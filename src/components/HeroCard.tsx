@@ -6,9 +6,11 @@ interface HeroCardProps {
   isSelected?: boolean
   showStats?: boolean
   onRemove?: () => void // For removing from battlefields
+  onDecreaseHealth?: () => void // For combat simulation
+  showCombatControls?: boolean // Show decrease health button
 }
 
-export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove }: HeroCardProps) {
+export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove, onDecreaseHealth, showCombatControls = false }: HeroCardProps) {
   const getCardTypeColor = () => {
     switch (card.cardType) {
       case 'hero': return '#4a90e2'
@@ -29,6 +31,20 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
   const getHealth = () => {
     if (card.cardType === 'generic' && 'stackHealth' in card && card.stackHealth !== undefined) {
       return card.stackHealth
+    }
+    // Use currentHealth if available (for combat simulation), otherwise use health
+    if ('currentHealth' in card && card.currentHealth !== undefined) {
+      return card.currentHealth
+    }
+    return 'health' in card ? card.health : 0
+  }
+
+  const getMaxHealth = () => {
+    if (card.cardType === 'generic' && 'stackHealth' in card && card.stackHealth !== undefined) {
+      return card.stackHealth
+    }
+    if ('maxHealth' in card && card.maxHealth !== undefined) {
+      return card.maxHealth
     }
     return 'health' in card ? card.health : 0
   }
@@ -93,9 +109,30 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
       
       {showStats && (card.cardType === 'hero' || card.cardType === 'signature' || card.cardType === 'hybrid' || card.cardType === 'generic') && (
         <div style={{ marginTop: '8px', fontSize: '12px' }}>
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <span>⚔️ {getAttack()}</span>
-            <span>❤️ {getHealth()}</span>
+            <span>❤️ {getHealth()}{getMaxHealth() !== getHealth() ? `/${getMaxHealth()}` : ''}</span>
+            {showCombatControls && onDecreaseHealth && getHealth() > 0 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDecreaseHealth()
+                }}
+                style={{
+                  background: '#f44336',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '2px 6px',
+                  fontSize: '10px',
+                  cursor: 'pointer',
+                  marginLeft: '4px',
+                }}
+                title="Decrease health (simulate damage)"
+              >
+                -1
+              </button>
+            )}
           </div>
           {isStacked && (
             <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>

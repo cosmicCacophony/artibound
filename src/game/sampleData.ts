@@ -1,4 +1,32 @@
-import { Hero, SignatureCard, HybridCard, GenericUnit, Card, BaseCard } from './types'
+import { Hero, SignatureCard, HybridCard, GenericUnit, Card, BaseCard, Item, GameMetadata, TOWER_HP, NEXUS_HP, STARTING_GOLD } from './types'
+
+// Item definitions
+export const tier1Items: Item[] = [
+  {
+    id: 'item-armor',
+    name: 'Armor',
+    description: '+2 HP',
+    cost: 5,
+    tier: 1,
+    hpBonus: 2,
+  },
+  {
+    id: 'item-weapon',
+    name: 'Weapon',
+    description: '+2 Attack',
+    cost: 5,
+    tier: 1,
+    attackBonus: 2,
+  },
+  {
+    id: 'item-goldmine',
+    name: 'Gold Mine',
+    description: '+1 gold per turn',
+    cost: 8,
+    tier: 1,
+    goldPerTurn: 1,
+  },
+]
 
 // Hero definitions (templates for the library)
 export const heroTemplates: Omit<Hero, 'location' | 'owner'>[] = [
@@ -9,6 +37,8 @@ export const heroTemplates: Omit<Hero, 'location' | 'owner'>[] = [
     cardType: 'hero',
     attack: 5,
     health: 10,
+    maxHealth: 10,
+    currentHealth: 10,
     supportEffect: 'Allies gain +1 attack',
     signatureCardIds: ['sig-warrior-1', 'sig-warrior-2'],
   },
@@ -19,6 +49,8 @@ export const heroTemplates: Omit<Hero, 'location' | 'owner'>[] = [
     cardType: 'hero',
     attack: 4,
     health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
     supportEffect: 'Draw an extra card each turn',
     signatureCardIds: ['sig-mage-1', 'sig-mage-2'],
   },
@@ -29,6 +61,8 @@ export const heroTemplates: Omit<Hero, 'location' | 'owner'>[] = [
     cardType: 'hero',
     attack: 2,
     health: 8,
+    maxHealth: 8,
+    currentHealth: 8,
     supportEffect: 'Heal allies 2 HP each turn',
     signatureCardIds: ['sig-healer-1', 'sig-healer-2'],
   },
@@ -39,6 +73,8 @@ export const heroTemplates: Omit<Hero, 'location' | 'owner'>[] = [
     cardType: 'hero',
     attack: 6,
     health: 7,
+    maxHealth: 7,
+    currentHealth: 7,
     supportEffect: 'Range attacks ignore first defense',
     signatureCardIds: ['sig-archer-1', 'sig-archer-2'],
   },
@@ -49,6 +85,8 @@ export const heroTemplates: Omit<Hero, 'location' | 'owner'>[] = [
     cardType: 'hero',
     attack: 3,
     health: 12,
+    maxHealth: 12,
+    currentHealth: 12,
     supportEffect: 'Allies gain +2 health',
     signatureCardIds: ['sig-guardian-1', 'sig-guardian-2'],
   },
@@ -65,6 +103,8 @@ export const signatureCardTemplates: Omit<SignatureCard, 'location' | 'owner'>[]
     heroName: 'Warrior',
     attack: 3,
     health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
     effect: 'If Warrior is on battlefield, +2 attack',
   },
   {
@@ -75,6 +115,8 @@ export const signatureCardTemplates: Omit<SignatureCard, 'location' | 'owner'>[]
     heroName: 'Warrior',
     attack: 2,
     health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
     effect: 'Warrior gains +1 attack for each signature card',
   },
   // Mage signatures
@@ -86,6 +128,8 @@ export const signatureCardTemplates: Omit<SignatureCard, 'location' | 'owner'>[]
     heroName: 'Mage',
     attack: 3,
     health: 1,
+    maxHealth: 1,
+    currentHealth: 1,
     effect: 'Deal 2 damage to enemy when played',
   },
   {
@@ -96,6 +140,8 @@ export const signatureCardTemplates: Omit<SignatureCard, 'location' | 'owner'>[]
     heroName: 'Mage',
     attack: 1,
     health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
     effect: 'Mage gains +3 health',
   },
   // Healer signatures
@@ -107,6 +153,8 @@ export const signatureCardTemplates: Omit<SignatureCard, 'location' | 'owner'>[]
     heroName: 'Healer',
     attack: 1,
     health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
     effect: 'Heal all allies 3 HP',
   },
   {
@@ -117,6 +165,8 @@ export const signatureCardTemplates: Omit<SignatureCard, 'location' | 'owner'>[]
     heroName: 'Healer',
     attack: 2,
     health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
     effect: 'Allies gain +1 health',
   },
   // Archer signatures
@@ -128,6 +178,8 @@ export const signatureCardTemplates: Omit<SignatureCard, 'location' | 'owner'>[]
     heroName: 'Archer',
     attack: 4,
     health: 1,
+    maxHealth: 1,
+    currentHealth: 1,
     effect: 'Can attack enemy base directly',
   },
   {
@@ -138,6 +190,8 @@ export const signatureCardTemplates: Omit<SignatureCard, 'location' | 'owner'>[]
     heroName: 'Archer',
     attack: 3,
     health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
     effect: 'Archer gains +2 attack this turn',
   },
   // Guardian signatures
@@ -149,6 +203,8 @@ export const signatureCardTemplates: Omit<SignatureCard, 'location' | 'owner'>[]
     heroName: 'Guardian',
     attack: 2,
     health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
     effect: 'Block next attack on an ally',
   },
   {
@@ -159,6 +215,8 @@ export const signatureCardTemplates: Omit<SignatureCard, 'location' | 'owner'>[]
     heroName: 'Guardian',
     attack: 1,
     health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
     effect: 'Guardian gains +5 health',
   },
 ]
@@ -172,6 +230,8 @@ export const hybridCardTemplates: Omit<HybridCard, 'location' | 'owner'>[] = [
     cardType: 'hybrid',
     attack: 4,
     health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
     baseBuff: 'Battlefield units gain +1 attack',
   },
   {
@@ -181,6 +241,8 @@ export const hybridCardTemplates: Omit<HybridCard, 'location' | 'owner'>[] = [
     cardType: 'hybrid',
     attack: 3,
     health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
     baseBuff: 'See enemy hand size',
   },
   {
@@ -190,6 +252,8 @@ export const hybridCardTemplates: Omit<HybridCard, 'location' | 'owner'>[] = [
     cardType: 'hybrid',
     attack: 2,
     health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
     baseBuff: 'Repair 1 damage to all allies each turn',
   },
 ]
@@ -203,6 +267,8 @@ export const genericUnitTemplates: Omit<GenericUnit, 'location' | 'owner' | 'sta
     cardType: 'generic',
     attack: 2,
     health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
   },
   {
     id: 'generic-soldier-2',
@@ -211,6 +277,8 @@ export const genericUnitTemplates: Omit<GenericUnit, 'location' | 'owner' | 'sta
     cardType: 'generic',
     attack: 2,
     health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
   },
   {
     id: 'generic-knight-1',
@@ -219,6 +287,8 @@ export const genericUnitTemplates: Omit<GenericUnit, 'location' | 'owner' | 'sta
     cardType: 'generic',
     attack: 3,
     health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
   },
   {
     id: 'generic-knight-2',
@@ -227,6 +297,8 @@ export const genericUnitTemplates: Omit<GenericUnit, 'location' | 'owner' | 'sta
     cardType: 'generic',
     attack: 3,
     health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
   },
   {
     id: 'generic-spearman-1',
@@ -235,6 +307,8 @@ export const genericUnitTemplates: Omit<GenericUnit, 'location' | 'owner' | 'sta
     cardType: 'generic',
     attack: 1,
     health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
   },
   {
     id: 'generic-spearman-2',
@@ -243,6 +317,8 @@ export const genericUnitTemplates: Omit<GenericUnit, 'location' | 'owner' | 'sta
     cardType: 'generic',
     attack: 1,
     health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
   },
 ]
 
@@ -276,24 +352,33 @@ export function createCardFromTemplate(
     return {
       ...base,
       ...heroTemplate,
+      maxHealth: heroTemplate.maxHealth || heroTemplate.health,
+      currentHealth: heroTemplate.currentHealth !== undefined ? heroTemplate.currentHealth : (heroTemplate.maxHealth || heroTemplate.health),
+      equippedItems: [],
     } as Hero
   } else if (template.cardType === 'signature') {
     const sigTemplate = template as unknown as Omit<SignatureCard, 'location' | 'owner' | 'id' | 'name' | 'description' | 'cardType'>
     return {
       ...base,
       ...sigTemplate,
+      maxHealth: sigTemplate.maxHealth || sigTemplate.health,
+      currentHealth: sigTemplate.currentHealth !== undefined ? sigTemplate.currentHealth : (sigTemplate.maxHealth || sigTemplate.health),
     } as SignatureCard
   } else if (template.cardType === 'hybrid') {
     const hybridTemplate = template as unknown as Omit<HybridCard, 'location' | 'owner' | 'id' | 'name' | 'description' | 'cardType'>
     return {
       ...base,
       ...hybridTemplate,
+      maxHealth: hybridTemplate.maxHealth || hybridTemplate.health,
+      currentHealth: hybridTemplate.currentHealth !== undefined ? hybridTemplate.currentHealth : (hybridTemplate.maxHealth || hybridTemplate.health),
     } as HybridCard
   } else {
     const genTemplate = template as unknown as Omit<GenericUnit, 'location' | 'owner' | 'id' | 'name' | 'description' | 'cardType' | 'stackedWith' | 'stackPower' | 'stackHealth'>
     return {
       ...base,
       ...genTemplate,
+      maxHealth: genTemplate.maxHealth || genTemplate.health,
+      currentHealth: genTemplate.currentHealth !== undefined ? genTemplate.currentHealth : (genTemplate.maxHealth || genTemplate.health),
     } as GenericUnit
   }
 }
@@ -306,6 +391,7 @@ export function createInitialGameState(): {
   player2Base: Card[]
   battlefieldA: { player1: Card[], player2: Card[] }
   battlefieldB: { player1: Card[], player2: Card[] }
+  metadata: GameMetadata
 } {
   // Give each player 2 starting heroes
   const player1Hero1 = createCardFromTemplate(heroTemplates[0], 'player1', 'hand')
@@ -314,6 +400,19 @@ export function createInitialGameState(): {
   const player2Hero1 = createCardFromTemplate(heroTemplates[2], 'player2', 'hand')
   const player2Hero2 = createCardFromTemplate(heroTemplates[3], 'player2', 'hand')
 
+  const metadata: GameMetadata = {
+    currentTurn: 1,
+    activePlayer: 'player1',
+    player1Gold: STARTING_GOLD,
+    player2Gold: STARTING_GOLD,
+    player1NexusHP: NEXUS_HP,
+    player2NexusHP: NEXUS_HP,
+    towerA_HP: TOWER_HP,
+    towerB_HP: TOWER_HP,
+    player1Tier: 1,
+    player2Tier: 1,
+  }
+
   return {
     player1Hand: [player1Hero1, player1Hero2],
     player2Hand: [player2Hero1, player2Hero2],
@@ -321,5 +420,6 @@ export function createInitialGameState(): {
     player2Base: [],
     battlefieldA: { player1: [], player2: [] },
     battlefieldB: { player1: [], player2: [] },
+    metadata,
   }
 }
