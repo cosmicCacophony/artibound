@@ -4,10 +4,26 @@ import { createInitialGameState, createCardLibrary, createCardFromTemplate } fro
 import { HeroCard } from './HeroCard'
 
 export function Board() {
-  const cardLibrary = createCardLibrary()
+  const baseCardLibrary = createCardLibrary()
+  // Initialize sidebar with base cards as actual instances (not templates)
+  const [sidebarCards, setSidebarCards] = useState<import('../game/types').BaseCard[]>(() => 
+    baseCardLibrary.map(template => ({ ...template }))
+  )
   const [gameState, setGameState] = useState(createInitialGameState())
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
   const [activePlayer, setActivePlayer] = useState<'player1' | 'player2'>('player1')
+  const [showCreateCard, setShowCreateCard] = useState(false)
+  const [newCardForm, setNewCardForm] = useState({
+    name: '',
+    description: '',
+    cardType: 'generic' as import('../game/types').CardType,
+    attack: '',
+    health: '',
+    ability: '',
+  })
+
+  // Sidebar cards - no limit
+  const cardLibrary = sidebarCards
 
   // Get cards for current view
   const player1Hand = gameState.player1Hand
@@ -41,10 +57,111 @@ export function Board() {
     const template = cardLibrary[templateIndex]
     const newCard = createCardFromTemplate(template, player, 'hand')
     
+    // Remove the card from the sidebar (all cards are removable)
+    setSidebarCards(prev => prev.filter((_, index) => index !== templateIndex))
+    
     setGameState(prev => ({
       ...prev,
       [`${player}Hand`]: [...prev[`${player}Hand` as keyof typeof prev] as Card[], newCard],
     }))
+  }
+
+  const handleDeleteFromSidebar = (templateIndex: number) => {
+    setSidebarCards(prev => prev.filter((_, index) => index !== templateIndex))
+  }
+
+  const handleMoveCardToLibrary = (card: Card) => {
+    // Create a template from the card - strip instance-specific fields
+    const template: import('../game/types').BaseCard & Partial<{ attack: number, health: number, supportEffect?: string, effect?: string, baseBuff?: string, heroName?: string }> = {
+      id: `custom-${Date.now()}-${Math.random()}`,
+      name: card.name,
+      description: card.description,
+      cardType: card.cardType,
+    }
+
+    // Preserve stats and abilities based on card type
+    if ('attack' in card && card.attack !== undefined) {
+      template.attack = card.attack
+    }
+    if ('health' in card && card.health !== undefined) {
+      template.health = card.health
+    }
+    if (card.cardType === 'hero' && 'supportEffect' in card && card.supportEffect) {
+      template.supportEffect = card.supportEffect
+    } else if (card.cardType === 'signature' && 'effect' in card && card.effect) {
+      template.effect = card.effect
+      if ('heroName' in card) {
+        template.heroName = (card as any).heroName
+      }
+    } else if (card.cardType === 'hybrid' && 'baseBuff' in card && card.baseBuff) {
+      template.baseBuff = card.baseBuff
+    }
+    
+    // Add to sidebar at the bottom
+    setSidebarCards(prev => [...prev, template as import('../game/types').BaseCard])
+    
+    // Remove from hand
+    setGameState(prev => ({
+      ...prev,
+      [`${card.owner}Hand`]: (prev[`${card.owner}Hand` as keyof typeof prev] as Card[])
+        .filter(c => c.id !== card.id),
+    }))
+    
+    setSelectedCardId(null)
+  }
+
+  const handleCreateCard = () => {
+    const { name, description, cardType, attack, health, ability } = newCardForm
+    
+    if (!name.trim()) {
+      alert('Card name is required')
+      return
+    }
+
+    const newCard: import('../game/types').BaseCard & Partial<{ attack: number, health: number, supportEffect?: string, effect?: string, baseBuff?: string }> = {
+      id: `custom-${Date.now()}-${Math.random()}`,
+      name: name.trim(),
+      description: description.trim() || 'Custom card',
+      cardType,
+    }
+
+    // Add stats - use 0 if not provided, or parse the value
+    if (attack.trim() === '' || attack === null || attack === undefined) {
+      newCard.attack = 0
+    } else {
+      newCard.attack = parseInt(attack) || 0
+    }
+    
+    if (health.trim() === '' || health === null || health === undefined) {
+      newCard.health = 0
+    } else {
+      newCard.health = parseInt(health) || 0
+    }
+    
+    // Add ability/effect only if provided
+    if (ability.trim()) {
+      if (cardType === 'hero') {
+        newCard.supportEffect = ability.trim()
+      } else if (cardType === 'signature') {
+        newCard.effect = ability.trim()
+      } else if (cardType === 'hybrid') {
+        newCard.baseBuff = ability.trim()
+      }
+    }
+
+    // Add to sidebar
+    setSidebarCards(prev => [...prev, newCard as import('../game/types').BaseCard])
+    
+    // Reset form
+    setNewCardForm({
+      name: '',
+      description: '',
+      cardType: 'generic',
+      attack: '',
+      health: '',
+      ability: '',
+    })
+    setShowCreateCard(false)
   }
 
   const handleDeploy = (location: Location) => {
@@ -212,7 +329,7 @@ export function Board() {
           backgroundColor: '#fafafa',
         }}
       >
-        <h2 style={{ marginTop: 0, fontSize: '18px' }}>Card Library</h2>
+        <h2 style={{ marginTop: 0, fontSize: '18px' }}>Card Library ({cardLibrary.length})</h2>
         <div style={{ marginBottom: '20px' }}>
           <button
             onClick={() => setActivePlayer(activePlayer === 'player1' ? 'player2' : 'player1')}
@@ -229,7 +346,164 @@ export function Board() {
           >
             Adding to: {activePlayer === 'player1' ? 'Player 1' : 'Player 2'}
           </button>
+          <button
+            onClick={() => setShowCreateCard(!showCreateCard)}
+            style={{
+              width: '100%',
+              padding: '8px',
+              backgroundColor: showCreateCard ? '#ff9800' : '#4caf50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              marginBottom: '10px',
+            }}
+          >
+            {showCreateCard ? 'Cancel' : '+ Create Card'}
+          </button>
+          {selectedCard && selectedCard.location === 'hand' && (
+            <button
+              onClick={() => handleMoveCardToLibrary(selectedCard)}
+              style={{
+                width: '100%',
+                padding: '8px',
+                backgroundColor: '#9c27b0',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                marginBottom: '10px',
+              }}
+            >
+              Move {selectedCard.name} to Library
+            </button>
+          )}
         </div>
+
+        {/* Card Creation Form */}
+        {showCreateCard && (
+          <div
+            style={{
+              border: '2px solid #4caf50',
+              borderRadius: '4px',
+              padding: '12px',
+              marginBottom: '15px',
+              backgroundColor: '#f1f8e9',
+            }}
+          >
+            <h3 style={{ marginTop: 0, fontSize: '14px' }}>Create New Card</h3>
+            <input
+              type="text"
+              placeholder="Card Name *"
+              value={newCardForm.name}
+              onChange={(e) => setNewCardForm({ ...newCardForm, name: e.target.value })}
+              style={{
+                width: '100%',
+                padding: '6px',
+                marginBottom: '8px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                fontSize: '12px',
+                boxSizing: 'border-box',
+              }}
+            />
+            <textarea
+              placeholder="Description"
+              value={newCardForm.description}
+              onChange={(e) => setNewCardForm({ ...newCardForm, description: e.target.value })}
+              style={{
+                width: '100%',
+                padding: '6px',
+                marginBottom: '8px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                fontSize: '12px',
+                minHeight: '50px',
+                resize: 'vertical',
+                boxSizing: 'border-box',
+              }}
+            />
+            <select
+              value={newCardForm.cardType}
+              onChange={(e) => setNewCardForm({ ...newCardForm, cardType: e.target.value as import('../game/types').CardType })}
+              style={{
+                width: '100%',
+                padding: '6px',
+                marginBottom: '8px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                fontSize: '12px',
+                boxSizing: 'border-box',
+              }}
+            >
+              <option value="hero">Hero</option>
+              <option value="signature">Signature</option>
+              <option value="hybrid">Hybrid</option>
+              <option value="generic">Generic</option>
+            </select>
+            <input
+              type="number"
+              placeholder="Attack (optional)"
+              value={newCardForm.attack}
+              onChange={(e) => setNewCardForm({ ...newCardForm, attack: e.target.value })}
+              style={{
+                width: '48%',
+                padding: '6px',
+                marginBottom: '8px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                fontSize: '12px',
+                boxSizing: 'border-box',
+                marginRight: '2%',
+              }}
+            />
+            <input
+              type="number"
+              placeholder="Health (optional)"
+              value={newCardForm.health}
+              onChange={(e) => setNewCardForm({ ...newCardForm, health: e.target.value })}
+              style={{
+                width: '48%',
+                padding: '6px',
+                marginBottom: '8px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                fontSize: '12px',
+                boxSizing: 'border-box',
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Ability/Effect (optional)"
+              value={newCardForm.ability}
+              onChange={(e) => setNewCardForm({ ...newCardForm, ability: e.target.value })}
+              style={{
+                width: '100%',
+                padding: '6px',
+                marginBottom: '8px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                fontSize: '12px',
+                boxSizing: 'border-box',
+              }}
+            />
+            <button
+              onClick={handleCreateCard}
+              style={{
+                width: '100%',
+                padding: '8px',
+                backgroundColor: '#4caf50',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px',
+              }}
+            >
+              Create Card
+            </button>
+          </div>
+        )}
         
         <div style={{ fontSize: '12px', color: '#666', marginBottom: '10px' }}>
           Click a card to add to hand
@@ -237,28 +511,63 @@ export function Board() {
         
         {cardLibrary.map((template, index) => (
           <div
-            key={index}
-            onClick={() => handleAddToHand(index, activePlayer)}
+            key={template.id || index}
             style={{
               border: '1px solid #ddd',
               borderRadius: '4px',
               padding: '8px',
               marginBottom: '8px',
-              cursor: 'pointer',
               backgroundColor: '#fff',
               fontSize: '12px',
+              position: 'relative',
             }}
           >
-            <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#666' }}>
-              {template.cardType.toUpperCase()}
-            </div>
-            <div style={{ fontWeight: 'bold' }}>{template.name}</div>
-            <div style={{ fontSize: '11px', color: '#999' }}>{template.description}</div>
-            {'attack' in template && 'health' in template && (
-              <div style={{ fontSize: '11px', marginTop: '4px' }}>
-                ⚔️ {(template as { attack: number; health: number }).attack} ❤️ {(template as { attack: number; health: number }).health}
+            <div
+              onClick={() => handleAddToHand(index, activePlayer)}
+              style={{
+                cursor: 'pointer',
+                paddingRight: '25px',
+              }}
+            >
+              <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#666' }}>
+                {template.cardType.toUpperCase()}
               </div>
-            )}
+              <div style={{ fontWeight: 'bold' }}>{template.name}</div>
+              <div style={{ fontSize: '11px', color: '#999' }}>{template.description}</div>
+              {'attack' in template && 'health' in template && (
+                <div style={{ fontSize: '11px', marginTop: '4px' }}>
+                  ⚔️ {(template as { attack: number; health: number }).attack} ❤️ {(template as { attack: number; health: number }).health}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                if (confirm(`Delete ${template.name} from library?`)) {
+                  handleDeleteFromSidebar(index)
+                }
+              }}
+              style={{
+                position: 'absolute',
+                top: '4px',
+                right: '4px',
+                background: '#f44336',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '20px',
+                height: '20px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                lineHeight: '1',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              title="Delete card"
+            >
+              ×
+            </button>
           </div>
         ))}
       </div>
