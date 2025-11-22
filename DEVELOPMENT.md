@@ -82,6 +82,13 @@ This file documents major architectural decisions, design learnings, implementat
 
 ## Change Log
 
+### 2024-12-XX - Combat System & Spell Cards
+- Implemented hybrid positional combat system (positional with player choice)
+- Added spell card types and examples (black damage, blue control/AOE)
+- Added manual slot positioning (1-5 slots per battlefield)
+- Made battlefield cards smaller (scale 0.85) to fit 5 positions
+- Created playtesting template (PLAYTESTING.md) for systematic testing
+
 ### 2024-12-XX - Initial Development Documentation
 - Created DEVELOPMENT.md structure
 - Documented current architecture decisions

@@ -495,8 +495,7 @@ export const mageCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' |
 // Includes: signature cards (2 per hero) + generic aggro/control cards + multicolor cards + spells
 export function createCardLibrary(player: 'player1' | 'player2'): (BaseCard & Partial<{ effect: SpellEffect, initiative?: boolean }>)[] {
   if (player === 'player1') {
-    // Player 1 (RW Aggro): All signature cards + aggro generics + multicolor cards
-    // Note: RW doesn't get spells yet (they're more unit-focused)
+    // Player 1 (RW Aggro): All signature cards + aggro generics + multicolor cards + spells
     return [
       ...rwWarriorSignatureCards,
       ...rwBerserkerSignatureCards,
@@ -504,14 +503,24 @@ export function createCardLibrary(player: 'player1' | 'player2'): (BaseCard & Pa
       ...rwPaladinSignatureCards,
       ...rwAggroGenericCards,
       ...redWhiteMulticolorCards,
-    ].map(card => ({
-      id: card.id,
-      name: card.name,
-      description: card.description,
-      cardType: card.cardType,
-      manaCost: card.manaCost,
-      colors: card.colors,
-    }))
+      ...redWhiteSpells,
+    ].map(card => {
+      const base: BaseCard & Partial<{ effect: SpellEffect, initiative?: boolean }> = {
+        id: card.id,
+        name: card.name,
+        description: card.description,
+        cardType: card.cardType,
+        manaCost: card.manaCost,
+        colors: card.colors,
+      }
+      // For spells, include the effect
+      if (card.cardType === 'spell') {
+        const spell = card as SpellCard
+        base.effect = spell.effect
+        base.initiative = spell.initiative
+      }
+      return base
+    })
   } else {
     // Player 2 (UB Control): All signature cards + control generics + multicolor cards + spells
     return [
@@ -572,7 +581,7 @@ export function createCardFromTemplate(
 
   // Check if it's a spell card first
   if (template.cardType === 'spell') {
-    const allSpells = [...blackSpells, ...blueSpells]
+    const allSpells = [...blackSpells, ...blueSpells, ...redWhiteSpells]
     const spellCard = allSpells.find(c => c.id === template.id)
     if (spellCard) {
       return {
@@ -947,29 +956,39 @@ export const rwAggroGenericCards: Omit<GenericUnit, 'location' | 'owner' | 'stac
     maxHealth: 4,
     currentHealth: 4,
   },
+]
+
+// Spell Cards - Red/White (RW)
+export const redWhiteSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-damage-1',
     name: 'Fireball',
     description: 'Damage spell - deals 4 damage',
-    cardType: 'generic',
+    cardType: 'spell',
     colors: ['red'],
     manaCost: 4,
-    attack: 4,
-    health: 1,
-    maxHealth: 1,
-    currentHealth: 1,
+    effect: {
+      type: 'targeted_damage',
+      damage: 4,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+    initiative: false,
   },
   {
     id: 'rw-damage-2',
     name: 'Smite',
     description: 'Divine damage spell - deals 3 damage',
-    cardType: 'generic',
+    cardType: 'spell',
     colors: ['white'],
     manaCost: 3,
-    attack: 3,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
+    effect: {
+      type: 'targeted_damage',
+      damage: 3,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+    initiative: false,
   },
 ]
 
@@ -1376,6 +1395,10 @@ export function createInitialGameState(): {
     towerB_HP: TOWER_HP,
     player1Tier: 1,
     player2Tier: 1,
+    deathCooldowns: {}, // Track cards that died (1 round cooldown) - Record<cardId, turnDied>
+    player1MovedToBase: false, // Track if player 1 moved a hero to base this turn
+    player2MovedToBase: false, // Track if player 2 moved a hero to base this turn
+    playedSpells: {}, // Track spells that have been played (for toggle X overlay) - Record<spellId, true>
   }
 
   return {

@@ -62,6 +62,15 @@ export interface GameMetadata {
   towerB_HP: number
   player1Tier: 1 | 2
   player2Tier: 1 | 2
+  // Death cooldown: Record of card ID -> turn they died (to track 1 round cooldown)
+  // Using Record instead of Map for JSON serialization
+  deathCooldowns: Record<string, number>
+  // Movement tracking: Track if each player has moved a hero to base this turn
+  player1MovedToBase: boolean
+  player2MovedToBase: boolean
+  // Played spells: Record of spell card ID -> boolean (for toggle X overlay in base)
+  // Using Record instead of Set for JSON serialization
+  playedSpells: Record<string, boolean>
 }
 
 export interface Hero extends BaseCard {

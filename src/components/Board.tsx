@@ -302,10 +302,25 @@ export function Board() {
       // Add to new location
       const playerManaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
       if (location === 'base') {
+        // Hero movement to base: 1 per turn, heals to full
+        const isHero = selectedCard.cardType === 'hero'
+        const movedToBaseKey = `${selectedCard.owner}MovedToBase` as keyof GameMetadata
+        const hasMovedToBase = prev.metadata[movedToBaseKey] as boolean
+        
+        if (isHero && hasMovedToBase) {
+          alert('You can only move one hero to base per turn!')
+          return prev
+        }
+        
+        // Heal hero to full health when moving to base
+        const healedCard = isHero && 'maxHealth' in selectedCard
+          ? { ...selectedCard, location, currentHealth: (selectedCard as any).maxHealth, slot: undefined }
+          : { ...selectedCard, location, slot: undefined }
+        
         return {
           ...prev,
           [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
-          [`${selectedCard.owner}Base`]: [...prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[], { ...selectedCard, location }],
+          [`${selectedCard.owner}Base`]: [...prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[], healedCard],
           battlefieldA: {
             ...prev.battlefieldA,
             [selectedCard.owner]: removeFromLocation(prev.battlefieldA[selectedCard.owner as 'player1' | 'player2']),
@@ -317,6 +332,7 @@ export function Board() {
           metadata: {
             ...prev.metadata,
             [playerManaKey]: Math.max(0, (prev.metadata[playerManaKey] as number) - manaCost),
+            ...(isHero ? { [movedToBaseKey]: true } : {}),
           },
         }
       } else if (location === 'battlefieldA' || location === 'battlefieldB') {
@@ -626,6 +642,45 @@ export function Board() {
     let nextPlayer: 'player1' | 'player2' = player
     let shouldIncrementTurn = false
     
+    // When starting a new turn (play phase), reset movement flags and clear expired death cooldowns
+    if (currentPhase === 'combatB') {
+      // Next phase will be play for next player - reset movement flags
+      setGameState(prev => {
+        // Clear death cooldowns that are 1+ turns old (can redeploy now)
+        const newDeathCooldowns: Record<string, number> = {}
+        const currentTurn = prev.metadata.currentTurn
+        Object.entries(prev.metadata.deathCooldowns).forEach(([cardId, turnDied]) => {
+          // Keep cooldowns that are still active (died this turn or last turn)
+          if (currentTurn - turnDied < 1) {
+            newDeathCooldowns[cardId] = turnDied
+          }
+        })
+        
+        // Heal heroes in base that are no longer on death cooldown
+        const healHeroInBase = (c: Card): Card => {
+          if (c.cardType === 'hero' && c.location === 'base' && !newDeathCooldowns[c.id]) {
+            const hero = c as import('../game/types').Hero
+            if (hero.currentHealth < hero.maxHealth) {
+              return { ...hero, currentHealth: hero.maxHealth }
+            }
+          }
+          return c
+        }
+        
+        return {
+          ...prev,
+          player1Base: prev.player1Base.map(healHeroInBase),
+          player2Base: prev.player2Base.map(healHeroInBase),
+          metadata: {
+            ...prev.metadata,
+            deathCooldowns: newDeathCooldowns,
+            player1MovedToBase: false,
+            player2MovedToBase: false,
+          },
+        }
+      })
+    }
+    
     // Resolve combat before leaving combat phase
     if (currentPhase === 'combatA') {
       // Resolve combat for battlefield A
@@ -761,6 +816,57 @@ export function Board() {
   // Legacy handleEndTurn for compatibility
   const handleEndTurn = handleNextPhase
 
+  // Toggle spell played state (for spells in base)
+  const handleToggleSpellPlayed = (card: Card) => {
+    if (card.cardType !== 'spell' || card.location !== 'base') return
+    
+    setGameState(prev => {
+      const isCurrentlyPlayed = prev.metadata.playedSpells[card.id] || false
+      const newPlayedSpells = { ...prev.metadata.playedSpells }
+      
+      if (isCurrentlyPlayed) {
+        delete newPlayedSpells[card.id]
+      } else {
+        newPlayedSpells[card.id] = true
+      }
+      
+      return {
+        ...prev,
+        metadata: {
+          ...prev.metadata,
+          playedSpells: newPlayedSpells,
+        },
+      }
+    })
+  }
+
+  // Increase health (for correcting mistakes)
+  const handleIncreaseHealth = (card: Card) => {
+    if (!('currentHealth' in card) || !('maxHealth' in card)) return
+    
+    const newHealth = Math.min(card.currentHealth + 1, card.maxHealth)
+    const player = card.owner
+    
+    setGameState(prev => {
+      const updateCardInArray = (cards: Card[]): Card[] => 
+        cards.map(c => c.id === card.id ? { ...c, currentHealth: newHealth } as Card : c)
+
+      return {
+        ...prev,
+        [`${player}Hand`]: updateCardInArray(prev[`${player}Hand` as keyof typeof prev] as Card[]),
+        [`${player}Base`]: updateCardInArray(prev[`${player}Base` as keyof typeof prev] as Card[]),
+        battlefieldA: {
+          ...prev.battlefieldA,
+          [player]: updateCardInArray(prev.battlefieldA[player as 'player1' | 'player2']),
+        },
+        battlefieldB: {
+          ...prev.battlefieldB,
+          [player]: updateCardInArray(prev.battlefieldB[player as 'player1' | 'player2']),
+        },
+      }
+    })
+  }
+
   // Combat Simulation
   const handleDecreaseHealth = (card: Card) => {
     if (!('currentHealth' in card)) return
@@ -768,13 +874,13 @@ export function Board() {
     const newHealth = card.currentHealth - 1
 
     if (newHealth <= 0) {
-      // Card dies
+      // Card dies - track death cooldown (1 round)
       const player = card.owner
+      const location = card.location
 
       if (card.cardType === 'hero') {
-        // Hero returns to hand with full health restored
+        // Hero dies - goes to base with death cooldown (1 round before can redeploy)
         const hero = card as import('../game/types').Hero
-        const location = card.location
         setGameState(prev => {
           const removeFromLocation = (cards: Card[]) => cards.filter(c => c.id !== card.id)
           
@@ -784,21 +890,24 @@ export function Board() {
               ...prev[location === 'battlefieldA' ? 'battlefieldA' : 'battlefieldB'],
               [player]: removeFromLocation(prev[location === 'battlefieldA' ? 'battlefieldA' : 'battlefieldB'][player as 'player1' | 'player2']),
             },
-            [`${player}Hand`]: [...prev[`${player}Hand` as keyof typeof prev] as Card[], {
+            [`${player}Base`]: [...prev[`${player}Base` as keyof typeof prev] as Card[], {
               ...hero,
-              location: 'hand',
-              currentHealth: hero.maxHealth,
+              location: 'base',
+              currentHealth: 0, // Dead - will heal to full in base after cooldown
               slot: undefined,
             }],
             metadata: {
               ...prev.metadata,
               [`${player}Gold`]: (prev.metadata[`${player}Gold` as keyof GameMetadata] as number) + 5,
+              deathCooldowns: {
+                ...prev.metadata.deathCooldowns,
+                [card.id]: prev.metadata.currentTurn, // Track turn they died
+              },
             },
           }
         })
       } else {
-        // Generic unit dies - remove completely
-        const location = card.location
+        // Generic unit dies - remove completely, track death cooldown
         setGameState(prev => {
           return {
             ...prev,
@@ -809,6 +918,10 @@ export function Board() {
             metadata: {
               ...prev.metadata,
               [`${player}Gold`]: (prev.metadata[`${player}Gold` as keyof GameMetadata] as number) + 2,
+              deathCooldowns: {
+                ...prev.metadata.deathCooldowns,
+                [card.id]: prev.metadata.currentTurn, // Track turn they died
+              },
             },
           }
         })
@@ -1260,6 +1373,9 @@ export function Board() {
                     onClick={() => handleCardClick(card.id)}
                     isSelected={selectedCardId === card.id}
                     showStats={false}
+                    isDead={!!metadata.deathCooldowns[card.id]}
+                    isPlayed={card.cardType === 'spell' && !!metadata.playedSpells[card.id]}
+                    onTogglePlayed={card.cardType === 'spell' ? () => handleToggleSpellPlayed(card) : undefined}
                   />
                 ))
               ) : (
@@ -1280,6 +1396,9 @@ export function Board() {
                     onClick={() => handleCardClick(card.id)}
                     isSelected={selectedCardId === card.id}
                     showStats={true}
+                    isDead={!!metadata.deathCooldowns[card.id]}
+                    isPlayed={card.cardType === 'spell' && card.location === 'base' && !!metadata.playedSpells[card.id]}
+                    onTogglePlayed={card.cardType === 'spell' && card.location === 'base' ? () => handleToggleSpellPlayed(card) : undefined}
                   />
                 ))
               ) : (
@@ -1314,8 +1433,56 @@ export function Board() {
                   ({getAvailableSlots([...battlefieldAP1, ...battlefieldAP2])} slots)
                 </span>
               </h3>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#d32f2f' }}>
-                Tower: {metadata.towerA_HP} HP
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#d32f2f' }}>
+                  Tower: {metadata.towerA_HP} HP
+                </div>
+                <button
+                  onClick={() => {
+                    setGameState(prev => ({
+                      ...prev,
+                      metadata: {
+                        ...prev.metadata,
+                        towerA_HP: Math.max(0, prev.metadata.towerA_HP - 1),
+                      },
+                    }))
+                  }}
+                  style={{
+                    padding: '4px 8px',
+                    backgroundColor: '#f44336',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                  }}
+                  title="Deal 1 damage to Tower A"
+                >
+                  -1
+                </button>
+                <button
+                  onClick={() => {
+                    setGameState(prev => ({
+                      ...prev,
+                      metadata: {
+                        ...prev.metadata,
+                        towerA_HP: Math.min(20, prev.metadata.towerA_HP + 1),
+                      },
+                    }))
+                  }}
+                  style={{
+                    padding: '4px 8px',
+                    backgroundColor: '#4caf50',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                  }}
+                  title="Heal 1 HP to Tower A"
+                >
+                  +1
+                </button>
               </div>
             </div>
             
@@ -1365,7 +1532,9 @@ export function Board() {
                             showStats={true}
                             onRemove={() => handleRemoveFromBattlefield(cardInSlot, 'battlefieldA')}
                             onDecreaseHealth={() => handleDecreaseHealth(cardInSlot)}
+                            onIncreaseHealth={() => handleIncreaseHealth(cardInSlot)}
                             showCombatControls={true}
+                            isDead={!!metadata.deathCooldowns[cardInSlot.id]}
                           />
                         </div>
                       ) : (
@@ -1425,7 +1594,9 @@ export function Board() {
                             showStats={true}
                             onRemove={() => handleRemoveFromBattlefield(cardInSlot, 'battlefieldA')}
                             onDecreaseHealth={() => handleDecreaseHealth(cardInSlot)}
+                            onIncreaseHealth={() => handleIncreaseHealth(cardInSlot)}
                             showCombatControls={true}
+                            isDead={!!metadata.deathCooldowns[cardInSlot.id]}
                           />
                         </div>
                       ) : (
@@ -1479,8 +1650,56 @@ export function Board() {
                   ({getAvailableSlots([...battlefieldBP1, ...battlefieldBP2])} slots)
                 </span>
               </h3>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#d32f2f' }}>
-                Tower: {metadata.towerB_HP} HP
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#d32f2f' }}>
+                  Tower: {metadata.towerB_HP} HP
+                </div>
+                <button
+                  onClick={() => {
+                    setGameState(prev => ({
+                      ...prev,
+                      metadata: {
+                        ...prev.metadata,
+                        towerB_HP: Math.max(0, prev.metadata.towerB_HP - 1),
+                      },
+                    }))
+                  }}
+                  style={{
+                    padding: '4px 8px',
+                    backgroundColor: '#f44336',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                  }}
+                  title="Deal 1 damage to Tower B"
+                >
+                  -1
+                </button>
+                <button
+                  onClick={() => {
+                    setGameState(prev => ({
+                      ...prev,
+                      metadata: {
+                        ...prev.metadata,
+                        towerB_HP: Math.min(20, prev.metadata.towerB_HP + 1),
+                      },
+                    }))
+                  }}
+                  style={{
+                    padding: '4px 8px',
+                    backgroundColor: '#4caf50',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                  }}
+                  title="Heal 1 HP to Tower B"
+                >
+                  +1
+                </button>
               </div>
             </div>
             
@@ -1530,7 +1749,9 @@ export function Board() {
                             showStats={true}
                             onRemove={() => handleRemoveFromBattlefield(cardInSlot, 'battlefieldB')}
                             onDecreaseHealth={() => handleDecreaseHealth(cardInSlot)}
+                            onIncreaseHealth={() => handleIncreaseHealth(cardInSlot)}
                             showCombatControls={true}
+                            isDead={!!metadata.deathCooldowns[cardInSlot.id]}
                           />
                         </div>
                       ) : (
@@ -1590,7 +1811,9 @@ export function Board() {
                             showStats={true}
                             onRemove={() => handleRemoveFromBattlefield(cardInSlot, 'battlefieldB')}
                             onDecreaseHealth={() => handleDecreaseHealth(cardInSlot)}
+                            onIncreaseHealth={() => handleIncreaseHealth(cardInSlot)}
                             showCombatControls={true}
+                            isDead={!!metadata.deathCooldowns[cardInSlot.id]}
                           />
                         </div>
                       ) : (
@@ -1665,6 +1888,9 @@ export function Board() {
                     onClick={() => handleCardClick(card.id)}
                     isSelected={selectedCardId === card.id}
                     showStats={false}
+                    isDead={!!metadata.deathCooldowns[card.id]}
+                    isPlayed={card.cardType === 'spell' && !!metadata.playedSpells[card.id]}
+                    onTogglePlayed={card.cardType === 'spell' ? () => handleToggleSpellPlayed(card) : undefined}
                   />
                 ))
               ) : (
@@ -1713,6 +1939,9 @@ export function Board() {
                     onClick={() => handleCardClick(card.id)}
                     isSelected={selectedCardId === card.id}
                     showStats={true}
+                    isDead={!!metadata.deathCooldowns[card.id]}
+                    isPlayed={card.cardType === 'spell' && card.location === 'base' && !!metadata.playedSpells[card.id]}
+                    onTogglePlayed={card.cardType === 'spell' && card.location === 'base' ? () => handleToggleSpellPlayed(card) : undefined}
                   />
                 ))
               ) : (

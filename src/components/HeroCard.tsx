@@ -7,7 +7,11 @@ interface HeroCardProps {
   showStats?: boolean
   onRemove?: () => void // For removing from battlefields
   onDecreaseHealth?: () => void // For combat simulation
-  showCombatControls?: boolean // Show decrease health button
+  onIncreaseHealth?: () => void // For correcting mistakes
+  showCombatControls?: boolean // Show decrease/increase health buttons
+  isDead?: boolean // Show death cooldown overlay (black X)
+  isPlayed?: boolean // Show played overlay (black X) for spells in base
+  onTogglePlayed?: () => void // Toggle played state for spells
 }
 
 // Color palette mapping
@@ -27,7 +31,7 @@ const COLOR_LIGHT_MAP: Record<Color, string> = {
   green: '#e8f5e9',
 }
 
-export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove, onDecreaseHealth, showCombatControls = false }: HeroCardProps) {
+export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove, onDecreaseHealth, onIncreaseHealth, showCombatControls = false, isDead = false, isPlayed = false, onTogglePlayed }: HeroCardProps) {
   // Get card colors
   const cardColors: Color[] = 'colors' in card && card.colors ? card.colors : []
   
@@ -242,26 +246,49 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <span>⚔️ {getAttack()}</span>
             <span>❤️ {getHealth()}{getMaxHealth() !== getHealth() ? `/${getMaxHealth()}` : ''}</span>
-            {showCombatControls && onDecreaseHealth && getHealth() > 0 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onDecreaseHealth()
-                }}
-                style={{
-                  background: '#f44336',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '2px 6px',
-                  fontSize: '10px',
-                  cursor: 'pointer',
-                  marginLeft: '4px',
-                }}
-                title="Decrease health (simulate damage)"
-              >
-                -1
-              </button>
+            {showCombatControls && (
+              <div style={{ display: 'flex', gap: '4px', marginLeft: '4px' }}>
+                {onDecreaseHealth && getHealth() > 0 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDecreaseHealth()
+                    }}
+                    style={{
+                      background: '#f44336',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '2px 6px',
+                      fontSize: '10px',
+                      cursor: 'pointer',
+                    }}
+                    title="Decrease health (simulate damage)"
+                  >
+                    -1
+                  </button>
+                )}
+                {onIncreaseHealth && getHealth() < getMaxHealth() && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onIncreaseHealth()
+                    }}
+                    style={{
+                      background: '#4caf50',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '2px 6px',
+                      fontSize: '10px',
+                      cursor: 'pointer',
+                    }}
+                    title="Increase health (correct mistake)"
+                  >
+                    +1
+                  </button>
+                )}
+              </div>
             )}
           </div>
           {isStacked && (
@@ -287,6 +314,27 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
               ⚡ Initiative
             </div>
           )}
+          {card.location === 'base' && onTogglePlayed && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onTogglePlayed()
+              }}
+              style={{
+                marginTop: '4px',
+                padding: '2px 6px',
+                background: isPlayed ? '#4caf50' : '#9e9e9e',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                fontSize: '10px',
+                cursor: 'pointer',
+              }}
+              title={isPlayed ? 'Mark as not played' : 'Mark as played'}
+            >
+              {isPlayed ? '✓ Played' : 'Mark Played'}
+            </button>
+          )}
         </div>
       )}
       
@@ -305,6 +353,66 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
       {card.cardType === 'hybrid' && 'baseBuff' in card && (card as import('../game/types').HybridCard).baseBuff && (
         <div style={{ marginTop: '4px', fontSize: '11px', color: '#ff9800' }}>
           {card.location === 'base' ? `🏰 ${(card as import('../game/types').HybridCard).baseBuff}` : '⚔️ Battlefield: Combat unit'}
+        </div>
+      )}
+      
+      {/* Death cooldown overlay - black X */}
+      {isDead && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10,
+            borderRadius: '4px',
+          }}
+        >
+          <div
+            style={{
+              fontSize: '48px',
+              color: '#fff',
+              fontWeight: 'bold',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+            }}
+          >
+            ✕
+          </div>
+        </div>
+      )}
+      
+      {/* Played spell overlay - black X (for spells in base) */}
+      {isPlayed && card.cardType === 'spell' && card.location === 'base' && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10,
+            borderRadius: '4px',
+          }}
+        >
+          <div
+            style={{
+              fontSize: '48px',
+              color: '#fff',
+              fontWeight: 'bold',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+            }}
+          >
+            ✕
+          </div>
         </div>
       )}
     </div>
