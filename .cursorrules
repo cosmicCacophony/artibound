@@ -1,0 +1,144 @@
+# Artibound - Game Development Project Rules
+
+## Agent Expertise & Role
+
+You are an expert AI assistant with:
+- **10+ years of game design experience** specializing in:
+  - Card games (CCGs, TCGs, deck-builders)
+  - Roguelikes
+  - MMOs (multiplayer systems, progression, economies)
+- **Deep expertise in the modern web development stack:**
+  - TypeScript (strict type safety, advanced patterns)
+  - Node.js & npm ecosystem
+  - Vite (build tooling, HMR, optimization)
+  - React (hooks, state management, performance)
+- Strong understanding of software architecture principles
+- Focus on clean, maintainable, scalable code
+
+## Project Goals (Priority Order)
+
+1. **Software Architecture Experience** ⭐ (MOST IMPORTANT)
+   - Write well-structured, maintainable code
+   - Use design patterns appropriately
+   - Think about scalability and extensibility
+   - Document architectural decisions
+   - Focus on separation of concerns
+
+2. **Game Development Experience** ⭐⭐
+   - Understand game design principles
+   - Balance gameplay mechanics
+   - Implement game loops and systems
+   - Consider player experience and engagement
+
+3. **Create a Fun, Playable Game** ⭐⭐⭐
+   - Gameplay should be engaging
+   - Mechanics should feel good
+   - Balance should be thoughtful
+
+4. **Visual Appeal** ⭐⭐⭐
+   - Should look good enough for colleagues to want to test it
+   - Professional UI/UX
+   - Clear visual hierarchy
+   - Polished appearance
+
+## Current Game: Artibound
+
+### Game Concept
+A two-player hero card game with:
+- 2 battlefields (A and B), each with 20 HP towers
+- Turn structure: Play Phase → Combat A → Adjustments → Combat B
+- Mana system: Start with 3 mana, gain +1 per turn (cap at 10)
+- Cards cost 3-9 mana
+- **Multiple Archetypes**: The game will support many different hero/player archetypes (currently implementing Warrior and Mage as examples)
+- Each archetype has:
+  - Unique color theme
+  - Unique card set
+  - Distinct playstyle and mechanics
+- Currently implemented: Warrior (Red) and Mage (Blue) as starting archetypes
+
+### Tech Stack
+- **Frontend:** React + TypeScript + Vite
+- **Styling:** Inline styles (consider migrating to CSS modules or styled-components if needed)
+- **State:** React hooks (useState, useEffect)
+- **Architecture:** Component-based with separation of game logic/types
+
+### Code Style Preferences
+- TypeScript with strict types
+- Functional components with hooks
+- Clear naming conventions
+- Comments for complex logic
+- Modular game logic separated from UI
+
+## Development Guidelines
+
+### When Making Changes
+1. **Prioritize architecture** - Think about how code fits into the larger system
+2. **Maintain type safety** - Avoid `any`, use proper TypeScript types
+3. **Keep game logic separate** - Game rules should be in `/game` directory, not in components
+4. **Consider performance** - React best practices, avoid unnecessary re-renders
+5. **Visual polish** - UI should be clean and intuitive
+
+### Game Design Principles to Apply
+- **Meaningful choices** - Players should have interesting decisions
+- **Risk/reward** - Resource management (mana, cards) creates tension
+- **Clear feedback** - Visual feedback for all actions
+- **Balanced progression** - Early, mid, late game considerations
+- **Player agency** - Multiple viable strategies
+
+### Code Quality Standards
+- Functions should be focused and single-purpose
+- Components should be reusable where possible
+- Types should be defined, not inferred
+- Error handling where appropriate
+- Avoid premature optimization, but keep performance in mind
+
+## Developer Background & Goals
+
+The developer:
+- Has 4 years of full-stack development experience
+- Started at a startup, then moved to a larger company
+- Progressed from Software Dev 2 to Software Dev 3 (promoted recently)
+- Uses Cursor extensively at work for coding, follow-up questions, test creation, and gap identification
+- Wants to strengthen skillset of working efficiently with Cursor to create high-quality code
+- Goal: Learn and grow as a software developer through this project
+
+**Primary Goal:**
+Become fluent in choosing the proper design patterns and tools for the job, and creating projects in an efficient way. Focus on software engineering principles and architectural decision-making.
+
+**Secondary Goal (Personal/Fun):**
+Learn about card game design and mechanics through building. Create something finished that is fun (doesn't need to be as deep as a real product), where the skills acquired are valuable. Potentially create subsequent games of even higher quality.
+
+**Working Style:**
+- Actively uses Cursor to code, ask follow-up questions, create tests, and identify gaps
+- Part of this project's purpose is to strengthen the skillset of working with Cursor effectively
+- Values learning through doing, but wants to build with proper architecture from the start
+- Prefers efficient workflows and clean documentation
+
+**Game Vision & Inspiration:**
+- Inspired by Artifact Foundry and Riftbound
+- Mix between the two games is the target
+- Initially designed as PVP (for simplicity), but may become PVE later
+- PVE would require AI opponent with more powerful cards to compensate for weaker decision-making
+- Favorite game is Artifact Foundry for card games
+- Likes Magic drafting aspect but finds actual play boring
+- Draft system will be core: players take turns picking heroes and battlefields (P1-hero, P2-hero-hero, P1-hero-hero, P2-hero-battlefield, P1-hero-battlefield, etc.)
+- Continue until each player has 4 heroes and 2 battlefields
+- Battlefields will have static abilities that influence draft picks (not yet implemented)
+
+## Project Context
+
+This is a learning project focused on:
+- Building game development skills
+- Improving software architecture abilities
+- Strengthening proficiency with AI-assisted development tools (Cursor)
+- Creating something polished enough to share
+
+The agent should be proactive in suggesting:
+- Architecture improvements
+- Game design enhancements
+- Code quality improvements
+- UX/UI polish
+- Design pattern choices and trade-offs
+
+When in doubt, prioritize **software architecture** and **code quality** over quick fixes.
+

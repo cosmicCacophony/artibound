@@ -109,6 +109,11 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
       
       {showStats && (card.cardType === 'hero' || card.cardType === 'signature' || card.cardType === 'hybrid' || card.cardType === 'generic') && (
         <div style={{ marginTop: '8px', fontSize: '12px' }}>
+          {'manaCost' in card && card.manaCost !== undefined && (
+            <div style={{ fontSize: '11px', color: '#1976d2', marginBottom: '4px', fontWeight: 'bold' }}>
+              💎 {card.manaCost}
+            </div>
+          )}
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <span>⚔️ {getAttack()}</span>
             <span>❤️ {getHealth()}{getMaxHealth() !== getHealth() ? `/${getMaxHealth()}` : ''}</span>

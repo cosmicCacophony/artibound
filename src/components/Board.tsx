@@ -1,14 +1,21 @@
 import { useState, useEffect } from 'react'
-import { Card, Location, BATTLEFIELD_SLOT_LIMIT, GenericUnit, Item, GameMetadata } from '../game/types'
+import { Card, Location, BATTLEFIELD_SLOT_LIMIT, GenericUnit, Item, GameMetadata, TurnPhase } from '../game/types'
 import { createInitialGameState, createCardLibrary, createCardFromTemplate, tier1Items } from '../game/sampleData'
 import { HeroCard } from './HeroCard'
 
 export function Board() {
-  const baseCardLibrary = createCardLibrary()
-  // Initialize sidebar with base cards as actual instances (not templates)
-  const [sidebarCards, setSidebarCards] = useState<import('../game/types').BaseCard[]>(() => 
-    baseCardLibrary.map(template => ({ ...template }))
+  // Separate card libraries for each player
+  const player1CardLibrary = createCardLibrary('player1')
+  const player2CardLibrary = createCardLibrary('player2')
+  
+  // Initialize sidebars with player-specific cards
+  const [player1SidebarCards, setPlayer1SidebarCards] = useState<import('../game/types').BaseCard[]>(() => 
+    player1CardLibrary.map(template => ({ ...template }))
   )
+  const [player2SidebarCards, setPlayer2SidebarCards] = useState<import('../game/types').BaseCard[]>(() => 
+    player2CardLibrary.map(template => ({ ...template }))
+  )
+  
   const [gameState, setGameState] = useState(createInitialGameState())
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
   const [activePlayer, setActivePlayer] = useState<'player1' | 'player2'>('player1')
@@ -25,8 +32,9 @@ export function Board() {
     ability: '',
   })
 
-  // Sidebar cards - no limit
-  const cardLibrary = sidebarCards
+  // Sidebar cards - get based on active player
+  const cardLibrary = activePlayer === 'player1' ? player1SidebarCards : player2SidebarCards
+  const setSidebarCards = activePlayer === 'player1' ? setPlayer1SidebarCards : setPlayer2SidebarCards
 
   // Get cards for current view
   const player1Hand = gameState.player1Hand
@@ -70,11 +78,15 @@ export function Board() {
   }
 
   const handleAddToHand = (templateIndex: number, player: 'player1' | 'player2') => {
-    const template = cardLibrary[templateIndex]
+    const sidebar = player === 'player1' ? player1SidebarCards : player2SidebarCards
+    const setSidebar = player === 'player1' ? setPlayer1SidebarCards : setPlayer2SidebarCards
+    const template = sidebar[templateIndex]
+    if (!template) return
+    
     const newCard = createCardFromTemplate(template, player, 'hand')
     
-    // Remove the card from the sidebar (all cards are removable)
-    setSidebarCards(prev => prev.filter((_, index) => index !== templateIndex))
+    // Remove the card from the sidebar
+    setSidebar(prev => prev.filter((_, index) => index !== templateIndex))
     
     setGameState(prev => ({
       ...prev,
@@ -182,6 +194,35 @@ export function Board() {
 
   const handleDeploy = (location: Location) => {
     if (!selectedCardId || !selectedCard) return
+    
+    // On turn 1, both players can deploy during play phase
+    const isTurn1 = metadata.currentTurn === 1
+    const isPlayPhase = metadata.currentPhase === 'play'
+    const isOwnerTurn = selectedCard.owner === metadata.activePlayer
+    
+    // Allow deployment if:
+    // - It's the owner's turn (normal case)
+    // - OR it's turn 1 and play phase (both players can deploy)
+    if (!isTurn1 && !isOwnerTurn) {
+      alert("It's not your turn!")
+      return
+    }
+    
+    if (!isPlayPhase) {
+      alert(`Cannot deploy during ${metadata.currentPhase} phase!`)
+      return
+    }
+    
+    // Check mana cost (heroes don't cost mana to deploy from base, cards from hand do)
+    const isHero = selectedCard.cardType === 'hero'
+    const isFromBase = selectedCard.location === 'base'
+    const manaCost = (isHero && isFromBase) ? 0 : ('manaCost' in selectedCard ? (selectedCard as any).manaCost : 0)
+    const playerMana = selectedCard.owner === 'player1' ? metadata.player1Mana : metadata.player2Mana
+    
+    if (manaCost > 0 && playerMana < manaCost) {
+      alert(`Not enough mana! Need ${manaCost}, have ${playerMana}`)
+      return
+    }
 
     // Check if deploying to battlefield and slots are full
     if ((location === 'battlefieldA' || location === 'battlefieldB')) {
@@ -214,6 +255,7 @@ export function Board() {
           setGameState(prev => {
             const newBattlefield = prev[location === 'battlefieldA' ? 'battlefieldA' : 'battlefieldB']
             const playerField = selectedCard.owner as 'player1' | 'player2'
+            const playerManaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
             
             return {
               ...prev,
@@ -235,6 +277,10 @@ export function Board() {
                 .filter((c: Card) => c.id !== selectedCard.id),
               [`${selectedCard.owner}Base`]: (prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[])
                 .filter((c: Card) => c.id !== selectedCard.id),
+              metadata: {
+                ...prev.metadata,
+                [playerManaKey]: Math.max(0, (prev.metadata[playerManaKey] as number) - manaCost),
+              },
             }
           })
           setSelectedCardId(null)
@@ -249,6 +295,7 @@ export function Board() {
       const removeFromLocation = (cards: Card[]) => cards.filter(c => c.id !== selectedCardId)
       
       // Add to new location
+      const playerManaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
       if (location === 'base') {
         return {
           ...prev,
@@ -261,6 +308,10 @@ export function Board() {
           battlefieldB: {
             ...prev.battlefieldB,
             [selectedCard.owner]: removeFromLocation(prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']),
+          },
+          metadata: {
+            ...prev.metadata,
+            [playerManaKey]: Math.max(0, (prev.metadata[playerManaKey] as number) - manaCost),
           },
         }
       } else if (location === 'battlefieldA' || location === 'battlefieldB') {
@@ -276,22 +327,42 @@ export function Board() {
           }
         }
         
-        // If all slots full, don't deploy
-        if (targetSlot > 5) {
+        // If all slots full, don't deploy (unless moving from another battlefield - allow that)
+        const isMovingFromBattlefield = selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB'
+        if (targetSlot > 5 && !isMovingFromBattlefield) {
           alert('Battlefield is full! Maximum 5 slots.')
           return prev
         }
+        
+        // If moving from another battlefield, reuse the slot or find a new one
+        if (isMovingFromBattlefield && targetSlot > 5) {
+          targetSlot = selectedCard.slot || 1 // Try to keep the same slot
+        }
 
+        const playerManaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
+        const otherBattlefieldKey = location === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
+        
         return {
           ...prev,
           [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
           [`${selectedCard.owner}Base`]: removeFromLocation(prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[]),
+          // Remove from the other battlefield if the card is moving from there
+          [otherBattlefieldKey]: {
+            ...prev[otherBattlefieldKey],
+            [selectedCard.owner]: removeFromLocation(prev[otherBattlefieldKey][selectedCard.owner as 'player1' | 'player2']),
+          },
+          // Add to the target battlefield
           [battlefieldKey]: {
             ...prev[battlefieldKey],
             [selectedCard.owner]: [
-              ...prev[battlefieldKey][selectedCard.owner as 'player1' | 'player2'],
+              // Remove from this battlefield first (in case it's already here and we're just repositioning)
+              ...prev[battlefieldKey][selectedCard.owner as 'player1' | 'player2'].filter(c => c.id !== selectedCard.id),
               { ...selectedCard, location, slot: targetSlot }
             ].sort((a, b) => (a.slot || 0) - (b.slot || 0)),
+          },
+          metadata: {
+            ...prev.metadata,
+            [playerManaKey]: Math.max(0, (prev.metadata[playerManaKey] as number) - manaCost),
           },
         }
       }
@@ -449,57 +520,96 @@ export function Board() {
     setShowItemShop(false)
   }
 
-  // Turn Management
-  const handleEndTurn = () => {
+  // Turn Management - Phase system
+  const handleNextPhase = () => {
     const player = metadata.activePlayer
-    const nextPlayer = player === 'player1' ? 'player2' : 'player1'
+    const currentPhase = metadata.currentPhase
     
-    // Calculate gold per turn (base + items)
-    const baseGoldPerTurn = 3
-    let goldPerTurnFromItems = 0
+    // Phase progression: play -> combatA -> adjust -> combatB -> play (next player)
+    let nextPhase: TurnPhase = 'play'
+    let nextPlayer: 'player1' | 'player2' = player
+    let shouldIncrementTurn = false
     
-    // Check all heroes for gold per turn items
-    const allPlayerCards = [
-      ...gameState[`${player}Hand` as keyof typeof gameState] as Card[],
-      ...gameState.battlefieldA[player as 'player1' | 'player2'],
-      ...gameState.battlefieldB[player as 'player1' | 'player2'],
-    ]
-    
-    allPlayerCards.forEach(card => {
-      if (card.cardType === 'hero') {
-        const hero = card as import('../game/types').Hero
-        const equippedItems = hero.equippedItems || []
-        equippedItems.forEach(itemId => {
-          const item = tier1Items.find(i => i.id === itemId)
-          if (item && item.goldPerTurn) {
-            goldPerTurnFromItems += item.goldPerTurn
-          }
-        })
-      }
-    })
+    if (currentPhase === 'play') {
+      nextPhase = 'combatA'
+    } else if (currentPhase === 'combatA') {
+      nextPhase = 'adjust'
+    } else if (currentPhase === 'adjust') {
+      nextPhase = 'combatB'
+    } else if (currentPhase === 'combatB') {
+      // End turn - switch player and reset to play phase
+      nextPlayer = player === 'player1' ? 'player2' : 'player1'
+      nextPhase = 'play'
+      shouldIncrementTurn = nextPlayer === 'player1'
+      
+      // Regenerate mana for next player (+1 max mana, restore to max)
+      const nextPlayerMaxMana = Math.min(
+        (nextPlayer === 'player1' ? metadata.player1MaxMana : metadata.player2MaxMana) + 1,
+        10 // Cap at 10
+      )
+      
+      // Calculate gold per turn (base + items)
+      const baseGoldPerTurn = 3
+      let goldPerTurnFromItems = 0
+      
+      // Check all heroes for gold per turn items
+      const allPlayerCards = [
+        ...gameState[`${player}Hand` as keyof typeof gameState] as Card[],
+        ...gameState.battlefieldA[player as 'player1' | 'player2'],
+        ...gameState.battlefieldB[player as 'player1' | 'player2'],
+      ]
+      
+      allPlayerCards.forEach(card => {
+        if (card.cardType === 'hero') {
+          const hero = card as import('../game/types').Hero
+          const equippedItems = hero.equippedItems || []
+          equippedItems.forEach(itemId => {
+            const item = tier1Items.find(i => i.id === itemId)
+            if (item && item.goldPerTurn) {
+              goldPerTurnFromItems += item.goldPerTurn
+            }
+          })
+        }
+      })
 
-    const totalGoldThisTurn = baseGoldPerTurn + goldPerTurnFromItems
+      const totalGoldThisTurn = baseGoldPerTurn + goldPerTurnFromItems
 
+      setGameState(prev => ({
+        ...prev,
+        metadata: {
+          ...prev.metadata,
+          [`${player}Gold`]: (prev.metadata[`${player}Gold` as keyof GameMetadata] as number) + totalGoldThisTurn,
+          currentTurn: prev.metadata.currentTurn + (shouldIncrementTurn ? 1 : 0),
+          activePlayer: nextPlayer,
+          currentPhase: nextPhase,
+          [`${nextPlayer}MaxMana`]: nextPlayerMaxMana,
+          [`${nextPlayer}Mana`]: nextPlayerMaxMana, // Restore to max
+        },
+      }))
+      
+      // Generate item shop for next player
+      setTimeout(() => {
+        const newPlayerTier = nextPlayer === 'player1' ? metadata.player1Tier : metadata.player2Tier
+        const availableItems = tier1Items.filter(item => item.tier === newPlayerTier)
+        const shuffled = [...availableItems].sort(() => Math.random() - 0.5)
+        setItemShopItems(shuffled.slice(0, 3))
+        setShowItemShop(true)
+      }, 0)
+      return
+    }
+    
+    // Just advance phase
     setGameState(prev => ({
       ...prev,
       metadata: {
         ...prev.metadata,
-        [`${player}Gold`]: (prev.metadata[`${player}Gold` as keyof GameMetadata] as number) + totalGoldThisTurn,
-        currentTurn: prev.metadata.currentTurn + (nextPlayer === 'player1' ? 1 : 0),
-        activePlayer: nextPlayer,
+        currentPhase: nextPhase,
       },
     }))
-    
-    // Generate item shop for next player (will show via useEffect)
-    // Small delay to ensure state update completes
-    setTimeout(() => {
-      const newPlayerTier = nextPlayer === 'player1' ? metadata.player1Tier : metadata.player2Tier
-      const availableItems = tier1Items.filter(item => item.tier === newPlayerTier)
-      const shuffled = [...availableItems].sort(() => Math.random() - 0.5)
-      setItemShopItems(shuffled.slice(0, 3))
-      setShowItemShop(true)
-    }, 0)
   }
+  
+  // Legacy handleEndTurn for compatibility
+  const handleEndTurn = handleNextPhase
 
   // Combat Simulation
   const handleDecreaseHealth = (card: Card) => {
@@ -626,225 +736,61 @@ export function Board() {
     setSavedStates(states)
   }
 
-  return (
-    <div style={{ display: 'flex', fontFamily: 'Arial, sans-serif', height: '100vh' }}>
-      {/* Sidebar - Card Library */}
+  // Helper function to render sidebar for a player
+  const renderSidebar = (player: 'player1' | 'player2', cards: import('../game/types').BaseCard[], setCards: React.Dispatch<React.SetStateAction<import('../game/types').BaseCard[]>>) => {
+    const playerColor = player === 'player1' ? '#f44336' : '#2196f3'
+    const playerBgColor = player === 'player1' ? '#ffebee' : '#e3f2fd'
+    const playerName = player === 'player1' ? 'Warrior' : 'Mage'
+    
+    return (
       <div
         style={{
-          width: '250px',
-          borderRight: '2px solid #ddd',
-          padding: '20px',
+          width: '200px',
+          border: `2px solid ${playerColor}`,
+          padding: '15px',
           overflowY: 'auto',
-          backgroundColor: '#fafafa',
+          backgroundColor: playerBgColor,
         }}
       >
-        <h2 style={{ marginTop: 0, fontSize: '18px' }}>Card Library ({cardLibrary.length})</h2>
-        <div style={{ marginBottom: '20px' }}>
-          <button
-            onClick={() => setActivePlayer(activePlayer === 'player1' ? 'player2' : 'player1')}
-            style={{
-              width: '100%',
-              padding: '8px',
-              backgroundColor: activePlayer === 'player1' ? '#4a90e2' : '#9c27b0',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              marginBottom: '10px',
-            }}
-          >
-            Adding to: {activePlayer === 'player1' ? 'Player 1' : 'Player 2'}
-          </button>
-          <button
-            onClick={() => setShowCreateCard(!showCreateCard)}
-            style={{
-              width: '100%',
-              padding: '8px',
-              backgroundColor: showCreateCard ? '#ff9800' : '#4caf50',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              marginBottom: '10px',
-            }}
-          >
-            {showCreateCard ? 'Cancel' : '+ Create Card'}
-          </button>
-          {selectedCard && selectedCard.location === 'hand' && (
-            <button
-              onClick={() => handleMoveCardToLibrary(selectedCard)}
-              style={{
-                width: '100%',
-                padding: '8px',
-                backgroundColor: '#9c27b0',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                marginBottom: '10px',
-              }}
-            >
-              Move {selectedCard.name} to Library
-            </button>
-          )}
-        </div>
-
-        {/* Card Creation Form */}
-        {showCreateCard && (
-          <div
-            style={{
-              border: '2px solid #4caf50',
-              borderRadius: '4px',
-              padding: '12px',
-              marginBottom: '15px',
-              backgroundColor: '#f1f8e9',
-            }}
-          >
-            <h3 style={{ marginTop: 0, fontSize: '14px' }}>Create New Card</h3>
-            <input
-              type="text"
-              placeholder="Card Name *"
-              value={newCardForm.name}
-              onChange={(e) => setNewCardForm({ ...newCardForm, name: e.target.value })}
-              style={{
-                width: '100%',
-                padding: '6px',
-                marginBottom: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '12px',
-                boxSizing: 'border-box',
-              }}
-            />
-            <textarea
-              placeholder="Description"
-              value={newCardForm.description}
-              onChange={(e) => setNewCardForm({ ...newCardForm, description: e.target.value })}
-              style={{
-                width: '100%',
-                padding: '6px',
-                marginBottom: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '12px',
-                minHeight: '50px',
-                resize: 'vertical',
-                boxSizing: 'border-box',
-              }}
-            />
-            <select
-              value={newCardForm.cardType}
-              onChange={(e) => setNewCardForm({ ...newCardForm, cardType: e.target.value as import('../game/types').CardType })}
-              style={{
-                width: '100%',
-                padding: '6px',
-                marginBottom: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '12px',
-                boxSizing: 'border-box',
-              }}
-            >
-              <option value="hero">Hero</option>
-              <option value="signature">Signature</option>
-              <option value="hybrid">Hybrid</option>
-              <option value="generic">Generic</option>
-            </select>
-            <input
-              type="number"
-              placeholder="Attack (optional)"
-              value={newCardForm.attack}
-              onChange={(e) => setNewCardForm({ ...newCardForm, attack: e.target.value })}
-              style={{
-                width: '48%',
-                padding: '6px',
-                marginBottom: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '12px',
-                boxSizing: 'border-box',
-                marginRight: '2%',
-              }}
-            />
-            <input
-              type="number"
-              placeholder="Health (optional)"
-              value={newCardForm.health}
-              onChange={(e) => setNewCardForm({ ...newCardForm, health: e.target.value })}
-              style={{
-                width: '48%',
-                padding: '6px',
-                marginBottom: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '12px',
-                boxSizing: 'border-box',
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Ability/Effect (optional)"
-              value={newCardForm.ability}
-              onChange={(e) => setNewCardForm({ ...newCardForm, ability: e.target.value })}
-              style={{
-                width: '100%',
-                padding: '6px',
-                marginBottom: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '12px',
-                boxSizing: 'border-box',
-              }}
-            />
-            <button
-              onClick={handleCreateCard}
-              style={{
-                width: '100%',
-                padding: '8px',
-                backgroundColor: '#4caf50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px',
-              }}
-            >
-              Create Card
-            </button>
-          </div>
-        )}
-        
-        <div style={{ fontSize: '12px', color: '#666', marginBottom: '10px' }}>
+        <h2 style={{ marginTop: 0, fontSize: '16px', color: playerColor }}>
+          {playerName} Library ({cards.length})
+        </h2>
+        <div style={{ marginBottom: '15px', fontSize: '11px', color: '#666' }}>
           Click a card to add to hand
         </div>
         
-        {cardLibrary.map((template, index) => (
+        {cards.map((template, index) => (
           <div
             key={template.id || index}
             style={{
-              border: '1px solid #ddd',
+              border: `1px solid ${playerColor}`,
               borderRadius: '4px',
-              padding: '8px',
-              marginBottom: '8px',
+              padding: '6px',
+              marginBottom: '6px',
               backgroundColor: '#fff',
-              fontSize: '12px',
+              fontSize: '11px',
               position: 'relative',
             }}
           >
             <div
-              onClick={() => handleAddToHand(index, activePlayer)}
+              onClick={() => handleAddToHand(index, player)}
               style={{
                 cursor: 'pointer',
-                paddingRight: '25px',
+                paddingRight: '20px',
               }}
             >
-              <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#666' }}>
+              <div style={{ fontWeight: 'bold', fontSize: '10px', color: playerColor }}>
                 {template.cardType.toUpperCase()}
               </div>
-              <div style={{ fontWeight: 'bold' }}>{template.name}</div>
-              <div style={{ fontSize: '11px', color: '#999' }}>{template.description}</div>
+              <div style={{ fontWeight: 'bold', fontSize: '12px' }}>{template.name}</div>
+              <div style={{ fontSize: '10px', color: '#666' }}>{template.description}</div>
+              {template.manaCost !== undefined && (
+                <div style={{ fontSize: '10px', color: '#1976d2', marginTop: '2px' }}>
+                  💎 {template.manaCost}
+                </div>
+              )}
               {'attack' in template && 'health' in template && (
-                <div style={{ fontSize: '11px', marginTop: '4px' }}>
+                <div style={{ fontSize: '10px', marginTop: '2px' }}>
                   ⚔️ {(template as { attack: number; health: number }).attack} ❤️ {(template as { attack: number; health: number }).health}
                 </div>
               )}
@@ -853,21 +799,25 @@ export function Board() {
               onClick={(e) => {
                 e.stopPropagation()
                 if (confirm(`Delete ${template.name} from library?`)) {
-                  handleDeleteFromSidebar(index)
+                  if (player === 'player1') {
+                    setPlayer1SidebarCards(prev => prev.filter((_, i) => i !== index))
+                  } else {
+                    setPlayer2SidebarCards(prev => prev.filter((_, i) => i !== index))
+                  }
                 }
               }}
               style={{
                 position: 'absolute',
-                top: '4px',
-                right: '4px',
+                top: '2px',
+                right: '2px',
                 background: '#f44336',
                 color: 'white',
                 border: 'none',
                 borderRadius: '50%',
-                width: '20px',
-                height: '20px',
+                width: '18px',
+                height: '18px',
                 cursor: 'pointer',
-                fontSize: '12px',
+                fontSize: '10px',
                 lineHeight: '1',
                 display: 'flex',
                 alignItems: 'center',
@@ -880,14 +830,31 @@ export function Board() {
           </div>
         ))}
       </div>
+    )
+  }
+
+  return (
+    <div style={{ display: 'flex', fontFamily: 'Arial, sans-serif', height: '100vh' }}>
+      {/* Left Sidebar - Player 1 (Warrior - Red) */}
+      {renderSidebar('player1', player1SidebarCards, setPlayer1SidebarCards)}
 
       {/* Main Board */}
-      <div style={{ flex: 1, padding: '20px', overflowY: 'auto', position: 'relative' }}>
+      <div style={{ flex: 1, padding: '15px', overflowY: 'auto', position: 'relative', minWidth: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h1 style={{ margin: 0 }}>Artibound - Hero Card Game</h1>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
-              Turn {metadata.currentTurn} - {metadata.activePlayer === 'player1' ? 'Player 1' : 'Player 2'}
+              Turn {metadata.currentTurn} - {metadata.activePlayer === 'player1' ? 'Player 1 (Warrior)' : 'Player 2 (Mage)'}
+            </div>
+            <div style={{ fontSize: '14px', fontWeight: 'bold', textTransform: 'capitalize' }}>
+              Phase: {metadata.currentPhase}
+            </div>
+            <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
+              {metadata.activePlayer === 'player1' ? (
+                <>Mana: {metadata.player1Mana}/{metadata.player1MaxMana}</>
+              ) : (
+                <>Mana: {metadata.player2Mana}/{metadata.player2MaxMana}</>
+              )}
             </div>
             <button
               onClick={handleEndTurn}
@@ -901,7 +868,7 @@ export function Board() {
                 fontSize: '14px',
               }}
             >
-              End Turn
+              Next Phase
             </button>
             <button
               onClick={exportGameState}
@@ -1032,19 +999,22 @@ export function Board() {
           </div>
         )}
 
-        {/* Player 2 Area (Top) */}
+        {/* Player 2 Area (Top) - Mage (Blue) */}
         <div
           style={{
-            border: '2px solid #9c27b0',
+            border: '3px solid #2196f3',
             borderRadius: '8px',
             padding: '20px',
             marginBottom: '20px',
-            backgroundColor: '#f3e5f5',
+            backgroundColor: '#e3f2fd',
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-            <h2 style={{ marginTop: 0 }}>Player 2</h2>
+            <h2 style={{ marginTop: 0, color: '#1976d2' }}>Player 2 - Mage</h2>
             <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+              <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#1976d2' }}>
+                Mana: {metadata.player2Mana}/{metadata.player2MaxMana}
+              </div>
               <div style={{ fontSize: '16px', fontWeight: 'bold' }}>
                 Gold: {metadata.player2Gold}
               </div>
@@ -1095,40 +1065,40 @@ export function Board() {
           </div>
         </div>
 
-        {/* Battlefields (Middle) */}
+        {/* Battlefields (Middle) - Compact */}
         <div
           style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            gap: '20px',
-            marginBottom: '20px',
+            gap: '15px',
+            marginBottom: '15px',
           }}
         >
           {/* Battlefield A */}
           <div
             style={{
               border: '2px solid #4a90e2',
-              borderRadius: '8px',
-              padding: '20px',
+              borderRadius: '6px',
+              padding: '12px',
               backgroundColor: '#e3f2fd',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-              <h2 style={{ marginTop: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <h3 style={{ marginTop: 0, fontSize: '16px' }}>
                 Battlefield A
-                <span style={{ fontSize: '14px', fontWeight: 'normal', marginLeft: '10px', color: '#666' }}>
-                  ({getAvailableSlots([...battlefieldAP1, ...battlefieldAP2])} slots available)
+                <span style={{ fontSize: '12px', fontWeight: 'normal', marginLeft: '8px', color: '#666' }}>
+                  ({getAvailableSlots([...battlefieldAP1, ...battlefieldAP2])} slots)
                 </span>
-              </h2>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#d32f2f' }}>
+              </h3>
+              <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#d32f2f' }}>
                 Tower: {metadata.towerA_HP} HP
               </div>
             </div>
             
             {/* Player 2 side */}
-            <div style={{ marginBottom: '20px' }}>
-              <h4 style={{ fontSize: '14px', marginBottom: '10px' }}>Player 2</h4>
-              <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '80px' }}>
+            <div style={{ marginBottom: '12px' }}>
+              <h4 style={{ fontSize: '12px', marginBottom: '6px' }}>Player 2</h4>
+              <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '60px', gap: '4px' }}>
                 {battlefieldAP2.length > 0 ? (
                   battlefieldAP2.map(card => (
                     <HeroCard
@@ -1199,27 +1169,27 @@ export function Board() {
           <div
             style={{
               border: '2px solid #ff9800',
-              borderRadius: '8px',
-              padding: '20px',
+              borderRadius: '6px',
+              padding: '12px',
               backgroundColor: '#fff3e0',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-              <h2 style={{ marginTop: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <h3 style={{ marginTop: 0, fontSize: '16px' }}>
                 Battlefield B
-                <span style={{ fontSize: '14px', fontWeight: 'normal', marginLeft: '10px', color: '#666' }}>
-                  ({getAvailableSlots([...battlefieldBP1, ...battlefieldBP2])} slots available)
+                <span style={{ fontSize: '12px', fontWeight: 'normal', marginLeft: '8px', color: '#666' }}>
+                  ({getAvailableSlots([...battlefieldBP1, ...battlefieldBP2])} slots)
                 </span>
-              </h2>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#d32f2f' }}>
+              </h3>
+              <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#d32f2f' }}>
                 Tower: {metadata.towerB_HP} HP
               </div>
             </div>
             
             {/* Player 2 side */}
-            <div style={{ marginBottom: '20px' }}>
-              <h4 style={{ fontSize: '14px', marginBottom: '10px' }}>Player 2</h4>
-              <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '80px' }}>
+            <div style={{ marginBottom: '12px' }}>
+              <h4 style={{ fontSize: '12px', marginBottom: '6px' }}>Player 2</h4>
+              <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '60px', gap: '4px' }}>
                 {battlefieldBP2.length > 0 ? (
                   battlefieldBP2.map(card => (
                     <HeroCard
@@ -1287,18 +1257,21 @@ export function Board() {
           </div>
         </div>
 
-        {/* Player 1 Area (Bottom) */}
+        {/* Player 1 Area (Bottom) - Warrior (Red) */}
         <div
           style={{
-            border: '2px solid #4a90e2',
+            border: '3px solid #f44336',
             borderRadius: '8px',
             padding: '20px',
-            backgroundColor: '#e3f2fd',
+            backgroundColor: '#ffebee',
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-            <h2 style={{ marginTop: 0 }}>Player 1</h2>
+            <h2 style={{ marginTop: 0, color: '#c62828' }}>Player 1 - Warrior</h2>
             <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+              <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#c62828' }}>
+                Mana: {metadata.player1Mana}/{metadata.player1MaxMana}
+              </div>
               <div style={{ fontSize: '16px', fontWeight: 'bold' }}>
                 Gold: {metadata.player1Gold}
               </div>
@@ -1377,6 +1350,9 @@ export function Board() {
           </div>
         </div>
       </div>
+
+      {/* Right Sidebar - Player 2 (Mage - Blue) */}
+      {renderSidebar('player2', player2SidebarCards, setPlayer2SidebarCards)}
     </div>
   )
 }
