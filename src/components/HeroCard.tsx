@@ -1,4 +1,4 @@
-import { Card } from '../game/types'
+import { Card, Color } from '../game/types'
 
 interface HeroCardProps {
   card: Card
@@ -10,16 +10,75 @@ interface HeroCardProps {
   showCombatControls?: boolean // Show decrease health button
 }
 
+// Color palette mapping
+const COLOR_MAP: Record<Color, string> = {
+  red: '#d32f2f',
+  blue: '#1976d2',
+  white: '#f5f5f5',
+  black: '#424242',
+  green: '#388e3c',
+}
+
+const COLOR_LIGHT_MAP: Record<Color, string> = {
+  red: '#ffebee',
+  blue: '#e3f2fd',
+  white: '#ffffff',
+  black: '#fafafa',
+  green: '#e8f5e9',
+}
+
 export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove, onDecreaseHealth, showCombatControls = false }: HeroCardProps) {
+  // Get card colors
+  const cardColors: Color[] = 'colors' in card && card.colors ? card.colors : []
+  
+  // Get color styling based on card colors
+  const getColorStyles = () => {
+    if (cardColors.length === 0) {
+      // Colorless card - gray border
+      return {
+        borderColor: '#757575',
+        backgroundColor: '#fafafa',
+        borderStyle: 'solid' as const,
+      }
+    } else if (cardColors.length === 1) {
+      // Single color - use that color
+      const color = cardColors[0]
+      return {
+        borderColor: COLOR_MAP[color],
+        backgroundColor: COLOR_LIGHT_MAP[color],
+        borderStyle: 'solid' as const,
+        borderWidth: '3px',
+      }
+    } else {
+      // Multicolor - create gradient border effect
+      // We'll use a background gradient and a solid border
+      const gradientColors = cardColors.map(c => COLOR_MAP[c]).join(', ')
+      return {
+        borderColor: COLOR_MAP[cardColors[0]], // Primary color border
+        background: cardColors.length === 2 
+          ? `linear-gradient(to right, ${COLOR_LIGHT_MAP[cardColors[0]]} 50%, ${COLOR_LIGHT_MAP[cardColors[1]]} 50%)`
+          : `linear-gradient(135deg, ${cardColors.map((c, i) => {
+              const percent = (i / cardColors.length) * 100
+              return `${COLOR_LIGHT_MAP[c]} ${percent}%`
+            }).join(', ')})`,
+        borderStyle: 'solid' as const,
+        borderWidth: '3px',
+      }
+    }
+  }
+
   const getCardTypeColor = () => {
     switch (card.cardType) {
       case 'hero': return '#4a90e2'
       case 'signature': return '#9c27b0'
       case 'hybrid': return '#ff9800'
       case 'generic': return '#757575'
+      case 'spell': return '#9c27b0'
       default: return '#333'
     }
   }
+
+  const colorStyles = getColorStyles()
 
   const getAttack = () => {
     if (card.cardType === 'generic' && 'stackPower' in card && card.stackPower !== undefined) {
@@ -51,24 +110,65 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
 
   const isStacked = card.cardType === 'generic' && 'stackedWith' in card && card.stackedWith !== undefined
 
+  const getSpellEffectDescription = (effect: import('../game/types').SpellEffect): string => {
+    switch (effect.type) {
+      case 'damage':
+        return `Deal ${effect.damage} damage`
+      case 'targeted_damage':
+        return `Deal ${effect.damage} damage to target`
+      case 'aoe_damage':
+        return `Deal ${effect.damage} damage to ${effect.targetCount || 3} targets`
+      case 'adjacent_damage':
+        return `Deal ${effect.damage} damage to ${effect.adjacentCount || 3} adjacent units`
+      case 'all_units_damage':
+        return `Deal ${effect.damage} damage to all units`
+      case 'board_wipe':
+        return `Destroy all ${effect.affectsOwnUnits ? 'units' : 'enemy units'}`
+      default:
+        return 'Spell effect'
+    }
+  }
+
   return (
     <div
       onClick={onClick}
       className={`hero-card ${isSelected ? 'selected' : ''} ${isStacked ? 'stacked' : ''}`}
       style={{
-        border: isSelected ? '3px solid #4a90e2' : `2px solid ${getCardTypeColor()}`,
+        border: isSelected 
+          ? `3px solid #4a90e2` 
+          : `${colorStyles.borderWidth || '2px'} ${colorStyles.borderStyle} ${colorStyles.borderColor}`,
         borderRadius: '8px',
         padding: '12px',
         margin: '8px',
-        backgroundColor: isSelected ? '#e3f2fd' : isStacked ? '#f5f5f5' : '#fff',
+        background: isSelected ? '#e3f2fd' : isStacked ? '#f5f5f5' : (colorStyles.background || colorStyles.backgroundColor || '#fff'),
+        backgroundColor: colorStyles.backgroundColor ? colorStyles.backgroundColor : undefined,
         cursor: onClick ? 'pointer' : 'default',
         minWidth: '120px',
         maxWidth: '150px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        boxShadow: isSelected ? '0 4px 8px rgba(74, 144, 226, 0.4)' : '0 2px 4px rgba(0,0,0,0.1)',
         transition: 'all 0.2s',
         position: 'relative',
+        overflow: 'hidden',
       }}
     >
+      {/* Color indicator bar at top for multicolor */}
+      {cardColors.length > 1 && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '4px',
+            background: cardColors.length === 2
+              ? `linear-gradient(to right, ${COLOR_MAP[cardColors[0]]} 50%, ${COLOR_MAP[cardColors[1]]} 50%)`
+              : `linear-gradient(to right, ${cardColors.map((c, i) => {
+                  const percent = ((i + 1) / cardColors.length) * 100
+                  return `${COLOR_MAP[c]} ${i === 0 ? 0 : ((i / cardColors.length) * 100)}% ${percent}%`
+                }).join(', ')})`,
+          }}
+        />
+      )}
       {onRemove && (
         <button
           onClick={(e) => {
@@ -95,13 +195,38 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
       )}
       
       <div style={{ 
-        fontSize: '10px', 
-        color: getCardTypeColor(), 
-        fontWeight: 'bold',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: '4px',
-        textTransform: 'uppercase',
+        marginTop: cardColors.length > 1 ? '4px' : '0',
       }}>
-        {card.cardType}
+        <div style={{ 
+          fontSize: '10px', 
+          color: getCardTypeColor(), 
+          fontWeight: 'bold',
+          textTransform: 'uppercase',
+        }}>
+          {card.cardType}
+        </div>
+        {/* Color indicators */}
+        {cardColors.length > 0 && (
+          <div style={{ display: 'flex', gap: '2px' }}>
+            {cardColors.map((colorVal, idx) => (
+              <div
+                key={idx}
+                style={{
+                  width: '12px',
+                  height: '12px',
+                  borderRadius: '50%',
+                  backgroundColor: COLOR_MAP[colorVal],
+                  border: '1px solid rgba(0,0,0,0.2)',
+                }}
+                title={colorVal}
+              />
+            ))}
+          </div>
+        )}
       </div>
       
       <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 'bold' }}>{card.name}</h3>
@@ -142,6 +267,24 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
           {isStacked && (
             <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>
               (Stacked)
+            </div>
+          )}
+        </div>
+      )}
+      
+      {card.cardType === 'spell' && 'effect' in card && (
+        <div style={{ marginTop: '8px', fontSize: '12px' }}>
+          {'manaCost' in card && card.manaCost !== undefined && (
+            <div style={{ fontSize: '11px', color: '#1976d2', marginBottom: '4px', fontWeight: 'bold' }}>
+              💎 {card.manaCost}
+            </div>
+          )}
+          <div style={{ fontSize: '11px', color: '#9c27b0', marginTop: '4px' }}>
+            ✨ {getSpellEffectDescription((card as import('../game/types').SpellCard).effect)}
+          </div>
+          {(card as import('../game/types').SpellCard).initiative && (
+            <div style={{ fontSize: '10px', color: '#ff9800', marginTop: '2px' }}>
+              ⚡ Initiative
             </div>
           )}
         </div>

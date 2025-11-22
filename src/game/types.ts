@@ -1,5 +1,5 @@
 export type Location = 'base' | 'battlefieldA' | 'battlefieldB' | 'hand'
-export type CardType = 'hero' | 'signature' | 'hybrid' | 'generic'
+export type CardType = 'hero' | 'signature' | 'hybrid' | 'generic' | 'spell'
 export type PlayerId = 'player1' | 'player2'
 
 // Color System Types
@@ -30,6 +30,21 @@ export interface Item {
 }
 
 export type TurnPhase = 'play' | 'combatA' | 'adjust' | 'combatB'
+
+// Combat System Types
+export type AttackTargetType = 'unit' | 'tower'
+
+export interface AttackTarget {
+  type: AttackTargetType
+  targetId?: string // Unit ID if type is 'unit', undefined if 'tower'
+  targetSlot?: number // Slot number for tower targeting (positional reference)
+}
+
+export interface CombatAction {
+  attackerId: string // ID of the attacking unit
+  attackerSlot: number // Slot position of attacker
+  target: AttackTarget // What the attacker is targeting
+}
 
 export interface GameMetadata {
   currentTurn: number
@@ -103,7 +118,36 @@ export interface GenericUnit extends BaseCard {
   stackHealth?: number // Combined health if stacked
 }
 
-export type Card = Hero | SignatureCard | HybridCard | GenericUnit
+// Spell Effect Types
+export type SpellEffectType = 
+  | 'damage' // Deal damage to target
+  | 'aoe_damage' // Area of effect damage
+  | 'board_wipe' // Destroy all units/heroes
+  | 'targeted_damage' // Damage to specific target(s)
+  | 'adjacent_damage' // Damage to adjacent units
+  | 'all_units_damage' // Damage to all units
+
+export interface SpellEffect {
+  type: SpellEffectType
+  damage?: number // Damage amount
+  targetCount?: number // For AOE: how many targets
+  affectsHeroes?: boolean // Does it affect heroes?
+  affectsUnits?: boolean // Does it affect units?
+  affectsOwnUnits?: boolean // For board wipes: affects own units too?
+  affectsEnemyUnits?: boolean // For board wipes: affects enemy units?
+  adjacentCount?: number // For adjacent damage: how many adjacent units
+}
+
+export interface SpellCard extends BaseCard {
+  cardType: 'spell'
+  location: Location
+  owner: PlayerId
+  effect: SpellEffect
+  description: string // Flavor text describing the spell
+  initiative?: boolean // Does this spell give initiative (like Artifact)?
+}
+
+export type Card = Hero | SignatureCard | HybridCard | GenericUnit | SpellCard
 
 export interface Battlefield {
   player1: Card[]

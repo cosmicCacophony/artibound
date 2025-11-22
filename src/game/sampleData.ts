@@ -1,4 +1,4 @@
-import { Hero, SignatureCard, HybridCard, GenericUnit, Card, BaseCard, Item, GameMetadata, TOWER_HP, NEXUS_HP, STARTING_GOLD, BattlefieldDefinition } from './types'
+import { Hero, SignatureCard, HybridCard, GenericUnit, Card, BaseCard, Item, GameMetadata, TOWER_HP, NEXUS_HP, STARTING_GOLD, BattlefieldDefinition, SpellCard, SpellEffect } from './types'
 
 // Item definitions
 export const tier1Items: Item[] = [
@@ -492,10 +492,11 @@ export const mageCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' |
 ]
 
 // Create card library - separate for each player
-// Includes: signature cards (2 per hero) + generic aggro/control cards + multicolor cards
-export function createCardLibrary(player: 'player1' | 'player2'): BaseCard[] {
+// Includes: signature cards (2 per hero) + generic aggro/control cards + multicolor cards + spells
+export function createCardLibrary(player: 'player1' | 'player2'): (BaseCard & Partial<{ effect: SpellEffect, initiative?: boolean }>)[] {
   if (player === 'player1') {
     // Player 1 (RW Aggro): All signature cards + aggro generics + multicolor cards
+    // Note: RW doesn't get spells yet (they're more unit-focused)
     return [
       ...rwWarriorSignatureCards,
       ...rwBerserkerSignatureCards,
@@ -512,7 +513,7 @@ export function createCardLibrary(player: 'player1' | 'player2'): BaseCard[] {
       colors: card.colors,
     }))
   } else {
-    // Player 2 (UB Control): All signature cards + control generics + multicolor cards
+    // Player 2 (UB Control): All signature cards + control generics + multicolor cards + spells
     return [
       ...ubMageSignatureCards,
       ...ubSorcererSignatureCards,
@@ -520,14 +521,25 @@ export function createCardLibrary(player: 'player1' | 'player2'): BaseCard[] {
       ...ubNecromancerSignatureCards,
       ...ubControlGenericCards,
       ...blueBlackMulticolorCards,
-    ].map(card => ({
-      id: card.id,
-      name: card.name,
-      description: card.description,
-      cardType: card.cardType,
-      manaCost: card.manaCost,
-      colors: card.colors,
-    }))
+      ...blackSpells,
+      ...blueSpells,
+    ].map(card => {
+      const base: BaseCard & Partial<{ effect: SpellEffect, initiative?: boolean }> = {
+        id: card.id,
+        name: card.name,
+        description: card.description,
+        cardType: card.cardType,
+        manaCost: card.manaCost,
+        colors: card.colors,
+      }
+      // For spells, include the effect
+      if (card.cardType === 'spell') {
+        const spell = card as SpellCard
+        base.effect = spell.effect
+        base.initiative = spell.initiative
+      }
+      return base
+    })
   }
 }
 
@@ -558,6 +570,20 @@ export function createCardFromTemplate(
     colors: template.colors,
   }
 
+  // Check if it's a spell card first
+  if (template.cardType === 'spell') {
+    const allSpells = [...blackSpells, ...blueSpells]
+    const spellCard = allSpells.find(c => c.id === template.id)
+    if (spellCard) {
+      return {
+        ...base,
+        effect: spellCard.effect,
+        initiative: spellCard.initiative,
+        colors: spellCard.colors,
+      } as SpellCard
+    }
+  }
+  
   // Check if it's a RW card (Player 1)
   if (owner === 'player1') {
     const allRWCards = [
@@ -623,6 +649,12 @@ export function createCardFromTemplate(
       maxHealth: hybridTemplate.maxHealth || hybridTemplate.health,
       currentHealth: hybridTemplate.currentHealth !== undefined ? hybridTemplate.currentHealth : (hybridTemplate.maxHealth || hybridTemplate.health),
     } as HybridCard
+  } else if (template.cardType === 'spell') {
+    const spellTemplate = template as unknown as Omit<SpellCard, 'location' | 'owner' | 'id' | 'name' | 'description' | 'cardType'>
+    return {
+      ...base,
+      ...spellTemplate,
+    } as SpellCard
   } else {
     const genTemplate = template as unknown as Omit<GenericUnit, 'location' | 'owner' | 'id' | 'name' | 'description' | 'cardType' | 'stackedWith' | 'stackPower' | 'stackHealth'>
     return {
@@ -1159,6 +1191,102 @@ export const blueBlackMulticolorCards: Omit<GenericUnit, 'location' | 'owner' | 
     health: 6,
     maxHealth: 6,
     currentHealth: 6,
+  },
+]
+
+// Spell Cards - Black (Damage spells)
+export const blackSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  {
+    id: 'spell-black-1',
+    name: 'Dark Bolt',
+    description: 'Deal damage to target',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage',
+      damage: 3,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+    initiative: false,
+  },
+  {
+    id: 'spell-black-2',
+    name: 'Shadow Strike',
+    description: 'Quick damage with initiative',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage',
+      damage: 3,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+    initiative: true, // 3 damage with initiative bonus
+  },
+  {
+    id: 'spell-black-3',
+    name: 'Death Ray',
+    description: 'Powerful single target damage',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 4,
+    effect: {
+      type: 'targeted_damage',
+      damage: 4,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+]
+
+// Spell Cards - Blue (Control/AOE spells)
+export const blueSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  {
+    id: 'spell-blue-1',
+    name: 'Arcane Burst',
+    description: 'Damage 3 adjacent units',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 4,
+    effect: {
+      type: 'adjacent_damage',
+      damage: 3,
+      adjacentCount: 3,
+      affectsUnits: true,
+      affectsHeroes: false,
+    },
+  },
+  {
+    id: 'spell-blue-2',
+    name: 'Frost Wave',
+    description: 'Damage all units',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 4,
+    effect: {
+      type: 'all_units_damage',
+      damage: 2,
+      affectsUnits: true,
+      affectsHeroes: false,
+    },
+  },
+  {
+    id: 'spell-blue-3',
+    name: 'Void Storm',
+    description: 'Destroy all units and heroes',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 6,
+    effect: {
+      type: 'board_wipe',
+      affectsUnits: true,
+      affectsHeroes: true,
+      affectsOwnUnits: true,
+      affectsEnemyUnits: true,
+    },
   },
 ]
 

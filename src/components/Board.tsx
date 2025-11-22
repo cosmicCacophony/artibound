@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Card, Location, BATTLEFIELD_SLOT_LIMIT, GenericUnit, Item, GameMetadata, TurnPhase } from '../game/types'
+import { Card, Location, BATTLEFIELD_SLOT_LIMIT, GenericUnit, Item, GameMetadata, TurnPhase, AttackTarget } from '../game/types'
 import { createInitialGameState, createCardLibrary, createCardFromTemplate, tier1Items } from '../game/sampleData'
+import { getDefaultTargets, resolveCombat, getDefaultTarget } from '../game/combatSystem'
 import { HeroCard } from './HeroCard'
 
 export function Board() {
@@ -31,6 +32,10 @@ export function Board() {
     health: '',
     ability: '',
   })
+  
+  // Combat target state - Map of unit ID -> AttackTarget
+  const [combatTargetsA, setCombatTargetsA] = useState<Map<string, AttackTarget>>(new Map())
+  const [combatTargetsB, setCombatTargetsB] = useState<Map<string, AttackTarget>>(new Map())
 
   // Sidebar cards - get based on active player
   const cardLibrary = activePlayer === 'player1' ? player1SidebarCards : player2SidebarCards
@@ -192,7 +197,7 @@ export function Board() {
     setShowCreateCard(false)
   }
 
-  const handleDeploy = (location: Location) => {
+  const handleDeploy = (location: Location, targetSlot?: number) => {
     if (!selectedCardId || !selectedCard) return
     
     // On turn 1, both players can deploy during play phase
@@ -232,13 +237,13 @@ export function Board() {
       
       const availableSlots = getAvailableSlots(battlefield)
       
-      if (selectedCard.cardType !== 'generic' && availableSlots <= 0) {
+      if (selectedCard.cardType !== 'generic' && availableSlots <= 0 && !targetSlot) {
         alert('Battlefield is full! Maximum 5 slots.')
         return
       }
 
       // Handle generic unit stacking
-      if (selectedCard.cardType === 'generic' && battlefield.length > 0) {
+      if (selectedCard.cardType === 'generic' && battlefield.length > 0 && !targetSlot) {
         // Try to stack with another generic unit
         const stackableGeneric = battlefield.find(c => 
           c.cardType === 'generic' && 
@@ -318,25 +323,61 @@ export function Board() {
         const battlefieldKey = location
         const battlefieldCards = prev[battlefieldKey][selectedCard.owner as 'player1' | 'player2']
         
-        // Find first available slot (1-5)
-        let targetSlot = 1
-        for (let i = 1; i <= 5; i++) {
-          if (!battlefieldCards.some(c => c.slot === i)) {
-            targetSlot = i
-            break
+        // Use provided slot or find first available slot (1-5)
+        let finalTargetSlot = targetSlot
+        if (!finalTargetSlot) {
+          for (let i = 1; i <= 5; i++) {
+            if (!battlefieldCards.some(c => c.slot === i)) {
+              finalTargetSlot = i
+              break
+            }
           }
         }
         
         // If all slots full, don't deploy (unless moving from another battlefield - allow that)
         const isMovingFromBattlefield = selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB'
-        if (targetSlot > 5 && !isMovingFromBattlefield) {
+        if (!finalTargetSlot && !isMovingFromBattlefield) {
           alert('Battlefield is full! Maximum 5 slots.')
           return prev
         }
         
-        // If moving from another battlefield, reuse the slot or find a new one
-        if (isMovingFromBattlefield && targetSlot > 5) {
-          targetSlot = selectedCard.slot || 1 // Try to keep the same slot
+        // If moving from another battlefield and no slot specified, reuse the slot or find a new one
+        if (isMovingFromBattlefield && !finalTargetSlot) {
+          finalTargetSlot = selectedCard.slot || 1 // Try to keep the same slot
+        }
+        
+        // If target slot is occupied, swap positions
+        if (finalTargetSlot) {
+          const slotOccupied = battlefieldCards.some(c => c.id !== selectedCard.id && c.slot === finalTargetSlot)
+          if (slotOccupied) {
+            const otherCard = battlefieldCards.find(c => c.slot === finalTargetSlot)
+            if (otherCard) {
+              // Swap positions
+              return {
+                ...prev,
+                [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
+                [`${selectedCard.owner}Base`]: removeFromLocation(prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[]),
+                [otherBattlefieldKey]: {
+                  ...prev[otherBattlefieldKey],
+                  [selectedCard.owner]: removeFromLocation(prev[otherBattlefieldKey][selectedCard.owner as 'player1' | 'player2']),
+                },
+                [battlefieldKey]: {
+                  ...prev[battlefieldKey],
+                  [selectedCard.owner]: prev[battlefieldKey][selectedCard.owner as 'player1' | 'player2']
+                    .filter(c => c.id !== selectedCard.id && c.id !== otherCard.id)
+                    .concat([
+                      { ...selectedCard, location, slot: finalTargetSlot },
+                      { ...otherCard, slot: selectedCard.slot || finalTargetSlot }
+                    ])
+                    .sort((a, b) => (a.slot || 0) - (b.slot || 0)),
+                },
+                metadata: {
+                  ...prev.metadata,
+                  [playerManaKey]: Math.max(0, (prev.metadata[playerManaKey] as number) - manaCost),
+                },
+              }
+            }
+          }
         }
 
         const playerManaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
@@ -357,7 +398,7 @@ export function Board() {
             [selectedCard.owner]: [
               // Remove from this battlefield first (in case it's already here and we're just repositioning)
               ...prev[battlefieldKey][selectedCard.owner as 'player1' | 'player2'].filter(c => c.id !== selectedCard.id),
-              { ...selectedCard, location, slot: targetSlot }
+              { ...selectedCard, location, slot: finalTargetSlot || 1 }
             ].sort((a, b) => (a.slot || 0) - (b.slot || 0)),
           },
           metadata: {
@@ -369,6 +410,50 @@ export function Board() {
       return prev
     })
     setSelectedCardId(null)
+  }
+
+  // Change slot position for a card on battlefield
+  const handleChangeSlot = (card: Card, newSlot: number, location: 'battlefieldA' | 'battlefieldB') => {
+    if (newSlot < 1 || newSlot > 5) return
+    
+    const player = card.owner
+    setGameState(prev => {
+      const battlefield = prev[location][player as 'player1' | 'player2']
+      
+      // Check if slot is already occupied
+      const slotOccupied = battlefield.some(c => c.id !== card.id && c.slot === newSlot)
+      if (slotOccupied) {
+        // Swap positions if slot is occupied
+        const otherCard = battlefield.find(c => c.slot === newSlot)
+        if (otherCard) {
+          return {
+            ...prev,
+            [location]: {
+              ...prev[location],
+              [player]: battlefield.map(c => {
+                if (c.id === card.id) {
+                  return { ...c, slot: newSlot }
+                } else if (c.id === otherCard.id) {
+                  return { ...c, slot: card.slot }
+                }
+                return c
+              }),
+            },
+          }
+        }
+      }
+      
+      // Just move to new slot
+      return {
+        ...prev,
+        [location]: {
+          ...prev[location],
+          [player]: battlefield.map(c =>
+            c.id === card.id ? { ...c, slot: newSlot } : c
+          ).sort((a, b) => (a.slot || 0) - (b.slot || 0)),
+        },
+      }
+    })
   }
 
   const handleRemoveFromBattlefield = (card: Card, location: 'battlefieldA' | 'battlefieldB') => {
@@ -520,6 +605,17 @@ export function Board() {
     setShowItemShop(false)
   }
 
+  // Initialize combat targets when entering combat phase
+  useEffect(() => {
+    if (metadata.currentPhase === 'combatA') {
+      const defaults = getDefaultTargets(gameState.battlefieldA, metadata.activePlayer)
+      setCombatTargetsA(new Map(defaults))
+    } else if (metadata.currentPhase === 'combatB') {
+      const defaults = getDefaultTargets(gameState.battlefieldB, metadata.activePlayer)
+      setCombatTargetsB(new Map(defaults))
+    }
+  }, [metadata.currentPhase, metadata.activePlayer])
+
   // Turn Management - Phase system
   const handleNextPhase = () => {
     const player = metadata.activePlayer
@@ -530,13 +626,67 @@ export function Board() {
     let nextPlayer: 'player1' | 'player2' = player
     let shouldIncrementTurn = false
     
-    if (currentPhase === 'play') {
-      nextPhase = 'combatA'
-    } else if (currentPhase === 'combatA') {
+    // Resolve combat before leaving combat phase
+    if (currentPhase === 'combatA') {
+      // Resolve combat for battlefield A
+      const targets = combatTargetsA.size > 0 ? combatTargetsA : getDefaultTargets(gameState.battlefieldA, player)
+      const result = resolveCombat(
+        gameState.battlefieldA,
+        'battlefieldA',
+        targets,
+        player,
+        {
+          towerA: metadata.towerA_HP,
+          towerB: metadata.towerB_HP,
+        }
+      )
+      
+      // Apply combat results
+      setGameState(prev => {
+        const updatedState = {
+          ...prev,
+          battlefieldA: result.updatedBattlefield,
+          metadata: {
+            ...prev.metadata,
+            towerA_HP: result.updatedTowerHP.towerA,
+            // Apply overflow damage to nexus
+            player2NexusHP: Math.max(0, prev.metadata.player2NexusHP - result.overflowDamage),
+          },
+        }
+        return updatedState
+      })
+      
       nextPhase = 'adjust'
     } else if (currentPhase === 'adjust') {
       nextPhase = 'combatB'
     } else if (currentPhase === 'combatB') {
+      // Resolve combat for battlefield B
+      const targets = combatTargetsB.size > 0 ? combatTargetsB : getDefaultTargets(gameState.battlefieldB, player)
+      const result = resolveCombat(
+        gameState.battlefieldB,
+        'battlefieldB',
+        targets,
+        player,
+        {
+          towerA: metadata.towerA_HP,
+          towerB: metadata.towerB_HP,
+        }
+      )
+      
+      // Apply combat results
+      setGameState(prev => {
+        const updatedState = {
+          ...prev,
+          battlefieldB: result.updatedBattlefield,
+          metadata: {
+            ...prev.metadata,
+            towerB_HP: result.updatedTowerHP.towerB,
+            // Apply overflow damage to nexus
+            player2NexusHP: Math.max(0, prev.metadata.player2NexusHP - result.overflowDamage),
+          },
+        }
+        return updatedState
+      })
       // End turn - switch player and reset to play phase
       nextPlayer = player === 'player1' ? 'player2' : 'player1'
       nextPhase = 'play'
@@ -736,6 +886,47 @@ export function Board() {
     setSavedStates(states)
   }
 
+  // Helper to get color styles for cards
+  const getCardColorStyles = (colors?: import('../game/types').Color[]) => {
+    const COLOR_MAP: Record<import('../game/types').Color, string> = {
+      red: '#d32f2f',
+      blue: '#1976d2',
+      white: '#f5f5f5',
+      black: '#424242',
+      green: '#388e3c',
+    }
+    const COLOR_LIGHT_MAP: Record<import('../game/types').Color, string> = {
+      red: '#ffebee',
+      blue: '#e3f2fd',
+      white: '#ffffff',
+      black: '#fafafa',
+      green: '#e8f5e9',
+    }
+    
+    if (!colors || colors.length === 0) {
+      return {
+        borderColor: '#757575',
+        backgroundColor: '#fafafa',
+      }
+    } else if (colors.length === 1) {
+      return {
+        borderColor: COLOR_MAP[colors[0]],
+        backgroundColor: COLOR_LIGHT_MAP[colors[0]],
+        borderWidth: '2px',
+      }
+    } else {
+      // Multicolor
+      return {
+        borderColor: COLOR_MAP[colors[0]],
+        background: colors.length === 2
+          ? `linear-gradient(to right, ${COLOR_LIGHT_MAP[colors[0]]} 50%, ${COLOR_LIGHT_MAP[colors[1]]} 50%)`
+          : undefined,
+        backgroundColor: colors.length > 2 ? COLOR_LIGHT_MAP[colors[0]] : undefined,
+        borderWidth: '2px',
+      }
+    }
+  }
+
   // Helper function to render sidebar for a player
   const renderSidebar = (player: 'player1' | 'player2', cards: import('../game/types').BaseCard[], setCards: React.Dispatch<React.SetStateAction<import('../game/types').BaseCard[]>>) => {
     const playerColor = player === 'player1' ? '#f44336' : '#2196f3'
@@ -759,15 +950,18 @@ export function Board() {
           Click a card to add to hand
         </div>
         
-        {cards.map((template, index) => (
+        {cards.map((template, index) => {
+          const colorStyles = getCardColorStyles(template.colors)
+          return (
           <div
             key={template.id || index}
             style={{
-              border: `1px solid ${playerColor}`,
+              border: `${colorStyles.borderWidth || '1px'} solid ${colorStyles.borderColor}`,
               borderRadius: '4px',
               padding: '6px',
               marginBottom: '6px',
-              backgroundColor: '#fff',
+              backgroundColor: colorStyles.backgroundColor,
+              background: colorStyles.background,
               fontSize: '11px',
               position: 'relative',
             }}
@@ -779,8 +973,37 @@ export function Board() {
                 paddingRight: '20px',
               }}
             >
-              <div style={{ fontWeight: 'bold', fontSize: '10px', color: playerColor }}>
-                {template.cardType.toUpperCase()}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                <div style={{ fontWeight: 'bold', fontSize: '10px', color: playerColor }}>
+                  {template.cardType.toUpperCase()}
+                </div>
+                {/* Color indicators */}
+                {template.colors && template.colors.length > 0 && (
+                  <div style={{ display: 'flex', gap: '2px' }}>
+                    {template.colors.map((colorVal, idx) => {
+                      const COLOR_MAP: Record<import('../game/types').Color, string> = {
+                        red: '#d32f2f',
+                        blue: '#1976d2',
+                        white: '#f5f5f5',
+                        black: '#424242',
+                        green: '#388e3c',
+                      }
+                      return (
+                        <div
+                          key={idx}
+                          style={{
+                            width: '10px',
+                            height: '10px',
+                            borderRadius: '50%',
+                            backgroundColor: COLOR_MAP[colorVal],
+                            border: '1px solid rgba(0,0,0,0.2)',
+                          }}
+                          title={colorVal}
+                        />
+                      )
+                    })}
+                  </div>
+                )}
               </div>
               <div style={{ fontWeight: 'bold', fontSize: '12px' }}>{template.name}</div>
               <div style={{ fontSize: '10px', color: '#666' }}>{template.description}</div>
@@ -828,7 +1051,8 @@ export function Board() {
               ×
             </button>
           </div>
-        ))}
+          )
+        })}
       </div>
     )
   }
@@ -1098,46 +1322,120 @@ export function Board() {
             {/* Player 2 side */}
             <div style={{ marginBottom: '12px' }}>
               <h4 style={{ fontSize: '12px', marginBottom: '6px' }}>Player 2</h4>
-              <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '60px', gap: '4px' }}>
-                {battlefieldAP2.length > 0 ? (
-                  battlefieldAP2.map(card => (
-                    <HeroCard
-                      key={card.id}
-                      card={card}
-                      onClick={() => handleCardClick(card.id)}
-                      isSelected={selectedCardId === card.id}
-                      showStats={true}
-                      onRemove={() => handleRemoveFromBattlefield(card, 'battlefieldA')}
-                      onDecreaseHealth={() => handleDecreaseHealth(card)}
-                      showCombatControls={true}
-                    />
-                  ))
-                ) : (
-                  <p style={{ color: '#999', fontSize: '12px', width: '100%' }}>Empty</p>
-                )}
+              {/* Slot positions 1-5 */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', marginBottom: '4px' }}>
+                {[1, 2, 3, 4, 5].map(slotNum => {
+                  const cardInSlot = battlefieldAP2.find(c => c.slot === slotNum)
+                  const isSelected = selectedCard && selectedCard.id === cardInSlot?.id
+                  const canMoveHere = selectedCard && selectedCard.owner === 'player2' && 
+                    (selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB' || selectedCard.location === 'hand' || selectedCard.location === 'base')
+                  
+                  return (
+                    <div
+                      key={slotNum}
+                      style={{
+                        minHeight: '100px',
+                        border: canMoveHere ? '2px dashed #4a90e2' : '1px solid #ddd',
+                        borderRadius: '4px',
+                        padding: '4px',
+                        backgroundColor: canMoveHere ? '#e3f2fd' : '#f9f9f9',
+                        position: 'relative',
+                      }}
+                      onClick={() => {
+                        if (selectedCard && canMoveHere && selectedCard.owner === 'player2') {
+                          if (selectedCard.location === 'battlefieldA') {
+                            handleChangeSlot(selectedCard, slotNum, 'battlefieldA')
+                          } else if (selectedCard.location === 'battlefieldB') {
+                            // Move from B to A
+                            handleDeploy('battlefieldA', slotNum)
+                          } else {
+                            // Deploy to A with specific slot
+                            handleDeploy('battlefieldA', slotNum)
+                          }
+                        }
+                      }}
+                    >
+                      <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>Slot {slotNum}</div>
+                      {cardInSlot ? (
+                        <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
+                          <HeroCard
+                            card={cardInSlot}
+                            onClick={() => handleCardClick(cardInSlot.id)}
+                            isSelected={isSelected}
+                            showStats={true}
+                            onRemove={() => handleRemoveFromBattlefield(cardInSlot, 'battlefieldA')}
+                            onDecreaseHealth={() => handleDecreaseHealth(cardInSlot)}
+                            showCombatControls={true}
+                          />
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '10px', color: '#ccc', textAlign: 'center', paddingTop: '20px' }}>
+                          {canMoveHere ? 'Drop here' : 'Empty'}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
             {/* Player 1 side */}
             <div>
               <h4 style={{ fontSize: '14px', marginBottom: '10px' }}>Player 1</h4>
-              <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '80px' }}>
-                {battlefieldAP1.length > 0 ? (
-                  battlefieldAP1.map(card => (
-                    <HeroCard
-                      key={card.id}
-                      card={card}
-                      onClick={() => handleCardClick(card.id)}
-                      isSelected={selectedCardId === card.id}
-                      showStats={true}
-                      onRemove={() => handleRemoveFromBattlefield(card, 'battlefieldA')}
-                      onDecreaseHealth={() => handleDecreaseHealth(card)}
-                      showCombatControls={true}
-                    />
-                  ))
-                ) : (
-                  <p style={{ color: '#999', fontSize: '12px', width: '100%' }}>Empty</p>
-                )}
+              {/* Slot positions 1-5 */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px' }}>
+                {[1, 2, 3, 4, 5].map(slotNum => {
+                  const cardInSlot = battlefieldAP1.find(c => c.slot === slotNum)
+                  const isSelected = selectedCard && selectedCard.id === cardInSlot?.id
+                  const canMoveHere = selectedCard && selectedCard.owner === 'player1' && 
+                    (selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB' || selectedCard.location === 'hand' || selectedCard.location === 'base')
+                  
+                  return (
+                    <div
+                      key={slotNum}
+                      style={{
+                        minHeight: '100px',
+                        border: canMoveHere ? '2px dashed #f44336' : '1px solid #ddd',
+                        borderRadius: '4px',
+                        padding: '4px',
+                        backgroundColor: canMoveHere ? '#ffebee' : '#f9f9f9',
+                        position: 'relative',
+                      }}
+                      onClick={() => {
+                        if (selectedCard && canMoveHere && selectedCard.owner === 'player1') {
+                          if (selectedCard.location === 'battlefieldA') {
+                            handleChangeSlot(selectedCard, slotNum, 'battlefieldA')
+                          } else if (selectedCard.location === 'battlefieldB') {
+                            // Move from B to A
+                            handleDeploy('battlefieldA', slotNum)
+                          } else {
+                            // Deploy to A with specific slot
+                            handleDeploy('battlefieldA', slotNum)
+                          }
+                        }
+                      }}
+                    >
+                      <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>Slot {slotNum}</div>
+                      {cardInSlot ? (
+                        <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
+                          <HeroCard
+                            card={cardInSlot}
+                            onClick={() => handleCardClick(cardInSlot.id)}
+                            isSelected={isSelected}
+                            showStats={true}
+                            onRemove={() => handleRemoveFromBattlefield(cardInSlot, 'battlefieldA')}
+                            onDecreaseHealth={() => handleDecreaseHealth(cardInSlot)}
+                            showCombatControls={true}
+                          />
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '10px', color: '#ccc', textAlign: 'center', paddingTop: '20px' }}>
+                          {canMoveHere ? 'Drop here' : 'Empty'}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
@@ -1189,46 +1487,120 @@ export function Board() {
             {/* Player 2 side */}
             <div style={{ marginBottom: '12px' }}>
               <h4 style={{ fontSize: '12px', marginBottom: '6px' }}>Player 2</h4>
-              <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '60px', gap: '4px' }}>
-                {battlefieldBP2.length > 0 ? (
-                  battlefieldBP2.map(card => (
-                    <HeroCard
-                      key={card.id}
-                      card={card}
-                      onClick={() => handleCardClick(card.id)}
-                      isSelected={selectedCardId === card.id}
-                      showStats={true}
-                      onRemove={() => handleRemoveFromBattlefield(card, 'battlefieldB')}
-                      onDecreaseHealth={() => handleDecreaseHealth(card)}
-                      showCombatControls={true}
-                    />
-                  ))
-                ) : (
-                  <p style={{ color: '#999', fontSize: '12px', width: '100%' }}>Empty</p>
-                )}
+              {/* Slot positions 1-5 */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', marginBottom: '4px' }}>
+                {[1, 2, 3, 4, 5].map(slotNum => {
+                  const cardInSlot = battlefieldBP2.find(c => c.slot === slotNum)
+                  const isSelected = selectedCard && selectedCard.id === cardInSlot?.id
+                  const canMoveHere = selectedCard && selectedCard.owner === 'player2' && 
+                    (selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB' || selectedCard.location === 'hand' || selectedCard.location === 'base')
+                  
+                  return (
+                    <div
+                      key={slotNum}
+                      style={{
+                        minHeight: '100px',
+                        border: canMoveHere ? '2px dashed #4a90e2' : '1px solid #ddd',
+                        borderRadius: '4px',
+                        padding: '4px',
+                        backgroundColor: canMoveHere ? '#e3f2fd' : '#f9f9f9',
+                        position: 'relative',
+                      }}
+                      onClick={() => {
+                        if (selectedCard && canMoveHere && selectedCard.owner === 'player2') {
+                          if (selectedCard.location === 'battlefieldB') {
+                            handleChangeSlot(selectedCard, slotNum, 'battlefieldB')
+                          } else if (selectedCard.location === 'battlefieldA') {
+                            // Move from A to B
+                            handleDeploy('battlefieldB', slotNum)
+                          } else {
+                            // Deploy to B with specific slot
+                            handleDeploy('battlefieldB', slotNum)
+                          }
+                        }
+                      }}
+                    >
+                      <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>Slot {slotNum}</div>
+                      {cardInSlot ? (
+                        <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
+                          <HeroCard
+                            card={cardInSlot}
+                            onClick={() => handleCardClick(cardInSlot.id)}
+                            isSelected={isSelected}
+                            showStats={true}
+                            onRemove={() => handleRemoveFromBattlefield(cardInSlot, 'battlefieldB')}
+                            onDecreaseHealth={() => handleDecreaseHealth(cardInSlot)}
+                            showCombatControls={true}
+                          />
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '10px', color: '#ccc', textAlign: 'center', paddingTop: '20px' }}>
+                          {canMoveHere ? 'Drop here' : 'Empty'}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
             {/* Player 1 side */}
             <div>
               <h4 style={{ fontSize: '14px', marginBottom: '10px' }}>Player 1</h4>
-              <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '80px' }}>
-                {battlefieldBP1.length > 0 ? (
-                  battlefieldBP1.map(card => (
-                    <HeroCard
-                      key={card.id}
-                      card={card}
-                      onClick={() => handleCardClick(card.id)}
-                      isSelected={selectedCardId === card.id}
-                      showStats={true}
-                      onRemove={() => handleRemoveFromBattlefield(card, 'battlefieldB')}
-                      onDecreaseHealth={() => handleDecreaseHealth(card)}
-                      showCombatControls={true}
-                    />
-                  ))
-                ) : (
-                  <p style={{ color: '#999', fontSize: '12px', width: '100%' }}>Empty</p>
-                )}
+              {/* Slot positions 1-5 */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px' }}>
+                {[1, 2, 3, 4, 5].map(slotNum => {
+                  const cardInSlot = battlefieldBP1.find(c => c.slot === slotNum)
+                  const isSelected = selectedCard && selectedCard.id === cardInSlot?.id
+                  const canMoveHere = selectedCard && selectedCard.owner === 'player1' && 
+                    (selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB' || selectedCard.location === 'hand' || selectedCard.location === 'base')
+                  
+                  return (
+                    <div
+                      key={slotNum}
+                      style={{
+                        minHeight: '100px',
+                        border: canMoveHere ? '2px dashed #f44336' : '1px solid #ddd',
+                        borderRadius: '4px',
+                        padding: '4px',
+                        backgroundColor: canMoveHere ? '#ffebee' : '#f9f9f9',
+                        position: 'relative',
+                      }}
+                      onClick={() => {
+                        if (selectedCard && canMoveHere && selectedCard.owner === 'player1') {
+                          if (selectedCard.location === 'battlefieldB') {
+                            handleChangeSlot(selectedCard, slotNum, 'battlefieldB')
+                          } else if (selectedCard.location === 'battlefieldA') {
+                            // Move from A to B
+                            handleDeploy('battlefieldB', slotNum)
+                          } else {
+                            // Deploy to B with specific slot
+                            handleDeploy('battlefieldB', slotNum)
+                          }
+                        }
+                      }}
+                    >
+                      <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>Slot {slotNum}</div>
+                      {cardInSlot ? (
+                        <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
+                          <HeroCard
+                            card={cardInSlot}
+                            onClick={() => handleCardClick(cardInSlot.id)}
+                            isSelected={isSelected}
+                            showStats={true}
+                            onRemove={() => handleRemoveFromBattlefield(cardInSlot, 'battlefieldB')}
+                            onDecreaseHealth={() => handleDecreaseHealth(cardInSlot)}
+                            showCombatControls={true}
+                          />
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '10px', color: '#ccc', textAlign: 'center', paddingTop: '20px' }}>
+                          {canMoveHere ? 'Drop here' : 'Empty'}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
