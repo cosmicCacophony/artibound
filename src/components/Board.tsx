@@ -4,6 +4,7 @@ import { PlayerArea } from './PlayerArea'
 import { BattlefieldView } from './BattlefieldView'
 import { ItemShopModal } from './ItemShopModal'
 import { CardLibrarySidebar } from './CardLibrarySidebar'
+import { CardLibraryView } from './CardLibraryView'
 
 export function Board() {
   return (
@@ -30,6 +31,7 @@ function BoardContent() {
         <GameHeader />
 
         <ItemShopModal />
+        <CardLibraryView />
 
         {/* Player 2 Area (Top) - Mage (Blue) */}
         <PlayerArea player="player2" />

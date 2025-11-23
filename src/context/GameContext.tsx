@@ -21,6 +21,14 @@ interface GameContextType {
   player2SidebarCards: BaseCard[]
   setPlayer2SidebarCards: React.Dispatch<React.SetStateAction<BaseCard[]>>
   
+  // Archived Cards
+  archivedCards: BaseCard[]
+  setArchivedCards: React.Dispatch<React.SetStateAction<BaseCard[]>>
+  
+  // Card Library View
+  showCardLibrary: boolean
+  setShowCardLibrary: (show: boolean) => void
+  
   // Combat Targets
   combatTargetsA: Map<string, AttackTarget>
   setCombatTargetsA: React.Dispatch<React.SetStateAction<Map<string, AttackTarget>>>
@@ -57,6 +65,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [player2SidebarCards, setPlayer2SidebarCards] = useState<BaseCard[]>(() => 
     player2CardLibrary.map(template => ({ ...template }))
   )
+  
+  // Archived cards
+  const [archivedCards, setArchivedCards] = useState<BaseCard[]>([])
+  
+  // Card Library View
+  const [showCardLibrary, setShowCardLibrary] = useState(false)
   
   // Combat targets
   const [combatTargetsA, setCombatTargetsA] = useState<Map<string, AttackTarget>>(new Map())
@@ -112,6 +126,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setPlayer1SidebarCards,
     player2SidebarCards,
     setPlayer2SidebarCards,
+    archivedCards,
+    setArchivedCards,
+    showCardLibrary,
+    setShowCardLibrary,
     combatTargetsA,
     setCombatTargetsA,
     combatTargetsB,

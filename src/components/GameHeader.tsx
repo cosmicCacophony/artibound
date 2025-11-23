@@ -3,7 +3,7 @@ import { useGamePersistence } from '../hooks/useGamePersistence'
 import { useTurnManagement } from '../hooks/useTurnManagement'
 
 export function GameHeader() {
-  const { metadata, activePlayer } = useGameContext()
+  const { metadata, activePlayer, setShowCardLibrary } = useGameContext()
   const { savedStates, exportGameState, importGameState } = useGamePersistence()
   const { handleNextPhase } = useTurnManagement()
 
@@ -37,6 +37,20 @@ export function GameHeader() {
           }}
         >
           Next Phase
+        </button>
+        <button
+          onClick={() => setShowCardLibrary(true)}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#9c27b0',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px',
+          }}
+        >
+          Card Library
         </button>
         <button
           onClick={exportGameState}

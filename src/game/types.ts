@@ -173,23 +173,68 @@ export interface BattlefieldDefinition {
 }
 
 // Draft System Types
-export type DraftPickType = 'hero' | 'battlefield'
+export type DraftPickType = 'hero' | 'card' | 'battlefield'
 
-export interface DraftState {
-  currentPicker: PlayerId
-  pickNumber: number // Overall pick number in the draft
-  player1Picks: (Hero | BattlefieldDefinition)[]
-  player2Picks: (Hero | BattlefieldDefinition)[]
-  availableHeroes: Hero[] // Pool of heroes available to draft
-  availableBattlefields: BattlefieldDefinition[] // Pool of battlefields available to draft
+// Draft pool item (what's available to pick)
+export interface DraftPoolItem {
+  id: string
+  type: DraftPickType
+  item: Hero | BaseCard | BattlefieldDefinition
+  packNumber: number
+}
+
+// Draft pack
+export interface DraftPack {
+  packNumber: number
+  heroes: Hero[] // 2 heroes
+  cards: BaseCard[] // 8-9 cards
+  battlefields: BattlefieldDefinition[] // 1 battlefield
+  remainingItems: DraftPoolItem[] // Items not yet picked
+  picks: DraftPick[] // Picks made from this pack
   isComplete: boolean
 }
 
+// Draft pick record
 export interface DraftPick {
   pickNumber: number
+  packNumber: number
   player: PlayerId
   pickType: DraftPickType
-  pick: Hero | BattlefieldDefinition
+  pick: Hero | BaseCard | BattlefieldDefinition
+  timestamp: number // For ordering
+}
+
+// Drafted items (all picks, not final selections)
+export interface DraftedItems {
+  heroes: Hero[]
+  cards: BaseCard[]
+  battlefields: BattlefieldDefinition[]
+}
+
+// Final selections (chosen after draft)
+export interface FinalDraftSelection {
+  heroes: Hero[] // Exactly 4
+  cards: BaseCard[] // Exactly 12
+  battlefield: BattlefieldDefinition // Exactly 1
+}
+
+// Updated DraftState
+export interface DraftState {
+  currentPack: number // 1-4
+  currentPicker: PlayerId
+  pickNumber: number // Overall pick number (1-56 total, alternating)
+  packs: DraftPack[]
+  
+  // All picks (not final selections) - visible to both players
+  player1Drafted: DraftedItems
+  player2Drafted: DraftedItems
+  
+  // Final selections (chosen after draft, private until game starts)
+  player1Final: FinalDraftSelection | null
+  player2Final: FinalDraftSelection | null
+  
+  isDraftComplete: boolean // All packs picked
+  isSelectionComplete: boolean // Final selections made
 }
 
 export interface GameState {
@@ -215,6 +260,22 @@ export const NEXUS_HP = 30
 export const STARTING_GOLD = 5
 
 // Draft System Constants
-export const HEROES_PER_PLAYER = 4
-export const BATTLEFIELDS_PER_PLAYER = 2
+export const DECK_SIZE = 20
+export const HEROES_REQUIRED = 4
+export const CARDS_REQUIRED = 12 // 20 - 8 signature cards
+export const BATTLEFIELDS_REQUIRED = 1
 export const SIGNATURE_CARDS_PER_HERO = 2
+
+export const DRAFT_PACKS = 4
+export const PICKS_PER_PACK = 7
+export const TOTAL_PICKS_PER_PLAYER = DRAFT_PACKS * PICKS_PER_PACK // 28
+
+export const HEROES_PER_PACK = 2
+export const CARDS_PER_PACK = 8
+export const BATTLEFIELDS_PER_PACK = 1
+export const ITEMS_PER_PACK = HEROES_PER_PACK + CARDS_PER_PACK + BATTLEFIELDS_PER_PACK // 11
+
+// Pick distribution expectations
+export const EXPECTED_HERO_PICKS = 4 // Required, but can draft 2-6
+export const EXPECTED_BATTLEFIELD_PICKS = 1 // Required, but can draft 0-3
+export const EXPECTED_CARD_PICKS = 12 // For deck, but will draft more for hate/specing
