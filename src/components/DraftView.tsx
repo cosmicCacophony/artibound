@@ -95,6 +95,11 @@ export default function DraftView() {
             fontWeight: 'bold',
           }}>
             {isPlayer1Turn ? "Player 1's Turn" : "Player 2's Turn"}
+            {draftState.picksRemainingThisTurn > 0 && (
+              <span style={{ marginLeft: '8px', fontSize: '14px', opacity: 0.9 }}>
+                ({draftState.picksRemainingThisTurn} pick{draftState.picksRemainingThisTurn !== 1 ? 's' : ''} remaining)
+              </span>
+            )}
           </div>
           <div style={{ fontSize: '14px', color: '#666' }}>
             (You control both players)

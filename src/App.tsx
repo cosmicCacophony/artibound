@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Board } from './components/Board'
 import DraftView from './components/DraftView'
+import { GameProvider } from './context/GameContext'
 import './App.css'
 
 function App() {
@@ -36,7 +37,13 @@ function App() {
           Game
         </button>
       </div>
-      {view === 'draft' ? <DraftView /> : <Board />}
+      {view === 'draft' ? (
+        <GameProvider>
+          <DraftView />
+        </GameProvider>
+      ) : (
+        <Board />
+      )}
     </div>
   )
 }

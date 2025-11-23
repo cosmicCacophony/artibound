@@ -16,50 +16,34 @@ import {
   getAllDraftBattlefields,
 } from './draftData'
 import {
-  rwWarriorSignatureCards,
-  rwBerserkerSignatureCards,
-  rwChampionSignatureCards,
-  rwPaladinSignatureCards,
-  rwAggroGenericCards,
-  redWhiteMulticolorCards,
-  redWhiteSpells,
-  ubMageSignatureCards,
-  ubSorcererSignatureCards,
-  ubArchmageSignatureCards,
-  ubNecromancerSignatureCards,
-  ubControlGenericCards,
-  blueBlackMulticolorCards,
-  blackSpells,
-  blueSpells,
-} from './sampleData'
+  allHeroes,
+  allCards,
+  allSpells,
+  rwCards,
+  rgCards,
+  ruCards,
+  rbCards,
+  gwCards,
+  gbCards,
+  guCards,
+  ubCards,
+  uwCards,
+  rwSpells,
+  ruSpells,
+  rbSpells,
+  gbSpells,
+  guSpells,
+  ubSpells,
+  uwSpells,
+} from './comprehensiveCardData'
 
 // All available cards for draft pool
-const allSignatureCards: BaseCard[] = [
-  ...rwWarriorSignatureCards,
-  ...rwBerserkerSignatureCards,
-  ...rwChampionSignatureCards,
-  ...rwPaladinSignatureCards,
-  ...ubMageSignatureCards,
-  ...ubSorcererSignatureCards,
-  ...ubArchmageSignatureCards,
-  ...ubNecromancerSignatureCards,
-]
-
-const allGenericCards: BaseCard[] = [
-  ...rwAggroGenericCards,
-  ...ubControlGenericCards,
-]
-
-const allMulticolorCards: BaseCard[] = [
-  ...redWhiteMulticolorCards,
-  ...blueBlackMulticolorCards,
-]
-
-const allSpellCards: BaseCard[] = [
-  ...redWhiteSpells,
-  ...blackSpells,
-  ...blueSpells,
-]
+// Separate signature cards (those with sig- in ID) from generic cards
+const allSignatureCards: BaseCard[] = allCards.filter(card => card.id.includes('sig-'))
+const allGenericCards: BaseCard[] = allCards.filter(card => !card.id.includes('sig-'))
+const allSpellCards: BaseCard[] = allSpells
+// Multicolor cards are cards with 2+ colors
+const allMulticolorCards: BaseCard[] = allCards.filter(card => card.colors && card.colors.length >= 2)
 
 // Helper to shuffle array
 function shuffleArray<T>(array: T[]): T[] {
@@ -176,7 +160,8 @@ function createPoolItems(
 
 // Generate a single draft pack
 export function generateDraftPack(packNumber: number): DraftPack {
-  const heroes = selectHeroesForPack(packNumber, draftableHeroes)
+  // Use all heroes from comprehensive data, not just draftableHeroes
+  const heroes = selectHeroesForPack(packNumber, allHeroes)
   const cards = selectCardsForPack()
   const battlefields = [selectBattlefieldForPack()]
 

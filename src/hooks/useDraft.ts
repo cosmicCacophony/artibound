@@ -24,6 +24,7 @@ const initialDraftState = (): DraftState => {
     currentPack: 1,
     currentPicker: 'player1',
     pickNumber: 0,
+    picksRemainingThisTurn: 1, // Player 1 picks 1 first, then everyone picks 2
     packs,
     player1Drafted: {
       heroes: [],
@@ -99,7 +100,20 @@ export function useDraft() {
 
       // Determine next state
       const allPacksComplete = updatedPacks.every(p => p.isComplete)
-      const nextPicker: PlayerId = draftState.currentPicker === 'player1' ? 'player2' : 'player1'
+      const picksRemaining = draftState.picksRemainingThisTurn - 1
+      
+      // If current player has picks remaining, stay with them
+      // Otherwise, switch to next player
+      let nextPicker: PlayerId = draftState.currentPicker
+      let nextPicksRemaining = picksRemaining
+      
+      if (picksRemaining <= 0 && !allPacksComplete) {
+        // Switch to next player
+        nextPicker = draftState.currentPicker === 'player1' ? 'player2' : 'player1'
+        // After first pick, everyone picks 2 at a time
+        nextPicksRemaining = 2
+      }
+      
       const nextPack = allPacksComplete
         ? draftState.currentPack
         : packComplete
@@ -112,6 +126,7 @@ export function useDraft() {
             ...prev,
             pickNumber: prev.pickNumber + 1,
             currentPicker: allPacksComplete ? prev.currentPicker : nextPicker,
+            picksRemainingThisTurn: allPacksComplete ? prev.picksRemainingThisTurn : nextPicksRemaining,
             currentPack: nextPack,
             packs: updatedPacks,
             player1Drafted: updatedDrafted,
@@ -122,6 +137,7 @@ export function useDraft() {
             ...prev,
             pickNumber: prev.pickNumber + 1,
             currentPicker: allPacksComplete ? prev.currentPicker : nextPicker,
+            picksRemainingThisTurn: allPacksComplete ? prev.picksRemainingThisTurn : nextPicksRemaining,
             currentPack: nextPack,
             packs: updatedPacks,
             player2Drafted: updatedDrafted,

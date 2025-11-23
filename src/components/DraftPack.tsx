@@ -1,6 +1,8 @@
-import React from 'react'
-import { DraftPack, DraftPoolItem, DraftPickType } from '../game/types'
+import React, { useState } from 'react'
+import { DraftPack, DraftPoolItem, DraftPickType, BaseCard } from '../game/types'
 import { HeroCard } from './HeroCard'
+import { CardEditorModal } from './CardEditorModal'
+import { useCardManagement } from '../hooks/useCardManagement'
 
 interface DraftPackProps {
   pack: DraftPack
@@ -10,10 +12,29 @@ interface DraftPackProps {
 }
 
 export default function DraftPackComponent({ pack, selectedItem, onItemClick, isPlayer1Turn }: DraftPackProps) {
+  const [editingCard, setEditingCard] = useState<BaseCard | null>(null)
+  const { updateCard } = useCardManagement()
+  
   const groupedItems = {
     heroes: pack.remainingItems.filter(item => item.type === 'hero'),
     cards: pack.remainingItems.filter(item => item.type === 'card'),
     battlefields: pack.remainingItems.filter(item => item.type === 'battlefield'),
+  }
+
+  const handleEditCard = (e: React.MouseEvent, item: DraftPoolItem) => {
+    e.stopPropagation()
+    if (item.type === 'hero' || item.type === 'card') {
+      setEditingCard(item.item as BaseCard)
+    }
+  }
+
+  const handleSaveCard = (updatedCard: BaseCard, archiveOld: boolean) => {
+    if (editingCard) {
+      updateCard(editingCard, updatedCard, archiveOld)
+      setEditingCard(null)
+      // Note: The draft pack won't update immediately, but the card library will
+      // The user would need to refresh or we'd need to add state management for draft packs
+    }
   }
 
   const renderItem = (item: DraftPoolItem) => {
@@ -71,6 +92,12 @@ export default function DraftPackComponent({ pack, selectedItem, onItemClick, is
       <div
         key={item.id}
         onClick={() => canSelect && onItemClick(item)}
+        onContextMenu={(e) => {
+          e.preventDefault()
+          if (item.type === 'hero' || item.type === 'card') {
+            handleEditCard(e, item)
+          }
+        }}
         style={{
           border: isSelected ? '3px solid #2196F3' : '1px solid #ccc',
           borderRadius: '8px',
@@ -79,8 +106,30 @@ export default function DraftPackComponent({ pack, selectedItem, onItemClick, is
           backgroundColor: isSelected ? '#E3F2FD' : canSelect ? '#fff' : '#f5f5f5',
           opacity: canSelect ? 1 : 0.6,
           transition: 'all 0.2s',
+          position: 'relative',
         }}
       >
+        {(item.type === 'hero' || item.type === 'card') && (
+          <button
+            onClick={(e) => handleEditCard(e, item)}
+            style={{
+              position: 'absolute',
+              top: '4px',
+              right: '4px',
+              padding: '4px 8px',
+              fontSize: '10px',
+              backgroundColor: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              zIndex: 10,
+            }}
+            title="Edit card (or right-click)"
+          >
+            Edit
+          </button>
+        )}
         {item.type === 'hero' && cardData && (
           <HeroCard card={cardData} />
         )}
@@ -154,6 +203,15 @@ export default function DraftPackComponent({ pack, selectedItem, onItemClick, is
         <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#E8F5E9', borderRadius: '8px' }}>
           Pack {pack.packNumber} is complete!
         </div>
+      )}
+
+      {/* Card Editor Modal */}
+      {editingCard && (
+        <CardEditorModal
+          card={editingCard}
+          onSave={handleSaveCard}
+          onCancel={() => setEditingCard(null)}
+        />
       )}
     </div>
   )

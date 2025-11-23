@@ -1,4 +1,5 @@
 import { Hero, SignatureCard, HybridCard, GenericUnit, Card, BaseCard, Item, GameMetadata, TOWER_HP, NEXUS_HP, STARTING_GOLD, BattlefieldDefinition, SpellCard, SpellEffect } from './types'
+import { allCards, allSpells } from './comprehensiveCardData'
 
 // Item definitions
 export const tier1Items: Item[] = [
@@ -491,65 +492,32 @@ export const mageCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' |
   },
 ]
 
-// Create card library - separate for each player
-// Includes: signature cards (2 per hero) + generic aggro/control cards + multicolor cards + spells
+// Create card library - now includes all cards from comprehensive data
+// Both players get access to all cards for testing and editing
 export function createCardLibrary(player: 'player1' | 'player2'): (BaseCard & Partial<{ effect: SpellEffect, initiative?: boolean }>)[] {
-  if (player === 'player1') {
-    // Player 1 (RW Aggro): All signature cards + aggro generics + multicolor cards + spells
-    return [
-      ...rwWarriorSignatureCards,
-      ...rwBerserkerSignatureCards,
-      ...rwChampionSignatureCards,
-      ...rwPaladinSignatureCards,
-      ...rwAggroGenericCards,
-      ...redWhiteMulticolorCards,
-      ...redWhiteSpells,
-    ].map(card => {
-      const base: BaseCard & Partial<{ effect: SpellEffect, initiative?: boolean }> = {
-        id: card.id,
-        name: card.name,
-        description: card.description,
-        cardType: card.cardType,
-        manaCost: card.manaCost,
-        colors: card.colors,
-      }
-      // For spells, include the effect
-      if (card.cardType === 'spell') {
-        const spell = card as SpellCard
-        base.effect = spell.effect
-        base.initiative = spell.initiative
-      }
-      return base
-    })
-  } else {
-    // Player 2 (UB Control): All signature cards + control generics + multicolor cards + spells
-    return [
-      ...ubMageSignatureCards,
-      ...ubSorcererSignatureCards,
-      ...ubArchmageSignatureCards,
-      ...ubNecromancerSignatureCards,
-      ...ubControlGenericCards,
-      ...blueBlackMulticolorCards,
-      ...blackSpells,
-      ...blueSpells,
-    ].map(card => {
-      const base: BaseCard & Partial<{ effect: SpellEffect, initiative?: boolean }> = {
-        id: card.id,
-        name: card.name,
-        description: card.description,
-        cardType: card.cardType,
-        manaCost: card.manaCost,
-        colors: card.colors,
-      }
-      // For spells, include the effect
-      if (card.cardType === 'spell') {
-        const spell = card as SpellCard
-        base.effect = spell.effect
-        base.initiative = spell.initiative
-      }
-      return base
-    })
-  }
+  // Both players get all cards for comprehensive testing
+  const allCardsBase: BaseCard[] = [
+    ...allCards,
+    ...allSpells,
+  ]
+  
+  return allCardsBase.map(card => {
+    const base: BaseCard & Partial<{ effect: SpellEffect, initiative?: boolean }> = {
+      id: card.id,
+      name: card.name,
+      description: card.description,
+      cardType: card.cardType,
+      manaCost: card.manaCost,
+      colors: card.colors,
+    }
+    // For spells, include the effect
+    if (card.cardType === 'spell') {
+      const spell = card as SpellCard
+      base.effect = spell.effect
+      base.initiative = spell.initiative
+    }
+    return base
+  })
 }
 
 // Legacy function for backward compatibility

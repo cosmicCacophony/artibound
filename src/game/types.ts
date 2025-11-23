@@ -223,6 +223,7 @@ export interface DraftState {
   currentPack: number // 1-4
   currentPicker: PlayerId
   pickNumber: number // Overall pick number (1-56 total, alternating)
+  picksRemainingThisTurn: number // How many picks the current player has left this turn
   packs: DraftPack[]
   
   // All picks (not final selections) - visible to both players
