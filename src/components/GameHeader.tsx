@@ -12,7 +12,7 @@ export function GameHeader() {
       <h1 style={{ margin: 0 }}>Artibound - Hero Card Game</h1>
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
         <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
-          Turn {metadata.currentTurn} - {activePlayer === 'player1' ? 'Player 1 (Warrior)' : 'Player 2 (Mage)'}
+          Turn {metadata.currentTurn} - {activePlayer === 'player1' ? 'Player 1' : 'Player 2'}
         </div>
         <div style={{ fontSize: '14px', fontWeight: 'bold', textTransform: 'capitalize' }}>
           Phase: {metadata.currentPhase}

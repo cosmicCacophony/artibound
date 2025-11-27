@@ -81,7 +81,7 @@ export const heroTemplates: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 10,
     currentHealth: 10,
     supportEffect: 'Allies gain +1 attack',
-    signatureCardIds: ['sig-warrior-1', 'sig-warrior-2'],
+    signatureCardId: 'sig-warrior-1',
   },
   {
     id: 'hero-mage',
@@ -94,7 +94,7 @@ export const heroTemplates: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 6,
     currentHealth: 6,
     supportEffect: 'Draw an extra card each turn',
-    signatureCardIds: ['sig-mage-1', 'sig-mage-2'],
+    signatureCardId: 'sig-mage-1',
   },
   {
     id: 'hero-healer',
@@ -107,7 +107,7 @@ export const heroTemplates: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 8,
     currentHealth: 8,
     supportEffect: 'Heal allies 2 HP each turn',
-    signatureCardIds: ['sig-healer-1', 'sig-healer-2'],
+    signatureCardId: 'sig-healer-1',
   },
   {
     id: 'hero-archer',
@@ -120,7 +120,7 @@ export const heroTemplates: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 7,
     currentHealth: 7,
     supportEffect: 'Range attacks ignore first defense',
-    signatureCardIds: ['sig-archer-1', 'sig-archer-2'],
+    signatureCardId: 'sig-archer-1',
   },
   {
     id: 'hero-guardian',
@@ -133,7 +133,7 @@ export const heroTemplates: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 12,
     currentHealth: 12,
     supportEffect: 'Allies gain +2 health',
-    signatureCardIds: ['sig-guardian-1', 'sig-guardian-2'],
+    signatureCardId: 'sig-guardian-1',
   },
 ]
 
@@ -757,7 +757,7 @@ export const warriorTestDeckHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 10,
     currentHealth: 10,
     supportEffect: 'Allies gain +1 attack',
-    signatureCardIds: ['rw-sig-warrior-1', 'rw-sig-warrior-2'],
+    signatureCardId: 'rw-sig-warrior-1',
     equippedItems: [],
   },
   {
@@ -771,7 +771,7 @@ export const warriorTestDeckHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 8,
     currentHealth: 8,
     supportEffect: 'Gain +1 attack for each enemy unit',
-    signatureCardIds: ['rw-sig-berserker-1', 'rw-sig-berserker-2'],
+    signatureCardId: 'rw-sig-berserker-1',
     equippedItems: [],
   },
   {
@@ -785,7 +785,7 @@ export const warriorTestDeckHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 12,
     currentHealth: 12,
     supportEffect: 'Allies gain +1 health',
-    signatureCardIds: ['rw-sig-champion-1', 'rw-sig-champion-2'],
+    signatureCardId: 'rw-sig-champion-1',
     equippedItems: [],
   },
   {
@@ -799,7 +799,7 @@ export const warriorTestDeckHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 11,
     currentHealth: 11,
     supportEffect: 'Heal allies 1 HP each turn',
-    signatureCardIds: ['rw-sig-paladin-1', 'rw-sig-paladin-2'],
+    signatureCardId: 'rw-sig-paladin-1',
     equippedItems: [],
   },
 ]
@@ -818,7 +818,7 @@ export const mageTestDeckHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 6,
     currentHealth: 6,
     supportEffect: 'Draw an extra card each turn',
-    signatureCardIds: ['ub-sig-mage-1', 'ub-sig-mage-2'],
+    signatureCardId: 'ub-sig-mage-1',
     equippedItems: [],
   },
   {
@@ -832,7 +832,7 @@ export const mageTestDeckHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 7,
     currentHealth: 7,
     supportEffect: 'Spells cost -1 mana',
-    signatureCardIds: ['ub-sig-sorcerer-1', 'ub-sig-sorcerer-2'],
+    signatureCardId: 'ub-sig-sorcerer-1',
     equippedItems: [],
   },
   {
@@ -846,7 +846,7 @@ export const mageTestDeckHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 9,
     currentHealth: 9,
     supportEffect: 'Allies gain +1 spell power',
-    signatureCardIds: ['ub-sig-archmage-1', 'ub-sig-archmage-2'],
+    signatureCardId: 'ub-sig-archmage-1',
     equippedItems: [],
   },
   {
@@ -860,7 +860,7 @@ export const mageTestDeckHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 8,
     currentHealth: 8,
     supportEffect: 'Gain 1 gold when units die',
-    signatureCardIds: ['ub-sig-necromancer-1', 'ub-sig-necromancer-2'],
+    signatureCardId: 'ub-sig-necromancer-1',
     equippedItems: [],
   },
 ]

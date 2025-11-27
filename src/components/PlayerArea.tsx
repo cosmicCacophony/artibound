@@ -28,7 +28,6 @@ export function PlayerArea({ player }: PlayerAreaProps) {
 
   const playerColor = player === 'player1' ? '#f44336' : '#2196f3'
   const playerBgColor = player === 'player1' ? '#ffebee' : '#e3f2fd'
-  const playerName = player === 'player1' ? 'Warrior' : 'Mage'
   const playerTitleColor = player === 'player1' ? '#c62828' : '#1976d2'
   const playerManaColor = player === 'player1' ? '#c62828' : '#1976d2'
 
@@ -47,7 +46,7 @@ export function PlayerArea({ player }: PlayerAreaProps) {
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-        <h2 style={{ marginTop: 0, color: playerTitleColor }}>Player {player === 'player1' ? '1' : '2'} - {playerName}</h2>
+        <h2 style={{ marginTop: 0, color: playerTitleColor }}>Player {player === 'player1' ? '1' : '2'}</h2>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
           <div style={{ fontSize: '16px', fontWeight: 'bold', color: playerManaColor }}>
             Mana: {playerMana}/{playerMaxMana}

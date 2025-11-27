@@ -18,7 +18,7 @@ export const defaultGenericHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 7,
     currentHealth: 7,
     supportEffect: 'Basic combat support',
-    signatureCardIds: [],
+    signatureCardId: undefined,
     equippedItems: [],
   },
   {
@@ -32,7 +32,7 @@ export const defaultGenericHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 9,
     currentHealth: 9,
     supportEffect: 'Basic defensive support',
-    signatureCardIds: [],
+    signatureCardId: undefined,
     equippedItems: [],
   },
   {
@@ -46,7 +46,7 @@ export const defaultGenericHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 6,
     currentHealth: 6,
     supportEffect: 'Basic nature support',
-    signatureCardIds: [],
+    signatureCardId: undefined,
     equippedItems: [],
   },
   {
@@ -60,7 +60,7 @@ export const defaultGenericHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 6,
     currentHealth: 6,
     supportEffect: 'Basic arcane support',
-    signatureCardIds: [],
+    signatureCardId: undefined,
     equippedItems: [],
   },
   {
@@ -74,7 +74,7 @@ export const defaultGenericHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 6,
     currentHealth: 6,
     supportEffect: 'Basic shadow support',
-    signatureCardIds: [],
+    signatureCardId: undefined,
     equippedItems: [],
   },
 ]
@@ -95,7 +95,7 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 10,
     currentHealth: 10,
     supportEffect: 'Allies gain +1/+1',
-    signatureCardIds: ['rw-sig-commander-1', 'rw-sig-commander-2'],
+    signatureCardId: 'rw-sig-commander-1',
     equippedItems: [],
   },
   {
@@ -109,7 +109,7 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 8,
     currentHealth: 8,
     supportEffect: 'Allies gain +2 attack',
-    signatureCardIds: ['rw-sig-captain-1', 'rw-sig-captain-2'],
+    signatureCardId: 'rw-sig-captain-1',
     equippedItems: [],
   },
 ]
@@ -284,7 +284,7 @@ export const rgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 9,
     currentHealth: 9,
     supportEffect: 'Can fight enemy units',
-    signatureCardIds: ['rg-sig-brawler-1', 'rg-sig-brawler-2'],
+    signatureCardId: 'rg-sig-brawler-1',
     equippedItems: [],
   },
   {
@@ -298,7 +298,7 @@ export const rgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 10,
     currentHealth: 10,
     supportEffect: 'Gain +1 max mana',
-    signatureCardIds: ['rg-sig-ramp-1', 'rg-sig-ramp-2'],
+    signatureCardId: 'rg-sig-ramp-1',
     equippedItems: [],
   },
 ]
@@ -432,7 +432,7 @@ export const ruHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 7,
     currentHealth: 7,
     supportEffect: 'Spells deal +1 damage',
-    signatureCardIds: ['ru-sig-spellblade-1', 'ru-sig-spellblade-2'],
+    signatureCardId: 'ru-sig-spellblade-1',
     equippedItems: [],
   },
   {
@@ -446,7 +446,7 @@ export const ruHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 6,
     currentHealth: 6,
     supportEffect: 'Draw card when casting spell',
-    signatureCardIds: ['ru-sig-sorcerer-1', 'ru-sig-sorcerer-2'],
+    signatureCardId: 'ru-sig-sorcerer-1',
     equippedItems: [],
   },
 ]
@@ -579,7 +579,7 @@ export const rbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 8,
     currentHealth: 8,
     supportEffect: 'Draw card when unit dies',
-    signatureCardIds: ['rb-sig-reaper-1', 'rb-sig-reaper-2'],
+    signatureCardId: 'rb-sig-reaper-1',
     equippedItems: [],
   },
   {
@@ -593,7 +593,7 @@ export const rbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 7,
     currentHealth: 7,
     supportEffect: 'Gain gold when units die',
-    signatureCardIds: ['rb-sig-assassin-1', 'rb-sig-assassin-2'],
+    signatureCardId: 'rb-sig-assassin-1',
     equippedItems: [],
   },
 ]
@@ -732,7 +732,7 @@ export const gwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 11,
     currentHealth: 11,
     supportEffect: 'Allies gain +0/+2',
-    signatureCardIds: ['gw-sig-warden-1', 'gw-sig-warden-2'],
+    signatureCardId: 'gw-sig-warden-1',
     equippedItems: [],
   },
   {
@@ -746,7 +746,7 @@ export const gwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 10,
     currentHealth: 10,
     supportEffect: 'Allies gain +1/+1',
-    signatureCardIds: ['gw-sig-protector-1', 'gw-sig-protector-2'],
+    signatureCardId: 'gw-sig-protector-1',
     equippedItems: [],
   },
 ]
@@ -868,7 +868,7 @@ export const gbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 10,
     currentHealth: 10,
     supportEffect: 'Gain gold when units die',
-    signatureCardIds: ['gb-sig-reaper-1', 'gb-sig-reaper-2'],
+    signatureCardId: 'gb-sig-reaper-1',
     equippedItems: [],
   },
   {
@@ -882,7 +882,7 @@ export const gbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 9,
     currentHealth: 9,
     supportEffect: 'Kill spells cost -1',
-    signatureCardIds: ['gb-sig-assassin-1', 'gb-sig-assassin-2'],
+    signatureCardId: 'gb-sig-assassin-1',
     equippedItems: [],
   },
 ]
@@ -1009,7 +1009,7 @@ export const guHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 9,
     currentHealth: 9,
     supportEffect: 'Gain +1 max mana each turn',
-    signatureCardIds: ['gu-sig-druid-1', 'gu-sig-druid-2'],
+    signatureCardId: 'gu-sig-druid-1',
     equippedItems: [],
   },
   {
@@ -1023,7 +1023,7 @@ export const guHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 8,
     currentHealth: 8,
     supportEffect: 'Spells cost -1',
-    signatureCardIds: ['gu-sig-archmage-1', 'gu-sig-archmage-2'],
+    signatureCardId: 'gu-sig-archmage-1',
     equippedItems: [],
   },
   // Special: Green hero that allows 3-color play
@@ -1038,7 +1038,7 @@ export const guHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 9,
     currentHealth: 9,
     supportEffect: 'You can play cards of any color',
-    signatureCardIds: ['gu-sig-chromat-1', 'gu-sig-chromat-2'],
+    signatureCardId: 'gu-sig-chromat-1',
     equippedItems: [],
   },
 ]
@@ -1201,7 +1201,7 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 9,
     currentHealth: 9,
     supportEffect: 'Draw extra card each turn',
-    signatureCardIds: ['ub-sig-archmage-1', 'ub-sig-archmage-2'],
+    signatureCardId: 'ub-sig-archmage-1',
     equippedItems: [],
   },
   {
@@ -1215,7 +1215,7 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 8,
     currentHealth: 8,
     supportEffect: 'Gain gold when units die',
-    signatureCardIds: ['ub-sig-necromancer-1', 'ub-sig-necromancer-2'],
+    signatureCardId: 'ub-sig-necromancer-1',
     equippedItems: [],
   },
 ]
@@ -1399,7 +1399,7 @@ export const uwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 10,
     currentHealth: 10,
     supportEffect: 'Allies gain +1/+1',
-    signatureCardIds: ['uw-sig-paladin-1', 'uw-sig-paladin-2'],
+    signatureCardId: 'uw-sig-paladin-1',
     equippedItems: [],
   },
   {
@@ -1413,7 +1413,7 @@ export const uwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 8,
     currentHealth: 8,
     supportEffect: 'Draw card each turn',
-    signatureCardIds: ['uw-sig-mage-1', 'uw-sig-mage-2'],
+    signatureCardId: 'uw-sig-mage-1',
     equippedItems: [],
   },
 ]

@@ -14,7 +14,7 @@ export function CardLibrarySidebar({ player, cards, setCards }: CardLibrarySideb
   
   const playerColor = player === 'player1' ? '#f44336' : '#2196f3'
   const playerBgColor = player === 'player1' ? '#ffebee' : '#e3f2fd'
-  const playerName = player === 'player1' ? 'Warrior' : 'Mage'
+  const playerName = `Player ${player === 'player1' ? '1' : '2'}`
   
   const getCardColorStyles = (colors?: Color[]) => {
     const COLOR_MAP: Record<Color, string> = {
@@ -75,6 +75,7 @@ export function CardLibrarySidebar({ player, cards, setCards }: CardLibrarySideb
       
       {cards.map((template, index) => {
         const colorStyles = getCardColorStyles(template.colors)
+        const cardColors = template.colors || []
         return (
           <div
             key={template.id || index}
@@ -83,8 +84,21 @@ export function CardLibrarySidebar({ player, cards, setCards }: CardLibrarySideb
               borderRadius: '4px',
               padding: '6px',
               marginBottom: '6px',
-              backgroundColor: colorStyles.backgroundColor,
-              background: colorStyles.background,
+              // For single-color cards: ONLY set backgroundColor, never set background property
+              // For multicolor cards: set both backgroundColor (fallback) and background (gradient)
+              ...(cardColors.length === 1
+                ? {
+                    backgroundColor: colorStyles.backgroundColor,
+                    // Explicitly don't set background property for single-color cards
+                  }
+                : cardColors.length > 1
+                  ? {
+                      backgroundColor: colorStyles.backgroundColor, // Fallback
+                      background: colorStyles.background, // Gradient
+                    }
+                  : {
+                      backgroundColor: colorStyles.backgroundColor || '#fff',
+                    }),
               fontSize: '11px',
               position: 'relative',
             }}

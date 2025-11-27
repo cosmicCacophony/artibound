@@ -110,7 +110,7 @@ export interface Hero extends BaseCard {
   owner: PlayerId
   slot?: number // Slot position 1-5 on battlefield
   equippedItems?: string[] // Array of item IDs
-  signatureCardIds?: string[] // IDs of signature cards that synergize with this hero
+  signatureCardId?: string // ID of the signature card for this hero (2 copies added to deck)
 }
 
 export interface SignatureCard extends BaseCard {
@@ -290,9 +290,9 @@ export const STARTING_GOLD = 5
 // Draft System Constants
 export const DECK_SIZE = 20
 export const HEROES_REQUIRED = 4
-export const CARDS_REQUIRED = 20 // 12 drafted + 8 signature cards (auto-added when heroes are drafted)
+export const CARDS_REQUIRED = 20 // 12 drafted + 8 signature cards (2 copies × 4 heroes = 8 signature cards, auto-added when heroes are drafted)
 export const BATTLEFIELDS_REQUIRED = 1
-export const SIGNATURE_CARDS_PER_HERO = 2
+export const SIGNATURE_CARDS_PER_HERO = 2 // 2 copies of each hero's signature card are added to the deck
 
 export const DRAFT_PACKS = 5
 export const PICKS_PER_PACK = 7

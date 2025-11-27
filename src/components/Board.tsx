@@ -11,7 +11,7 @@ export function Board() {
   
   return (
     <div style={{ display: 'flex', fontFamily: 'Arial, sans-serif', height: '100vh' }}>
-      {/* Left Sidebar - Player 1 (Warrior - Red) */}
+      {/* Left Sidebar - Player 1 */}
       <CardLibrarySidebar 
         player="player1" 
         cards={player1SidebarCards} 
@@ -25,7 +25,7 @@ export function Board() {
         <ItemShopModal />
         <CardLibraryView />
 
-        {/* Player 2 Area (Top) - Mage (Blue) */}
+        {/* Player 2 Area (Top) */}
         <PlayerArea player="player2" />
 
         {/* Battlefields (Middle) */}
@@ -41,11 +41,11 @@ export function Board() {
           <BattlefieldView battlefieldId="battlefieldB" />
         </div>
 
-        {/* Player 1 Area (Bottom) - Warrior (Red) */}
+        {/* Player 1 Area (Bottom) */}
         <PlayerArea player="player1" />
       </div>
 
-      {/* Right Sidebar - Player 2 (Mage - Blue) */}
+      {/* Right Sidebar - Player 2 */}
       <CardLibrarySidebar 
         player="player2" 
         cards={player2SidebarCards} 

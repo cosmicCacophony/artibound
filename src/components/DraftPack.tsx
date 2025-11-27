@@ -115,7 +115,7 @@ export default function DraftPackComponent({ pack, selectedItem, onItemClick, is
         location: 'hand' as const,
         owner: 'player1' as const,
         equippedItems: hero.equippedItems || [],
-        signatureCardIds: hero.signatureCardIds || [],
+        signatureCardId: hero.signatureCardId,
       }
     } else if (item.type === 'card') {
       const card = item.item as any

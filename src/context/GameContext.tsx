@@ -192,9 +192,40 @@ export function GameProvider({ children }: { children: ReactNode }) {
       } as Hero)
     }
     
-    // Select 12 cards for each player (signature cards will be auto-added, so we need 12 drafted)
-    const player1Cards = shuffle(player1CardPool).slice(0, CARDS_REQUIRED)
-    const player2Cards = shuffle(player2CardPool).slice(0, CARDS_REQUIRED)
+    // Select 12 cards for each player (signature cards will be auto-added)
+    const DRAFTED_CARDS_REQUIRED = 12
+    const player1DraftedCards = shuffle(player1CardPool).slice(0, DRAFTED_CARDS_REQUIRED)
+    const player2DraftedCards = shuffle(player2CardPool).slice(0, DRAFTED_CARDS_REQUIRED)
+    
+    // Add 2 copies of each hero's signature card (4 heroes × 2 copies = 8 signature cards)
+    const player1SignatureCards: BaseCard[] = []
+    const player2SignatureCards: BaseCard[] = []
+    
+    for (const hero of player1Heroes) {
+      if (hero.signatureCardId) {
+        const sigCard = allCards.find(card => card.id === hero.signatureCardId)
+        if (sigCard) {
+          // Add 2 copies
+          player1SignatureCards.push(sigCard)
+          player1SignatureCards.push(sigCard)
+        }
+      }
+    }
+    
+    for (const hero of player2Heroes) {
+      if (hero.signatureCardId) {
+        const sigCard = allCards.find(card => card.id === hero.signatureCardId)
+        if (sigCard) {
+          // Add 2 copies
+          player2SignatureCards.push(sigCard)
+          player2SignatureCards.push(sigCard)
+        }
+      }
+    }
+    
+    // Combine drafted cards + signature cards (12 + 8 = 20 total)
+    const player1Cards = [...player1DraftedCards, ...player1SignatureCards]
+    const player2Cards = [...player2DraftedCards, ...player2SignatureCards]
     
     // Select 1 battlefield for each player
     const player1Battlefield = shuffle(player1BattlefieldPool)[0] || allBattlefields[0]

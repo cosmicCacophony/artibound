@@ -2,6 +2,10 @@
 
 This file tracks playtesting sessions, observations, and learnings. Update existing sections rather than creating new files.
 
+**📋 See `TESTING_PLAN.md` for comprehensive testing strategies, scenarios, and efficient self-playtesting methods.**
+
+This document (`PLAYTESTING.md`) is for recording actual playtest sessions and findings. Use `TESTING_PLAN.md` to structure your testing approach.
+
 ## Quick Reference: Turn 1 Testing Checklist
 
 ### Pre-Test Setup

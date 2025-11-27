@@ -118,15 +118,14 @@ export function useDraft() {
         }
         updatedDrafted.heroes.push(uniqueHero)
         
-        // Auto-add signature cards for this hero
-        if (heroTemplate.signatureCardIds && heroTemplate.signatureCardIds.length > 0) {
-          heroTemplate.signatureCardIds.forEach(sigCardId => {
-            // Find the signature card in allCards
-            const sigCard = allCards.find(card => card.id === sigCardId)
-            if (sigCard) {
-              updatedDrafted.cards.push(sigCard)
-            }
-          })
+        // Auto-add 2 copies of this hero's signature card
+        if (heroTemplate.signatureCardId) {
+          const sigCard = allCards.find(card => card.id === heroTemplate.signatureCardId)
+          if (sigCard) {
+            // Add 2 copies of the signature card
+            updatedDrafted.cards.push(sigCard)
+            updatedDrafted.cards.push(sigCard)
+          }
         }
       } else if (item.type === 'card') {
         updatedDrafted.cards.push(item.item as BaseCard)
@@ -429,15 +428,14 @@ export function useDraft() {
           }
           updatedDrafted.heroes.push(uniqueHero)
           
-          // Auto-add signature cards for this hero
-          if (heroTemplate.signatureCardIds && heroTemplate.signatureCardIds.length > 0) {
-            heroTemplate.signatureCardIds.forEach(sigCardId => {
-              // Find the signature card in allCards
-              const sigCard = allCards.find(card => card.id === sigCardId)
-              if (sigCard) {
-                updatedDrafted.cards.push(sigCard)
-              }
-            })
+          // Auto-add 2 copies of this hero's signature card
+          if (heroTemplate.signatureCardId) {
+            const sigCard = allCards.find(card => card.id === heroTemplate.signatureCardId)
+            if (sigCard) {
+              // Add 2 copies of the signature card
+              updatedDrafted.cards.push(sigCard)
+              updatedDrafted.cards.push(sigCard)
+            }
           }
         } else if (randomItem.type === 'card') {
           updatedDrafted.cards.push(randomItem.item as BaseCard)
