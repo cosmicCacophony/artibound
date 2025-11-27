@@ -69,10 +69,11 @@ export default function DraftPackComponent({ pack, selectedItem, onItemClick, is
         borderWidth: '3px',
       }
     } else {
-      // Multicolor - create gradient background
-      const gradientColors = colors.map(c => COLOR_LIGHT_MAP[c]).join(', ')
+      // Multicolor - create gradient background with fallback backgroundColor
+      const primaryColor = colors[0]
       return {
-        borderColor: COLOR_MAP[colors[0]], // Primary color border
+        borderColor: COLOR_MAP[primaryColor], // Primary color border
+        backgroundColor: COLOR_LIGHT_MAP[primaryColor], // Fallback background color
         background: colors.length === 2
           ? `linear-gradient(to right, ${COLOR_LIGHT_MAP[colors[0]]} 50%, ${COLOR_LIGHT_MAP[colors[1]]} 50%)`
           : `linear-gradient(135deg, ${colors.map((c, i) => {
@@ -158,13 +159,29 @@ export default function DraftPackComponent({ pack, selectedItem, onItemClick, is
           borderRadius: '8px',
           padding: '8px',
           cursor: canSelect ? 'pointer' : 'default',
-          // For selected items, use a lighter version of the card's color, or blue if colorless
-          backgroundColor: isSelected 
-            ? (itemColors.length > 0 ? COLOR_LIGHT_MAP[itemColors[0]] : '#E3F2FD')
-            : (colorStyles.backgroundColor || colorStyles.background || '#fff'),
-          background: isSelected 
-            ? (itemColors.length > 1 ? colorStyles.background : undefined)
-            : (colorStyles.background || undefined),
+          // For single-color cards: ONLY set backgroundColor, never set background property
+          // For multicolor cards: set both backgroundColor (fallback) and background (gradient)
+          ...(itemColors.length === 1 
+            ? {
+                backgroundColor: isSelected 
+                  ? COLOR_LIGHT_MAP[itemColors[0]]
+                  : COLOR_LIGHT_MAP[itemColors[0]],
+                // Explicitly don't set background property for single-color cards
+              }
+            : itemColors.length > 1
+              ? {
+                  backgroundColor: isSelected 
+                    ? COLOR_LIGHT_MAP[itemColors[0]]
+                    : COLOR_LIGHT_MAP[itemColors[0]], // Fallback
+                  background: isSelected 
+                    ? colorStyles.background
+                    : colorStyles.background, // Gradient
+                }
+              : {
+                  backgroundColor: isSelected 
+                    ? '#E3F2FD'
+                    : (colorStyles.backgroundColor || '#fff'),
+                }),
           opacity: canSelect ? 1 : 0.6,
           transition: 'all 0.2s',
           position: 'relative',

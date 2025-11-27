@@ -5,26 +5,28 @@ interface CardPreviewProps {
 }
 
 export function CardPreview({ card }: CardPreviewProps) {
+  const COLOR_MAP: Record<Color, string> = {
+    red: '#d32f2f',
+    blue: '#1976d2',
+    white: '#f5f5f5',
+    black: '#424242',
+    green: '#388e3c',
+  }
+  const COLOR_LIGHT_MAP: Record<Color, string> = {
+    red: '#ffebee',
+    blue: '#e3f2fd',
+    white: '#ffffff',
+    black: '#fafafa',
+    green: '#e8f5e9',
+  }
+  
   const getCardColorStyles = (colors?: Color[]) => {
-    const COLOR_MAP: Record<Color, string> = {
-      red: '#d32f2f',
-      blue: '#1976d2',
-      white: '#f5f5f5',
-      black: '#424242',
-      green: '#388e3c',
-    }
-    const COLOR_LIGHT_MAP: Record<Color, string> = {
-      red: '#ffebee',
-      blue: '#e3f2fd',
-      white: '#ffffff',
-      black: '#fafafa',
-      green: '#e8f5e9',
-    }
     
     if (!colors || colors.length === 0) {
       return {
         borderColor: '#757575',
         backgroundColor: '#fafafa',
+        borderWidth: '2px',
       }
     } else if (colors.length === 1) {
       return {
@@ -33,12 +35,17 @@ export function CardPreview({ card }: CardPreviewProps) {
         borderWidth: '2px',
       }
     } else {
+      // Multicolor - create gradient background with fallback backgroundColor
+      const primaryColor = colors[0]
       return {
-        borderColor: COLOR_MAP[colors[0]],
+        borderColor: COLOR_MAP[primaryColor],
+        backgroundColor: COLOR_LIGHT_MAP[primaryColor], // Fallback background color
         background: colors.length === 2
           ? `linear-gradient(to right, ${COLOR_LIGHT_MAP[colors[0]]} 50%, ${COLOR_LIGHT_MAP[colors[1]]} 50%)`
-          : undefined,
-        backgroundColor: colors.length > 2 ? COLOR_LIGHT_MAP[colors[0]] : undefined,
+          : `linear-gradient(135deg, ${colors.map((c, i) => {
+              const percent = (i / colors.length) * 100
+              return `${COLOR_LIGHT_MAP[c]} ${percent}%`
+            }).join(', ')})`,
         borderWidth: '2px',
       }
     }
@@ -51,14 +58,29 @@ export function CardPreview({ card }: CardPreviewProps) {
   const attack = hasStats ? (card as any).attack : null
   const health = hasStats ? (card as any).health : null
 
+  const cardColors = card.colors || []
+  
   return (
     <div
       style={{
         border: `${colorStyles.borderWidth || '1px'} solid ${colorStyles.borderColor}`,
         borderRadius: '8px',
         padding: '12px',
-        backgroundColor: colorStyles.backgroundColor,
-        background: colorStyles.background,
+        // For single-color cards: ONLY set backgroundColor, never set background property
+        // For multicolor cards: set both backgroundColor (fallback) and background (gradient)
+        ...(cardColors.length === 1 
+          ? {
+              backgroundColor: COLOR_LIGHT_MAP[cardColors[0]],
+              // Explicitly don't set background property for single-color cards
+            }
+          : cardColors.length > 1
+            ? {
+                backgroundColor: COLOR_LIGHT_MAP[cardColors[0]], // Fallback
+                background: colorStyles.background, // Gradient
+              }
+            : {
+                backgroundColor: colorStyles.backgroundColor || '#fff',
+              }),
         minWidth: '200px',
         maxWidth: '300px',
         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
