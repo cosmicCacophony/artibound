@@ -58,8 +58,10 @@ export interface GameMetadata {
   player2MaxMana: number
   player1NexusHP: number
   player2NexusHP: number
-  towerA_HP: number
-  towerB_HP: number
+  towerA_player1_HP: number
+  towerA_player2_HP: number
+  towerB_player1_HP: number
+  towerB_player2_HP: number
   player1Tier: 1 | 2
   player2Tier: 1 | 2
   // Death cooldown: Record of card ID -> turn they died (to track 1 round cooldown)

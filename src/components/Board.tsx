@@ -1,4 +1,4 @@
-import { GameProvider, useGameContext } from '../context/GameContext'
+import { useGameContext } from '../context/GameContext'
 import { GameHeader } from './GameHeader'
 import { PlayerArea } from './PlayerArea'
 import { BattlefieldView } from './BattlefieldView'
@@ -7,14 +7,6 @@ import { CardLibrarySidebar } from './CardLibrarySidebar'
 import { CardLibraryView } from './CardLibraryView'
 
 export function Board() {
-  return (
-    <GameProvider>
-      <BoardContent />
-    </GameProvider>
-  )
-}
-
-function BoardContent() {
   const { player1SidebarCards, setPlayer1SidebarCards, player2SidebarCards, setPlayer2SidebarCards } = useGameContext()
   
   return (

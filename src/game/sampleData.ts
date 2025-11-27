@@ -547,10 +547,20 @@ export function createCardFromTemplate(
     colors: template.colors,
   }
 
-  // Check if it's a spell card first
+  // Handle spell cards - check comprehensive data first, then test deck data
   if (template.cardType === 'spell') {
-    const allSpells = [...blackSpells, ...blueSpells, ...redWhiteSpells]
-    const spellCard = allSpells.find(c => c.id === template.id)
+    // Check if template already has spell properties (from comprehensive data)
+    if ('effect' in template && template.effect) {
+      return {
+        ...base,
+        effect: (template as any).effect,
+        initiative: (template as any).initiative,
+        colors: template.colors,
+      } as SpellCard
+    }
+    // Fallback to test deck spells
+    const allTestSpells = [...blackSpells, ...blueSpells, ...redWhiteSpells]
+    const spellCard = allTestSpells.find(c => c.id === template.id)
     if (spellCard) {
       return {
         ...base,
@@ -560,47 +570,8 @@ export function createCardFromTemplate(
       } as SpellCard
     }
   }
-  
-  // Check if it's a RW card (Player 1)
-  if (owner === 'player1') {
-    const allRWCards = [
-      ...rwWarriorSignatureCards,
-      ...rwBerserkerSignatureCards,
-      ...rwChampionSignatureCards,
-      ...rwPaladinSignatureCards,
-      ...rwAggroGenericCards,
-      ...redWhiteMulticolorCards,
-    ]
-    const rwCard = allRWCards.find(c => c.id === template.id)
-    if (rwCard) {
-      const { id, name, description, cardType, manaCost, ...stats } = rwCard
-      return {
-        ...base,
-        ...stats,
-        colors: rwCard.colors,
-      } as GenericUnit
-    }
-  } else {
-    // Check if it's a UB card (Player 2)
-    const allUBCards = [
-      ...ubMageSignatureCards,
-      ...ubSorcererSignatureCards,
-      ...ubArchmageSignatureCards,
-      ...ubNecromancerSignatureCards,
-      ...ubControlGenericCards,
-      ...blueBlackMulticolorCards,
-    ]
-    const ubCard = allUBCards.find(c => c.id === template.id)
-    if (ubCard) {
-      const { id, name, description, cardType, manaCost, ...stats } = ubCard
-      return {
-        ...base,
-        ...stats,
-        colors: ubCard.colors,
-      } as GenericUnit
-    }
-  }
 
+  // Handle heroes - template should already have all properties
   if (template.cardType === 'hero') {
     const heroTemplate = template as unknown as Omit<Hero, 'location' | 'owner' | 'id' | 'name' | 'description' | 'cardType'>
     return {
@@ -608,9 +579,78 @@ export function createCardFromTemplate(
       ...heroTemplate,
       maxHealth: heroTemplate.maxHealth || heroTemplate.health,
       currentHealth: heroTemplate.currentHealth !== undefined ? heroTemplate.currentHealth : (heroTemplate.maxHealth || heroTemplate.health),
-      equippedItems: [],
+      equippedItems: heroTemplate.equippedItems || [],
     } as Hero
-  } else if (template.cardType === 'signature') {
+  }
+
+  // Handle generic/signature/hybrid cards - template should already have all properties
+  if (template.cardType === 'generic' || template.cardType === 'signature' || template.cardType === 'hybrid') {
+    // Check if template has unit properties (attack, health) - from comprehensive data
+    if ('attack' in template && 'health' in template) {
+      const { id, name, description, cardType, manaCost, ...stats } = template as any
+      if (template.cardType === 'signature') {
+        return {
+          ...base,
+          ...stats,
+          colors: template.colors,
+        } as SignatureCard
+      } else if (template.cardType === 'hybrid') {
+        return {
+          ...base,
+          ...stats,
+          colors: template.colors,
+        } as HybridCard
+      } else {
+        return {
+          ...base,
+          ...stats,
+          colors: template.colors,
+        } as GenericUnit
+      }
+    }
+    
+    // Fallback to test deck cards (for backwards compatibility)
+    if (owner === 'player1') {
+      const allRWCards = [
+        ...rwWarriorSignatureCards,
+        ...rwBerserkerSignatureCards,
+        ...rwChampionSignatureCards,
+        ...rwPaladinSignatureCards,
+        ...rwAggroGenericCards,
+        ...redWhiteMulticolorCards,
+      ]
+      const rwCard = allRWCards.find(c => c.id === template.id)
+      if (rwCard) {
+        const { id, name, description, cardType, manaCost, ...stats } = rwCard
+        return {
+          ...base,
+          ...stats,
+          colors: rwCard.colors,
+        } as GenericUnit
+      }
+    } else {
+      const allUBCards = [
+        ...ubMageSignatureCards,
+        ...ubSorcererSignatureCards,
+        ...ubArchmageSignatureCards,
+        ...ubNecromancerSignatureCards,
+        ...ubControlGenericCards,
+        ...blueBlackMulticolorCards,
+      ]
+      const ubCard = allUBCards.find(c => c.id === template.id)
+      if (ubCard) {
+        const { id, name, description, cardType, manaCost, ...stats } = ubCard
+        return {
+          ...base,
+          ...stats,
+          colors: ubCard.colors,
+        } as GenericUnit
+      }
+    }
+  }
+
+  // Final fallback - use template directly with type-specific handling
+  if (template.cardType === 'signature') {
     const sigTemplate = template as unknown as Omit<SignatureCard, 'location' | 'owner' | 'id' | 'name' | 'description' | 'cardType'>
     return {
       ...base,
@@ -633,6 +673,7 @@ export function createCardFromTemplate(
       ...spellTemplate,
     } as SpellCard
   } else {
+    // Generic unit - template should have attack/health
     const genTemplate = template as unknown as Omit<GenericUnit, 'location' | 'owner' | 'id' | 'name' | 'description' | 'cardType' | 'stackedWith' | 'stackPower' | 'stackHealth'>
     return {
       ...base,
@@ -1359,8 +1400,10 @@ export function createInitialGameState(): {
     player2MaxMana: 3,
     player1NexusHP: NEXUS_HP,
     player2NexusHP: NEXUS_HP,
-    towerA_HP: TOWER_HP,
-    towerB_HP: TOWER_HP,
+    towerA_player1_HP: TOWER_HP,
+    towerA_player2_HP: TOWER_HP,
+    towerB_player1_HP: TOWER_HP,
+    towerB_player2_HP: TOWER_HP,
     player1Tier: 1,
     player2Tier: 1,
     deathCooldowns: {}, // Track cards that died (1 round cooldown) - Record<cardId, turnDied>
@@ -1393,4 +1436,95 @@ export function getInitialDeployedHeroes(): {
   )
   
   return { player1Deployed, player2Deployed }
+}
+
+// Helper to shuffle array
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}
+
+// Create game state from draft selections
+export function createGameStateFromDraft(
+  player1Selection: { heroes: Hero[], cards: BaseCard[], battlefield: BattlefieldDefinition },
+  player2Selection: { heroes: Hero[], cards: BaseCard[], battlefield: BattlefieldDefinition }
+): {
+  player1Hand: Card[]
+  player2Hand: Card[]
+  player1Base: Card[]
+  player2Base: Card[]
+  battlefieldA: { player1: Card[], player2: Card[] }
+  battlefieldB: { player1: Card[], player2: Card[] }
+  cardLibrary: BaseCard[]
+  player1Library: BaseCard[]
+  player2Library: BaseCard[]
+  metadata: GameMetadata
+} {
+  // Create heroes in base for each player (all 4 heroes)
+  const player1Heroes = player1Selection.heroes.map(hero => {
+    return createCardFromTemplate(hero, 'player1', 'base') as Hero
+  })
+  const player2Heroes = player2Selection.heroes.map(hero => {
+    return createCardFromTemplate(hero, 'player2', 'base') as Hero
+  })
+
+  // Shuffle cards and select 4 random cards for each hand
+  const player1ShuffledCards = shuffleArray([...player1Selection.cards])
+  const player2ShuffledCards = shuffleArray([...player2Selection.cards])
+  
+  const player1HandCards = player1ShuffledCards.slice(0, 4)
+  const player1LibraryCards = player1ShuffledCards.slice(4)
+  
+  const player2HandCards = player2ShuffledCards.slice(0, 4)
+  const player2LibraryCards = player2ShuffledCards.slice(4)
+
+  // Create card instances for hands
+  const player1Hand = player1HandCards.map(card => 
+    createCardFromTemplate(card, 'player1', 'hand')
+  )
+  const player2Hand = player2HandCards.map(card => 
+    createCardFromTemplate(card, 'player2', 'hand')
+  )
+
+  // Initialize metadata
+  const metadata: GameMetadata = {
+    currentTurn: 1,
+    activePlayer: 'player1',
+    currentPhase: 'play',
+    player1Gold: STARTING_GOLD,
+    player2Gold: STARTING_GOLD,
+    player1Mana: 3, // Starting mana
+    player2Mana: 3,
+    player1MaxMana: 3, // Starting max mana
+    player2MaxMana: 3,
+    player1NexusHP: NEXUS_HP,
+    player2NexusHP: NEXUS_HP,
+    towerA_player1_HP: TOWER_HP,
+    towerA_player2_HP: TOWER_HP,
+    towerB_player1_HP: TOWER_HP,
+    towerB_player2_HP: TOWER_HP,
+    player1Tier: 1,
+    player2Tier: 1,
+    deathCooldowns: {},
+    player1MovedToBase: false,
+    player2MovedToBase: false,
+    playedSpells: {},
+  }
+
+  return {
+    player1Hand,
+    player2Hand,
+    player1Base: player1Heroes,
+    player2Base: player2Heroes,
+    battlefieldA: { player1: [], player2: [] },
+    battlefieldB: { player1: [], player2: [] },
+    cardLibrary: [], // Card library is managed separately via player1SidebarCards/player2SidebarCards
+    player1Library: player1LibraryCards,
+    player2Library: player2LibraryCards,
+    metadata,
+  }
 }

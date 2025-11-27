@@ -4,9 +4,15 @@ import { DraftPoolItem, DraftPickType } from '../game/types'
 import DraftPackComponent from './DraftPack'
 import DraftPicks from './DraftPicks'
 import DraftSelection from './DraftSelection'
+import { useGameContext } from '../context/GameContext'
 
-export default function DraftView() {
-  const { draftState, getCurrentPack, makePick, makeFinalSelection, autoFillDefaults, autoDraft, resetDraft } = useDraft()
+interface DraftViewProps {
+  onStartGame?: () => void
+}
+
+export default function DraftView({ onStartGame }: DraftViewProps = {}) {
+  const { draftState, getCurrentPack, makePick, makeFinalSelection, autoFillDefaults, autoDraft, autoBuildDecks, resetDraft } = useDraft()
+  const { initializeGameFromDraft } = useGameContext()
   const [selectedItem, setSelectedItem] = useState<DraftPoolItem | null>(null)
   const [showSelection, setShowSelection] = useState(false)
   const [isAutoDrafting, setIsAutoDrafting] = useState(false)
@@ -66,25 +72,50 @@ export default function DraftView() {
 
   // Show completion screen if both players have made final selections
   if (draftState.isSelectionComplete) {
+    const handleStartGame = () => {
+      if (draftState.player1Final && draftState.player2Final) {
+        initializeGameFromDraft(draftState.player1Final, draftState.player2Final)
+        if (onStartGame) {
+          onStartGame()
+        }
+      }
+    }
+
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>
         <h1>Draft Complete!</h1>
         <p>Both players have made their final selections.</p>
-        <button
-          onClick={resetDraft}
-          style={{
-            padding: '12px 24px',
-            fontSize: '16px',
-            backgroundColor: '#4CAF50',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            marginTop: '20px',
-          }}
-        >
-          Start New Draft
-        </button>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px' }}>
+          <button
+            onClick={handleStartGame}
+            style={{
+              padding: '12px 24px',
+              fontSize: '16px',
+              backgroundColor: '#2196F3',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+            }}
+          >
+            Start Game
+          </button>
+          <button
+            onClick={resetDraft}
+            style={{
+              padding: '12px 24px',
+              fontSize: '16px',
+              backgroundColor: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            Start New Draft
+          </button>
+        </div>
       </div>
     )
   }

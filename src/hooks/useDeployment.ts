@@ -27,16 +27,7 @@ export function useDeployment() {
       return
     }
     
-    // Check mana cost (heroes don't cost mana to deploy from base, cards from hand do)
-    const isHero = selectedCard.cardType === 'hero'
-    const isFromBase = selectedCard.location === 'base'
-    const manaCost = (isHero && isFromBase) ? 0 : ('manaCost' in selectedCard ? (selectedCard as any).manaCost : 0)
-    const playerMana = selectedCard.owner === 'player1' ? metadata.player1Mana : metadata.player2Mana
-    
-    if (manaCost > 0 && playerMana < manaCost) {
-      alert(`Not enough mana! Need ${manaCost}, have ${playerMana}`)
-      return
-    }
+    // Mana checks removed - players can play any card (mana is tracked but not enforced)
 
     // Check if deploying to battlefield and slots are full
     if ((location === 'battlefieldA' || location === 'battlefieldB')) {
@@ -69,7 +60,6 @@ export function useDeployment() {
           setGameState(prev => {
             const newBattlefield = prev[location === 'battlefieldA' ? 'battlefieldA' : 'battlefieldB']
             const playerField = selectedCard.owner as 'player1' | 'player2'
-            const playerManaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
             
             return {
               ...prev,
@@ -91,10 +81,6 @@ export function useDeployment() {
                 .filter((c: Card) => c.id !== selectedCard.id),
               [`${selectedCard.owner}Base`]: (prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[])
                 .filter((c: Card) => c.id !== selectedCard.id),
-              metadata: {
-                ...prev.metadata,
-                [playerManaKey]: Math.max(0, (prev.metadata[playerManaKey] as number) - manaCost),
-              },
             }
           })
           setSelectedCardId(null)
@@ -109,7 +95,6 @@ export function useDeployment() {
       const removeFromLocation = (cards: Card[]) => cards.filter(c => c.id !== selectedCardId)
       
       // Add to new location
-      const playerManaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
       if (location === 'base') {
         // Hero movement to base: 1 per turn, heals to full
         const isHero = selectedCard.cardType === 'hero'
@@ -140,7 +125,6 @@ export function useDeployment() {
           },
           metadata: {
             ...prev.metadata,
-            [playerManaKey]: Math.max(0, (prev.metadata[playerManaKey] as number) - manaCost),
             ...(isHero ? { [movedToBaseKey]: true } : {}),
           },
         }
@@ -197,16 +181,11 @@ export function useDeployment() {
                     ])
                     .sort((a, b) => (a.slot || 0) - (b.slot || 0)),
                 },
-                metadata: {
-                  ...prev.metadata,
-                  [playerManaKey]: Math.max(0, (prev.metadata[playerManaKey] as number) - manaCost),
-                },
               }
             }
           }
         }
 
-        const playerManaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
         const otherBattlefieldKey = location === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
         
         return {
@@ -226,10 +205,6 @@ export function useDeployment() {
               ...prev[battlefieldKey][selectedCard.owner as 'player1' | 'player2'].filter(c => c.id !== selectedCard.id),
               { ...selectedCard, location, slot: finalTargetSlot || 1 }
             ].sort((a, b) => (a.slot || 0) - (b.slot || 0)),
-          },
-          metadata: {
-            ...prev.metadata,
-            [playerManaKey]: Math.max(0, (prev.metadata[playerManaKey] as number) - manaCost),
           },
         }
       }

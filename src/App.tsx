@@ -1,15 +1,21 @@
 import { useState } from 'react'
 import { Board } from './components/Board'
 import DraftView from './components/DraftView'
-import { GameProvider } from './context/GameContext'
+import { GameProvider, useGameContext } from './context/GameContext'
 import './App.css'
 
-function App() {
+function AppContent() {
   const [view, setView] = useState<'game' | 'draft'>('draft')
+  const { initializeRandomGame } = useGameContext()
+
+  const handleStartRandomGame = () => {
+    initializeRandomGame()
+    setView('game')
+  }
 
   return (
     <div className="App">
-      <div style={{ padding: '20px', borderBottom: '1px solid #ccc', display: 'flex', gap: '12px' }}>
+      <div style={{ padding: '20px', borderBottom: '1px solid #ccc', display: 'flex', gap: '12px', alignItems: 'center' }}>
         <button
           onClick={() => setView('draft')}
           style={{
@@ -36,15 +42,38 @@ function App() {
         >
           Game
         </button>
+        <div style={{ marginLeft: 'auto' }}>
+          <button
+            onClick={handleStartRandomGame}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#FF9800',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+            }}
+            title="Start a game with randomly generated decks (for quick testing)"
+          >
+            🎲 Start Random Game
+          </button>
+        </div>
       </div>
       {view === 'draft' ? (
-        <GameProvider>
-          <DraftView />
-        </GameProvider>
+        <DraftView onStartGame={() => setView('game')} />
       ) : (
         <Board />
       )}
     </div>
+  )
+}
+
+function App() {
+  return (
+    <GameProvider>
+      <AppContent />
+    </GameProvider>
   )
 }
 

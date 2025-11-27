@@ -17,7 +17,8 @@ import {
   Color,
 } from '../game/types'
 import { generateAllDraftPacks, removeItemFromPack, isPackComplete, generateRandomPack } from '../game/draftSystem'
-import { defaultHeroes, defaultBattlefield } from '../game/draftData'
+import { defaultHeroes, defaultBattlefield, draftableHeroes } from '../game/draftData'
+import { allCards, allSpells, allBattlefields } from '../game/comprehensiveCardData'
 
 // Check if a player has enough items to complete their deck
 function hasEnoughItems(drafted: DraftedItems): boolean {
@@ -108,7 +109,13 @@ export function useDraft() {
       }
       
       if (item.type === 'hero') {
-        updatedDrafted.heroes.push(item.item as Hero)
+        // Create a unique instance of the hero with a unique ID
+        const heroTemplate = item.item as Hero
+        const uniqueHero: Hero = {
+          ...heroTemplate,
+          id: `${heroTemplate.id}-${draftState.currentPicker}-pick-${draftState.pickNumber + 1}-${Date.now()}-${Math.random()}`,
+        }
+        updatedDrafted.heroes.push(uniqueHero)
       } else if (item.type === 'card') {
         updatedDrafted.cards.push(item.item as BaseCard)
       } else if (item.type === 'battlefield') {
@@ -232,71 +239,115 @@ export function useDraft() {
   )
 
   // Auto-fill defaults if needed
+  // This function should ONLY return items that were actually drafted
+  // It does NOT add default items - those should be added via the UI
   const autoFillDefaults = useCallback(
     (player: PlayerId): FinalDraftSelection => {
       const drafted = draftState[`${player}Drafted`]
-      const heroes = [...drafted.heroes]
-      const cards = [...drafted.cards]
-      const battlefields = [...drafted.battlefields]
-
-      // Fill heroes if needed - use default heroes for each color
-      const defaultHeroColors: Color[] = ['red', 'blue', 'white', 'black', 'green']
-      while (heroes.length < HEROES_REQUIRED) {
-        const colorIndex = heroes.length % defaultHeroColors.length
-        const color = defaultHeroColors[colorIndex]
-        const defaultHeroTemplate = defaultHeroes.passable.find(h => h.colors[0] === color) ||
-          defaultHeroes.disappointing.find(h => h.colors[0] === color)
-        
-        if (defaultHeroTemplate) {
-          // Create a proper Hero instance with location and owner
-          const defaultHero: Hero = {
-            ...defaultHeroTemplate,
-            id: `default-${player}-${color}-${Date.now()}-${heroes.length}`,
-            location: 'hand',
-            owner: player,
-          }
-          heroes.push(defaultHero)
-        } else {
-          // Fallback to first available default hero
-          const fallback = defaultHeroes.passable[0] || defaultHeroes.disappointing[0]
-          if (fallback) {
-            const defaultHero: Hero = {
-              ...fallback,
-              id: `default-${player}-fallback-${Date.now()}-${heroes.length}`,
-              location: 'hand',
-              owner: player,
-            }
-            heroes.push(defaultHero)
-          }
-          break // Prevent infinite loop
-        }
-      }
-
-      // Fill cards if needed (basic 2/2 for 3 mana)
-      while (cards.length < CARDS_REQUIRED) {
-        cards.push({
-          id: `default-card-${cards.length}`,
-          name: 'Basic Unit',
-          description: 'A basic unit',
-          cardType: 'generic',
-          manaCost: 3,
-          colors: [],
-        } as BaseCard)
-      }
-
-      // Fill battlefield if needed
-      if (battlefields.length === 0) {
-        battlefields.push(defaultBattlefield)
-      }
+      
+      // Select all available heroes (up to required amount)
+      const selectedHeroes = drafted.heroes.slice(0, HEROES_REQUIRED)
+      
+      // Select all available cards (up to required amount)
+      const selectedCards = drafted.cards.slice(0, CARDS_REQUIRED)
+      
+      // Select first available battlefield, or use default if none
+      const selectedBattlefield = drafted.battlefields.length > 0 
+        ? drafted.battlefields[0]
+        : defaultBattlefield
 
       return {
-        heroes: heroes.slice(0, HEROES_REQUIRED),
-        cards: cards.slice(0, CARDS_REQUIRED),
-        battlefield: battlefields[0],
+        heroes: selectedHeroes,
+        cards: selectedCards,
+        battlefield: selectedBattlefield,
       }
     },
     [draftState]
   )
+
+  // Auto-build complete decks: Assign colors and build decks automatically
+  const autoBuildDecks = useCallback(() => {
+    setDraftState(prevState => {
+      // Randomly assign 2 colors to each player (different colors)
+      const allColors: Color[] = ['red', 'blue', 'white', 'black', 'green']
+      const shuffledColors = [...allColors].sort(() => Math.random() - 0.5)
+      const player1Colors = shuffledColors.slice(0, 2)
+      const player2Colors = shuffledColors.slice(2, 4)
+      
+      // Helper to filter by colors (card must have at least one of the colors)
+      const matchesColors = (item: { colors?: Color[] }, colors: Color[]) => {
+        if (!item.colors || item.colors.length === 0) return false
+        return item.colors.some(c => colors.includes(c))
+      }
+      
+      // Get heroes in player colors
+      const player1HeroPool = draftableHeroes.filter(h => matchesColors(h, player1Colors))
+      const player2HeroPool = draftableHeroes.filter(h => matchesColors(h, player2Colors))
+      
+      // Get cards in player colors (including spells)
+      const allCardsAndSpells: BaseCard[] = [...allCards, ...allSpells]
+      const player1CardPool = allCardsAndSpells.filter(c => matchesColors(c, player1Colors))
+      const player2CardPool = allCardsAndSpells.filter(c => matchesColors(c, player2Colors))
+      
+      // Get battlefields (prefer ones matching colors, but allow any)
+      const player1BattlefieldPool = allBattlefields.filter(b => 
+        !b.colors || b.colors.length === 0 || matchesColors(b, player1Colors)
+      )
+      const player2BattlefieldPool = allBattlefields.filter(b => 
+        !b.colors || b.colors.length === 0 || matchesColors(b, player2Colors)
+      )
+      
+      // Shuffle and select
+      const shuffle = <T>(arr: T[]): T[] => {
+        const copy = [...arr]
+        for (let i = copy.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [copy[i], copy[j]] = [copy[j], copy[i]]
+        }
+        return copy
+      }
+      
+      // Select 4 heroes for each player
+      const player1Heroes = shuffle(player1HeroPool).slice(0, HEROES_REQUIRED).map((hero, idx) => ({
+        ...hero,
+        id: `${hero.id}-player1-auto-${Date.now()}-${idx}`,
+      } as Hero))
+      
+      const player2Heroes = shuffle(player2HeroPool).slice(0, HEROES_REQUIRED).map((hero, idx) => ({
+        ...hero,
+        id: `${hero.id}-player2-auto-${Date.now()}-${idx}`,
+      } as Hero))
+      
+      // Select 12 cards for each player
+      const player1Cards = shuffle(player1CardPool).slice(0, CARDS_REQUIRED)
+      const player2Cards = shuffle(player2CardPool).slice(0, CARDS_REQUIRED)
+      
+      // Select 1 battlefield for each player
+      const player1Battlefield = shuffle(player1BattlefieldPool)[0] || allBattlefields[0]
+      const player2Battlefield = shuffle(player2BattlefieldPool)[0] || allBattlefields[0]
+      
+      // Create final selections
+      const player1Final: FinalDraftSelection = {
+        heroes: player1Heroes,
+        cards: player1Cards,
+        battlefield: player1Battlefield,
+      }
+      
+      const player2Final: FinalDraftSelection = {
+        heroes: player2Heroes,
+        cards: player2Cards,
+        battlefield: player2Battlefield,
+      }
+      
+      return {
+        ...prevState,
+        player1Final,
+        player2Final,
+        isSelectionComplete: true,
+        isDraftComplete: true,
+      }
+    })
+  }, [])
 
   // Autodraft: Automatically pick random items until draft is complete
   const autoDraft = useCallback(() => {
@@ -358,7 +409,13 @@ export function useDraft() {
         }
 
         if (randomItem.type === 'hero') {
-          updatedDrafted.heroes.push(randomItem.item as Hero)
+          // Create a unique instance of the hero with a unique ID
+          const heroTemplate = randomItem.item as Hero
+          const uniqueHero: Hero = {
+            ...heroTemplate,
+            id: `${heroTemplate.id}-${currentState.currentPicker}-pick-${currentState.pickNumber + 1}-${Date.now()}-${Math.random()}`,
+          }
+          updatedDrafted.heroes.push(uniqueHero)
         } else if (randomItem.type === 'card') {
           updatedDrafted.cards.push(randomItem.item as BaseCard)
         } else if (randomItem.type === 'battlefield') {
@@ -443,6 +500,87 @@ export function useDraft() {
         iterations++
       }
 
+      // If draft completed, automatically build decks
+      if (currentState.isDraftComplete && !currentState.isSelectionComplete) {
+        // Randomly assign 2 colors to each player (different colors)
+        const allColors: Color[] = ['red', 'blue', 'white', 'black', 'green']
+        const shuffledColors = [...allColors].sort(() => Math.random() - 0.5)
+        const player1Colors = shuffledColors.slice(0, 2)
+        const player2Colors = shuffledColors.slice(2, 4)
+        
+        // Helper to filter by colors (card must have at least one of the colors)
+        const matchesColors = (item: { colors?: Color[] }, colors: Color[]) => {
+          if (!item.colors || item.colors.length === 0) return false
+          return item.colors.some(c => colors.includes(c))
+        }
+        
+        // Get heroes in player colors
+        const player1HeroPool = draftableHeroes.filter(h => matchesColors(h, player1Colors))
+        const player2HeroPool = draftableHeroes.filter(h => matchesColors(h, player2Colors))
+        
+        // Get cards in player colors (including spells)
+        const allCardsAndSpells: BaseCard[] = [...allCards, ...allSpells]
+        const player1CardPool = allCardsAndSpells.filter(c => matchesColors(c, player1Colors))
+        const player2CardPool = allCardsAndSpells.filter(c => matchesColors(c, player2Colors))
+        
+        // Get battlefields (prefer ones matching colors, but allow any)
+        const player1BattlefieldPool = allBattlefields.filter(b => 
+          !b.colors || b.colors.length === 0 || matchesColors(b, player1Colors)
+        )
+        const player2BattlefieldPool = allBattlefields.filter(b => 
+          !b.colors || b.colors.length === 0 || matchesColors(b, player2Colors)
+        )
+        
+        // Shuffle and select
+        const shuffle = <T>(arr: T[]): T[] => {
+          const copy = [...arr]
+          for (let i = copy.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copy[i], copy[j]] = [copy[j], copy[i]]
+          }
+          return copy
+        }
+        
+        // Select 4 heroes for each player
+        const player1Heroes = shuffle(player1HeroPool).slice(0, HEROES_REQUIRED).map((hero, idx) => ({
+          ...hero,
+          id: `${hero.id}-player1-auto-${Date.now()}-${idx}`,
+        } as Hero))
+        
+        const player2Heroes = shuffle(player2HeroPool).slice(0, HEROES_REQUIRED).map((hero, idx) => ({
+          ...hero,
+          id: `${hero.id}-player2-auto-${Date.now()}-${idx}`,
+        } as Hero))
+        
+        // Select 12 cards for each player
+        const player1Cards = shuffle(player1CardPool).slice(0, CARDS_REQUIRED)
+        const player2Cards = shuffle(player2CardPool).slice(0, CARDS_REQUIRED)
+        
+        // Select 1 battlefield for each player
+        const player1Battlefield = shuffle(player1BattlefieldPool)[0] || allBattlefields[0]
+        const player2Battlefield = shuffle(player2BattlefieldPool)[0] || allBattlefields[0]
+        
+        // Create final selections
+        const player1Final: FinalDraftSelection = {
+          heroes: player1Heroes,
+          cards: player1Cards,
+          battlefield: player1Battlefield,
+        }
+        
+        const player2Final: FinalDraftSelection = {
+          heroes: player2Heroes,
+          cards: player2Cards,
+          battlefield: player2Battlefield,
+        }
+        
+        currentState = {
+          ...currentState,
+          player1Final,
+          player2Final,
+          isSelectionComplete: true,
+        }
+      }
+
       return currentState
     })
   }, [])
@@ -459,6 +597,7 @@ export function useDraft() {
     makeFinalSelection,
     autoFillDefaults,
     autoDraft,
+    autoBuildDecks,
     resetDraft,
   }
 }

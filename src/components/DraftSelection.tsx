@@ -58,6 +58,45 @@ export default function DraftSelection({ draftState, onFinalSelection, autoFillD
     black: '#424242',
     green: '#388e3c',
   }
+  
+  const COLOR_LIGHT_MAP: Record<Color, string> = {
+    red: '#ffebee',
+    blue: '#e3f2fd',
+    white: '#ffffff',
+    black: '#fafafa',
+    green: '#e8f5e9',
+  }
+  
+  const getColorStyles = (colors?: Color[]) => {
+    if (!colors || colors.length === 0) {
+      return {
+        borderColor: '#757575',
+        backgroundColor: '#fafafa',
+        borderWidth: '2px',
+      }
+    } else if (colors.length === 1) {
+      const color = colors[0]
+      return {
+        borderColor: COLOR_MAP[color],
+        backgroundColor: COLOR_LIGHT_MAP[color],
+        borderWidth: '3px',
+      }
+    } else {
+      // Multicolor - create gradient background
+      const primaryColor = colors[0]
+      return {
+        borderColor: COLOR_MAP[primaryColor],
+        backgroundColor: COLOR_LIGHT_MAP[primaryColor],
+        background: colors.length === 2
+          ? `linear-gradient(to right, ${COLOR_LIGHT_MAP[colors[0]]} 50%, ${COLOR_LIGHT_MAP[colors[1]]} 50%)`
+          : `linear-gradient(135deg, ${colors.map((c, i) => {
+              const percent = (i / colors.length) * 100
+              return `${COLOR_LIGHT_MAP[c]} ${percent}%`
+            }).join(', ')})`,
+        borderWidth: '3px',
+      }
+    }
+  }
 
   const heroesNeeded = HEROES_REQUIRED - (currentDrafted.heroes.length + currentDefaultHeroes.size)
   const canAddDefaultHero = heroesNeeded > 0
@@ -120,20 +159,49 @@ export default function DraftSelection({ draftState, onFinalSelection, autoFillD
     const drafted = player === 'player1' ? player1Drafted : player2Drafted
     const defaultHeroes = player === 'player1' ? player1DefaultHeroes : player2DefaultHeroes
     
-    const selectedHeroes = drafted.heroes.filter(h => selection.heroes.has(h.id))
+    // Filter heroes by selected IDs - only take the first match for each ID to handle duplicates
+    const selectedHeroIds = Array.from(selection.heroes)
+    const selectedHeroes: Hero[] = []
+    const usedIds = new Set<string>()
+    for (const hero of drafted.heroes) {
+      if (selectedHeroIds.includes(hero.id) && !usedIds.has(hero.id)) {
+        selectedHeroes.push(hero)
+        usedIds.add(hero.id)
+      }
+    }
     // Add default heroes
     const allSelectedHeroes = [...selectedHeroes, ...Array.from(defaultHeroes.values())]
     const selectedCards = drafted.cards.filter(c => selection.cards.has(c.id))
     const selectedBattlefield = drafted.battlefields.find(b => b.id === selection.battlefield)
 
+    // Validate heroes - check selection size first, then actual count
+    if (selection.heroes.size + defaultHeroes.size !== HEROES_REQUIRED) {
+      alert(`Please select exactly ${HEROES_REQUIRED} heroes (you have ${selection.heroes.size + defaultHeroes.size}, need ${HEROES_REQUIRED})`)
+      return
+    }
     if (allSelectedHeroes.length !== HEROES_REQUIRED) {
-      alert(`Please select exactly ${HEROES_REQUIRED} heroes (you have ${allSelectedHeroes.length}, need ${HEROES_REQUIRED})`)
+      // Check if some selected hero IDs don't exist in drafted.heroes
+      const missingHeroIds = selectedHeroIds.filter(id => !drafted.heroes.some(h => h.id === id))
+      if (missingHeroIds.length > 0) {
+        alert(`Error: Some selected heroes are missing from your draft. Missing IDs: ${missingHeroIds.join(', ')}`)
+      } else {
+        alert(`Please select exactly ${HEROES_REQUIRED} heroes (you have ${allSelectedHeroes.length}, need ${HEROES_REQUIRED})`)
+      }
+      return
+    }
+    
+    // Validate cards - check selection size first, then actual count
+    if (selection.cards.size !== CARDS_REQUIRED) {
+      alert(`Please select exactly ${CARDS_REQUIRED} cards (you have ${selection.cards.size}, need ${CARDS_REQUIRED})`)
       return
     }
     if (selectedCards.length !== CARDS_REQUIRED) {
-      alert(`Please select exactly ${CARDS_REQUIRED} cards`)
+      // This means some selected card IDs don't exist in drafted.cards
+      const missingIds = Array.from(selection.cards).filter(id => !drafted.cards.some(c => c.id === id))
+      alert(`Error: Some selected cards are missing from your draft. Missing IDs: ${missingIds.join(', ')}`)
       return
     }
+    
     if (!selectedBattlefield) {
       alert('Please select a battlefield')
       return
@@ -147,18 +215,35 @@ export default function DraftSelection({ draftState, onFinalSelection, autoFillD
   }
 
   const handleAutoFill = (player: 'player1' | 'player2') => {
-    const autoFilled = autoFillDefaults(player)
+    const drafted = player === 'player1' ? player1Drafted : player2Drafted
+    
+    // Only select items that actually exist in drafted items
+    // Select all heroes up to required (or all if less)
+    const validHeroIds = drafted.heroes
+      .slice(0, HEROES_REQUIRED)
+      .map(h => h.id)
+    
+    // Select all cards up to required (or all if less)
+    const validCardIds = drafted.cards
+      .slice(0, CARDS_REQUIRED)
+      .map(c => c.id)
+    
+    // Select first battlefield if available
+    const validBattlefieldId = drafted.battlefields.length > 0 
+      ? drafted.battlefields[0].id 
+      : null
+    
     if (player === 'player1') {
       setPlayer1Selection({
-        heroes: new Set(autoFilled.heroes.map(h => h.id)),
-        cards: new Set(autoFilled.cards.map(c => c.id)),
-        battlefield: autoFilled.battlefield.id,
+        heroes: new Set(validHeroIds),
+        cards: new Set(validCardIds),
+        battlefield: validBattlefieldId,
       })
     } else {
       setPlayer2Selection({
-        heroes: new Set(autoFilled.heroes.map(h => h.id)),
-        cards: new Set(autoFilled.cards.map(c => c.id)),
-        battlefield: autoFilled.battlefield.id,
+        heroes: new Set(validHeroIds),
+        cards: new Set(validCardIds),
+        battlefield: validBattlefieldId,
       })
     }
   }
@@ -343,28 +428,70 @@ export default function DraftSelection({ draftState, onFinalSelection, autoFillD
         <div>
           <h3>Cards ({currentSelection.cards.size} / {CARDS_REQUIRED})</h3>
           <div style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid #ccc', padding: '12px', borderRadius: '4px' }}>
-            {currentDrafted.cards.map(card => (
-              <div
-                key={card.id}
-                onClick={() => toggleCard(card.id)}
-                style={{
-                  padding: '8px',
-                  marginBottom: '8px',
-                  border: currentSelection.cards.has(card.id) ? '2px solid #2196F3' : '1px solid #ccc',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  backgroundColor: currentSelection.cards.has(card.id) ? '#E3F2FD' : '#fff',
-                }}
-              >
-                <div style={{ fontWeight: 'bold' }}>{card.name}</div>
-                <div style={{ fontSize: '12px' }}>{card.description}</div>
-                {card.manaCost && (
-                  <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
-                    {card.manaCost} Mana
-                  </div>
-                )}
-              </div>
-            ))}
+            {currentDrafted.cards.map(card => {
+              const cardColors = card.colors || []
+              const colorStyles = getColorStyles(cardColors)
+              const isSelected = currentSelection.cards.has(card.id)
+              
+              return (
+                <div
+                  key={card.id}
+                  onClick={() => toggleCard(card.id)}
+                  style={{
+                    padding: '8px',
+                    marginBottom: '8px',
+                    border: isSelected ? '3px solid #2196F3' : `${colorStyles.borderWidth} solid ${colorStyles.borderColor}`,
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    // Apply color background similar to draft phase
+                    ...(cardColors.length === 1
+                      ? {
+                          backgroundColor: isSelected ? '#E3F2FD' : COLOR_LIGHT_MAP[cardColors[0]],
+                        }
+                      : cardColors.length > 1
+                        ? {
+                            backgroundColor: isSelected ? '#E3F2FD' : COLOR_LIGHT_MAP[cardColors[0]],
+                            background: isSelected ? undefined : colorStyles.background,
+                          }
+                        : {
+                            backgroundColor: isSelected ? '#E3F2FD' : (colorStyles.backgroundColor || '#fff'),
+                          }),
+                    boxShadow: cardColors.length > 0 ? `0 2px 8px rgba(0,0,0,0.15)` : 'none',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {/* Color indicator bar */}
+                  {cardColors.length > 0 && (
+                    <div style={{ 
+                      display: 'flex', 
+                      height: '4px', 
+                      marginBottom: '6px',
+                      borderRadius: '2px',
+                      overflow: 'hidden',
+                    }}>
+                      {cardColors.map((color, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            flex: 1,
+                            backgroundColor: COLOR_MAP[color],
+                            borderRight: idx < cardColors.length - 1 ? '1px solid rgba(255,255,255,0.3)' : 'none',
+                          }}
+                          title={color}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ fontWeight: 'bold' }}>{card.name}</div>
+                  <div style={{ fontSize: '12px' }}>{card.description}</div>
+                  {card.manaCost && (
+                    <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
+                      {card.manaCost} Mana
+                    </div>
+                  )}
+                </div>
+              )
+            })}
             {currentDrafted.cards.length === 0 && (
               <div style={{ color: '#999', fontStyle: 'italic' }}>No cards drafted</div>
             )}

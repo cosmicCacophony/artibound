@@ -1,4 +1,4 @@
-import { Card, AttackTarget, AttackTargetType, Battlefield, PlayerId, TOWER_HP } from './types'
+import { Card, AttackTarget, AttackTargetType, Battlefield, PlayerId, GameMetadata } from './types'
 
 /**
  * Combat System - Handles all combat-related logic
@@ -91,11 +91,11 @@ export function resolveAttack(
   attacker: Card,
   target: AttackTarget,
   battlefield: Battlefield,
-  towerHP: { towerA: number, towerB: number },
+  towerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
   battlefieldId: 'battlefieldA' | 'battlefieldB'
 ): {
   updatedBattlefield: Battlefield
-  updatedTowerHP: { towerA: number, towerB: number }
+  updatedTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
   damageDealt: number
   targetKilled: boolean
 } {
@@ -135,8 +135,11 @@ export function resolveAttack(
       }
     }
   } else {
-    // Attacking tower
-    const towerKey = battlefieldId === 'battlefieldA' ? 'towerA' : 'towerB'
+    // Attacking tower - determine which player's tower to attack
+    const opponent = attacker.owner === 'player1' ? 'player2' : 'player1'
+    const towerKey = battlefieldId === 'battlefieldA' 
+      ? (opponent === 'player1' ? 'towerA_player1' : 'towerA_player2')
+      : (opponent === 'player1' ? 'towerB_player1' : 'towerB_player2')
     const currentHP = towerHP[towerKey]
     const newHP = Math.max(0, currentHP - attackPower)
     damageDealt = Math.min(attackPower, currentHP)
@@ -182,10 +185,10 @@ export function resolveCombat(
   battlefieldId: 'battlefieldA' | 'battlefieldB',
   combatActions: Map<string, AttackTarget>, // Map of unit ID -> target (only active player's units)
   activePlayer: PlayerId,
-  initialTowerHP: { towerA: number, towerB: number }
+  initialTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
 ): {
   updatedBattlefield: Battlefield
-  updatedTowerHP: { towerA: number, towerB: number }
+  updatedTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
   overflowDamage: number // Damage to nexus if tower is destroyed
   combatLog: CombatLogEntry[]
 } {
@@ -214,7 +217,10 @@ export function resolveCombat(
       
       // Check for tower overflow damage
       if (target.type === 'tower') {
-        const towerKey = battlefieldId === 'battlefieldA' ? 'towerA' : 'towerB'
+        const opponent = activePlayer === 'player1' ? 'player2' : 'player1'
+        const towerKey = battlefieldId === 'battlefieldA' 
+          ? (opponent === 'player1' ? 'towerA_player1' : 'towerA_player2')
+          : (opponent === 'player1' ? 'towerB_player1' : 'towerB_player2')
         const towerWasDestroyed = initialTowerHP[towerKey] > 0 && currentTowerHP[towerKey] === 0
         if (towerWasDestroyed) {
           // Calculate overflow: if we dealt more damage than the tower had HP

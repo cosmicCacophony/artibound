@@ -86,8 +86,10 @@ export function useTurnManagement() {
         targets,
         player,
         {
-          towerA: metadata.towerA_HP,
-          towerB: metadata.towerB_HP,
+          towerA_player1: metadata.towerA_player1_HP,
+          towerA_player2: metadata.towerA_player2_HP,
+          towerB_player1: metadata.towerB_player1_HP,
+          towerB_player2: metadata.towerB_player2_HP,
         }
       )
       
@@ -98,9 +100,13 @@ export function useTurnManagement() {
           battlefieldA: result.updatedBattlefield,
           metadata: {
             ...prev.metadata,
-            towerA_HP: result.updatedTowerHP.towerA,
-            // Apply overflow damage to nexus
-            player2NexusHP: Math.max(0, prev.metadata.player2NexusHP - result.overflowDamage),
+            towerA_player1_HP: result.updatedTowerHP.towerA_player1,
+            towerA_player2_HP: result.updatedTowerHP.towerA_player2,
+            // Apply overflow damage to opponent's nexus
+            ...(player === 'player1' 
+              ? { player2NexusHP: Math.max(0, prev.metadata.player2NexusHP - result.overflowDamage) }
+              : { player1NexusHP: Math.max(0, prev.metadata.player1NexusHP - result.overflowDamage) }
+            ),
           },
         }
         return updatedState
@@ -118,8 +124,10 @@ export function useTurnManagement() {
         targets,
         player,
         {
-          towerA: metadata.towerA_HP,
-          towerB: metadata.towerB_HP,
+          towerA_player1: metadata.towerA_player1_HP,
+          towerA_player2: metadata.towerA_player2_HP,
+          towerB_player1: metadata.towerB_player1_HP,
+          towerB_player2: metadata.towerB_player2_HP,
         }
       )
       
@@ -130,9 +138,13 @@ export function useTurnManagement() {
           battlefieldB: result.updatedBattlefield,
           metadata: {
             ...prev.metadata,
-            towerB_HP: result.updatedTowerHP.towerB,
-            // Apply overflow damage to nexus
-            player2NexusHP: Math.max(0, prev.metadata.player2NexusHP - result.overflowDamage),
+            towerB_player1_HP: result.updatedTowerHP.towerB_player1,
+            towerB_player2_HP: result.updatedTowerHP.towerB_player2,
+            // Apply overflow damage to opponent's nexus
+            ...(player === 'player1' 
+              ? { player2NexusHP: Math.max(0, prev.metadata.player2NexusHP - result.overflowDamage) }
+              : { player1NexusHP: Math.max(0, prev.metadata.player1NexusHP - result.overflowDamage) }
+            ),
           },
         }
         return updatedState

@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
-import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId } from '../game/types'
-import { createInitialGameState, createCardLibrary } from '../game/sampleData'
+import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, BattlefieldDefinition, FinalDraftSelection, Color, HEROES_REQUIRED, CARDS_REQUIRED } from '../game/types'
+import { createInitialGameState, createCardLibrary, createGameStateFromDraft } from '../game/sampleData'
+import { draftableHeroes } from '../game/draftData'
+import { allCards, allSpells, allBattlefields } from '../game/comprehensiveCardData'
 
 interface GameContextType {
   // Game State
@@ -43,6 +45,8 @@ interface GameContextType {
   // Helper functions
   getAvailableSlots: (battlefield: Card[]) => number
   setActivePlayer: (player: PlayerId) => void
+  initializeGameFromDraft: (player1Selection: FinalDraftSelection, player2Selection: FinalDraftSelection) => void
+  initializeRandomGame: () => void
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
@@ -113,6 +117,99 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }))
   }, [setGameState])
 
+  const initializeGameFromDraft = useCallback((
+    player1Selection: FinalDraftSelection,
+    player2Selection: FinalDraftSelection
+  ) => {
+    const newGameState = createGameStateFromDraft(player1Selection, player2Selection)
+    
+    // Update game state with the new state from draft
+    setGameState({
+      ...newGameState,
+      cardLibrary: newGameState.cardLibrary,
+    })
+    
+    // Update card libraries with the remaining cards
+    setPlayer1SidebarCards(newGameState.player1Library)
+    setPlayer2SidebarCards(newGameState.player2Library)
+  }, [setGameState, setPlayer1SidebarCards, setPlayer2SidebarCards])
+
+  const initializeRandomGame = useCallback(() => {
+    // Randomly assign 2 colors to each player (different colors)
+    const allColors: Color[] = ['red', 'blue', 'white', 'black', 'green']
+    const shuffledColors = [...allColors].sort(() => Math.random() - 0.5)
+    const player1Colors = shuffledColors.slice(0, 2)
+    const player2Colors = shuffledColors.slice(2, 4)
+    
+    // Helper to filter by colors (card must have at least one of the colors)
+    const matchesColors = (item: { colors?: Color[] }, colors: Color[]) => {
+      if (!item.colors || item.colors.length === 0) return false
+      return item.colors.some(c => colors.includes(c))
+    }
+    
+    // Get heroes in player colors
+    const player1HeroPool = draftableHeroes.filter(h => matchesColors(h, player1Colors))
+    const player2HeroPool = draftableHeroes.filter(h => matchesColors(h, player2Colors))
+    
+    // Get cards in player colors (including spells)
+    const allCardsAndSpells: BaseCard[] = [...allCards, ...allSpells]
+    const player1CardPool = allCardsAndSpells.filter(c => matchesColors(c, player1Colors))
+    const player2CardPool = allCardsAndSpells.filter(c => matchesColors(c, player2Colors))
+    
+    // Get battlefields (prefer ones matching colors, but allow any)
+    const player1BattlefieldPool = allBattlefields.filter(b => 
+      !b.colors || b.colors.length === 0 || matchesColors(b, player1Colors)
+    )
+    const player2BattlefieldPool = allBattlefields.filter(b => 
+      !b.colors || b.colors.length === 0 || matchesColors(b, player2Colors)
+    )
+    
+    // Shuffle and select
+    const shuffle = <T>(arr: T[]): T[] => {
+      const copy = [...arr]
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]]
+      }
+      return copy
+    }
+    
+    // Select 4 heroes for each player
+    const player1Heroes = shuffle(player1HeroPool).slice(0, HEROES_REQUIRED).map((hero, idx) => ({
+      ...hero,
+      id: `${hero.id}-player1-random-${Date.now()}-${idx}`,
+    } as Hero))
+    
+    const player2Heroes = shuffle(player2HeroPool).slice(0, HEROES_REQUIRED).map((hero, idx) => ({
+      ...hero,
+      id: `${hero.id}-player2-random-${Date.now()}-${idx}`,
+    } as Hero))
+    
+    // Select 12 cards for each player
+    const player1Cards = shuffle(player1CardPool).slice(0, CARDS_REQUIRED)
+    const player2Cards = shuffle(player2CardPool).slice(0, CARDS_REQUIRED)
+    
+    // Select 1 battlefield for each player
+    const player1Battlefield = shuffle(player1BattlefieldPool)[0] || allBattlefields[0]
+    const player2Battlefield = shuffle(player2BattlefieldPool)[0] || allBattlefields[0]
+    
+    // Create final selections
+    const player1Selection: FinalDraftSelection = {
+      heroes: player1Heroes,
+      cards: player1Cards,
+      battlefield: player1Battlefield,
+    }
+    
+    const player2Selection: FinalDraftSelection = {
+      heroes: player2Heroes,
+      cards: player2Cards,
+      battlefield: player2Battlefield,
+    }
+    
+    // Initialize game from these selections
+    initializeGameFromDraft(player1Selection, player2Selection)
+  }, [initializeGameFromDraft])
+
   const value: GameContextType = {
     gameState,
     setGameState,
@@ -139,6 +236,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     activePlayer,
     getAvailableSlots,
     setActivePlayer,
+    initializeGameFromDraft,
+    initializeRandomGame,
   }
   
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>

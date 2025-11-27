@@ -31,7 +31,8 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     ? [...battlefieldAP1, ...battlefieldAP2]
     : [...battlefieldBP1, ...battlefieldBP2]
   
-  const towerHP = battlefieldId === 'battlefieldA' ? metadata.towerA_HP : metadata.towerB_HP
+  const towerP1HP = battlefieldId === 'battlefieldA' ? metadata.towerA_player1_HP : metadata.towerB_player1_HP
+  const towerP2HP = battlefieldId === 'battlefieldA' ? metadata.towerA_player2_HP : metadata.towerB_player2_HP
   const borderColor = battlefieldId === 'battlefieldA' ? '#4a90e2' : '#ff9800'
   const bgColor = battlefieldId === 'battlefieldA' ? '#e3f2fd' : '#fff3e0'
   const battlefieldName = battlefieldId === 'battlefieldA' ? 'A' : 'B'
@@ -40,8 +41,10 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     setSelectedCardId(selectedCardId === cardId ? null : cardId)
   }
 
-  const handleTowerDamage = (amount: number) => {
-    const towerKey = battlefieldId === 'battlefieldA' ? 'towerA_HP' : 'towerB_HP'
+  const handleTowerDamage = (amount: number, player: 'player1' | 'player2') => {
+    const towerKey = battlefieldId === 'battlefieldA' 
+      ? (player === 'player1' ? 'towerA_player1_HP' : 'towerA_player2_HP')
+      : (player === 'player1' ? 'towerB_player1_HP' : 'towerB_player2_HP')
     setGameState(prev => ({
       ...prev,
       metadata: {
@@ -125,40 +128,77 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
             ({getAvailableSlots(allCards)} slots)
           </span>
         </h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#d32f2f' }}>
-            Tower: {towerHP} HP
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a90e2' }}>
+              P2 Tower: {towerP2HP} HP
+            </div>
+            <button
+              onClick={() => handleTowerDamage(-1, 'player2')}
+              style={{
+                padding: '2px 6px',
+                backgroundColor: '#f44336',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '10px',
+              }}
+              title={`Deal 1 damage to P2 Tower ${battlefieldName}`}
+            >
+              -1
+            </button>
+            <button
+              onClick={() => handleTowerDamage(1, 'player2')}
+              style={{
+                padding: '2px 6px',
+                backgroundColor: '#4caf50',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '10px',
+              }}
+              title={`Heal 1 HP to P2 Tower ${battlefieldName}`}
+            >
+              +1
+            </button>
           </div>
-          <button
-            onClick={() => handleTowerDamage(-1)}
-            style={{
-              padding: '4px 8px',
-              backgroundColor: '#f44336',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px',
-            }}
-            title={`Deal 1 damage to Tower ${battlefieldName}`}
-          >
-            -1
-          </button>
-          <button
-            onClick={() => handleTowerDamage(1)}
-            style={{
-              padding: '4px 8px',
-              backgroundColor: '#4caf50',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px',
-            }}
-            title={`Heal 1 HP to Tower ${battlefieldName}`}
-          >
-            +1
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#f44336' }}>
+              P1 Tower: {towerP1HP} HP
+            </div>
+            <button
+              onClick={() => handleTowerDamage(-1, 'player1')}
+              style={{
+                padding: '2px 6px',
+                backgroundColor: '#f44336',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '10px',
+              }}
+              title={`Deal 1 damage to P1 Tower ${battlefieldName}`}
+            >
+              -1
+            </button>
+            <button
+              onClick={() => handleTowerDamage(1, 'player1')}
+              style={{
+                padding: '2px 6px',
+                backgroundColor: '#4caf50',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '10px',
+              }}
+              title={`Heal 1 HP to P1 Tower ${battlefieldName}`}
+            >
+              +1
+            </button>
+          </div>
         </div>
       </div>
       
