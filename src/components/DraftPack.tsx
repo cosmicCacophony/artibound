@@ -158,8 +158,13 @@ export default function DraftPackComponent({ pack, selectedItem, onItemClick, is
           borderRadius: '8px',
           padding: '8px',
           cursor: canSelect ? 'pointer' : 'default',
-          backgroundColor: isSelected ? '#E3F2FD' : (colorStyles.backgroundColor || colorStyles.background || '#fff'),
-          background: isSelected ? undefined : (colorStyles.background || undefined),
+          // For selected items, use a lighter version of the card's color, or blue if colorless
+          backgroundColor: isSelected 
+            ? (itemColors.length > 0 ? COLOR_LIGHT_MAP[itemColors[0]] : '#E3F2FD')
+            : (colorStyles.backgroundColor || colorStyles.background || '#fff'),
+          background: isSelected 
+            ? (itemColors.length > 1 ? colorStyles.background : undefined)
+            : (colorStyles.background || undefined),
           opacity: canSelect ? 1 : 0.6,
           transition: 'all 0.2s',
           position: 'relative',

@@ -55,15 +55,16 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled
 }
 
-// Select 2 heroes from different colors for a pack
+// Select 3 heroes from different colors for a pack
 function selectHeroesForPack(packNumber: number, allHeroes: Omit<Hero, 'location' | 'owner'>[]): Omit<Hero, 'location' | 'owner'>[] {
   const availableHeroes = [...allHeroes]
   const selected: Omit<Hero, 'location' | 'owner'>[] = []
   const usedColors = new Set<Color>()
 
-  // Ensure we get 2 different colors
+  // Try to get heroes with different colors, but allow duplicates if needed
   while (selected.length < HEROES_PER_PACK && availableHeroes.length > 0) {
     const shuffled = shuffleArray(availableHeroes)
+    // Prefer heroes with colors we haven't used yet
     const hero = shuffled.find(h => {
       const heroColor = h.colors[0] // Primary color
       return !usedColors.has(heroColor)
@@ -88,35 +89,36 @@ function selectHeroesForPack(packNumber: number, allHeroes: Omit<Hero, 'location
 function selectCardsForPack(): BaseCard[] {
   const selected: BaseCard[] = []
   
-  // 2-3 signature cards
+  // 4-6 signature cards
   const signaturePool = shuffleArray(allSignatureCards)
-  selected.push(...signaturePool.slice(0, 2 + Math.floor(Math.random() * 2)))
+  selected.push(...signaturePool.slice(0, 4 + Math.floor(Math.random() * 3)))
   
-  // 3-4 generic units
+  // 6-8 generic units
   const genericPool = shuffleArray(allGenericCards)
-  selected.push(...genericPool.slice(0, 3 + Math.floor(Math.random() * 2)))
+  selected.push(...genericPool.slice(0, 6 + Math.floor(Math.random() * 3)))
   
-  // 1-2 spell cards
+  // 2-3 spell cards
   const spellPool = shuffleArray(allSpellCards)
-  selected.push(...spellPool.slice(0, 1 + Math.floor(Math.random() * 2)))
+  selected.push(...spellPool.slice(0, 2 + Math.floor(Math.random() * 2)))
   
-  // 0-1 multicolor cards (potential bombs)
-  if (Math.random() > 0.3) { // 70% chance
-    const multicolorPool = shuffleArray(allMulticolorCards)
-    if (multicolorPool.length > 0) {
-      selected.push(multicolorPool[0])
-    }
+  // 1-2 multicolor cards (potential bombs)
+  const multicolorCount = Math.random() > 0.4 ? 2 : 1 // 60% chance for 2, 40% for 1
+  const multicolorPool = shuffleArray(allMulticolorCards)
+  if (multicolorPool.length > 0) {
+    selected.push(...multicolorPool.slice(0, multicolorCount))
   }
   
-  // Trim to CARDS_PER_PACK
-  return shuffleArray(selected).slice(0, CARDS_PER_PACK)
+  // Trim to CARDS_PER_PACK (should be close to 15 already)
+  const shuffled = shuffleArray(selected)
+  return shuffled.slice(0, CARDS_PER_PACK)
 }
 
-// Select 1 battlefield for a pack
-function selectBattlefieldForPack(): BattlefieldDefinition {
+// Select 3 battlefields for a pack
+function selectBattlefieldsForPack(): BattlefieldDefinition[] {
   const allBattlefields = getAllDraftBattlefields()
   const shuffled = shuffleArray(allBattlefields)
-  return shuffled[0]
+  // Return 3 battlefields, or all available if less than 3
+  return shuffled.slice(0, Math.min(BATTLEFIELDS_PER_PACK, shuffled.length))
 }
 
 // Convert items to DraftPoolItems
@@ -163,7 +165,7 @@ export function generateDraftPack(packNumber: number): DraftPack {
   // Use all heroes from comprehensive data, not just draftableHeroes
   const heroes = selectHeroesForPack(packNumber, allHeroes)
   const cards = selectCardsForPack()
-  const battlefields = [selectBattlefieldForPack()]
+  const battlefields = selectBattlefieldsForPack()
 
   const poolItems = createPoolItems(packNumber, heroes, cards, battlefields)
 

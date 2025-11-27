@@ -273,10 +273,10 @@ export const DRAFT_PACKS = 5
 export const PICKS_PER_PACK = 7
 export const TOTAL_PICKS_PER_PLAYER = DRAFT_PACKS * PICKS_PER_PACK // 28
 
-export const HEROES_PER_PACK = 2
-export const CARDS_PER_PACK = 8
-export const BATTLEFIELDS_PER_PACK = 1
-export const ITEMS_PER_PACK = HEROES_PER_PACK + CARDS_PER_PACK + BATTLEFIELDS_PER_PACK // 11
+export const HEROES_PER_PACK = 3
+export const CARDS_PER_PACK = 15
+export const BATTLEFIELDS_PER_PACK = 3
+export const ITEMS_PER_PACK = HEROES_PER_PACK + CARDS_PER_PACK + BATTLEFIELDS_PER_PACK // 21
 
 // Pick distribution expectations
 export const EXPECTED_HERO_PICKS = 4 // Required, but can draft 2-6
