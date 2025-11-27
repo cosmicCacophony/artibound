@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback, ReactNode } fr
 import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, BattlefieldDefinition, FinalDraftSelection, Color, HEROES_REQUIRED, CARDS_REQUIRED } from '../game/types'
 import { createInitialGameState, createCardLibrary, createGameStateFromDraft } from '../game/sampleData'
 import { draftableHeroes } from '../game/draftData'
-import { allCards, allSpells, allBattlefields } from '../game/comprehensiveCardData'
+import { allCards, allSpells, allBattlefields } from '../game/cardData'
 
 interface GameContextType {
   // Game State

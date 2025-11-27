@@ -8,6 +8,14 @@ export default defineConfig({
     host: 'localhost',
     port: 5173,
     strictPort: true,
+    hmr: {
+      // Enable HMR for better hot-reload experience
+      overlay: true,
+    },
+  },
+  // Ensure fast refresh works for all files
+  optimizeDeps: {
+    include: ['react', 'react-dom'],
   },
 })
 

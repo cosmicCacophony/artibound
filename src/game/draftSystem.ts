@@ -15,10 +15,10 @@ import {
   draftableHeroes,
   getAllDraftBattlefields,
 } from './draftData'
+// Import storage-aware versions for runtime use
+import { allHeroes, allCards, allSpells } from './cardData'
+// Import specific arrays for pack generation (these are used for filtering/selection logic)
 import {
-  allHeroes,
-  allCards,
-  allSpells,
   rwCards,
   rgCards,
   ruCards,

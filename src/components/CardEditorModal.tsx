@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { BaseCard, CardType, Color } from '../game/types'
+import { BaseCard, CardType, Color, SpellCard } from '../game/types'
 import { useGameContext } from '../context/GameContext'
+import { updateCard, updateHero, updateSpell } from '../game/cardData'
 
 interface CardEditorModalProps {
   card: BaseCard
@@ -57,6 +58,20 @@ export function CardEditorModal({ card, onSave, onCancel }: CardEditorModalProps
     }
     if (formData.cardType === 'hybrid' && formData.baseBuff) {
       updatedCard.baseBuff = formData.baseBuff.trim()
+    }
+
+    // Save to localStorage for persistence
+    try {
+      if (card.cardType === 'hero') {
+        updateHero(card.id, updatedCard as any)
+      } else if (card.cardType === 'spell') {
+        updateSpell(card.id, updatedCard as any)
+      } else {
+        updateCard(card.id, updatedCard as any)
+      }
+      console.log(`Saved changes to ${card.name} (${card.id}) - will persist across restarts!`)
+    } catch (error) {
+      console.error('Failed to save to localStorage:', error)
     }
 
     onSave(updatedCard as BaseCard, archiveOld)

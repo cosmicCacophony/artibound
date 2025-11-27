@@ -1,5 +1,5 @@
 import { Hero, SignatureCard, HybridCard, GenericUnit, Card, BaseCard, Item, GameMetadata, TOWER_HP, NEXUS_HP, STARTING_GOLD, BattlefieldDefinition, SpellCard, SpellEffect } from './types'
-import { allCards, allSpells } from './comprehensiveCardData'
+import { allCards, allSpells } from './cardData'
 
 // Item definitions
 export const tier1Items: Item[] = [

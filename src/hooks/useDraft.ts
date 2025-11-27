@@ -18,7 +18,7 @@ import {
 } from '../game/types'
 import { generateAllDraftPacks, removeItemFromPack, isPackComplete, generateRandomPack } from '../game/draftSystem'
 import { defaultHeroes, defaultBattlefield, draftableHeroes } from '../game/draftData'
-import { allCards, allSpells, allBattlefields } from '../game/comprehensiveCardData'
+import { allCards, allSpells, allBattlefields } from '../game/cardData'
 
 // Check if a player has enough items to complete their deck
 function hasEnoughItems(drafted: DraftedItems): boolean {

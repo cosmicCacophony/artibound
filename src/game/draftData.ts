@@ -1,5 +1,5 @@
 import { Hero, BattlefieldDefinition, BaseCard, Color } from './types'
-import { allHeroes, allBattlefields, defaultGenericHeroes } from './comprehensiveCardData'
+import { allHeroes, allBattlefields, defaultGenericHeroes } from './cardData'
 
 // Default Heroes (used if player doesn't draft 4 heroes)
 // Use the default generic heroes from comprehensive data
