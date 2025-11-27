@@ -9,25 +9,21 @@ export function useDeployment() {
   const handleDeploy = useCallback((location: Location, targetSlot?: number) => {
     if (!selectedCardId || !selectedCard) return
     
-    // On turn 1, both players can deploy during play phase
-    const isTurn1 = metadata.currentTurn === 1
     const isPlayPhase = metadata.currentPhase === 'play'
-    const isOwnerTurn = selectedCard.owner === metadata.activePlayer
-    
-    // Allow deployment if:
-    // - It's the owner's turn (normal case)
-    // - OR it's turn 1 and play phase (both players can deploy)
-    if (!isTurn1 && !isOwnerTurn) {
-      alert("It's not your turn!")
-      return
-    }
     
     if (!isPlayPhase) {
       alert(`Cannot deploy during ${metadata.currentPhase} phase!`)
       return
     }
     
-    // Mana checks removed - players can play any card (mana is tracked but not enforced)
+    // Check mana cost
+    const manaCost = selectedCard.manaCost || 0
+    const playerMana = selectedCard.owner === 'player1' ? metadata.player1Mana : metadata.player2Mana
+    
+    if (manaCost > playerMana) {
+      alert(`Not enough mana! Need ${manaCost}, have ${playerMana}`)
+      return
+    }
 
     // Check if deploying to battlefield and slots are full
     if ((location === 'battlefieldA' || location === 'battlefieldB')) {
@@ -111,6 +107,9 @@ export function useDeployment() {
           ? { ...selectedCard, location, currentHealth: (selectedCard as any).maxHealth, slot: undefined }
           : { ...selectedCard, location, slot: undefined }
         
+        // Deduct mana
+        const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
+        
         return {
           ...prev,
           [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
@@ -126,6 +125,7 @@ export function useDeployment() {
           metadata: {
             ...prev.metadata,
             ...(isHero ? { [movedToBaseKey]: true } : {}),
+            [manaKey]: (prev.metadata[manaKey] as number) - manaCost,
           },
         }
       } else if (location === 'battlefieldA' || location === 'battlefieldB') {
@@ -163,6 +163,8 @@ export function useDeployment() {
             if (otherCard) {
               // Swap positions
               const otherBattlefieldKey = location === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
+              const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
+              
               return {
                 ...prev,
                 [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
@@ -181,12 +183,17 @@ export function useDeployment() {
                     ])
                     .sort((a, b) => (a.slot || 0) - (b.slot || 0)),
                 },
+                metadata: {
+                  ...prev.metadata,
+                  [manaKey]: (prev.metadata[manaKey] as number) - manaCost,
+                },
               }
             }
           }
         }
 
         const otherBattlefieldKey = location === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
+        const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
         
         return {
           ...prev,
@@ -205,6 +212,10 @@ export function useDeployment() {
               ...prev[battlefieldKey][selectedCard.owner as 'player1' | 'player2'].filter(c => c.id !== selectedCard.id),
               { ...selectedCard, location, slot: finalTargetSlot || 1 }
             ].sort((a, b) => (a.slot || 0) - (b.slot || 0)),
+          },
+          metadata: {
+            ...prev.metadata,
+            [manaKey]: (prev.metadata[manaKey] as number) - manaCost,
           },
         }
       }

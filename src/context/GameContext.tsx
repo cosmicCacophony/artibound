@@ -13,8 +13,8 @@ interface GameContextType {
   // UI State
   selectedCardId: string | null
   setSelectedCardId: (id: string | null) => void
-  showItemShop: boolean
-  setShowItemShop: (show: boolean) => void
+  itemShopPlayer: PlayerId | null // Which player's shop is open (null if closed)
+  setItemShopPlayer: (player: PlayerId | null) => void
   itemShopItems: ShopItem[]
   setItemShopItems: (items: ShopItem[]) => void
   
@@ -66,7 +66,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   })
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
-  const [showItemShop, setShowItemShop] = useState(false)
+  const [itemShopPlayer, setItemShopPlayer] = useState<PlayerId | null>(null)
   const [itemShopItems, setItemShopItems] = useState<ShopItem[]>([])
   
   // Card libraries
@@ -253,8 +253,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setGameState,
     selectedCardId,
     setSelectedCardId,
-    showItemShop,
-    setShowItemShop,
+    itemShopPlayer,
+    setItemShopPlayer,
     itemShopItems,
     setItemShopItems,
     player1SidebarCards,

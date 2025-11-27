@@ -3,6 +3,7 @@ import { allCards, allSpells } from './cardData'
 
 // Item definitions
 export const tier1Items: Item[] = [
+  // Basic items
   {
     id: 'item-armor',
     name: 'Armor',
@@ -27,10 +28,146 @@ export const tier1Items: Item[] = [
     tier: 1,
     goldPerTurn: 1,
   },
+  // Artifact Foundry items - Simple stat boosts
+  {
+    id: 'item-broadsword',
+    name: 'Broadsword',
+    description: '+6 Attack',
+    cost: 15,
+    tier: 2,
+    attackBonus: 6,
+  },
+  {
+    id: 'item-ring-tarrasque',
+    name: 'Ring of Tarrasque',
+    description: '+3 Attack, +3 HP, Regeneration',
+    cost: 12,
+    tier: 2,
+    attackBonus: 3,
+    hpBonus: 3,
+    specialEffects: ['regeneration'],
+  },
+  {
+    id: 'item-stonehall-cloak',
+    name: 'Stonehall Cloak',
+    description: '+3 HP, Increase max HP by 1',
+    cost: 8,
+    tier: 1,
+    hpBonus: 3,
+  },
+  {
+    id: 'item-red-mist-maul',
+    name: 'Red Mist Maul',
+    description: '+2 Attack, +3 HP, Siege',
+    cost: 10,
+    tier: 1,
+    attackBonus: 2,
+    hpBonus: 3,
+    specialEffects: ['siege'],
+  },
+  {
+    id: 'item-blade-vigil',
+    name: 'Blade of the Vigil',
+    description: '+5 Attack, Cleave',
+    cost: 12,
+    tier: 2,
+    attackBonus: 5,
+    specialEffects: ['cleave'],
+  },
+  {
+    id: 'item-barbed-mail',
+    name: 'Barbed Mail',
+    description: '+1 Attack, +2 HP, Retaliate, Taunt',
+    cost: 7,
+    tier: 1,
+    attackBonus: 1,
+    hpBonus: 2,
+    specialEffects: ['retaliate', 'taunt'],
+  },
+  {
+    id: 'item-demagicking-maul',
+    name: 'Demagicking Maul',
+    description: '+2 Attack. When equipped hero deals damage to a tower, dispel a random tower enchantment.',
+    cost: 9,
+    tier: 1,
+    attackBonus: 2,
+  },
+  // Artifact Foundry items - With activated abilities (description only for now)
+  {
+    id: 'item-blink-dagger',
+    name: 'Blink Dagger',
+    description: '+2 HP. Activated: Move this hero to a slot in an adjacent lane.',
+    cost: 6,
+    tier: 1,
+    hpBonus: 2,
+    hasActivatedAbility: true,
+    activatedAbilityDescription: 'Move this hero to a slot in an adjacent lane.',
+  },
+  {
+    id: 'item-phase-boots',
+    name: 'Phase Boots',
+    description: '+3 HP. Activated: Swap this hero to another slot.',
+    cost: 7,
+    tier: 1,
+    hpBonus: 3,
+    hasActivatedAbility: true,
+    activatedAbilityDescription: 'Swap this hero to another slot.',
+  },
+  {
+    id: 'item-keenfolk-musket',
+    name: 'Keenfolk Musket',
+    description: '+2 Attack. Activated: Deal 2 damage to a unit.',
+    cost: 5,
+    tier: 1,
+    attackBonus: 2,
+    hasActivatedAbility: true,
+    activatedAbilityDescription: 'Deal 2 damage to a unit.',
+  },
+  {
+    id: 'item-assassins-veil',
+    name: "Assassin's Veil",
+    description: '+3 HP. Activated: Choose a combat target for equipped hero.',
+    cost: 6,
+    tier: 1,
+    hpBonus: 3,
+    hasActivatedAbility: true,
+    activatedAbilityDescription: 'Choose a combat target for equipped hero.',
+  },
+  {
+    id: 'item-helm-dominator',
+    name: 'Helm of the Dominator',
+    description: '+2 Attack. Activated: Steal an enemy unit.',
+    cost: 10,
+    tier: 2,
+    attackBonus: 2,
+    hasActivatedAbility: true,
+    activatedAbilityDescription: 'Steal an enemy unit.',
+  },
+  {
+    id: 'item-bracers-sacrifice',
+    name: 'Bracers of Sacrifice',
+    description: '+1 Attack, +2 HP. Activated: Slay this hero and deal 4 damage to adjacent enemies.',
+    cost: 8,
+    tier: 1,
+    attackBonus: 1,
+    hpBonus: 2,
+    hasActivatedAbility: true,
+    activatedAbilityDescription: 'Slay this hero and deal 4 damage to adjacent enemies.',
+  },
+  {
+    id: 'item-golden-ticket',
+    name: 'Golden Ticket',
+    description: 'Get a random item at your shop level. It costs 0 Mana.',
+    cost: 12,
+    tier: 2,
+    hasActivatedAbility: true,
+    activatedAbilityDescription: 'Get a random item at your shop level. It costs 0 Mana.',
+  },
 ]
 
 // Battlefield Buff definitions (templates - will be instantiated with playerId and battlefieldId)
 export const battlefieldBuffTemplates: Omit<BattlefieldBuff, 'id' | 'battlefieldId' | 'playerId'>[] = [
+  // Generic battlefield buffs
   {
     name: 'Combat Training',
     description: '+1/+1 to your units in this battlefield',
@@ -64,6 +201,36 @@ export const battlefieldBuffTemplates: Omit<BattlefieldBuff, 'id' | 'battlefield
     description: '+1 gold per turn when you control this battlefield',
     cost: 10,
     effectType: 'gold',
+    effectValue: 1,
+  },
+  // RW (Red/White) Archetype Battlefield Upgrades
+  {
+    name: 'War Banner',
+    description: 'All your units in this battlefield have +1 Attack',
+    cost: 6,
+    effectType: 'unit_power',
+    effectValue: 1,
+  },
+  {
+    name: 'Honor Memorial',
+    description: 'When a unit dies here, add a counter. Remove 3 counters to draw a card.',
+    cost: 8,
+    effectType: 'death_counter',
+    effectValue: 3, // Number of counters needed to draw a card
+  },
+  // UB (Blue/Black) Archetype Battlefield Upgrades
+  {
+    name: 'Arcane Focus',
+    description: 'Your spells deal +1 additional damage in this battlefield',
+    cost: 7,
+    effectType: 'spell',
+    effectValue: 1,
+  },
+  {
+    name: 'Rapid Deployment',
+    description: 'Your heroes have Quick Deploy: No cooldown when dying. They can immediately deploy from base the following turn.',
+    cost: 9,
+    effectType: 'quick_deploy',
     effectValue: 1,
   },
 ]
@@ -1451,6 +1618,8 @@ export function createInitialGameState(): {
     playedSpells: {}, // Track spells that have been played (for toggle X overlay) - Record<spellId, true>
     player1BattlefieldBuffs: [], // Permanent battlefield upgrades for player 1
     player2BattlefieldBuffs: [], // Permanent battlefield upgrades for player 2
+    battlefieldDeathCounters: {}, // Track death counters for RW-bf2 (death counter -> draw card) - Record<"player-battlefield", count>
+    initiativePlayer: 'player1', // Player 1 starts with initiative
   }
 
   return {
@@ -1556,6 +1725,8 @@ export function createGameStateFromDraft(
     playedSpells: {},
     player1BattlefieldBuffs: [],
     player2BattlefieldBuffs: [],
+    battlefieldDeathCounters: {}, // Track death counters for RW-bf2 (death counter -> draw card) - Record<"player-battlefield", count>
+    initiativePlayer: 'player1', // Player 1 starts with initiative
   }
 
   return {

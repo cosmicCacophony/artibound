@@ -5,7 +5,7 @@ import { useTurnManagement } from '../hooks/useTurnManagement'
 export function GameHeader() {
   const { metadata, activePlayer, setShowCardLibrary } = useGameContext()
   const { savedStates, exportGameState, importGameState } = useGamePersistence()
-  const { handleNextPhase } = useTurnManagement()
+  const { handleNextPhase, handleNextTurn } = useTurnManagement()
 
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -18,12 +18,23 @@ export function GameHeader() {
           Phase: {metadata.currentPhase}
         </div>
         <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
-          {activePlayer === 'player1' ? (
-            <>Mana: {metadata.player1Mana}/{metadata.player1MaxMana}</>
-          ) : (
-            <>Mana: {metadata.player2Mana}/{metadata.player2MaxMana}</>
-          )}
+          P1 Mana: {metadata.player1Mana}/{metadata.player1MaxMana} | P2 Mana: {metadata.player2Mana}/{metadata.player2MaxMana}
         </div>
+        <button
+          onClick={handleNextTurn}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#ff9800',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 'bold',
+          }}
+        >
+          Next Turn
+        </button>
         <button
           onClick={handleNextPhase}
           style={{

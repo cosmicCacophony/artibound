@@ -2,7 +2,7 @@ import { useCallback, useEffect } from 'react'
 import { TurnPhase, Card, GameMetadata, ShopItem } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { getDefaultTargets, resolveCombat } from '../game/combatSystem'
-import { tier1Items, battlefieldBuffTemplates } from '../game/sampleData'
+import { tier1Items } from '../game/sampleData'
 
 export function useTurnManagement() {
   const { 
@@ -12,8 +12,6 @@ export function useTurnManagement() {
     setCombatTargetsA, 
     combatTargetsB, 
     setCombatTargetsB,
-    setItemShopItems,
-    setShowItemShop,
   } = useGameContext()
   const metadata = gameState.metadata
 
@@ -198,19 +196,6 @@ export function useTurnManagement() {
           [`${nextPlayer}Mana`]: nextPlayerMaxMana, // Restore to max
         },
       }))
-      
-      // Generate item shop for next player (mix of items and battlefield buffs)
-      setTimeout(() => {
-        const newPlayerTier = nextPlayer === 'player1' ? metadata.player1Tier : metadata.player2Tier
-        const availableItems = tier1Items.filter(item => item.tier === newPlayerTier)
-        const availableBuffs = battlefieldBuffTemplates.map(buff => ({ ...buff, type: 'battlefieldBuff' as const }))
-        
-        // Mix items and buffs, then shuffle
-        const allShopItems: ShopItem[] = [...availableItems, ...availableBuffs]
-        const shuffled = [...allShopItems].sort(() => Math.random() - 0.5)
-        setItemShopItems(shuffled.slice(0, 3))
-        setShowItemShop(true)
-      }, 0)
       return
     }
     
@@ -222,7 +207,7 @@ export function useTurnManagement() {
         currentPhase: nextPhase,
       },
     }))
-  }, [metadata, gameState, combatTargetsA, combatTargetsB, setGameState, setCombatTargetsA, setCombatTargetsB, setItemShopItems, setShowItemShop])
+  }, [metadata, gameState, combatTargetsA, combatTargetsB, setGameState, setCombatTargetsA, setCombatTargetsB])
 
   const handleToggleSpellPlayed = useCallback((card: Card) => {
     if (card.cardType !== 'spell' || card.location !== 'base') return
@@ -247,8 +232,34 @@ export function useTurnManagement() {
     })
   }, [setGameState])
 
+  const handleNextTurn = useCallback(() => {
+    setGameState(prev => {
+      const newTurn = prev.metadata.currentTurn + 1
+      
+      // Increase max mana for both players (+1 per turn, capped at 10)
+      const newPlayer1MaxMana = Math.min(prev.metadata.player1MaxMana + 1, 10)
+      const newPlayer2MaxMana = Math.min(prev.metadata.player2MaxMana + 1, 10)
+      
+      return {
+        ...prev,
+        metadata: {
+          ...prev.metadata,
+          currentTurn: newTurn,
+          // Restore mana to max for both players
+          player1Mana: newPlayer1MaxMana,
+          player2Mana: newPlayer2MaxMana,
+          player1MaxMana: newPlayer1MaxMana,
+          player2MaxMana: newPlayer2MaxMana,
+          // Reset initiative to player 1 at start of new turn
+          initiativePlayer: 'player1',
+        },
+      }
+    })
+  }, [setGameState])
+
   return {
     handleNextPhase,
+    handleNextTurn,
     handleToggleSpellPlayed,
   }
 }

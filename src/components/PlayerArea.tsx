@@ -2,6 +2,7 @@ import { PlayerId } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { useDeployment } from '../hooks/useDeployment'
 import { useTurnManagement } from '../hooks/useTurnManagement'
+import { useItemShop } from '../hooks/useItemShop'
 import { HeroCard } from './HeroCard'
 
 interface PlayerAreaProps {
@@ -14,10 +15,13 @@ export function PlayerArea({ player }: PlayerAreaProps) {
     selectedCard, 
     selectedCardId, 
     setSelectedCardId, 
-    metadata 
+    metadata,
+    setItemShopPlayer,
+    itemShopPlayer,
   } = useGameContext()
   const { handleDeploy } = useDeployment()
   const { handleToggleSpellPlayed } = useTurnManagement()
+  const { generateItemShop } = useItemShop()
 
   const playerHand = player === 'player1' ? gameState.player1Hand : gameState.player2Hand
   const playerBase = player === 'player1' ? gameState.player1Base : gameState.player2Base
@@ -46,7 +50,12 @@ export function PlayerArea({ player }: PlayerAreaProps) {
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-        <h2 style={{ marginTop: 0, color: playerTitleColor }}>Player {player === 'player1' ? '1' : '2'}</h2>
+        <h2 style={{ marginTop: 0, color: playerTitleColor, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          Player {player === 'player1' ? '1' : '2'}
+          {metadata.initiativePlayer === player && (
+            <span style={{ fontSize: '20px' }} title="Has Initiative">⚡</span>
+          )}
+        </h2>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
           <div style={{ fontSize: '16px', fontWeight: 'bold', color: playerManaColor }}>
             Mana: {playerMana}/{playerMaxMana}
@@ -57,6 +66,24 @@ export function PlayerArea({ player }: PlayerAreaProps) {
           <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#d32f2f' }}>
             Nexus: {playerNexusHP} HP
           </div>
+          <button
+            onClick={() => {
+              generateItemShop(player)
+              setItemShopPlayer(player)
+            }}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: itemShopPlayer === player ? '#f9a825' : '#ffc107',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold',
+            }}
+          >
+            {itemShopPlayer === player ? 'Shop (Open)' : 'Item Shop'}
+          </button>
         </div>
       </div>
       

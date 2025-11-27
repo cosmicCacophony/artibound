@@ -1,4 +1,5 @@
 import { Card, Color } from '../game/types'
+import { tier1Items } from '../game/sampleData'
 
 interface HeroCardProps {
   card: Card
@@ -37,6 +38,15 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
   
   // Get color styling based on card colors
   const getColorStyles = () => {
+    // Items have yellow background
+    if (card.cardType === 'item') {
+      return {
+        borderColor: '#f9a825',
+        backgroundColor: '#fff9c4',
+        borderStyle: 'solid' as const,
+        borderWidth: '3px',
+      }
+    }
     if (cardColors.length === 0) {
       // Colorless card - gray border
       return {
@@ -78,6 +88,7 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
       case 'hybrid': return '#ff9800'
       case 'generic': return '#757575'
       case 'spell': return '#9c27b0'
+      case 'item': return '#f57c00'
       default: return '#333'
     }
   }
@@ -353,6 +364,39 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
       {card.cardType === 'hybrid' && 'baseBuff' in card && (card as import('../game/types').HybridCard).baseBuff && (
         <div style={{ marginTop: '4px', fontSize: '11px', color: '#ff9800' }}>
           {card.location === 'base' ? `🏰 ${(card as import('../game/types').HybridCard).baseBuff}` : '⚔️ Battlefield: Combat unit'}
+        </div>
+      )}
+      
+      {card.cardType === 'item' && 'itemId' in card && (
+        <div style={{ marginTop: '8px', fontSize: '12px' }}>
+          {(() => {
+            const itemCard = card as import('../game/types').ItemCard
+            const item = tier1Items.find(i => i.id === itemCard.itemId)
+            if (!item) return null
+            return (
+              <>
+                {(item.attackBonus || item.hpBonus) && (
+                  <div style={{ fontSize: '12px', marginBottom: '4px', fontWeight: 'bold' }}>
+                    {item.attackBonus && <span>⚔️ +{item.attackBonus} </span>}
+                    {item.hpBonus && <span>❤️ +{item.hpBonus}</span>}
+                  </div>
+                )}
+                {item.specialEffects && item.specialEffects.length > 0 && (
+                  <div style={{ fontSize: '11px', color: '#9c27b0', marginTop: '4px', fontStyle: 'italic' }}>
+                    Effects: {item.specialEffects.join(', ')}
+                  </div>
+                )}
+                {item.hasActivatedAbility && item.activatedAbilityDescription && (
+                  <div style={{ fontSize: '11px', color: '#1976d2', marginTop: '4px', fontStyle: 'italic' }}>
+                    ⚡ {item.activatedAbilityDescription}
+                  </div>
+                )}
+                <div style={{ fontSize: '10px', color: '#f57c00', marginTop: '4px', fontWeight: 'bold' }}>
+                  💰 Cost: {item.cost} gold
+                </div>
+              </>
+            )
+          })()}
         </div>
       )}
       

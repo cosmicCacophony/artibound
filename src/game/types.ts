@@ -1,5 +1,5 @@
 export type Location = 'base' | 'battlefieldA' | 'battlefieldB' | 'hand'
-export type CardType = 'hero' | 'signature' | 'hybrid' | 'generic' | 'spell'
+export type CardType = 'hero' | 'signature' | 'hybrid' | 'generic' | 'spell' | 'item'
 export type PlayerId = 'player1' | 'player2'
 
 // Color System Types
@@ -30,10 +30,14 @@ export interface Item {
   hpBonus?: number
   attackBonus?: number
   goldPerTurn?: number
+  // Special abilities (for future implementation)
+  hasActivatedAbility?: boolean
+  activatedAbilityDescription?: string
+  specialEffects?: string[] // e.g., ['cleave', 'siege', 'regeneration', 'taunt', 'retaliate']
 }
 
 export type BattlefieldId = 'battlefieldA' | 'battlefieldB'
-export type BattlefieldBuffEffectType = 'combat' | 'spell' | 'mana' | 'tower' | 'gold'
+export type BattlefieldBuffEffectType = 'combat' | 'spell' | 'mana' | 'tower' | 'gold' | 'unit_power' | 'death_counter' | 'quick_deploy'
 
 export interface BattlefieldBuff {
   id: string
@@ -96,6 +100,11 @@ export interface GameMetadata {
   // Battlefield buffs: Permanent upgrades that only affect owner's units in that battlefield
   player1BattlefieldBuffs: BattlefieldBuff[]
   player2BattlefieldBuffs: BattlefieldBuff[]
+  // Battlefield death counters: For RW-bf2 (death counter -> draw card mechanic)
+  // Format: `player-battlefield` -> count
+  battlefieldDeathCounters: Record<string, number>
+  // Initiative: Which player has initiative (can play next card)
+  initiativePlayer: PlayerId | null
 }
 
 export interface Hero extends BaseCard {
@@ -181,7 +190,14 @@ export interface SpellCard extends BaseCard {
   initiative?: boolean // Does this spell give initiative (like Artifact)?
 }
 
-export type Card = Hero | SignatureCard | HybridCard | GenericUnit | SpellCard
+export interface ItemCard extends BaseCard {
+  cardType: 'item'
+  itemId: string // Reference to the Item template
+  location: Location
+  owner: PlayerId
+}
+
+export type Card = Hero | SignatureCard | HybridCard | GenericUnit | SpellCard | ItemCard
 
 export interface Battlefield {
   player1: Card[]
