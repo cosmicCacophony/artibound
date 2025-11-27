@@ -9,6 +9,9 @@ export type ColorCombo = Color | `${Color}${Color}` | `${Color}${Color}${Color}`
 // Maximum colors allowed per deck
 export const MAX_COLORS_PER_DECK = 3
 
+// Archetype Types
+export type Archetype = 'rw-legion' | 'ub-control' | 'all'
+
 export interface BaseCard {
   id: string
   name: string
@@ -28,6 +31,23 @@ export interface Item {
   attackBonus?: number
   goldPerTurn?: number
 }
+
+export type BattlefieldId = 'battlefieldA' | 'battlefieldB'
+export type BattlefieldBuffEffectType = 'combat' | 'spell' | 'mana' | 'tower' | 'gold'
+
+export interface BattlefieldBuff {
+  id: string
+  name: string
+  description: string
+  cost: number
+  battlefieldId: BattlefieldId
+  playerId: PlayerId
+  effectType: BattlefieldBuffEffectType
+  effectValue: number
+}
+
+// Shop item type - can be either a hero item or a battlefield buff template
+export type ShopItem = Item | (Omit<BattlefieldBuff, 'id' | 'battlefieldId' | 'playerId'> & { type: 'battlefieldBuff' })
 
 export type TurnPhase = 'play' | 'combatA' | 'adjust' | 'combatB'
 
@@ -73,6 +93,9 @@ export interface GameMetadata {
   // Played spells: Record of spell card ID -> boolean (for toggle X overlay in base)
   // Using Record instead of Set for JSON serialization
   playedSpells: Record<string, boolean>
+  // Battlefield buffs: Permanent upgrades that only affect owner's units in that battlefield
+  player1BattlefieldBuffs: BattlefieldBuff[]
+  player2BattlefieldBuffs: BattlefieldBuff[]
 }
 
 export interface Hero extends BaseCard {
@@ -267,7 +290,7 @@ export const STARTING_GOLD = 5
 // Draft System Constants
 export const DECK_SIZE = 20
 export const HEROES_REQUIRED = 4
-export const CARDS_REQUIRED = 12 // 20 - 8 signature cards
+export const CARDS_REQUIRED = 20 // 12 drafted + 8 signature cards (auto-added when heroes are drafted)
 export const BATTLEFIELDS_REQUIRED = 1
 export const SIGNATURE_CARDS_PER_HERO = 2
 

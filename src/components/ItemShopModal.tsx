@@ -1,5 +1,6 @@
 import { useGameContext } from '../context/GameContext'
 import { useItemShop } from '../hooks/useItemShop'
+import { ShopItem, BattlefieldId } from '../game/types'
 
 export function ItemShopModal() {
   const { showItemShop, setShowItemShop, itemShopItems, metadata, activePlayer } = useGameContext()
@@ -31,42 +32,90 @@ export function ItemShopModal() {
         Gold: {playerGold}
       </div>
       <div style={{ marginBottom: '15px' }}>
-        {itemShopItems.map(item => (
-          <div
-            key={item.id}
-            style={{
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              padding: '12px',
-              marginBottom: '10px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <div>
-              <div style={{ fontWeight: 'bold' }}>{item.name}</div>
-              <div style={{ fontSize: '12px', color: '#666' }}>{item.description}</div>
-              <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
-                Cost: {item.cost} gold
-              </div>
-            </div>
-            <button
-              onClick={() => handleBuyItem(item)}
-              disabled={playerGold < item.cost}
+        {itemShopItems.map((shopItem: ShopItem, index: number) => {
+          const isBuff = 'type' in shopItem && shopItem.type === 'battlefieldBuff'
+          const itemId = isBuff ? `buff-${index}` : (shopItem as any).id
+          
+          return (
+            <div
+              key={itemId}
               style={{
-                padding: '8px 16px',
-                backgroundColor: playerGold >= item.cost ? '#4caf50' : '#ccc',
-                color: 'white',
-                border: 'none',
+                border: '1px solid #ddd',
                 borderRadius: '4px',
-                cursor: playerGold >= item.cost ? 'pointer' : 'not-allowed',
+                padding: '12px',
+                marginBottom: '10px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
               }}
             >
-              Buy ({item.cost})
-            </button>
-          </div>
-        ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: 'bold' }}>{shopItem.name}</div>
+                  <div style={{ fontSize: '12px', color: '#666' }}>{shopItem.description}</div>
+                  <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+                    Cost: {shopItem.cost} gold
+                  </div>
+                  {isBuff && (
+                    <div style={{ fontSize: '11px', color: '#4a90e2', marginTop: '4px', fontStyle: 'italic' }}>
+                      Battlefield Buff - Select A or B when purchasing
+                    </div>
+                  )}
+                </div>
+                {!isBuff && (
+                  <button
+                    onClick={() => handleBuyItem(shopItem)}
+                    disabled={playerGold < shopItem.cost}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: playerGold >= shopItem.cost ? '#4caf50' : '#ccc',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: playerGold >= shopItem.cost ? 'pointer' : 'not-allowed',
+                    }}
+                  >
+                    Buy ({shopItem.cost})
+                  </button>
+                )}
+              </div>
+              {isBuff && (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => handleBuyItem(shopItem, undefined, 'battlefieldA')}
+                    disabled={playerGold < shopItem.cost}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: playerGold >= shopItem.cost ? '#4caf50' : '#ccc',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: playerGold >= shopItem.cost ? 'pointer' : 'not-allowed',
+                      flex: 1,
+                    }}
+                  >
+                    Buy for A ({shopItem.cost})
+                  </button>
+                  <button
+                    onClick={() => handleBuyItem(shopItem, undefined, 'battlefieldB')}
+                    disabled={playerGold < shopItem.cost}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: playerGold >= shopItem.cost ? '#4caf50' : '#ccc',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: playerGold >= shopItem.cost ? 'pointer' : 'not-allowed',
+                      flex: 1,
+                    }}
+                  >
+                    Buy for B ({shopItem.cost})
+                  </button>
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
       <div style={{ display: 'flex', gap: '10px' }}>
         {playerTier === 1 && (

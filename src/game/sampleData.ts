@@ -1,4 +1,4 @@
-import { Hero, SignatureCard, HybridCard, GenericUnit, Card, BaseCard, Item, GameMetadata, TOWER_HP, NEXUS_HP, STARTING_GOLD, BattlefieldDefinition, SpellCard, SpellEffect } from './types'
+import { Hero, SignatureCard, HybridCard, GenericUnit, Card, BaseCard, Item, GameMetadata, TOWER_HP, NEXUS_HP, STARTING_GOLD, BattlefieldDefinition, SpellCard, SpellEffect, BattlefieldBuff, BattlefieldId, BattlefieldBuffEffectType } from './types'
 import { allCards, allSpells } from './cardData'
 
 // Item definitions
@@ -26,6 +26,45 @@ export const tier1Items: Item[] = [
     cost: 8,
     tier: 1,
     goldPerTurn: 1,
+  },
+]
+
+// Battlefield Buff definitions (templates - will be instantiated with playerId and battlefieldId)
+export const battlefieldBuffTemplates: Omit<BattlefieldBuff, 'id' | 'battlefieldId' | 'playerId'>[] = [
+  {
+    name: 'Combat Training',
+    description: '+1/+1 to your units in this battlefield',
+    cost: 6,
+    effectType: 'combat',
+    effectValue: 1,
+  },
+  {
+    name: 'Spell Amplification',
+    description: 'Your spells deal +1 damage in this battlefield',
+    cost: 7,
+    effectType: 'spell',
+    effectValue: 1,
+  },
+  {
+    name: 'Mana Efficiency',
+    description: 'Your units cost -1 mana in this battlefield',
+    cost: 8,
+    effectType: 'mana',
+    effectValue: 1,
+  },
+  {
+    name: 'Tower Fortification',
+    description: 'Your tower takes -1 damage in this battlefield',
+    cost: 5,
+    effectType: 'tower',
+    effectValue: 1,
+  },
+  {
+    name: 'Gold Mine',
+    description: '+1 gold per turn when you control this battlefield',
+    cost: 10,
+    effectType: 'gold',
+    effectValue: 1,
   },
 ]
 
@@ -1410,6 +1449,8 @@ export function createInitialGameState(): {
     player1MovedToBase: false, // Track if player 1 moved a hero to base this turn
     player2MovedToBase: false, // Track if player 2 moved a hero to base this turn
     playedSpells: {}, // Track spells that have been played (for toggle X overlay) - Record<spellId, true>
+    player1BattlefieldBuffs: [], // Permanent battlefield upgrades for player 1
+    player2BattlefieldBuffs: [], // Permanent battlefield upgrades for player 2
   }
 
   return {
@@ -1513,6 +1554,8 @@ export function createGameStateFromDraft(
     player1MovedToBase: false,
     player2MovedToBase: false,
     playedSpells: {},
+    player1BattlefieldBuffs: [],
+    player2BattlefieldBuffs: [],
   }
 
   return {

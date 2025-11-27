@@ -116,6 +116,17 @@ export function useDraft() {
           id: `${heroTemplate.id}-${draftState.currentPicker}-pick-${draftState.pickNumber + 1}-${Date.now()}-${Math.random()}`,
         }
         updatedDrafted.heroes.push(uniqueHero)
+        
+        // Auto-add signature cards for this hero
+        if (heroTemplate.signatureCardIds && heroTemplate.signatureCardIds.length > 0) {
+          heroTemplate.signatureCardIds.forEach(sigCardId => {
+            // Find the signature card in allCards
+            const sigCard = allCards.find(card => card.id === sigCardId)
+            if (sigCard) {
+              updatedDrafted.cards.push(sigCard)
+            }
+          })
+        }
       } else if (item.type === 'card') {
         updatedDrafted.cards.push(item.item as BaseCard)
       } else if (item.type === 'battlefield') {
@@ -416,6 +427,17 @@ export function useDraft() {
             id: `${heroTemplate.id}-${currentState.currentPicker}-pick-${currentState.pickNumber + 1}-${Date.now()}-${Math.random()}`,
           }
           updatedDrafted.heroes.push(uniqueHero)
+          
+          // Auto-add signature cards for this hero
+          if (heroTemplate.signatureCardIds && heroTemplate.signatureCardIds.length > 0) {
+            heroTemplate.signatureCardIds.forEach(sigCardId => {
+              // Find the signature card in allCards
+              const sigCard = allCards.find(card => card.id === sigCardId)
+              if (sigCard) {
+                updatedDrafted.cards.push(sigCard)
+              }
+            })
+          }
         } else if (randomItem.type === 'card') {
           updatedDrafted.cards.push(randomItem.item as BaseCard)
         } else if (randomItem.type === 'battlefield') {

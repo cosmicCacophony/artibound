@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { Item, Card, GameMetadata } from '../game/types'
+import { Item, Card, GameMetadata, ShopItem, BattlefieldBuff, BattlefieldId } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { tier1Items } from '../game/sampleData'
 
@@ -16,10 +16,59 @@ export function useItemShop() {
     setItemShopItems(shuffled.slice(0, 3))
   }, [metadata.activePlayer, metadata.player1Tier, metadata.player2Tier, setItemShopItems])
 
-  const handleBuyItem = useCallback((item: Item, targetHeroId?: string) => {
+  const handleBuyItem = useCallback((shopItem: ShopItem, targetHeroId?: string, battlefieldId?: BattlefieldId) => {
     const player = metadata.activePlayer
     const currentGold = player === 'player1' ? metadata.player1Gold : metadata.player2Gold
     
+    // Check if it's a battlefield buff
+    if ('type' in shopItem && shopItem.type === 'battlefieldBuff') {
+      if (!battlefieldId) {
+        // Prompt user to select battlefield
+        const selected = prompt('Select battlefield: A or B?')
+        if (selected?.toUpperCase() === 'A') {
+          battlefieldId = 'battlefieldA'
+        } else if (selected?.toUpperCase() === 'B') {
+          battlefieldId = 'battlefieldB'
+        } else {
+          return // User cancelled
+        }
+      }
+      
+      if (currentGold < shopItem.cost) {
+        alert(`Not enough gold! Need ${shopItem.cost}, have ${currentGold}`)
+        return
+      }
+      
+      // Create the battlefield buff
+      const buff: BattlefieldBuff = {
+        id: `buff-${player}-${battlefieldId}-${Date.now()}-${Math.random()}`,
+        name: shopItem.name,
+        description: shopItem.description,
+        cost: shopItem.cost,
+        battlefieldId,
+        playerId: player,
+        effectType: shopItem.effectType,
+        effectValue: shopItem.effectValue,
+      }
+      
+      setGameState(prev => ({
+        ...prev,
+        metadata: {
+          ...prev.metadata,
+          [`${player}Gold`]: (prev.metadata[`${player}Gold` as keyof GameMetadata] as number) - shopItem.cost,
+          [`${player}BattlefieldBuffs`]: [
+            ...(prev.metadata[`${player}BattlefieldBuffs` as keyof GameMetadata] as BattlefieldBuff[]),
+            buff,
+          ],
+        },
+      }))
+      
+      setShowItemShop(false)
+      return
+    }
+    
+    // It's a regular item
+    const item = shopItem as Item
     if (currentGold < item.cost) {
       alert(`Not enough gold! Need ${item.cost}, have ${currentGold}`)
       return

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
-import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, BattlefieldDefinition, FinalDraftSelection, Color, HEROES_REQUIRED, CARDS_REQUIRED } from '../game/types'
+import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, BattlefieldDefinition, FinalDraftSelection, Color, HEROES_REQUIRED, CARDS_REQUIRED, ShopItem } from '../game/types'
 import { createInitialGameState, createCardLibrary, createGameStateFromDraft } from '../game/sampleData'
 import { draftableHeroes } from '../game/draftData'
 import { allCards, allSpells, allBattlefields } from '../game/cardData'
@@ -14,8 +14,8 @@ interface GameContextType {
   setSelectedCardId: (id: string | null) => void
   showItemShop: boolean
   setShowItemShop: (show: boolean) => void
-  itemShopItems: Item[]
-  setItemShopItems: (items: Item[]) => void
+  itemShopItems: ShopItem[]
+  setItemShopItems: (items: ShopItem[]) => void
   
   // Card Libraries
   player1SidebarCards: BaseCard[]
@@ -60,7 +60,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [gameState, setGameState] = useState<GameState>(createInitialGameState())
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
   const [showItemShop, setShowItemShop] = useState(false)
-  const [itemShopItems, setItemShopItems] = useState<Item[]>([])
+  const [itemShopItems, setItemShopItems] = useState<ShopItem[]>([])
   
   // Card libraries
   const [player1SidebarCards, setPlayer1SidebarCards] = useState<BaseCard[]>(() => 

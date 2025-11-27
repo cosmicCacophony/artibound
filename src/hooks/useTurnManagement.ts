@@ -1,8 +1,8 @@
 import { useCallback, useEffect } from 'react'
-import { TurnPhase, Card, GameMetadata } from '../game/types'
+import { TurnPhase, Card, GameMetadata, ShopItem } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { getDefaultTargets, resolveCombat } from '../game/combatSystem'
-import { tier1Items } from '../game/sampleData'
+import { tier1Items, battlefieldBuffTemplates } from '../game/sampleData'
 
 export function useTurnManagement() {
   const { 
@@ -199,11 +199,15 @@ export function useTurnManagement() {
         },
       }))
       
-      // Generate item shop for next player
+      // Generate item shop for next player (mix of items and battlefield buffs)
       setTimeout(() => {
         const newPlayerTier = nextPlayer === 'player1' ? metadata.player1Tier : metadata.player2Tier
         const availableItems = tier1Items.filter(item => item.tier === newPlayerTier)
-        const shuffled = [...availableItems].sort(() => Math.random() - 0.5)
+        const availableBuffs = battlefieldBuffTemplates.map(buff => ({ ...buff, type: 'battlefieldBuff' as const }))
+        
+        // Mix items and buffs, then shuffle
+        const allShopItems: ShopItem[] = [...availableItems, ...availableBuffs]
+        const shuffled = [...allShopItems].sort(() => Math.random() - 0.5)
         setItemShopItems(shuffled.slice(0, 3))
         setShowItemShop(true)
       }, 0)

@@ -15,10 +15,14 @@ export function useCombat() {
     if (newHealth <= 0) {
       // Card dies - track death cooldown (1 round)
       const player = card.owner
+      const opponent = player === 'player1' ? 'player2' : 'player1'
       const location = card.location
 
       if (card.cardType === 'hero') {
         // Hero dies - goes to base with death cooldown (1 round before can redeploy)
+        // Gold System: Gold is awarded immediately on kill (5 for heroes, 2 for units)
+        // Item Shop: Appears after combat phases (after both combatA and combatB)
+        // TODO: Integrate battlefield gold-on-kill bonus (requires passing battlefield definition through combat system)
         const hero = card as import('../game/types').Hero
         setGameState(prev => {
           const removeFromLocation = (cards: Card[]) => cards.filter(c => c.id !== card.id)
@@ -37,6 +41,8 @@ export function useCombat() {
             }],
             metadata: {
               ...prev.metadata,
+              // TODO: Gold should go to opponent who killed the unit, not the owner
+              // Currently this is a placeholder - gold should be awarded in combat resolution
               [`${player}Gold`]: (prev.metadata[`${player}Gold` as keyof GameMetadata] as number) + 5,
               deathCooldowns: {
                 ...prev.metadata.deathCooldowns,
@@ -47,6 +53,8 @@ export function useCombat() {
         })
       } else {
         // Generic unit dies - remove completely, track death cooldown
+        // Gold System: Gold is awarded immediately on kill
+        const opponent = player === 'player1' ? 'player2' : 'player1'
         setGameState(prev => {
           return {
             ...prev,
@@ -56,6 +64,8 @@ export function useCombat() {
             },
             metadata: {
               ...prev.metadata,
+              // TODO: Gold should go to opponent who killed the unit, not the owner
+              // Currently this is a placeholder - gold should be awarded in combat resolution
               [`${player}Gold`]: (prev.metadata[`${player}Gold` as keyof GameMetadata] as number) + 2,
               deathCooldowns: {
                 ...prev.metadata.deathCooldowns,
