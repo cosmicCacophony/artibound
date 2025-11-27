@@ -1,0 +1,1188 @@
+{
+  "metadata": {
+    "source": "thinkArtifact.com - Artifact Foundry Card Browser",
+    "extractedDate": "2025-11-27",
+    "purpose": "Design inspiration for Artibound card game",
+    "notes": "This file contains card data from Artifact Foundry for design inspiration. Use this to understand card costs, effects, and design patterns.",
+    "extractionStatus": "Partial - Some cards have full descriptions extracted, others have placeholder descriptions. To extract more: navigate to thinkArtifact.com, search for a card, click on it to view details, and copy the description text.",
+    "cardsWithFullDescriptions": [
+      "Culling Blade",
+      "Berserker's Call",
+      "Lightning Strike"
+    ]
+  },
+  "heroes": [
+    {
+      "name": "Axe",
+      "cost": null,
+      "type": "Hero",
+      "stats": {
+        "attack": 3,
+        "armor": 2,
+        "health": 6
+      },
+      "signatureCard": {
+        "name": "Culling Blade",
+        "cost": 2,
+        "description": "Slay a damaged enemy unit with 3 or less ▥ and Stun other enemies for 1 action. Repeatable this round when you slay a hero"
+      },
+      "activeAbility": {
+        "name": "Berserker's Call",
+        "cost": "2■, 1 Mana",
+        "description": "Battle all adjacent enemies."
+      },
+      "color": "Red",
+      "archetype": "Aggressive Warrior"
+    }
+  ],
+  "cards": [
+    {
+      "name": "Culling Blade",
+      "cost": 2,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Slay a damaged enemy unit with 3 or less ▥ and Stun other enemies for 1 action. Repeatable this round when you slay a hero",
+      "designNotes": "Conditional removal with repeatability - creates interesting decision points about when to use it"
+    },
+    {
+      "name": "Berserker's Call",
+      "cost": null,
+      "type": "Active Ability",
+      "color": "Red",
+      "description": "Active 2■, 1 Mana: Battle all adjacent enemies.",
+      "designNotes": "Hero ability that requires both cooldown (■) and mana - dual resource cost"
+    },
+    {
+      "name": "Double Edge",
+      "cost": 1,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - low cost red spell",
+      "designNotes": "Very cheap spell - likely has a drawback or conditional effect"
+    },
+    {
+      "name": "Fighting Words",
+      "cost": 1,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - low cost red spell",
+      "designNotes": "1 mana spell - likely buff or combat trick"
+    },
+    {
+      "name": "Flesh of Iron",
+      "cost": 1,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - low cost red spell",
+      "designNotes": "1 mana - likely defensive or stat boost"
+    },
+    {
+      "name": "Greevil Bronco",
+      "cost": 1,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - low cost red creep",
+      "designNotes": "1 mana creature - likely has 1-2 stats or a simple ability"
+    },
+    {
+      "name": "Greevil Eggtender",
+      "cost": 1,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - low cost red creep",
+      "designNotes": "1 mana creature - egg theme suggests deathrattle or token generation"
+    },
+    {
+      "name": "Ice Shard",
+      "cost": 1,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - low cost red spell",
+      "designNotes": "1 mana - likely damage spell or freeze effect"
+    },
+    {
+      "name": "Ice Shards",
+      "cost": 1,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - low cost red spell",
+      "designNotes": "1 mana - plural suggests AOE or multiple targets"
+    },
+    {
+      "name": "Into the Fray",
+      "cost": 1,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - low cost red spell",
+      "designNotes": "1 mana - name suggests movement or combat positioning"
+    },
+    {
+      "name": "Poised to Strike",
+      "cost": 1,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - low cost red spell",
+      "designNotes": "1 mana - likely combat trick or initiative spell"
+    },
+    {
+      "name": "Bronze Legionnaire",
+      "cost": 2,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 2 cost red creep",
+      "designNotes": "2 mana creature - likely 2-3 stats or moderate ability"
+    },
+    {
+      "name": "Duel",
+      "cost": 2,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Caster battles another hero. Give the winner +1▣ permanently.",
+      "designNotes": "2 mana - permanent stat gain mechanic creates high-stakes decisions about when to use it"
+    },
+    {
+      "name": "Hellbear Crippler",
+      "cost": 2,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 2 cost red creep",
+      "designNotes": "2 mana - 'Crippler' suggests debuff or stat reduction ability"
+    },
+    {
+      "name": "Heroic Resolve",
+      "cost": 2,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 2 cost red spell",
+      "designNotes": "2 mana - likely defensive buff or hero-focused effect"
+    },
+    {
+      "name": "Loyal Beast",
+      "cost": 2,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 2 cost red creep",
+      "designNotes": "2 mana - 'Loyal' suggests synergy with heroes or owner"
+    },
+    {
+      "name": "No Hesitation",
+      "cost": 2,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 2 cost red spell",
+      "designNotes": "2 mana - likely initiative or immediate action effect"
+    },
+    {
+      "name": "Reckless Charge",
+      "cost": 2,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 2 cost red spell",
+      "designNotes": "2 mana - name suggests movement or aggressive positioning"
+    },
+    {
+      "name": "Shock Trooper",
+      "cost": 2,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 2 cost red creep",
+      "designNotes": "2 mana - 'Shock' suggests immediate impact or charge ability"
+    },
+    {
+      "name": "Shockwave",
+      "cost": 2,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Choose caster and an enemy. Deal 1 damage to enemies between them, then pull them towards the caster.",
+      "designNotes": "2 mana - positioning spell with damage, creates interesting tactical decisions about unit placement"
+    },
+    {
+      "name": "Smash Their Defenses!",
+      "cost": 2,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 2 cost red spell",
+      "designNotes": "2 mana - exclamation suggests impactful effect, likely armor/tower damage"
+    },
+    {
+      "name": "Throw Down",
+      "cost": 2,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 2 cost red spell",
+      "designNotes": "2 mana - likely repositioning or forced combat"
+    },
+    {
+      "name": "Unbreakable Column",
+      "cost": 2,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 2 cost red spell",
+      "designNotes": "2 mana - defensive spell, likely creates barrier or protects units"
+    },
+    {
+      "name": "Whirling Death",
+      "cost": 2,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 2 cost red spell",
+      "designNotes": "2 mana - AOE damage, likely affects adjacent or all units"
+    },
+    {
+      "name": "Battle Trance",
+      "cost": 3,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 3 cost red spell",
+      "designNotes": "3 mana - 'Trance' suggests buff or stat modification"
+    },
+    {
+      "name": "God's Strength",
+      "cost": 3,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Caster gains +3 attack permanently.",
+      "designNotes": "3 mana - permanent stat gain creates long-term value, signature card for Sven"
+    },
+    {
+      "name": "Gush",
+      "cost": 3,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 3 cost red spell",
+      "designNotes": "3 mana - likely repositioning or movement effect"
+    },
+    {
+      "name": "Illusion Confusion",
+      "cost": 3,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 3 cost red spell",
+      "designNotes": "3 mana - illusion theme suggests token generation or confusion effect"
+    },
+    {
+      "name": "Ion Shell",
+      "cost": 3,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 3 cost red spell",
+      "designNotes": "3 mana - 'Shell' suggests defensive buff or damage aura"
+    },
+    {
+      "name": "Iron Sharpens Iron",
+      "cost": 3,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 3 cost red spell",
+      "designNotes": "3 mana - synergy spell, likely buffs multiple units or creates synergy"
+    },
+    {
+      "name": "Lancer Illusion",
+      "cost": 3,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 3 cost red creep",
+      "designNotes": "3 mana - illusion creature, likely token or temporary unit"
+    },
+    {
+      "name": "Legion Standard Bearer",
+      "cost": 3,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 3 cost red creep",
+      "designNotes": "3 mana - 'Standard Bearer' suggests aura or buff to other units"
+    },
+    {
+      "name": "Loyal Guardian",
+      "cost": 3,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 3 cost red creep",
+      "designNotes": "3 mana - defensive creature, likely protects other units"
+    },
+    {
+      "name": "Overpower",
+      "cost": 3,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 3 cost red spell",
+      "designNotes": "3 mana - combat spell, likely stat boost or combat advantage"
+    },
+    {
+      "name": "Primal Roar",
+      "cost": 3,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 3 cost red spell",
+      "designNotes": "3 mana - AOE effect, likely stun or debuff"
+    },
+    {
+      "name": "Smeevil Armsmaster",
+      "cost": 3,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 3 cost red creep",
+      "designNotes": "3 mana - 'Armsmaster' suggests equipment synergy or weapon buff"
+    },
+    {
+      "name": "Smeevil Blacksmith",
+      "cost": 3,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 3 cost red creep",
+      "designNotes": "3 mana - 'Blacksmith' suggests item generation or equipment synergy"
+    },
+    {
+      "name": "Viscous Nasal Goo",
+      "cost": 3,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 3 cost red spell",
+      "designNotes": "3 mana - humorous name, likely debuff or slow effect"
+    },
+    {
+      "name": "Centaur Poacher",
+      "cost": 4,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 4 cost red creep",
+      "designNotes": "4 mana - 'Poacher' suggests resource generation or gold effect"
+    },
+    {
+      "name": "Cursed Satyr",
+      "cost": 4,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 4 cost red creep",
+      "designNotes": "4 mana - 'Cursed' suggests negative effect or drawback"
+    },
+    {
+      "name": "Honor Guard",
+      "cost": 4,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 4 cost red creep",
+      "designNotes": "4 mana - defensive creature, likely protects heroes or important units"
+    },
+    {
+      "name": "Imperial Herald",
+      "cost": 4,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 4 cost red creep",
+      "designNotes": "4 mana - 'Herald' suggests announcement or trigger effect"
+    },
+    {
+      "name": "Pincer",
+      "cost": 4,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 4 cost red spell",
+      "designNotes": "4 mana - 'Pincer' suggests flanking or positioning effect"
+    },
+    {
+      "name": "Raze",
+      "cost": 4,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 4 cost red spell",
+      "designNotes": "4 mana - likely AOE damage or board clear"
+    },
+    {
+      "name": "Slash It!",
+      "cost": 4,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 4 cost red spell",
+      "designNotes": "4 mana - direct damage spell, likely high damage"
+    },
+    {
+      "name": "Spirit Swordsman",
+      "cost": 4,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 4 cost red creep",
+      "designNotes": "4 mana - spirit suggests evasion or special combat rules"
+    },
+    {
+      "name": "Stonehall Elite",
+      "cost": 4,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 4 cost red creep",
+      "designNotes": "4 mana - 'Elite' suggests premium stats or powerful ability"
+    },
+    {
+      "name": "Stonehall Paragon",
+      "cost": 4,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 4 cost red creep",
+      "designNotes": "4 mana - 'Paragon' suggests exceptional stats or powerful effect"
+    },
+    {
+      "name": "Back For More",
+      "cost": 5,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 5 cost red spell",
+      "designNotes": "5 mana - suggests resurrection or return effect"
+    },
+    {
+      "name": "Clear the Deck",
+      "cost": 5,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 5 cost red spell",
+      "designNotes": "5 mana - likely board clear or removal spell"
+    },
+    {
+      "name": "Legion Scouting Party",
+      "cost": 5,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 5 cost red creep",
+      "designNotes": "5 mana - 'Party' suggests multiple units or token generation"
+    },
+    {
+      "name": "Marrowfell Brawler",
+      "cost": 5,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 5 cost red creep",
+      "designNotes": "5 mana - aggressive creature, likely high attack"
+    },
+    {
+      "name": "Ogre Conscript",
+      "cost": 5,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 5 cost red creep",
+      "designNotes": "5 mana - 'Conscript' suggests forced recruitment or token generation"
+    },
+    {
+      "name": "Stonehall Conscriptor",
+      "cost": 5,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 5 cost red creep",
+      "designNotes": "5 mana - 'Conscriptor' suggests unit generation or token creation"
+    },
+    {
+      "name": "Slumbering Brute",
+      "cost": 6,
+      "type": "Creep",
+      "color": "Red",
+      "description": "Unknown - 6 cost red creep",
+      "designNotes": "6 mana - 'Slumbering' suggests delayed activation or wake-up mechanic"
+    },
+    {
+      "name": "Team Fight",
+      "cost": 6,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 6 cost red spell",
+      "designNotes": "6 mana - likely affects multiple units, AOE combat effect"
+    },
+    {
+      "name": "Spring the Trap",
+      "cost": 7,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 7 cost red spell",
+      "designNotes": "7 mana - trap mechanic, likely conditional or setup effect"
+    },
+    {
+      "name": "Time of Triumph",
+      "cost": 9,
+      "type": "Spell",
+      "color": "Red",
+      "description": "Unknown - 9 cost red spell",
+      "designNotes": "9 mana - game-ending spell, likely massive buff or win condition"
+    },
+    {
+      "name": "Arc Bolt",
+      "cost": 1,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 1 cost blue spell",
+      "designNotes": "1 mana - lightning damage, likely single target"
+    },
+    {
+      "name": "Conspiracy of Ravens",
+      "cost": 1,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 1 cost blue creep",
+      "designNotes": "1 mana - 'Conspiracy' suggests multiple units or synergy effect"
+    },
+    {
+      "name": "Cunning Plan",
+      "cost": 1,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 1 cost blue spell",
+      "designNotes": "1 mana - likely card draw or setup effect"
+    },
+    {
+      "name": "Determined Greevil",
+      "cost": 1,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 1 cost blue creep",
+      "designNotes": "1 mana - 'Determined' suggests persistence or stat boost"
+    },
+    {
+      "name": "Diabolic Conclusion",
+      "cost": 1,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 1 cost blue spell",
+      "designNotes": "1 mana - 'Conclusion' suggests end of turn or delayed effect"
+    },
+    {
+      "name": "Fractured Timeline",
+      "cost": 1,
+      "type": "Tower Enchantment",
+      "color": "Blue",
+      "description": "Unknown - 1 cost blue tower enchantment",
+      "designNotes": "1 mana - time theme, likely manipulation or extra turn effect"
+    },
+    {
+      "name": "Hound of War",
+      "cost": 1,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 1 cost blue creep",
+      "designNotes": "1 mana - aggressive creature despite blue color"
+    },
+    {
+      "name": "Lightning Strike",
+      "cost": 1,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Deal 4 piercing damage to caster's combat target. (Can hit towers).",
+      "designNotes": "1 mana - piercing damage bypasses armor, can target towers for direct damage"
+    },
+    {
+      "name": "Plague Ward",
+      "cost": 1,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 1 cost blue creep",
+      "designNotes": "1 mana - 'Ward' suggests defensive or blocking ability"
+    },
+    {
+      "name": "Possessed Blade",
+      "cost": 1,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 1 cost blue creep",
+      "designNotes": "1 mana - 'Possessed' suggests transformation or special ability"
+    },
+    {
+      "name": "Ramp Bolt",
+      "cost": 1,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 1 cost blue spell",
+      "designNotes": "1 mana - 'Ramp' suggests mana acceleration"
+    },
+    {
+      "name": "Rock",
+      "cost": 1,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 1 cost blue creep",
+      "designNotes": "1 mana - simple name, likely basic stats or simple ability"
+    },
+    {
+      "name": "Spell Steal",
+      "cost": 1,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 1 cost blue spell",
+      "designNotes": "1 mana - copy or steal opponent's spell"
+    },
+    {
+      "name": "Spitting Greevil",
+      "cost": 1,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 1 cost blue creep",
+      "designNotes": "1 mana - ranged attack or damage ability"
+    },
+    {
+      "name": "The Double",
+      "cost": 1,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 1 cost blue creep",
+      "designNotes": "1 mana - copy or duplicate effect"
+    },
+    {
+      "name": "Ventriloquy",
+      "cost": 1,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 1 cost blue spell",
+      "designNotes": "1 mana - control or manipulation effect"
+    },
+    {
+      "name": "Acolyte of the Radiant",
+      "cost": 2,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue creep",
+      "designNotes": "2 mana - 'Acolyte' suggests support or buff ability"
+    },
+    {
+      "name": "Agent of Claszureme",
+      "cost": 2,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue creep",
+      "designNotes": "2 mana - 'Agent' suggests spy or information effect"
+    },
+    {
+      "name": "Better Late Than Never",
+      "cost": 2,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue spell",
+      "designNotes": "2 mana - delayed effect or late game value"
+    },
+    {
+      "name": "Compel",
+      "cost": 2,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue spell",
+      "designNotes": "2 mana - control effect, likely forces action"
+    },
+    {
+      "name": "Creep Reinforcements",
+      "cost": 2,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue spell",
+      "designNotes": "2 mana - token generation or unit summoning"
+    },
+    {
+      "name": "Fell Spirit",
+      "cost": 2,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue creep",
+      "designNotes": "2 mana - spirit suggests evasion or special rules"
+    },
+    {
+      "name": "Frostbite",
+      "cost": 2,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue spell",
+      "designNotes": "2 mana - freeze or stun effect"
+    },
+    {
+      "name": "Homunculus",
+      "cost": 2,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue creep",
+      "designNotes": "2 mana - artificial creature, likely has special ability"
+    },
+    {
+      "name": "Howling Mind",
+      "cost": 2,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue creep",
+      "designNotes": "2 mana - 'Mind' suggests card draw or hand manipulation"
+    },
+    {
+      "name": "Ignite",
+      "cost": 2,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue spell",
+      "designNotes": "2 mana - damage over time or burn effect"
+    },
+    {
+      "name": "Light Strike Array",
+      "cost": 2,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue spell",
+      "designNotes": "2 mana - AOE damage, likely hits multiple targets"
+    },
+    {
+      "name": "Path of the Wise",
+      "cost": 2,
+      "type": "Tower Enchantment",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue tower enchantment",
+      "designNotes": "2 mana - tower effect, likely card draw or value generation"
+    },
+    {
+      "name": "Relentless Zombie",
+      "cost": 2,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue creep",
+      "designNotes": "2 mana - 'Relentless' suggests persistence or regeneration"
+    },
+    {
+      "name": "Runic Instigation",
+      "cost": 2,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue spell",
+      "designNotes": "2 mana - 'Runic' suggests spell synergy or magic enhancement"
+    },
+    {
+      "name": "Sapphire Archivist",
+      "cost": 2,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue creep",
+      "designNotes": "2 mana - 'Archivist' suggests card draw or library manipulation"
+    },
+    {
+      "name": "Spark Wraith",
+      "cost": 2,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue creep",
+      "designNotes": "2 mana - 'Wraith' suggests evasion, 'Spark' suggests damage"
+    },
+    {
+      "name": "Tower Barrage",
+      "cost": 2,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue spell",
+      "designNotes": "2 mana - tower damage or AOE effect"
+    },
+    {
+      "name": "Unstable Elemental",
+      "cost": 2,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue creep",
+      "designNotes": "2 mana - 'Unstable' suggests random effect or explosion"
+    },
+    {
+      "name": "Watchtower",
+      "cost": 2,
+      "type": "Tower Enchantment",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue tower enchantment",
+      "designNotes": "2 mana - defensive tower effect or vision"
+    },
+    {
+      "name": "Whispers of Madness",
+      "cost": 2,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 2 cost blue spell",
+      "designNotes": "2 mana - control or manipulation effect"
+    },
+    {
+      "name": "Arcane Assault",
+      "cost": 3,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 3 cost blue spell",
+      "designNotes": "3 mana - AOE damage spell"
+    },
+    {
+      "name": "Arcane Citadel",
+      "cost": 3,
+      "type": "Tower Enchantment",
+      "color": "Blue",
+      "description": "Unknown - 3 cost blue tower enchantment",
+      "designNotes": "3 mana - powerful tower effect"
+    },
+    {
+      "name": "At Any Cost",
+      "cost": 3,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 3 cost blue spell",
+      "designNotes": "3 mana - powerful effect with drawback"
+    },
+    {
+      "name": "Barracks",
+      "cost": 3,
+      "type": "Tower Enchantment",
+      "color": "Blue",
+      "description": "Unknown - 3 cost blue tower enchantment",
+      "designNotes": "3 mana - unit generation or token creation"
+    },
+    {
+      "name": "Corpse Horde",
+      "cost": 3,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 3 cost blue creep",
+      "designNotes": "3 mana - 'Horde' suggests multiple units or token generation"
+    },
+    {
+      "name": "Divided We Stand",
+      "cost": 3,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 3 cost blue spell",
+      "designNotes": "3 mana - token generation or unit splitting"
+    },
+    {
+      "name": "Dragon Slave",
+      "cost": 3,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 3 cost blue spell",
+      "designNotes": "3 mana - AOE damage spell"
+    },
+    {
+      "name": "Foresight",
+      "cost": 3,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 3 cost blue spell",
+      "designNotes": "3 mana - card draw or information effect"
+    },
+    {
+      "name": "Gold Elemental",
+      "cost": 3,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 3 cost blue creep",
+      "designNotes": "3 mana - 'Gold' suggests resource generation"
+    },
+    {
+      "name": "Maelrawn Pupate",
+      "cost": 3,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 3 cost blue creep",
+      "designNotes": "3 mana - 'Pupate' suggests transformation or evolution"
+    },
+    {
+      "name": "Spirit of Desolation",
+      "cost": 3,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 3 cost blue creep",
+      "designNotes": "3 mana - powerful spirit, likely AOE or board effect"
+    },
+    {
+      "name": "Void Theft",
+      "cost": 3,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 3 cost blue spell",
+      "designNotes": "3 mana - steal or copy effect"
+    },
+    {
+      "name": "Volatile Fog",
+      "cost": 3,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 3 cost blue spell",
+      "designNotes": "3 mana - AOE effect, likely damage or debuff"
+    },
+    {
+      "name": "Wildwing",
+      "cost": 3,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 3 cost blue creep",
+      "designNotes": "3 mana - flying creature, likely has evasion"
+    },
+    {
+      "name": "Wildwing Bait",
+      "cost": 3,
+      "type": "Tower Enchantment",
+      "color": "Blue",
+      "description": "Unknown - 3 cost blue tower enchantment",
+      "designNotes": "3 mana - trap or conditional effect"
+    },
+    {
+      "name": "...And One For Me",
+      "cost": 4,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 4 cost blue spell",
+      "designNotes": "4 mana - copy or duplicate effect"
+    },
+    {
+      "name": "Aghanim's Sanctum",
+      "cost": 4,
+      "type": "Tower Enchantment",
+      "color": "Blue",
+      "description": "Unknown - 4 cost blue tower enchantment",
+      "designNotes": "4 mana - powerful tower effect, likely spell enhancement"
+    },
+    {
+      "name": "Laguna Blade",
+      "cost": 4,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 4 cost blue spell",
+      "designNotes": "4 mana - high damage single target spell"
+    },
+    {
+      "name": "Mana Short",
+      "cost": 4,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 4 cost blue spell",
+      "designNotes": "4 mana - mana denial or resource disruption"
+    },
+    {
+      "name": "Mimicry",
+      "cost": 4,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 4 cost blue spell",
+      "designNotes": "4 mana - copy or transform effect"
+    },
+    {
+      "name": "Morphling Whelp",
+      "cost": 4,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 4 cost blue creep",
+      "designNotes": "4 mana - 'Morphling' suggests transformation ability"
+    },
+    {
+      "name": "Mystic Flare",
+      "cost": 4,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 4 cost blue spell",
+      "designNotes": "4 mana - high damage AOE spell"
+    },
+    {
+      "name": "Satyr Magician",
+      "cost": 4,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 4 cost blue creep",
+      "designNotes": "4 mana - spell synergy or magic ability"
+    },
+    {
+      "name": "Sow Venom",
+      "cost": 4,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 4 cost blue spell",
+      "designNotes": "4 mana - damage over time or poison effect"
+    },
+    {
+      "name": "Thunderstorm",
+      "cost": 4,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 4 cost blue spell",
+      "designNotes": "4 mana - AOE damage spell"
+    },
+    {
+      "name": "Wall of Secrets",
+      "cost": 4,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 4 cost blue creep",
+      "designNotes": "4 mana - defensive creature, likely blocks or protects"
+    },
+    {
+      "name": "Call the Reserves",
+      "cost": 5,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 5 cost blue spell",
+      "designNotes": "5 mana - token generation or unit summoning"
+    },
+    {
+      "name": "Conflagration",
+      "cost": 5,
+      "type": "Tower Enchantment",
+      "color": "Blue",
+      "description": "Unknown - 5 cost blue tower enchantment",
+      "designNotes": "5 mana - AOE damage tower effect"
+    },
+    {
+      "name": "Defenestrating Kobold",
+      "cost": 5,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 5 cost blue creep",
+      "designNotes": "5 mana - humorous name, likely repositioning or removal"
+    },
+    {
+      "name": "Friendly Fire",
+      "cost": 5,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 5 cost blue spell",
+      "designNotes": "5 mana - AOE that affects both sides"
+    },
+    {
+      "name": "Glyph of Confusion",
+      "cost": 5,
+      "type": "Tower Enchantment",
+      "color": "Blue",
+      "description": "Unknown - 5 cost blue tower enchantment",
+      "designNotes": "5 mana - control or manipulation tower effect"
+    },
+    {
+      "name": "Keenfolk Golem",
+      "cost": 5,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 5 cost blue creep",
+      "designNotes": "5 mana - large creature, likely high stats"
+    },
+    {
+      "name": "Remote Detonation",
+      "cost": 5,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 5 cost blue spell",
+      "designNotes": "5 mana - delayed damage or trap effect"
+    },
+    {
+      "name": "Thundergod's Wrath",
+      "cost": 5,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 5 cost blue spell",
+      "designNotes": "5 mana - massive AOE damage"
+    },
+    {
+      "name": "Troll Soothsayer",
+      "cost": 5,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 5 cost blue creep",
+      "designNotes": "5 mana - 'Soothsayer' suggests prediction or card draw"
+    },
+    {
+      "name": "Wave of Madness",
+      "cost": 5,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 5 cost blue spell",
+      "designNotes": "5 mana - AOE control or damage effect"
+    },
+    {
+      "name": "Annihilation",
+      "cost": 6,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 6 cost blue spell",
+      "designNotes": "6 mana - board wipe or massive removal"
+    },
+    {
+      "name": "Echo Slam",
+      "cost": 6,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 6 cost blue spell",
+      "designNotes": "6 mana - AOE damage, likely scales with units"
+    },
+    {
+      "name": "Eclipse",
+      "cost": 6,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 6 cost blue spell",
+      "designNotes": "6 mana - powerful AOE effect"
+    },
+    {
+      "name": "Essence Font",
+      "cost": 6,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 6 cost blue spell",
+      "designNotes": "6 mana - healing or resource generation"
+    },
+    {
+      "name": "Sapphire Archon",
+      "cost": 6,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 6 cost blue creep",
+      "designNotes": "6 mana - powerful creature, likely game-ending threat"
+    },
+    {
+      "name": "Bolt of Damocles",
+      "cost": 10,
+      "type": "Spell",
+      "color": "Blue",
+      "description": "Unknown - 10 cost blue spell",
+      "designNotes": "10 mana - ultimate spell, likely game-ending effect"
+    },
+    {
+      "name": "Incarnation of Selemene",
+      "cost": 9,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 9 cost blue creep",
+      "designNotes": "9 mana - ultimate creature, game-ending threat"
+    },
+    {
+      "name": "Spawn of Maelrawn",
+      "cost": 13,
+      "type": "Creep",
+      "color": "Blue",
+      "description": "Unknown - 13 cost blue creep",
+      "designNotes": "13 mana - ultimate late game creature, requires ramp or special setup"
+    }
+  ],
+  "designPatterns": {
+    "costDistribution": {
+      "1": "Basic spells and creeps - simple effects, low stats",
+      "2": "Standard spells and creeps - moderate effects, balanced stats",
+      "3": "Mid-game cards - stronger effects, better stats",
+      "4": "Premium cards - powerful effects, strong stats",
+      "5": "High-impact cards - game-changing effects",
+      "6+": "Ultimate cards - game-ending threats or effects"
+    },
+    "colorThemes": {
+      "Red": "Aggressive, combat-focused, direct damage, positioning",
+      "Blue": "Control, card draw, AOE damage, manipulation, spells"
+    },
+    "cardTypes": {
+      "Hero": "Unique cards with signature abilities and active abilities",
+      "Creep": "Units with stats (attack/armor/health)",
+      "Spell": "One-time effects",
+      "Tower Enchantment": "Persistent battlefield effects"
+    },
+    "mechanics": [
+      "Repeatable effects (when conditions met)",
+      "Active abilities (cooldown + mana cost)",
+      "Conditional removal",
+      "AOE effects",
+      "Token generation",
+      "Resource generation",
+      "Positioning effects",
+      "Delayed effects",
+      "Transformation",
+      "Copy/steal effects"
+    ]
+  },
+  "notes": [
+    "Artifact Foundry uses a three-lane system with towers",
+    "Cards have attack, armor, and health stats",
+    "Heroes have signature cards and active abilities",
+    "Mana system with cooldowns (■) for active abilities",
+    "Many cards have conditional effects that create decision points",
+    "Cost curve ranges from 0-13, with most cards at 1-5 mana",
+    "Color identity is strong - each color has distinct playstyle",
+    "Tower enchantments provide persistent battlefield effects",
+    "Items are separate from spells and provide stat boosts"
+  ]
+}
+

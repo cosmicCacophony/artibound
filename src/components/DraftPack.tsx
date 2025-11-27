@@ -1,8 +1,25 @@
 import React, { useState } from 'react'
-import { DraftPack, DraftPoolItem, DraftPickType, BaseCard } from '../game/types'
+import { DraftPack, DraftPoolItem, DraftPickType, BaseCard, Color } from '../game/types'
 import { HeroCard } from './HeroCard'
 import { CardEditorModal } from './CardEditorModal'
 import { useCardManagement } from '../hooks/useCardManagement'
+
+// Color palette mapping
+const COLOR_MAP: Record<Color, string> = {
+  red: '#d32f2f',
+  blue: '#1976d2',
+  white: '#f5f5f5',
+  black: '#424242',
+  green: '#388e3c',
+}
+
+const COLOR_LIGHT_MAP: Record<Color, string> = {
+  red: '#ffebee',
+  blue: '#e3f2fd',
+  white: '#ffffff',
+  black: '#fafafa',
+  green: '#e8f5e9',
+}
 
 interface DraftPackProps {
   pack: DraftPack
@@ -37,9 +54,47 @@ export default function DraftPackComponent({ pack, selectedItem, onItemClick, is
     }
   }
 
+  const getColorStyles = (colors?: Color[]) => {
+    if (!colors || colors.length === 0) {
+      return {
+        borderColor: '#757575',
+        backgroundColor: '#fafafa',
+        borderWidth: '2px',
+      }
+    } else if (colors.length === 1) {
+      const color = colors[0]
+      return {
+        borderColor: COLOR_MAP[color],
+        backgroundColor: COLOR_LIGHT_MAP[color],
+        borderWidth: '3px',
+      }
+    } else {
+      // Multicolor - create gradient background
+      const gradientColors = colors.map(c => COLOR_LIGHT_MAP[c]).join(', ')
+      return {
+        borderColor: COLOR_MAP[colors[0]], // Primary color border
+        background: colors.length === 2
+          ? `linear-gradient(to right, ${COLOR_LIGHT_MAP[colors[0]]} 50%, ${COLOR_LIGHT_MAP[colors[1]]} 50%)`
+          : `linear-gradient(135deg, ${colors.map((c, i) => {
+              const percent = (i / colors.length) * 100
+              return `${COLOR_LIGHT_MAP[c]} ${percent}%`
+            }).join(', ')})`,
+        borderWidth: '3px',
+      }
+    }
+  }
+
   const renderItem = (item: DraftPoolItem) => {
     const isSelected = selectedItem?.id === item.id
     const canSelect = true // Allow selecting items for either player
+
+    // Get colors from the item
+    let itemColors: Color[] = []
+    if (item.type === 'hero' || item.type === 'card') {
+      itemColors = (item.item as any).colors || []
+    }
+
+    const colorStyles = getColorStyles(itemColors)
 
     let cardData: any = null
     if (item.type === 'hero') {
@@ -99,14 +154,16 @@ export default function DraftPackComponent({ pack, selectedItem, onItemClick, is
           }
         }}
         style={{
-          border: isSelected ? '3px solid #2196F3' : '1px solid #ccc',
+          border: isSelected ? '3px solid #2196F3' : `${colorStyles.borderWidth} solid ${colorStyles.borderColor}`,
           borderRadius: '8px',
           padding: '8px',
           cursor: canSelect ? 'pointer' : 'default',
-          backgroundColor: isSelected ? '#E3F2FD' : canSelect ? '#fff' : '#f5f5f5',
+          backgroundColor: isSelected ? '#E3F2FD' : (colorStyles.backgroundColor || colorStyles.background || '#fff'),
+          background: isSelected ? undefined : (colorStyles.background || undefined),
           opacity: canSelect ? 1 : 0.6,
           transition: 'all 0.2s',
           position: 'relative',
+          boxShadow: itemColors.length > 0 ? `0 2px 8px rgba(0,0,0,0.15)` : 'none',
         }}
       >
         {(item.type === 'hero' || item.type === 'card') && (
@@ -133,8 +190,34 @@ export default function DraftPackComponent({ pack, selectedItem, onItemClick, is
         {item.type === 'hero' && cardData && (
           <HeroCard card={cardData} />
         )}
+        {/* Color indicator bar at top */}
+        {itemColors.length > 0 && (
+          <div style={{ 
+            display: 'flex', 
+            height: '6px', 
+            marginBottom: '8px',
+            borderRadius: '3px',
+            overflow: 'hidden',
+            position: 'absolute',
+            top: '0',
+            left: '0',
+            right: '0',
+          }}>
+            {itemColors.map((color, idx) => (
+              <div
+                key={idx}
+                style={{
+                  flex: 1,
+                  backgroundColor: COLOR_MAP[color],
+                  borderRight: idx < itemColors.length - 1 ? '1px solid rgba(255,255,255,0.3)' : 'none',
+                }}
+                title={color}
+              />
+            ))}
+          </div>
+        )}
         {item.type === 'card' && (
-          <div>
+          <div style={{ marginTop: itemColors.length > 0 ? '14px' : '0' }}>
             <div style={{ fontWeight: 'bold' }}>{item.item.name}</div>
             <div style={{ fontSize: '12px', color: '#666' }}>{item.item.description}</div>
             {(item.item as any).manaCost && (
@@ -147,6 +230,27 @@ export default function DraftPackComponent({ pack, selectedItem, onItemClick, is
             {(item.item as any).attack !== undefined && (item.item as any).health !== undefined && (
               <div style={{ marginTop: '4px', fontSize: '14px' }}>
                 {(item.item as any).attack} / {(item.item as any).health}
+              </div>
+            )}
+            {/* Color badges */}
+            {itemColors.length > 0 && (
+              <div style={{ marginTop: '6px', display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                {itemColors.map((color, idx) => (
+                  <span
+                    key={idx}
+                    style={{
+                      backgroundColor: COLOR_MAP[color],
+                      color: 'white',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {color}
+                  </span>
+                ))}
               </div>
             )}
           </div>
@@ -167,7 +271,7 @@ export default function DraftPackComponent({ pack, selectedItem, onItemClick, is
 
   return (
     <div>
-      <h2>Pack {pack.packNumber} - Available Items</h2>
+      <h2>Round Pack - Available Items</h2>
       <div style={{ marginBottom: '16px', color: '#666' }}>
         {pack.remainingItems.length} items remaining
       </div>
@@ -201,7 +305,7 @@ export default function DraftPackComponent({ pack, selectedItem, onItemClick, is
 
       {pack.remainingItems.length === 0 && (
         <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#E8F5E9', borderRadius: '8px' }}>
-          Pack {pack.packNumber} is complete!
+          This pack is empty! A new pack will be generated for the next round.
         </div>
       )}
 

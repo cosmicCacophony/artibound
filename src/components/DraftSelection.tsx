@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { DraftState, Hero, BaseCard, BattlefieldDefinition, HEROES_REQUIRED, CARDS_REQUIRED } from '../game/types'
+import { DraftState, Hero, BaseCard, BattlefieldDefinition, HEROES_REQUIRED, CARDS_REQUIRED, Color } from '../game/types'
+import { defaultGenericHeroes } from '../game/comprehensiveCardData'
 
 interface DraftSelectionProps {
   draftState: DraftState
@@ -42,6 +43,50 @@ export default function DraftSelection({ draftState, onFinalSelection, autoFillD
   const currentSelection = activePlayer === 'player1' ? player1Selection : player2Selection
   const setCurrentSelection = activePlayer === 'player1' ? setPlayer1Selection : setPlayer2Selection
 
+  // Track default heroes being added (color -> hero)
+  const [player1DefaultHeroes, setPlayer1DefaultHeroes] = useState<Map<Color, Hero>>(new Map())
+  const [player2DefaultHeroes, setPlayer2DefaultHeroes] = useState<Map<Color, Hero>>(new Map())
+  const currentDefaultHeroes = activePlayer === 'player1' ? player1DefaultHeroes : player2DefaultHeroes
+  const setCurrentDefaultHeroes = activePlayer === 'player1' ? setPlayer1DefaultHeroes : setPlayer2DefaultHeroes
+
+  // Available colors for default heroes
+  const availableColors: Color[] = ['red', 'blue', 'white', 'black', 'green']
+  const COLOR_MAP: Record<Color, string> = {
+    red: '#d32f2f',
+    blue: '#1976d2',
+    white: '#f5f5f5',
+    black: '#424242',
+    green: '#388e3c',
+  }
+
+  const heroesNeeded = HEROES_REQUIRED - (currentDrafted.heroes.length + currentDefaultHeroes.size)
+  const canAddDefaultHero = heroesNeeded > 0
+
+  const addDefaultHero = (color: Color) => {
+    if (!canAddDefaultHero) return
+    
+    const defaultHero = defaultGenericHeroes.find(h => h.colors[0] === color)
+    if (!defaultHero) return
+
+    // Create a new hero instance with unique ID
+    const newHero: Hero = {
+      ...defaultHero,
+      id: `default-${activePlayer}-${color}-${Date.now()}`,
+      location: 'hand',
+      owner: activePlayer,
+    }
+
+    const newMap = new Map(currentDefaultHeroes)
+    newMap.set(color, newHero)
+    setCurrentDefaultHeroes(newMap)
+  }
+
+  const removeDefaultHero = (color: Color) => {
+    const newMap = new Map(currentDefaultHeroes)
+    newMap.delete(color)
+    setCurrentDefaultHeroes(newMap)
+  }
+
   const toggleHero = (heroId: string) => {
     const newSet = new Set(currentSelection.heroes)
     if (newSet.has(heroId)) {
@@ -73,13 +118,16 @@ export default function DraftSelection({ draftState, onFinalSelection, autoFillD
   const handleConfirm = (player: 'player1' | 'player2') => {
     const selection = player === 'player1' ? player1Selection : player2Selection
     const drafted = player === 'player1' ? player1Drafted : player2Drafted
+    const defaultHeroes = player === 'player1' ? player1DefaultHeroes : player2DefaultHeroes
     
     const selectedHeroes = drafted.heroes.filter(h => selection.heroes.has(h.id))
+    // Add default heroes
+    const allSelectedHeroes = [...selectedHeroes, ...Array.from(defaultHeroes.values())]
     const selectedCards = drafted.cards.filter(c => selection.cards.has(c.id))
     const selectedBattlefield = drafted.battlefields.find(b => b.id === selection.battlefield)
 
-    if (selectedHeroes.length !== HEROES_REQUIRED) {
-      alert(`Please select exactly ${HEROES_REQUIRED} heroes`)
+    if (allSelectedHeroes.length !== HEROES_REQUIRED) {
+      alert(`Please select exactly ${HEROES_REQUIRED} heroes (you have ${allSelectedHeroes.length}, need ${HEROES_REQUIRED})`)
       return
     }
     if (selectedCards.length !== CARDS_REQUIRED) {
@@ -92,7 +140,7 @@ export default function DraftSelection({ draftState, onFinalSelection, autoFillD
     }
 
     onFinalSelection(player, {
-      heroes: selectedHeroes,
+      heroes: allSelectedHeroes,
       cards: selectedCards,
       battlefield: selectedBattlefield,
     })
@@ -186,7 +234,7 @@ export default function DraftSelection({ draftState, onFinalSelection, autoFillD
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
         {/* Heroes */}
         <div>
-          <h3>Heroes ({currentSelection.heroes.size} / {HEROES_REQUIRED})</h3>
+          <h3>Heroes ({currentSelection.heroes.size + currentDefaultHeroes.size} / {HEROES_REQUIRED})</h3>
           <div style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid #ccc', padding: '12px', borderRadius: '4px' }}>
             {currentDrafted.heroes.map(hero => (
               <div
@@ -205,8 +253,88 @@ export default function DraftSelection({ draftState, onFinalSelection, autoFillD
                 <div style={{ fontSize: '12px' }}>{hero.description}</div>
               </div>
             ))}
-            {currentDrafted.heroes.length === 0 && (
-              <div style={{ color: '#999', fontStyle: 'italic' }}>No heroes drafted</div>
+            {/* Show default heroes that have been added */}
+            {Array.from(currentDefaultHeroes.values()).map(hero => (
+              <div
+                key={hero.id}
+                style={{
+                  padding: '8px',
+                  marginBottom: '8px',
+                  border: '2px solid #FF9800',
+                  borderRadius: '4px',
+                  backgroundColor: '#FFF3E0',
+                  position: 'relative',
+                }}
+              >
+                <button
+                  onClick={() => removeDefaultHero(hero.colors[0])}
+                  style={{
+                    position: 'absolute',
+                    top: '4px',
+                    right: '4px',
+                    padding: '2px 6px',
+                    fontSize: '10px',
+                    backgroundColor: '#f44336',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  ×
+                </button>
+                <div style={{ fontWeight: 'bold', color: COLOR_MAP[hero.colors[0]] }}>
+                  {hero.name} (Default)
+                </div>
+                <div style={{ fontSize: '12px' }}>{hero.description}</div>
+                <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
+                  {hero.attack} / {hero.health}
+                </div>
+              </div>
+            ))}
+            {/* Add default hero section */}
+            {canAddDefaultHero && (
+              <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#FFF9C4', borderRadius: '4px', border: '1px dashed #FFC107' }}>
+                <div style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '8px', color: '#F57F17' }}>
+                  Add Default Hero ({heroesNeeded} needed)
+                </div>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {availableColors.map(color => {
+                    const alreadyAdded = currentDefaultHeroes.has(color)
+                    const defaultHero = defaultGenericHeroes.find(h => h.colors[0] === color)
+                    if (!defaultHero) return null
+                    
+                    return (
+                      <button
+                        key={color}
+                        onClick={() => alreadyAdded ? removeDefaultHero(color) : addDefaultHero(color)}
+                        disabled={alreadyAdded}
+                        style={{
+                          padding: '6px 12px',
+                          fontSize: '11px',
+                          backgroundColor: alreadyAdded ? '#ccc' : COLOR_MAP[color],
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: alreadyAdded ? 'not-allowed' : 'pointer',
+                          fontWeight: 'bold',
+                          textTransform: 'capitalize',
+                          opacity: alreadyAdded ? 0.5 : 1,
+                        }}
+                        title={alreadyAdded ? 'Already added' : `Add ${color} default hero (${defaultHero.attack}/${defaultHero.health})`}
+                      >
+                        {color} {alreadyAdded ? '✓' : '+'}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div style={{ fontSize: '10px', color: '#666', marginTop: '8px', fontStyle: 'italic' }}>
+                  Default heroes are weaker (0.75x strength) but available if you need to fill your roster
+                </div>
+              </div>
+            )}
+            {currentDrafted.heroes.length === 0 && currentDefaultHeroes.size === 0 && (
+              <div style={{ color: '#999', fontStyle: 'italic' }}>No heroes drafted. Add default heroes above.</div>
             )}
           </div>
         </div>

@@ -218,13 +218,15 @@ export interface FinalDraftSelection {
   battlefield: BattlefieldDefinition // Exactly 1
 }
 
-// Updated DraftState
+// Updated DraftState - Round-based system
 export interface DraftState {
-  currentPack: number // 1-4
+  currentRound: number // Current round number
+  currentPack: DraftPack | null // Current pack being drafted from
   currentPicker: PlayerId
-  pickNumber: number // Overall pick number (1-56 total, alternating)
+  pickNumber: number // Overall pick number
   picksRemainingThisTurn: number // How many picks the current player has left this turn
-  packs: DraftPack[]
+  roundPicksRemaining: number // Picks remaining in current round
+  roundPattern: number // Which pattern we're in (0 = P1 P2 P2, 1 = P2 P1 P1 P2)
   
   // All picks (not final selections) - visible to both players
   player1Drafted: DraftedItems
@@ -234,7 +236,7 @@ export interface DraftState {
   player1Final: FinalDraftSelection | null
   player2Final: FinalDraftSelection | null
   
-  isDraftComplete: boolean // All packs picked
+  isDraftComplete: boolean // Both players have enough items
   isSelectionComplete: boolean // Final selections made
 }
 
@@ -267,7 +269,7 @@ export const CARDS_REQUIRED = 12 // 20 - 8 signature cards
 export const BATTLEFIELDS_REQUIRED = 1
 export const SIGNATURE_CARDS_PER_HERO = 2
 
-export const DRAFT_PACKS = 4
+export const DRAFT_PACKS = 5
 export const PICKS_PER_PACK = 7
 export const TOTAL_PICKS_PER_PLAYER = DRAFT_PACKS * PICKS_PER_PACK // 28
 

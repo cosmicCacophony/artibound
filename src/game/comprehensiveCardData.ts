@@ -4,17 +4,19 @@ import { Hero, BaseCard, GenericUnit, SpellCard, SpellEffect, BattlefieldDefinit
 // DEFAULT GENERIC HEROES (for each color)
 // ============================================================================
 
+// Default heroes are 0.75x as strong as normal draftable heroes
+// They are not included in drafts, only available as fallback options
 export const defaultGenericHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   {
     id: 'default-red-generic',
     name: 'Red Warrior',
-    description: 'Basic red hero',
+    description: 'Basic red hero (weaker than draftable heroes)',
     cardType: 'hero',
     colors: ['red'],
-    attack: 5,
-    health: 9,
-    maxHealth: 9,
-    currentHealth: 9,
+    attack: 4,
+    health: 7,
+    maxHealth: 7,
+    currentHealth: 7,
     supportEffect: 'Basic combat support',
     signatureCardIds: [],
     equippedItems: [],
@@ -22,13 +24,13 @@ export const defaultGenericHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   {
     id: 'default-white-generic',
     name: 'White Guard',
-    description: 'Basic white hero',
+    description: 'Basic white hero (weaker than draftable heroes)',
     cardType: 'hero',
     colors: ['white'],
-    attack: 3,
-    health: 11,
-    maxHealth: 11,
-    currentHealth: 11,
+    attack: 2,
+    health: 9,
+    maxHealth: 9,
+    currentHealth: 9,
     supportEffect: 'Basic defensive support',
     signatureCardIds: [],
     equippedItems: [],
@@ -36,13 +38,13 @@ export const defaultGenericHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   {
     id: 'default-green-generic',
     name: 'Green Ranger',
-    description: 'Basic green hero',
+    description: 'Basic green hero (weaker than draftable heroes)',
     cardType: 'hero',
     colors: ['green'],
-    attack: 6,
-    health: 8,
-    maxHealth: 8,
-    currentHealth: 8,
+    attack: 4,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
     supportEffect: 'Basic nature support',
     signatureCardIds: [],
     equippedItems: [],
@@ -50,13 +52,13 @@ export const defaultGenericHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   {
     id: 'default-blue-generic',
     name: 'Blue Mage',
-    description: 'Basic blue hero',
+    description: 'Basic blue hero (weaker than draftable heroes)',
     cardType: 'hero',
     colors: ['blue'],
-    attack: 4,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
+    attack: 3,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
     supportEffect: 'Basic arcane support',
     signatureCardIds: [],
     equippedItems: [],
@@ -64,13 +66,13 @@ export const defaultGenericHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   {
     id: 'default-black-generic',
     name: 'Black Assassin',
-    description: 'Basic black hero',
+    description: 'Basic black hero (weaker than draftable heroes)',
     cardType: 'hero',
     colors: ['black'],
-    attack: 4,
-    health: 8,
-    maxHealth: 8,
-    currentHealth: 8,
+    attack: 3,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
     supportEffect: 'Basic shadow support',
     signatureCardIds: [],
     equippedItems: [],
@@ -1600,4 +1602,6 @@ export const allBattlefields: BattlefieldDefinition[] = [
   ...archetypeBattlefields,
   ...genericBattlefields,
 ]
+
+
 

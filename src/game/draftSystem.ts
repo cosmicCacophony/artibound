@@ -187,6 +187,11 @@ export function generateAllDraftPacks(): DraftPack[] {
   return packs
 }
 
+// Generate a single random pack for the new round-based system
+export function generateRandomPack(roundNumber: number): DraftPack {
+  return generateDraftPack(roundNumber)
+}
+
 // Remove a picked item from pack's remaining items
 export function removeItemFromPack(
   pack: DraftPack,

@@ -6,9 +6,10 @@ import DraftPicks from './DraftPicks'
 import DraftSelection from './DraftSelection'
 
 export default function DraftView() {
-  const { draftState, getCurrentPack, makePick, makeFinalSelection, autoFillDefaults, resetDraft } = useDraft()
+  const { draftState, getCurrentPack, makePick, makeFinalSelection, autoFillDefaults, autoDraft, resetDraft } = useDraft()
   const [selectedItem, setSelectedItem] = useState<DraftPoolItem | null>(null)
   const [showSelection, setShowSelection] = useState(false)
+  const [isAutoDrafting, setIsAutoDrafting] = useState(false)
 
   const currentPack = getCurrentPack()
   const isPlayer1Turn = draftState.currentPicker === 'player1'
@@ -38,6 +39,18 @@ export default function DraftView() {
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Invalid selection')
     }
+  }
+
+  const handleAutoDraft = () => {
+    if (draftState.isDraftComplete) {
+      return
+    }
+    setIsAutoDrafting(true)
+    // Use setTimeout to allow UI to update before running autodraft
+    setTimeout(() => {
+      autoDraft()
+      setIsAutoDrafting(false)
+    }, 10)
   }
 
   // Show selection phase if draft is complete
@@ -80,12 +93,15 @@ export default function DraftView() {
     <div style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
       <div style={{ marginBottom: '20px' }}>
         <h1>Draft Phase</h1>
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div>
-            <strong>Pack:</strong> {draftState.currentPack} / {draftState.packs.length}
+            <strong>Round:</strong> {draftState.currentRound}
           </div>
           <div>
-            <strong>Pick:</strong> {draftState.pickNumber} / {draftState.packs.length * 7 * 2}
+            <strong>Pick:</strong> {draftState.pickNumber}
+          </div>
+          <div>
+            <strong>Round Picks Remaining:</strong> {draftState.roundPicksRemaining} / 4
           </div>
           <div style={{
             padding: '8px 16px',
@@ -104,6 +120,26 @@ export default function DraftView() {
           <div style={{ fontSize: '14px', color: '#666' }}>
             (You control both players)
           </div>
+          {!draftState.isDraftComplete && (
+            <button
+              onClick={handleAutoDraft}
+              disabled={isAutoDrafting}
+              style={{
+                padding: '8px 16px',
+                fontSize: '14px',
+                backgroundColor: isAutoDrafting ? '#ccc' : '#FF9800',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: isAutoDrafting ? 'not-allowed' : 'pointer',
+                fontWeight: 'bold',
+                marginLeft: 'auto',
+              }}
+              title="Automatically pick random cards for both players until draft is complete"
+            >
+              {isAutoDrafting ? 'Auto-drafting...' : '⚡ Auto-Draft'}
+            </button>
+          )}
         </div>
       </div>
 
