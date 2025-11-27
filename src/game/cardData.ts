@@ -11,7 +11,16 @@ import {
   getCardsWithOverrides, 
   getHeroesWithOverrides, 
   getSpellsWithOverrides, 
-  getBattlefieldsWithOverrides 
+  getBattlefieldsWithOverrides,
+  updateCard,
+  updateHero,
+  updateSpell,
+  updateBattlefield,
+  resetCard,
+  resetHero,
+  resetSpell,
+  resetBattlefield,
+  clearAllOverrides,
 } from './cardStorage'
 import { defaultGenericHeroes } from './comprehensiveCardData'
 
@@ -35,7 +44,7 @@ export {
   resetSpell,
   resetBattlefield,
   clearAllOverrides,
-} from './cardStorage'
+}
 
 // Make storage functions available globally for easy console access
 if (typeof window !== 'undefined') {

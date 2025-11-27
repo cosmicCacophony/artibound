@@ -15,10 +15,11 @@ import {
   CARDS_REQUIRED,
   BATTLEFIELDS_REQUIRED,
   Color,
+  Archetype,
 } from '../game/types'
-import { generateAllDraftPacks, removeItemFromPack, isPackComplete, generateRandomPack } from '../game/draftSystem'
+import { generateAllDraftPacks, removeItemFromPack, isPackComplete, generateRandomPack, heroMatchesArchetype, cardMatchesArchetype } from '../game/draftSystem'
 import { defaultHeroes, defaultBattlefield, draftableHeroes } from '../game/draftData'
-import { allCards, allSpells, allBattlefields } from '../game/cardData'
+import { allCards, allSpells, allBattlefields, allHeroes } from '../game/cardData'
 
 // Check if a player has enough items to complete their deck
 function hasEnoughItems(drafted: DraftedItems): boolean {
@@ -276,37 +277,28 @@ export function useDraft() {
     [draftState]
   )
 
-  // Auto-build complete decks: Assign colors and build decks automatically
+  // Auto-build complete decks: Assign archetypes and build decks automatically
   const autoBuildDecks = useCallback(() => {
     setDraftState(prevState => {
-      // Randomly assign 2 colors to each player (different colors)
-      const allColors: Color[] = ['red', 'blue', 'white', 'black', 'green']
-      const shuffledColors = [...allColors].sort(() => Math.random() - 0.5)
-      const player1Colors = shuffledColors.slice(0, 2)
-      const player2Colors = shuffledColors.slice(2, 4)
+      // Assign RW to one player and UB to the other (randomly)
+      const archetypes: [Archetype, Archetype] = Math.random() > 0.5 
+        ? ['rw-legion', 'ub-control']
+        : ['ub-control', 'rw-legion']
+      const player1Archetype = archetypes[0]
+      const player2Archetype = archetypes[1]
       
-      // Helper to filter by colors (card must have at least one of the colors)
-      const matchesColors = (item: { colors?: Color[] }, colors: Color[]) => {
-        if (!item.colors || item.colors.length === 0) return false
-        return item.colors.some(c => colors.includes(c))
-      }
+      // Get heroes matching each player's archetype
+      const player1HeroPool = allHeroes.filter(h => heroMatchesArchetype(h, [player1Archetype]))
+      const player2HeroPool = allHeroes.filter(h => heroMatchesArchetype(h, [player2Archetype]))
       
-      // Get heroes in player colors
-      const player1HeroPool = draftableHeroes.filter(h => matchesColors(h, player1Colors))
-      const player2HeroPool = draftableHeroes.filter(h => matchesColors(h, player2Colors))
-      
-      // Get cards in player colors (including spells)
+      // Get cards matching each player's archetype (including spells)
       const allCardsAndSpells: BaseCard[] = [...allCards, ...allSpells]
-      const player1CardPool = allCardsAndSpells.filter(c => matchesColors(c, player1Colors))
-      const player2CardPool = allCardsAndSpells.filter(c => matchesColors(c, player2Colors))
+      const player1CardPool = allCardsAndSpells.filter(c => cardMatchesArchetype(c, [player1Archetype]))
+      const player2CardPool = allCardsAndSpells.filter(c => cardMatchesArchetype(c, [player2Archetype]))
       
-      // Get battlefields (prefer ones matching colors, but allow any)
-      const player1BattlefieldPool = allBattlefields.filter(b => 
-        !b.colors || b.colors.length === 0 || matchesColors(b, player1Colors)
-      )
-      const player2BattlefieldPool = allBattlefields.filter(b => 
-        !b.colors || b.colors.length === 0 || matchesColors(b, player2Colors)
-      )
+      // Get battlefields (allow any for now)
+      const player1BattlefieldPool = allBattlefields
+      const player2BattlefieldPool = allBattlefields
       
       // Shuffle and select
       const shuffle = <T>(arr: T[]): T[] => {
@@ -318,16 +310,25 @@ export function useDraft() {
         return copy
       }
       
-      // Select 4 heroes for each player
-      const player1Heroes = shuffle(player1HeroPool).slice(0, HEROES_REQUIRED).map((hero, idx) => ({
-        ...hero,
-        id: `${hero.id}-player1-auto-${Date.now()}-${idx}`,
-      } as Hero))
+      // Select 4 heroes for each player (allow duplicates if not enough unique heroes)
+      const player1Heroes: Hero[] = []
+      const player2Heroes: Hero[] = []
       
-      const player2Heroes = shuffle(player2HeroPool).slice(0, HEROES_REQUIRED).map((hero, idx) => ({
-        ...hero,
-        id: `${hero.id}-player2-auto-${Date.now()}-${idx}`,
-      } as Hero))
+      // Fill up to HEROES_REQUIRED, allowing duplicates if needed
+      for (let i = 0; i < HEROES_REQUIRED; i++) {
+        const p1Hero = player1HeroPool[i % player1HeroPool.length]
+        const p2Hero = player2HeroPool[i % player2HeroPool.length]
+        
+        player1Heroes.push({
+          ...p1Hero,
+          id: `${p1Hero.id}-player1-auto-${Date.now()}-${i}-${Math.random()}`,
+        } as Hero)
+        
+        player2Heroes.push({
+          ...p2Hero,
+          id: `${p2Hero.id}-player2-auto-${Date.now()}-${i}-${Math.random()}`,
+        } as Hero)
+      }
       
       // Select 12 cards for each player
       const player1Cards = shuffle(player1CardPool).slice(0, CARDS_REQUIRED)
@@ -524,36 +525,10 @@ export function useDraft() {
 
       // If draft completed, automatically build decks
       if (currentState.isDraftComplete && !currentState.isSelectionComplete) {
-        // Randomly assign 2 colors to each player (different colors)
-        const allColors: Color[] = ['red', 'blue', 'white', 'black', 'green']
-        const shuffledColors = [...allColors].sort(() => Math.random() - 0.5)
-        const player1Colors = shuffledColors.slice(0, 2)
-        const player2Colors = shuffledColors.slice(2, 4)
+        // Use the drafted items directly - they're already filtered by archetype from the draft
+        // Just select the required amounts from what was drafted
         
-        // Helper to filter by colors (card must have at least one of the colors)
-        const matchesColors = (item: { colors?: Color[] }, colors: Color[]) => {
-          if (!item.colors || item.colors.length === 0) return false
-          return item.colors.some(c => colors.includes(c))
-        }
-        
-        // Get heroes in player colors
-        const player1HeroPool = draftableHeroes.filter(h => matchesColors(h, player1Colors))
-        const player2HeroPool = draftableHeroes.filter(h => matchesColors(h, player2Colors))
-        
-        // Get cards in player colors (including spells)
-        const allCardsAndSpells: BaseCard[] = [...allCards, ...allSpells]
-        const player1CardPool = allCardsAndSpells.filter(c => matchesColors(c, player1Colors))
-        const player2CardPool = allCardsAndSpells.filter(c => matchesColors(c, player2Colors))
-        
-        // Get battlefields (prefer ones matching colors, but allow any)
-        const player1BattlefieldPool = allBattlefields.filter(b => 
-          !b.colors || b.colors.length === 0 || matchesColors(b, player1Colors)
-        )
-        const player2BattlefieldPool = allBattlefields.filter(b => 
-          !b.colors || b.colors.length === 0 || matchesColors(b, player2Colors)
-        )
-        
-        // Shuffle and select
+        // Shuffle and select from drafted items
         const shuffle = <T>(arr: T[]): T[] => {
           const copy = [...arr]
           for (let i = copy.length - 1; i > 0; i--) {
@@ -563,24 +538,17 @@ export function useDraft() {
           return copy
         }
         
-        // Select 4 heroes for each player
-        const player1Heroes = shuffle(player1HeroPool).slice(0, HEROES_REQUIRED).map((hero, idx) => ({
-          ...hero,
-          id: `${hero.id}-player1-auto-${Date.now()}-${idx}`,
-        } as Hero))
+        // Select from drafted heroes (already filtered by archetype)
+        const player1Heroes = shuffle(currentState.player1Drafted.heroes).slice(0, HEROES_REQUIRED)
+        const player2Heroes = shuffle(currentState.player2Drafted.heroes).slice(0, HEROES_REQUIRED)
         
-        const player2Heroes = shuffle(player2HeroPool).slice(0, HEROES_REQUIRED).map((hero, idx) => ({
-          ...hero,
-          id: `${hero.id}-player2-auto-${Date.now()}-${idx}`,
-        } as Hero))
+        // Select from drafted cards (already filtered by archetype, includes signature cards)
+        const player1Cards = shuffle(currentState.player1Drafted.cards).slice(0, CARDS_REQUIRED)
+        const player2Cards = shuffle(currentState.player2Drafted.cards).slice(0, CARDS_REQUIRED)
         
-        // Select 12 cards for each player
-        const player1Cards = shuffle(player1CardPool).slice(0, CARDS_REQUIRED)
-        const player2Cards = shuffle(player2CardPool).slice(0, CARDS_REQUIRED)
-        
-        // Select 1 battlefield for each player
-        const player1Battlefield = shuffle(player1BattlefieldPool)[0] || allBattlefields[0]
-        const player2Battlefield = shuffle(player2BattlefieldPool)[0] || allBattlefields[0]
+        // Select from drafted battlefields
+        const player1Battlefield = currentState.player1Drafted.battlefields[0] || allBattlefields[0]
+        const player2Battlefield = currentState.player2Drafted.battlefields[0] || allBattlefields[0]
         
         // Create final selections
         const player1Final: FinalDraftSelection = {

@@ -56,7 +56,7 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 // Helper to check if hero matches active archetypes
-function heroMatchesArchetype(hero: Omit<Hero, 'location' | 'owner'>, activeArchetypes: Archetype[]): boolean {
+export function heroMatchesArchetype(hero: Omit<Hero, 'location' | 'owner'>, activeArchetypes: Archetype[]): boolean {
   if (activeArchetypes.includes('all')) return true
   
   const heroColors = hero.colors || []
@@ -64,11 +64,23 @@ function heroMatchesArchetype(hero: Omit<Hero, 'location' | 'owner'>, activeArch
   const hasWhite = heroColors.includes('white')
   const hasBlue = heroColors.includes('blue')
   const hasBlack = heroColors.includes('black')
+  const hasGreen = heroColors.includes('green')
   
-  // RW Legion: needs red AND white
-  if (activeArchetypes.includes('rw-legion') && hasRed && hasWhite) return true
-  // UB Control: needs blue AND black
-  if (activeArchetypes.includes('ub-control') && hasBlue && hasBlack) return true
+  // RW Legion: needs red AND/OR white (but NO green, blue, or black)
+  if (activeArchetypes.includes('rw-legion')) {
+    // Exclude heroes with green, blue, or black
+    if (hasGreen || hasBlue || hasBlack) return false
+    // Allow red+white, pure red, or pure white
+    if (hasRed || hasWhite) return true
+  }
+  
+  // UB Control: needs blue AND/OR black (but NO green, red, or white)
+  if (activeArchetypes.includes('ub-control')) {
+    // Exclude heroes with green, red, or white
+    if (hasGreen || hasRed || hasWhite) return false
+    // Allow blue+black, pure blue, or pure black
+    if (hasBlue || hasBlack) return true
+  }
   
   return false
 }
@@ -113,7 +125,7 @@ function selectHeroesForPack(
 }
 
 // Helper to check if card matches active archetypes
-function cardMatchesArchetype(card: BaseCard, activeArchetypes: Archetype[]): boolean {
+export function cardMatchesArchetype(card: BaseCard, activeArchetypes: Archetype[]): boolean {
   if (activeArchetypes.includes('all')) return true
   
   const cardColors = card.colors || []
@@ -121,25 +133,42 @@ function cardMatchesArchetype(card: BaseCard, activeArchetypes: Archetype[]): bo
   const hasWhite = cardColors.includes('white')
   const hasBlue = cardColors.includes('blue')
   const hasBlack = cardColors.includes('black')
+  const hasGreen = cardColors.includes('green')
   
   // Check if card is generic (weaker cards that work in any deck)
+  // Only allow generic cards that match the archetype colors
   const isGeneric = card.id.includes('generic')
   
-  // Generic cards work in any archetype
-  if (isGeneric) return true
-  
-  // RW Legion: needs red AND white, or single red/white
+  // RW Legion: Only red, white, or red+white cards (NO green, blue, or black)
   if (activeArchetypes.includes('rw-legion')) {
+    // Exclude any card with green, blue, or black
+    if (hasGreen || hasBlue || hasBlack) return false
+    
+    // Allow generic cards that are red/white only
+    if (isGeneric && (hasRed || hasWhite)) return true
+    
+    // Allow red+white cards
     if (hasRed && hasWhite) return true
-    if (hasRed && !hasBlue && !hasBlack && !hasWhite) return true // Pure red
-    if (hasWhite && !hasBlue && !hasBlack && !hasRed) return true // Pure white
+    // Allow pure red cards
+    if (hasRed && !hasWhite) return true
+    // Allow pure white cards
+    if (hasWhite && !hasRed) return true
   }
   
-  // UB Control: needs blue AND black, or single blue/black
+  // UB Control: Only blue, black, or blue+black cards (NO green, red, or white)
   if (activeArchetypes.includes('ub-control')) {
+    // Exclude any card with green, red, or white
+    if (hasGreen || hasRed || hasWhite) return false
+    
+    // Allow generic cards that are blue/black only
+    if (isGeneric && (hasBlue || hasBlack)) return true
+    
+    // Allow blue+black cards
     if (hasBlue && hasBlack) return true
-    if (hasBlue && !hasRed && !hasWhite && !hasBlack) return true // Pure blue
-    if (hasBlack && !hasRed && !hasWhite && !hasBlue) return true // Pure black
+    // Allow pure blue cards
+    if (hasBlue && !hasBlack) return true
+    // Allow pure black cards
+    if (hasBlack && !hasBlue) return true
   }
   
   return false
