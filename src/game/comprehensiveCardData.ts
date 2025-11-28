@@ -209,12 +209,12 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-sig-commander-2',
     name: 'Charge Order',
-    description: 'Commander signature - aggressive. All allies can attack immediately and gain +1 attack this turn.',
+    description: 'Commander signature - aggressive. All allies gain +2 attack this turn.',
     cardType: 'spell',
     colors: ['red', 'white'],
     manaCost: 3,
     effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect for immediate attack
+      type: 'targeted_damage', // Placeholder - would need custom effect for buff
       damage: 0,
     },
   },
@@ -297,7 +297,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-spell-into-the-fray',
     name: 'Into the Fray',
-    description: 'Target unit gains +2/+2 and can attack immediately.',
+    description: 'Target unit gains +3/+3 this turn.',
     cardType: 'spell',
     colors: ['red', 'white'],
     manaCost: 3,
@@ -432,18 +432,6 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   },
   // Generic RG cards
   {
-    id: 'rg-fight-1',
-    name: 'Fight Spell',
-    description: 'Make unit fight enemy',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 3,
-    attack: 0,
-    health: 0,
-    maxHealth: 0,
-    currentHealth: 0,
-  },
-  {
     id: 'rg-beefy-1',
     name: 'Wild Beast',
     description: 'Beefy aggressive unit',
@@ -490,6 +478,23 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 8,
     maxHealth: 8,
     currentHealth: 8,
+  },
+]
+
+export const rgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  {
+    id: 'rg-fight-1',
+    name: 'Fight Spell',
+    description: 'Make unit fight enemy. Target unit deals damage equal to its attack to target enemy unit.',
+    cardType: 'spell',
+    colors: ['green'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for fight mechanic
+      damage: 0,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
   },
 ]
 
@@ -554,33 +559,24 @@ export const ruCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 3,
     currentHealth: 3,
   },
-  {
-    id: 'ru-sig-sorcerer-1',
-    name: 'Chain Lightning',
-    description: 'Sorcerer signature - AOE',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 4,
-    attack: 3,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
-  {
-    id: 'ru-sig-sorcerer-2',
-    name: 'Spell Weave',
-    description: 'Sorcerer signature - synergy',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 3,
-    attack: 2,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
 ]
 
 export const ruSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  {
+    id: 'ru-sig-sorcerer-1',
+    name: 'Chain Lightning',
+    description: 'Sorcerer signature - AOE. Deal 3 damage to target unit and adjacent units.',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 4,
+    effect: {
+      type: 'adjacent_damage',
+      damage: 3,
+      adjacentCount: 3,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
   {
     id: 'ru-spell-1',
     name: 'Lightning Bolt',
@@ -702,18 +698,6 @@ export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     currentHealth: 3,
   },
   {
-    id: 'rb-sig-assassin-1',
-    name: 'Shadow Kill',
-    description: 'Assassin signature - removal',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 3,
-    attack: 3,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
-  {
     id: 'rb-sig-assassin-2',
     name: 'Dark Trade',
     description: 'Assassin signature - resource trade',
@@ -726,18 +710,6 @@ export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     currentHealth: 3,
   },
   // Generic RB cards
-  {
-    id: 'rb-kill-1',
-    name: 'Murder',
-    description: 'Kill target unit',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 4,
-    attack: 0,
-    health: 0,
-    maxHealth: 0,
-    currentHealth: 0,
-  },
   {
     id: 'rb-draw-1',
     name: 'Dark Insight',
@@ -765,6 +737,34 @@ export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
 ]
 
 export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  {
+    id: 'rb-sig-assassin-1',
+    name: 'Shadow Kill',
+    description: 'Assassin signature - removal. Deal 4 damage to target unit.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage',
+      damage: 4,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+  {
+    id: 'rb-kill-1',
+    name: 'Murder',
+    description: 'Kill target unit',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 4,
+    effect: {
+      type: 'targeted_damage',
+      damage: 999, // Effectively kill
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
   {
     id: 'rb-spell-1',
     name: 'Terminate',
@@ -1039,21 +1039,23 @@ export const gbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 7,
     currentHealth: 7,
   },
+]
+
+export const gbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'gb-kill-1',
     name: 'Murder',
     description: 'Kill target unit',
-    cardType: 'generic',
+    cardType: 'spell',
     colors: ['black'],
     manaCost: 4,
-    attack: 0,
-    health: 0,
-    maxHealth: 0,
-    currentHealth: 0,
+    effect: {
+      type: 'targeted_damage',
+      damage: 999, // Effectively kill
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
   },
-]
-
-export const gbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'gb-spell-1',
     name: 'Assassinate',
@@ -1687,18 +1689,6 @@ export const uwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 2,
     currentHealth: 2,
   },
-  {
-    id: 'uw-sig-mage-2',
-    name: 'Arcane Protection',
-    description: 'Mage signature - control',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 4,
-    attack: 3,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-  },
   // Generic UW cards
   {
     id: 'uw-threat-1',
@@ -1712,21 +1702,35 @@ export const uwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 6,
     currentHealth: 6,
   },
-  {
-    id: 'uw-control-1',
-    name: 'Counterspell',
-    description: 'Control spell',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 3,
-    attack: 0,
-    health: 0,
-    maxHealth: 0,
-    currentHealth: 0,
-  },
 ]
 
 export const uwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  {
+    id: 'uw-sig-mage-2',
+    name: 'Arcane Protection',
+    description: 'Mage signature - control. Target unit takes 1 less damage from all sources this turn.',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 4,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for damage reduction
+      damage: 0,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+  {
+    id: 'uw-control-1',
+    name: 'Counterspell',
+    description: 'Control spell. Cancel target spell.',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for spell cancellation
+      damage: 0,
+    },
+  },
   {
     id: 'uw-spell-1',
     name: 'Divine Wrath',

@@ -129,7 +129,7 @@ If a battlefield already has "Spells deal +1 damage" and you add Arcane Focus (+
 **For Unit Power Battlefield (War Camp):**
 - ❌ War Banner (+1 attack) - DISABLED (already has unit power)
 - ✅ Training Dummy: Units gain +0/+1
-- ✅ Rally Point: When you deploy a unit, all allies can attack immediately
+- ✅ Rally Point: When you deploy a unit, all your units gain +1/+0 until end of turn
 - ✅ Armory: Your units have +1 HP
 
 **Design Philosophy:**
@@ -342,6 +342,155 @@ If a battlefield already has "Spells deal +1 damage" and you add Arcane Focus (+
 - **Stacking**: Doesn't conflict, provides card advantage
 
 **Recommendation**: **Training Grounds** + **War Camp** - Training Grounds enables wide strategies, War Camp makes units stronger. Both are simple, powerful, and work well together.
+
+---
+
+## RW Battlefield Combo Synergies
+
+Since each player drafts 2 battlefields and they provide global bonuses, battlefield synergy becomes crucial. Players want battlefields that compound with each other, creating powerful combinations that reward strategic drafting.
+
+### Design Philosophy for RW Combos
+
+**Core Concept**: RW battlefields should create stat-based synergies that scale with unit count and power. The goal is to make units stronger together than individually.
+
+**Key Synergy Patterns**:
+1. **Stat Compounding**: Base stat bonus + conditional bonus based on stat thresholds
+2. **Wide Strategies**: Battlefields that reward deploying many units
+3. **Power Thresholds**: Unlock bonuses when units reach certain power levels
+4. **Combat Synergies**: Battlefields that enhance combat in complementary ways
+
+---
+
+### Combo Idea 1: Power Threshold Synergy
+
+**Battlefield A: War Camp**
+- **Ability**: All your units have +1/+0 (applies to both lanes)
+
+**Battlefield B: Champion's Arena**
+- **Ability**: All your units have +0/+1. If you control a unit with 5+ power, all your units have +1/+0 (applies to both lanes)
+
+**Combo Effect**: 
+- Units start at +1/+0 from War Camp
+- With +0/+1 from Champion's Arena, units are +1/+1
+- Once any unit reaches 5+ power (from base stats + War Camp bonus), Champion's Arena adds another +1/+0
+- **Result**: Units become +2/+1 once threshold is met
+- **Synergy**: War Camp helps units reach the 5+ power threshold faster, unlocking Champion's Arena's bonus
+
+**Draft Strategy**: Draft high-power units to trigger the combo faster. Wide strategies benefit from both battlefields.
+
+---
+
+### Combo Idea 2: Deployment Synergy
+
+**Battlefield A: Training Grounds**
+- **Ability**: You can deploy 6 units instead of 5 (applies to both lanes)
+
+**Battlefield B: Rally Point**
+- **Ability**: When you deploy a unit, all your units gain +1/+0 until end of turn (applies to both lanes)
+
+**Combo Effect**:
+- Training Grounds lets you deploy 6 units
+- Each deployment triggers Rally Point, giving all units +1/+0
+- Deploying 6 units in one turn = all units get +6/+0 for that turn
+- **Result**: Massive power spike on deployment turns
+- **Synergy**: More deployment slots = more Rally Point triggers = bigger power spike
+
+**Draft Strategy**: Draft cheap units to maximize deployment count. Save mana for big deployment turns.
+
+---
+
+### Combo Idea 3: Stat Stacking + Threshold
+
+**Battlefield A: War Camp**
+- **Ability**: All your units have +1/+0 (applies to both lanes)
+
+**Battlefield B: Legion Barracks**
+- **Ability**: Your Legion units cost 1 less mana. If you control 3+ units with 4+ power, all your units have +1/+0 (applies to both lanes)
+
+**Combo Effect**:
+- War Camp gives +1/+0 to all units
+- Legion Barracks reduces Legion costs, making it easier to deploy more units
+- Once you have 3+ units with 4+ power (helped by War Camp's +1/+0), Legion Barracks adds another +1/+0
+- **Result**: Units become +2/+0 once threshold is met, and Legion units are cheaper
+- **Synergy**: War Camp helps units reach 4+ power threshold, Legion Barracks rewards wide deployment
+
+**Draft Strategy**: Draft Legion units and high-power units. Go wide to trigger the threshold.
+
+---
+
+### Combo Idea 4: Death Synergy + Power
+
+**Battlefield A: War Camp**
+- **Ability**: All your units have +1/+0 (applies to both lanes)
+
+**Battlefield B: Honor Memorial**
+- **Ability**: When a unit dies, add a counter. Remove 3 counters to draw a card. If you control a unit with 5+ power, remove 2 counters instead (applies to both lanes)
+
+**Combo Effect**:
+- War Camp gives +1/+0, helping units reach 5+ power
+- Honor Memorial draws cards on unit deaths
+- With 5+ power unit, Honor Memorial draws cards faster (2 counters instead of 3)
+- **Result**: More card draw from aggressive play, units are stronger
+- **Synergy**: War Camp helps trigger Honor Memorial's bonus condition
+
+**Draft Strategy**: Draft aggressive units that trade well. Power threshold makes card draw more efficient.
+
+---
+
+### Combo Idea 5: Wide + Resilient
+
+**Battlefield A: Training Grounds**
+- **Ability**: You can deploy 6 units instead of 5 (applies to both lanes)
+
+**Battlefield B: Banner Field**
+- **Ability**: When you deploy a unit, all your units gain +0/+1 until end of turn. If you control 5+ units, all your units have +1/+0 (applies to both lanes)
+
+**Combo Effect**:
+- Training Grounds enables 6-unit deployment
+- Banner Field gives +0/+1 on each deployment
+- With 5+ units, Banner Field adds permanent +1/+0
+- **Result**: Wide board with high toughness from deployments, permanent attack bonus at 5+ units
+- **Synergy**: Training Grounds makes it easier to reach 5+ unit threshold
+
+**Draft Strategy**: Draft cheap units to go wide. Protect your board to maintain the 5+ unit bonus.
+
+---
+
+### Combo Idea 6: Double Power Threshold
+
+**Battlefield A: War Camp**
+- **Ability**: All your units have +1/+0 (applies to both lanes)
+
+**Battlefield B: Champion's Arena** (Alternative Version)
+- **Ability**: All your units have +0/+1. If you control a unit with 5+ power, all your units have +1/+0. If you control a unit with 7+ power, all your units have an additional +1/+0 (applies to both lanes)
+
+**Combo Effect**:
+- War Camp gives +1/+0 base
+- Champion's Arena gives +0/+1 base
+- At 5+ power: +1/+0 (total +2/+1)
+- At 7+ power: +1/+0 more (total +3/+1)
+- **Result**: Escalating power as you deploy stronger units
+- **Synergy**: War Camp helps units reach thresholds faster, creating exponential scaling
+
+**Draft Strategy**: Draft high-power units and stat-boosting cards. Power thresholds create scaling rewards.
+
+---
+
+### Recommended RW Battlefield Pair
+
+Based on combo analysis, the recommended pair is:
+
+**War Camp** + **Champion's Arena** (Combo Idea 1)
+
+**Why This Works**:
+- ✅ Simple to understand: +1/+0 base, +0/+1 base, unlock +1/+0 at 5+ power
+- ✅ Creates meaningful synergy: War Camp helps trigger Champion's Arena bonus
+- ✅ Rewards strategic drafting: High-power units become more valuable
+- ✅ Scales well: Goes from +1/+1 to +2/+1 once threshold is met
+- ✅ Balanced: Requires investment in high-power units to unlock full potential
+- ✅ Clear gameplay: Players understand the combo and can plan around it
+
+**Alternative Pair**: **Training Grounds** + **Rally Point** (Combo Idea 2) for explosive deployment turns
 
 ---
 
