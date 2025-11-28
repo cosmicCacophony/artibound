@@ -1,4 +1,4 @@
-import { Hero, BaseCard, GenericUnit, SpellCard, SpellEffect, BattlefieldDefinition, Color } from './types'
+import { Hero, BaseCard, GenericUnit, SpellCard, SpellEffect, BattlefieldDefinition, Color, HeroAbility } from './types'
 
 // ============================================================================
 // DEFAULT GENERIC HEROES (for each color)
@@ -97,6 +97,14 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     supportEffect: 'Allies gain +1/+1',
     signatureCardId: 'rw-sig-commander-1',
     equippedItems: [],
+    ability: {
+      name: 'Rally',
+      description: 'All your units gain +1/+1 this turn',
+      manaCost: 1,
+      cooldown: 2,
+      effectType: 'buff_units',
+      effectValue: 1, // +1/+1
+    },
   },
   {
     id: 'rw-hero-captain',
@@ -111,6 +119,14 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     supportEffect: 'Allies gain +2 attack',
     signatureCardId: 'rw-sig-captain-1',
     equippedItems: [],
+    ability: {
+      name: 'Charge',
+      description: 'Target unit gains +3 attack this turn and can attack immediately',
+      manaCost: 1,
+      cooldown: 3,
+      effectType: 'custom', // Custom effect: buff + immediate attack
+      effectValue: 3, // +3 attack
+    },
   },
 ]
 
@@ -144,23 +160,23 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'rw-legion-bronze',
     name: 'Bronze Legionnaire',
-    description: 'Legion. When this attacks, gain +1 attack this round.',
+    description: 'Legion. When you use a hero ability, this gains +1/+1.',
     cardType: 'generic',
     colors: ['red', 'white'],
     manaCost: 2,
     attack: 2,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
+    health: 3, // Changed from 2 to 3 for better defensive statline
+    maxHealth: 3,
+    currentHealth: 3,
   },
   {
     id: 'rw-legion-herald',
     name: 'Imperial Herald',
-    description: 'Legion. All Legion units get +1/+1.',
+    description: 'Legion. When you use a hero ability, all Legion units gain +1/+1 this turn.',
     cardType: 'generic',
     colors: ['red', 'white'],
     manaCost: 3,
-    attack: 2,
+    attack: 3, // Changed from 2 to 3 for better base stats
     health: 3,
     maxHealth: 3,
     currentHealth: 3,
@@ -1282,6 +1298,14 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     supportEffect: 'Draw extra card each turn',
     signatureCardId: 'ub-sig-archmage-1',
     equippedItems: [],
+    ability: {
+      name: 'Arcane Bolt',
+      description: 'Deal 2 damage to target unit',
+      manaCost: 1,
+      cooldown: 2,
+      effectType: 'damage_target',
+      effectValue: 2,
+    },
   },
   {
     id: 'ub-hero-necromancer',
@@ -1297,6 +1321,14 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     signatureCardId: 'ub-sig-necromancer-1',
     equippedItems: [],
     bonusVsHeroes: 3, // Assassin bonus: +3 damage vs enemy heroes
+    ability: {
+      name: 'Soul Drain',
+      description: 'Deal 1 damage to target unit. Draw a card.',
+      manaCost: 1,
+      cooldown: 3,
+      effectType: 'custom', // Custom effect: damage + draw
+      effectValue: 1, // 1 damage
+    },
   },
 ]
 
@@ -1305,14 +1337,26 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'ub-control-tower-destroyer',
     name: 'Tower Destroyer',
-    description: '6/8. Can attack towers directly.',
+    description: '5/7. When you use a hero ability, this can attack towers directly this turn.',
     cardType: 'generic',
     colors: ['blue', 'black'],
     manaCost: 7,
-    attack: 6,
-    health: 8,
-    maxHealth: 8,
-    currentHealth: 8,
+    attack: 5, // Changed from 6 to 5
+    health: 7, // Changed from 8 to 7
+    maxHealth: 7,
+    currentHealth: 7,
+  },
+  {
+    id: 'ub-control-arcane-scholar',
+    name: 'Arcane Scholar',
+    description: '2/3. When you use a hero ability, draw a card.',
+    cardType: 'generic',
+    colors: ['blue', 'black'],
+    manaCost: 3,
+    attack: 2,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
   },
 ]
 

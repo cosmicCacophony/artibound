@@ -163,6 +163,57 @@ export const tier1Items: Item[] = [
     hasActivatedAbility: true,
     activatedAbilityDescription: 'Get a random item at your shop level. It costs 0 Mana.',
   },
+  // Counterplay Items - Anti-Creep
+  {
+    id: 'item-cleave-axe',
+    name: 'Cleave Axe',
+    description: '+3 Attack, +2 HP. Cleave (damages adjacent units).',
+    cost: 10,
+    tier: 1,
+    attackBonus: 3,
+    hpBonus: 2,
+    specialEffects: ['cleave'],
+  },
+  {
+    id: 'item-chainmail',
+    name: 'Chainmail',
+    description: '+1 Attack, +4 HP. Retaliate (deals damage back when attacked).',
+    cost: 8,
+    tier: 1,
+    attackBonus: 1,
+    hpBonus: 4,
+    specialEffects: ['retaliate'],
+  },
+  {
+    id: 'item-siege-engine',
+    name: 'Siege Engine',
+    description: '+2 Attack, +3 HP. Siege (can attack towers directly).',
+    cost: 12,
+    tier: 1,
+    attackBonus: 2,
+    hpBonus: 3,
+    specialEffects: ['siege'],
+  },
+  // Counterplay Items - Anti-Hero
+  {
+    id: 'item-mortreds-dagger',
+    name: "Mortred's Dagger",
+    description: '+4 Attack. When this hero attacks, deal 4 damage to target enemy hero. (Cooldown: 3 turns)',
+    cost: 30,
+    tier: 2,
+    attackBonus: 4,
+    hasActivatedAbility: true,
+    activatedAbilityDescription: 'When this hero attacks, deal 4 damage to target enemy hero. (Cooldown: 3 turns)',
+  },
+  {
+    id: 'item-executioners-blade',
+    name: "Executioner's Blade",
+    description: '+5 Attack. Bonus +3 damage when attacking heroes.',
+    cost: 15,
+    tier: 2,
+    attackBonus: 5,
+    specialEffects: ['bonus_vs_heroes'], // +3 damage vs heroes
+  },
 ]
 
 // Battlefield Buff definitions (templates - will be instantiated with playerId and battlefieldId)
@@ -1622,6 +1673,7 @@ export function createInitialGameState(): {
     player2BattlefieldBuffs: [], // Permanent battlefield upgrades for player 2
     battlefieldDeathCounters: {}, // Track death counters for RW-bf2 (death counter -> draw card) - Record<"player-battlefield", count>
     initiativePlayer: 'player1', // Player 1 starts with initiative
+    heroAbilityCooldowns: {}, // Track hero ability cooldowns - Record<heroId, turnLastUsed>
   }
 
   // Hardcoded battlefields for RW vs UB testing
@@ -1774,6 +1826,7 @@ export function createGameStateFromDraft(
     player2BattlefieldBuffs: [],
     battlefieldDeathCounters: {}, // Track death counters for RW-bf2 (death counter -> draw card) - Record<"player-battlefield", count>
     initiativePlayer: 'player1', // Player 1 starts with initiative
+    heroAbilityCooldowns: {}, // Track hero ability cooldowns - Record<heroId, turnLastUsed>
   }
 
   // Helper to detect archetype from heroes

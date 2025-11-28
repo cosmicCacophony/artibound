@@ -105,6 +105,29 @@ export interface GameMetadata {
   battlefieldDeathCounters: Record<string, number>
   // Initiative: Which player has initiative (can play next card)
   initiativePlayer: PlayerId | null
+  // Hero ability cooldowns: Record of hero ID -> turn last used (to track cooldowns)
+  // Format: `heroId` -> turn number
+  heroAbilityCooldowns: Record<string, number>
+}
+
+// Hero Ability Types
+export type HeroAbilityEffectType = 
+  | 'buff_units' // Buff all units
+  | 'damage_target' // Deal damage to target
+  | 'draw_card' // Draw card(s)
+  | 'heal_target' // Heal target
+  | 'move_hero' // Move hero
+  | 'custom' // Custom effect
+
+export interface HeroAbility {
+  name: string
+  description: string
+  manaCost: number // Typically 1
+  cooldown: number // Turns until can use again (typically 2-3)
+  effectType: HeroAbilityEffectType
+  effectValue?: number // Value for the effect (damage, heal amount, etc.)
+  // For tracking cooldown: Record<heroId, turnLastUsed>
+  // Stored in GameMetadata.heroAbilityCooldowns
 }
 
 export interface Hero extends BaseCard {
@@ -121,6 +144,7 @@ export interface Hero extends BaseCard {
   equippedItems?: string[] // Array of item IDs
   signatureCardId?: string // ID of the signature card for this hero (2 copies added to deck)
   bonusVsHeroes?: number // Bonus damage when attacking heroes (e.g., +3 for assassins)
+  ability?: HeroAbility // Hero's activated ability (mana cost + cooldown)
 }
 
 export interface SignatureCard extends BaseCard {
