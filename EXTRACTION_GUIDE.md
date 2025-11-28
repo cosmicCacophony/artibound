@@ -95,3 +95,4 @@ The script outputs:
 - You can run the script multiple times - it will only extract missing descriptions
 - The script handles retries automatically for transient errors
 
+

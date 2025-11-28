@@ -35,7 +35,10 @@ export function PlayerArea({ player }: PlayerAreaProps) {
   const playerTitleColor = player === 'player1' ? '#c62828' : '#1976d2'
   const playerManaColor = player === 'player1' ? '#c62828' : '#1976d2'
 
-  const handleCardClick = (cardId: string) => {
+  const handleCardClick = (cardId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation()
+    }
     setSelectedCardId(selectedCardId === cardId ? null : cardId)
   }
 
@@ -96,7 +99,7 @@ export function PlayerArea({ player }: PlayerAreaProps) {
               <HeroCard
                 key={card.id}
                 card={card}
-                onClick={() => handleCardClick(card.id)}
+                onClick={(e) => handleCardClick(card.id, e)}
                 isSelected={selectedCardId === card.id}
                 showStats={false}
                 isDead={!!metadata.deathCooldowns[card.id]}
@@ -147,7 +150,7 @@ export function PlayerArea({ player }: PlayerAreaProps) {
               <HeroCard
                 key={card.id}
                 card={card}
-                onClick={() => handleCardClick(card.id)}
+                onClick={(e) => handleCardClick(card.id, e)}
                 isSelected={selectedCardId === card.id}
                 showStats={true}
                 isDead={!!metadata.deathCooldowns[card.id]}

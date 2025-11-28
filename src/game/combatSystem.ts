@@ -99,11 +99,11 @@ export function resolveAttack(
   damageDealt: number
   targetKilled: boolean
 } {
-  const attackPower = getAttackPower(attacker)
   let updatedBattlefield = { ...battlefield }
   let updatedTowerHP = { ...towerHP }
   let damageDealt = 0
   let targetKilled = false
+  let attackPower = 0
   
   if (target.type === 'unit' && target.targetId) {
     // Attacking a unit
@@ -112,6 +112,9 @@ export function resolveAttack(
     const targetUnit = opponentUnits.find(u => u.id === target.targetId)
     
     if (targetUnit && 'currentHealth' in targetUnit) {
+      // Check if target is a hero for bonus damage
+      const targetIsHero = targetUnit.cardType === 'hero'
+      const attackPower = getAttackPower(attacker, targetIsHero)
       const newHealth = Math.max(0, targetUnit.currentHealth - attackPower)
       damageDealt = Math.min(attackPower, targetUnit.currentHealth)
       
@@ -141,6 +144,7 @@ export function resolveAttack(
       ? (opponent === 'player1' ? 'towerA_player1' : 'towerA_player2')
       : (opponent === 'player1' ? 'towerB_player1' : 'towerB_player2')
     const currentHP = towerHP[towerKey]
+    attackPower = getAttackPower(attacker, false) // No hero bonus vs towers
     const newHP = Math.max(0, currentHP - attackPower)
     damageDealt = Math.min(attackPower, currentHP)
     
@@ -166,13 +170,22 @@ export function resolveAttack(
 }
 
 /**
- * Get attack power of a unit (handles stacked units)
+ * Get attack power of a unit (handles stacked units and hero bonuses)
  */
-function getAttackPower(unit: Card): number {
+function getAttackPower(unit: Card, targetIsHero: boolean = false): number {
+  let baseAttack = 0
   if (unit.cardType === 'generic' && 'stackPower' in unit && unit.stackPower !== undefined) {
-    return unit.stackPower
+    baseAttack = unit.stackPower
+  } else if ('attack' in unit) {
+    baseAttack = unit.attack
   }
-  return 'attack' in unit ? unit.attack : 0
+  
+  // Apply hero bonus vs heroes (e.g., assassins +3 vs heroes)
+  if (targetIsHero && unit.cardType === 'hero' && 'bonusVsHeroes' in unit && unit.bonusVsHeroes) {
+    return baseAttack + unit.bonusVsHeroes
+  }
+  
+  return baseAttack
 }
 
 /**
@@ -225,8 +238,8 @@ export function resolveCombat(
         if (towerWasDestroyed) {
           // Calculate overflow: if we dealt more damage than the tower had HP
           const towerHPBefore = initialTowerHP[towerKey]
-          const attackPower = getAttackPower(attacker)
-          const overflow = Math.max(0, attackPower - towerHPBefore)
+          const attackPowerForTower = getAttackPower(attacker, false) // No hero bonus vs towers
+          const overflow = Math.max(0, attackPowerForTower - towerHPBefore)
           overflowDamage += overflow
         }
       }

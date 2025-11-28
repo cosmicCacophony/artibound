@@ -115,11 +115,11 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
 ]
 
 export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
-  // Signature cards
+  // Signature units (physical objects that can be units)
   {
     id: 'rw-sig-commander-1',
     name: 'Rally Banner',
-    description: 'Commander signature - buffs team',
+    description: 'Commander signature - buffs team. All allies gain +1/+1.',
     cardType: 'generic',
     colors: ['red', 'white'],
     manaCost: 3,
@@ -129,33 +129,9 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     currentHealth: 3,
   },
   {
-    id: 'rw-sig-commander-2',
-    name: 'Charge Order',
-    description: 'Commander signature - aggressive',
-    cardType: 'generic',
-    colors: ['red', 'white'],
-    manaCost: 3,
-    attack: 4,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
-  {
-    id: 'rw-sig-captain-1',
-    name: 'War Cry',
-    description: 'Captain signature - pump team',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 3,
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  {
     id: 'rw-sig-captain-2',
     name: 'Battle Standard',
-    description: 'Captain signature - team buff',
+    description: 'Captain signature - team buff. All allies gain +1 attack.',
     cardType: 'generic',
     colors: ['red'],
     manaCost: 4,
@@ -229,6 +205,32 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
 ]
 
 export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  // Signature spells (converted from units)
+  {
+    id: 'rw-sig-commander-2',
+    name: 'Charge Order',
+    description: 'Commander signature - aggressive. All allies can attack immediately and gain +1 attack this turn.',
+    cardType: 'spell',
+    colors: ['red', 'white'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for immediate attack
+      damage: 0,
+    },
+  },
+  {
+    id: 'rw-sig-captain-1',
+    name: 'War Cry',
+    description: 'Captain signature - pump team. All allies gain +2 attack this turn.',
+    cardType: 'spell',
+    colors: ['red'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for buff
+      damage: 0,
+    },
+  },
+  // RW Combat Spells
   {
     id: 'rw-spell-path-valor',
     name: 'Path of Valor',
@@ -253,7 +255,82 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 0,
     },
   },
-  // Generic Red/White spell (weaker)
+  {
+    id: 'rw-spell-whirling-death',
+    name: 'Whirling Death',
+    description: 'Deal 2 damage to caster\'s adjacent enemies and give them -2 attack.',
+    cardType: 'spell',
+    colors: ['red'],
+    manaCost: 2,
+    effect: {
+      type: 'adjacent_damage',
+      damage: 2,
+      adjacentCount: 2,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+  {
+    id: 'rw-spell-unbreakable-column',
+    name: 'Unbreakable Column',
+    description: 'Caster and neighbors ignore incoming damage of 2 or less this turn.',
+    cardType: 'spell',
+    colors: ['red', 'white'],
+    manaCost: 2,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for damage reduction
+      damage: 0,
+    },
+  },
+  {
+    id: 'rw-spell-fighting-words',
+    name: 'Fighting Words',
+    description: 'Target unit gains +3 attack this turn.',
+    cardType: 'spell',
+    colors: ['red'],
+    manaCost: 1,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for buff
+      damage: 0,
+    },
+  },
+  {
+    id: 'rw-spell-into-the-fray',
+    name: 'Into the Fray',
+    description: 'Target unit gains +2/+2 and can attack immediately.',
+    cardType: 'spell',
+    colors: ['red', 'white'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect
+      damage: 0,
+    },
+  },
+  {
+    id: 'rw-spell-rally-banner',
+    name: 'Rally Banner',
+    description: 'All allies gain +1/+1 until end of turn. Draw a card.',
+    cardType: 'spell',
+    colors: ['red', 'white'],
+    manaCost: 4,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect
+      damage: 0,
+    },
+  },
+  {
+    id: 'rw-spell-battle-cry',
+    name: 'Battle Cry',
+    description: 'All allies gain +1 attack this turn.',
+    cardType: 'spell',
+    colors: ['red'],
+    manaCost: 2,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect
+      damage: 0,
+    },
+  },
+  // Generic Red/White spells (weaker)
   {
     id: 'rw-spell-basic-rally',
     name: 'Basic Rally',
@@ -1196,10 +1273,10 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     description: 'Control specialist',
     cardType: 'hero',
     colors: ['blue', 'black'],
-    attack: 3,
-    health: 9,
-    maxHealth: 9,
-    currentHealth: 9,
+    attack: 4, // Boosted from 3
+    health: 10, // Boosted from 9
+    maxHealth: 10,
+    currentHealth: 10,
     supportEffect: 'Draw extra card each turn',
     signatureCardId: 'ub-sig-archmage-1',
     equippedItems: [],
@@ -1210,79 +1287,19 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     description: 'Control and card advantage',
     cardType: 'hero',
     colors: ['black'],
-    attack: 4,
-    health: 8,
-    maxHealth: 8,
-    currentHealth: 8,
+    attack: 5, // Boosted from 4
+    health: 9, // Boosted from 8
+    maxHealth: 9,
+    currentHealth: 9,
     supportEffect: 'Gain gold when units die',
     signatureCardId: 'ub-sig-necromancer-1',
     equippedItems: [],
+    bonusVsHeroes: 3, // Assassin bonus: +3 damage vs enemy heroes
   },
 ]
 
 export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
-  // Signature cards
-  {
-    id: 'ub-sig-archmage-1',
-    name: 'Void Bolt',
-    description: 'Archmage signature - removal',
-    cardType: 'generic',
-    colors: ['blue', 'black'],
-    manaCost: 3,
-    attack: 3,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
-  {
-    id: 'ub-sig-archmage-2',
-    name: 'Arcane Sweep',
-    description: 'Archmage signature - board wipe',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 6,
-    attack: 4,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-  },
-  {
-    id: 'ub-sig-necromancer-1',
-    name: 'Death Ritual',
-    description: 'Necromancer signature - card draw',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 4,
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  {
-    id: 'ub-sig-necromancer-2',
-    name: 'Soul Drain',
-    description: 'Necromancer signature - advantage',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 5,
-    attack: 4,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-  },
-  // UB Control Archetype Units
-  {
-    id: 'ub-control-earthshaker',
-    name: 'Earthshaker',
-    description: 'When this enters, deal 2 damage to all enemies.',
-    cardType: 'generic',
-    colors: ['blue', 'black'],
-    manaCost: 6,
-    attack: 4,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-  },
+  // UB Control Archetype Units (minimal units - focus on spells)
   {
     id: 'ub-control-tower-destroyer',
     name: 'Tower Destroyer',
@@ -1295,34 +1312,65 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 8,
     currentHealth: 8,
   },
-  // Generic Blue/Black cards (weaker, work in any deck)
-  {
-    id: 'ub-generic-mystic',
-    name: 'Mystic Bolt',
-    description: 'Basic removal spell',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 3,
-    attack: 2,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
-  {
-    id: 'ub-generic-assassin',
-    name: 'Shadow Assassin',
-    description: 'When this kills a unit, draw a card.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 4,
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
 ]
 
 export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  // Signature spells (converted from units)
+  {
+    id: 'ub-sig-archmage-1',
+    name: 'Void Bolt',
+    description: 'Archmage signature - removal. Deal 3 damage to target unit.',
+    cardType: 'spell',
+    colors: ['blue', 'black'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage',
+      damage: 3,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+  {
+    id: 'ub-sig-archmage-2',
+    name: 'Arcane Sweep',
+    description: 'Archmage signature - board wipe. Deal 4 damage to all enemy units.',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 6,
+    effect: {
+      type: 'aoe_damage',
+      damage: 4,
+      affectsUnits: true,
+      affectsHeroes: true,
+      affectsEnemyUnits: true,
+    },
+  },
+  {
+    id: 'ub-sig-necromancer-1',
+    name: 'Death Ritual',
+    description: 'Necromancer signature - card draw. Draw 2 cards.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 4,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for card draw
+      damage: 0,
+    },
+  },
+  {
+    id: 'ub-sig-necromancer-2',
+    name: 'Soul Drain',
+    description: 'Necromancer signature - advantage. Deal 2 damage to target unit, draw a card.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 5,
+    effect: {
+      type: 'targeted_damage',
+      damage: 2,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
   // UB Control Archetype Spells
   {
     id: 'ub-spell-thunderstorm',
@@ -1364,6 +1412,189 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for card draw
       damage: 0,
+    },
+  },
+  {
+    id: 'ub-spell-removal',
+    name: 'Arcane Removal',
+    description: 'Destroy target unit with 3 or less health.',
+    cardType: 'spell',
+    colors: ['blue', 'black'],
+    manaCost: 2,
+    effect: {
+      type: 'targeted_damage',
+      damage: 999, // Effectively destroy
+      affectsUnits: true,
+      affectsHeroes: false,
+    },
+  },
+  {
+    id: 'ub-spell-dark-bolt',
+    name: 'Dark Bolt',
+    description: 'Deal 4 damage to target unit.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 4,
+    effect: {
+      type: 'targeted_damage',
+      damage: 4,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+  {
+    id: 'ub-spell-frost-bite',
+    name: 'Frost Bite',
+    description: 'Deal 1 damage to target unit. It cannot attack this turn.',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 2,
+    effect: {
+      type: 'targeted_damage',
+      damage: 1,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+  {
+    id: 'ub-spell-void-storm',
+    name: 'Void Storm',
+    description: 'Deal 3 damage to all units.',
+    cardType: 'spell',
+    colors: ['blue', 'black'],
+    manaCost: 6,
+    effect: {
+      type: 'aoe_damage',
+      damage: 3,
+      affectsUnits: true,
+      affectsHeroes: true,
+      affectsOwnUnits: true,
+      affectsEnemyUnits: true,
+    },
+  },
+  {
+    id: 'ub-spell-soul-reap',
+    name: 'Soul Reap',
+    description: 'Destroy target unit. Draw a card.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 5,
+    effect: {
+      type: 'targeted_damage',
+      damage: 999, // Effectively destroy
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+  // Early impactful spells
+  {
+    id: 'ub-spell-hip-fire',
+    name: 'Hip Fire',
+    description: 'Deal 2 damage to enemy unit in front of your hero.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 2,
+    effect: {
+      type: 'front_damage',
+      damage: 2,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+  {
+    id: 'ub-spell-exsanguinate',
+    name: 'Exsanguinate',
+    description: 'Deal 3 damage to enemy hero in front of your hero.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 3,
+    effect: {
+      type: 'front_damage',
+      damage: 3,
+      affectsHeroes: true,
+      affectsUnits: false,
+    },
+  },
+  {
+    id: 'ub-spell-pick-off',
+    name: 'Pick Off',
+    description: 'Deal 4 damage to enemy unit in front of your hero.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 3,
+    effect: {
+      type: 'front_damage',
+      damage: 4,
+      affectsUnits: true,
+      affectsHeroes: false,
+    },
+  },
+  {
+    id: 'ub-spell-sacred-arrow',
+    name: 'Sacred Arrow',
+    description: 'Deal 3 damage to enemy hero in any lane.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage',
+      damage: 3,
+      affectsHeroes: true,
+      affectsUnits: false,
+    },
+  },
+  {
+    id: 'ub-spell-light-strike-array',
+    name: 'Light Strike Array',
+    description: 'Deal 2 damage to enemy unit in front of your hero and stun it.',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 2,
+    effect: {
+      type: 'damage_and_stun',
+      damage: 2,
+      affectsUnits: true,
+      affectsHeroes: true,
+      stunDuration: 1,
+    },
+  },
+  {
+    id: 'ub-spell-cunning-plan',
+    name: 'Cunning Plan',
+    description: 'Stun target enemy unit. Draw a card.',
+    cardType: 'spell',
+    colors: ['blue', 'black'],
+    manaCost: 2,
+    effect: {
+      type: 'stun',
+      affectsUnits: true,
+      affectsHeroes: true,
+      stunDuration: 1,
+    },
+  },
+  {
+    id: 'ub-spell-gank',
+    name: 'Gank',
+    description: 'Deal 3 damage to enemy hero in any lane. Draw a card.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 4,
+    effect: {
+      type: 'targeted_damage',
+      damage: 3,
+      affectsHeroes: true,
+      affectsUnits: false,
+    },
+  },
+  {
+    id: 'ub-spell-relentless-pursuit',
+    name: 'Relentless Pursuit',
+    description: 'Swap your hero with another hero in any lane.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 3,
+    effect: {
+      type: 'swap_heroes',
     },
   },
   // Generic Blue/Black spells (weaker)

@@ -216,3 +216,4 @@ The `GameMetadata` interface now includes:
 - Should be powerful enough to influence game strategy
 - Cost should reflect their impact
 
+

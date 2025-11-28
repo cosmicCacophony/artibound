@@ -116,3 +116,4 @@ game/dcg/pak01_dir/scripts/talker/set_1_card_response_rules/
 4. **Use GitHub search** - Search for keywords like "card", "ability", "hero"
 5. **Check commit history** - See what files were changed recently
 
+

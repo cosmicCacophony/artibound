@@ -37,7 +37,14 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
   const bgColor = battlefieldId === 'battlefieldA' ? '#e3f2fd' : '#fff3e0'
   const battlefieldName = battlefieldId === 'battlefieldA' ? 'A' : 'B'
 
-  const handleCardClick = (cardId: string) => {
+  // Get player battlefields (global bonuses apply to both lanes)
+  const player1Battlefields = gameState.player1Battlefields || []
+  const player2Battlefields = gameState.player2Battlefields || []
+
+  const handleCardClick = (cardId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation()
+    }
     setSelectedCardId(selectedCardId === cardId ? null : cardId)
   }
 
@@ -93,7 +100,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
           <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
             <HeroCard
               card={cardInSlot}
-              onClick={() => handleCardClick(cardInSlot.id)}
+              onClick={(e) => handleCardClick(cardInSlot.id, e)}
               isSelected={isSelected}
               showStats={true}
               onRemove={() => handleRemoveFromBattlefield(cardInSlot, battlefieldId)}
@@ -122,12 +129,39 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-        <h3 style={{ marginTop: 0, fontSize: '16px' }}>
-          Battlefield {battlefieldName}
-          <span style={{ fontSize: '12px', fontWeight: 'normal', marginLeft: '8px', color: '#666' }}>
-            ({getAvailableSlots(allCards)} slots)
-          </span>
-        </h3>
+        <div style={{ flex: 1 }}>
+          <h3 style={{ marginTop: 0, fontSize: '16px' }}>
+            Battlefield {battlefieldName}
+            <span style={{ fontSize: '12px', fontWeight: 'normal', marginLeft: '8px', color: '#666' }}>
+              ({getAvailableSlots(allCards)} slots)
+            </span>
+          </h3>
+          {/* Global Battlefield Bonuses */}
+          {(player1Battlefields.length > 0 || player2Battlefields.length > 0) && (
+            <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              {player1Battlefields.length > 0 && (
+                <div style={{ fontSize: '10px', color: '#f44336', lineHeight: '1.3' }}>
+                  <strong>P1 Bonuses:</strong> {player1Battlefields.map((bf, idx) => (
+                    <span key={bf.id}>
+                      {idx > 0 && ' • '}
+                      <span style={{ fontStyle: 'italic' }}>{bf.staticAbility}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {player2Battlefields.length > 0 && (
+                <div style={{ fontSize: '10px', color: '#4a90e2', lineHeight: '1.3' }}>
+                  <strong>P2 Bonuses:</strong> {player2Battlefields.map((bf, idx) => (
+                    <span key={bf.id}>
+                      {idx > 0 && ' • '}
+                      <span style={{ fontStyle: 'italic' }}>{bf.staticAbility}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a90e2' }}>

@@ -3,7 +3,7 @@ import { tier1Items } from '../game/sampleData'
 
 interface HeroCardProps {
   card: Card
-  onClick?: () => void
+  onClick?: (e?: React.MouseEvent) => void
   isSelected?: boolean
   showStats?: boolean
   onRemove?: () => void // For removing from battlefields
@@ -146,7 +146,11 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
 
   return (
     <div
-      onClick={onClick}
+      onClick={(e) => {
+        if (onClick) {
+          onClick(e)
+        }
+      }}
       className={`hero-card ${isSelected ? 'selected' : ''} ${isStacked ? 'stacked' : ''}`}
       style={{
         border: isSelected 

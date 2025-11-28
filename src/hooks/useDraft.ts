@@ -121,6 +121,7 @@ export function useDraft() {
         // Auto-add 2 copies of this hero's signature card
         if (heroTemplate.signatureCardId) {
           const sigCard = allCards.find(card => card.id === heroTemplate.signatureCardId)
+            || allSpells.find(spell => spell.id === heroTemplate.signatureCardId)
           if (sigCard) {
             // Add 2 copies of the signature card
             updatedDrafted.cards.push(sigCard)
@@ -430,7 +431,8 @@ export function useDraft() {
           
           // Auto-add 2 copies of this hero's signature card
           if (heroTemplate.signatureCardId) {
-            const sigCard = allCards.find(card => card.id === heroTemplate.signatureCardId)
+            const sigCard = allCards.find(card => card.id === heroTemplate.signatureCardId) 
+              || allSpells.find(spell => spell.id === heroTemplate.signatureCardId)
             if (sigCard) {
               // Add 2 copies of the signature card
               updatedDrafted.cards.push(sigCard)

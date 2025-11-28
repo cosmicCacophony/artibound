@@ -82,3 +82,4 @@ extractCardDescriptions().then(cards => {
   console.log(JSON.stringify(cards, null, 2));
 });
 
+

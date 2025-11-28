@@ -63,6 +63,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return {
       ...initialState,
       cardLibrary: [],
+      player1Battlefields: initialState.player1Battlefields,
+      player2Battlefields: initialState.player2Battlefields,
     }
   })
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
@@ -134,6 +136,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setGameState({
       ...newGameState,
       cardLibrary: newGameState.cardLibrary,
+      player1Battlefields: newGameState.player1Battlefields,
+      player2Battlefields: newGameState.player2Battlefields,
     })
     
     // Update card libraries with the remaining cards
@@ -204,6 +208,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     for (const hero of player1Heroes) {
       if (hero.signatureCardId) {
         const sigCard = allCards.find(card => card.id === hero.signatureCardId)
+          || allSpells.find(spell => spell.id === hero.signatureCardId)
         if (sigCard) {
           // Add 2 copies
           player1SignatureCards.push(sigCard)
@@ -215,6 +220,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     for (const hero of player2Heroes) {
       if (hero.signatureCardId) {
         const sigCard = allCards.find(card => card.id === hero.signatureCardId)
+          || allSpells.find(spell => spell.id === hero.signatureCardId)
         if (sigCard) {
           // Add 2 copies
           player2SignatureCards.push(sigCard)
@@ -227,21 +233,21 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const player1Cards = [...player1DraftedCards, ...player1SignatureCards]
     const player2Cards = [...player2DraftedCards, ...player2SignatureCards]
     
-    // Select 1 battlefield for each player
-    const player1Battlefield = shuffle(player1BattlefieldPool)[0] || allBattlefields[0]
-    const player2Battlefield = shuffle(player2BattlefieldPool)[0] || allBattlefields[0]
+    // Don't pass battlefields - createGameStateFromDraft will assign hardcoded ones based on archetype
+    // RW always gets Training Grounds + War Camp
+    // UB always gets Arcane Nexus + Shadow Library
     
-    // Create final selections
+    // Create final selections (battlefield will be ignored, but required by type)
     const player1Selection: FinalDraftSelection = {
       heroes: player1Heroes,
       cards: player1Cards,
-      battlefield: player1Battlefield,
+      battlefield: allBattlefields[0], // Placeholder, will be replaced by hardcoded ones
     }
     
     const player2Selection: FinalDraftSelection = {
       heroes: player2Heroes,
       cards: player2Cards,
-      battlefield: player2Battlefield,
+      battlefield: allBattlefields[0], // Placeholder, will be replaced by hardcoded ones
     }
     
     // Initialize game from these selections

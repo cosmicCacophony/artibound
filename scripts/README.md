@@ -53,3 +53,4 @@ The script will:
 - Failed extractions are logged but don't stop the process
 - You can stop and restart the script - it will skip cards that already have descriptions
 
+

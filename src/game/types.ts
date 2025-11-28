@@ -120,6 +120,7 @@ export interface Hero extends BaseCard {
   slot?: number // Slot position 1-5 on battlefield
   equippedItems?: string[] // Array of item IDs
   signatureCardId?: string // ID of the signature card for this hero (2 copies added to deck)
+  bonusVsHeroes?: number // Bonus damage when attacking heroes (e.g., +3 for assassins)
 }
 
 export interface SignatureCard extends BaseCard {
@@ -169,6 +170,10 @@ export type SpellEffectType =
   | 'targeted_damage' // Damage to specific target(s)
   | 'adjacent_damage' // Damage to adjacent units
   | 'all_units_damage' // Damage to all units
+  | 'stun' // Stun target (cannot attack this turn)
+  | 'damage_and_stun' // Deal damage and stun
+  | 'front_damage' // Damage to enemy in front of caster's hero
+  | 'swap_heroes' // Swap hero positions
 
 export interface SpellEffect {
   type: SpellEffectType
@@ -179,6 +184,7 @@ export interface SpellEffect {
   affectsOwnUnits?: boolean // For board wipes: affects own units too?
   affectsEnemyUnits?: boolean // For board wipes: affects enemy units?
   adjacentCount?: number // For adjacent damage: how many adjacent units
+  stunDuration?: number // Turns stunned (default 1)
 }
 
 export interface SpellCard extends BaseCard {
