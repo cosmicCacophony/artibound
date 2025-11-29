@@ -103,8 +103,9 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                 isSelected={selectedCardId === card.id}
                 showStats={false}
                 isDead={!!metadata.deathCooldowns[card.id]}
-                isPlayed={card.cardType === 'spell' && !!metadata.playedSpells[card.id]}
-                onTogglePlayed={card.cardType === 'spell' ? () => handleToggleSpellPlayed(card) : undefined}
+                cooldownCounter={metadata.deathCooldowns[card.id]}
+                isPlayed={!!metadata.playedSpells[card.id]}
+                onTogglePlayed={() => handleToggleSpellPlayed(card)}
               />
             ))
           ) : (
@@ -154,8 +155,9 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                 isSelected={selectedCardId === card.id}
                 showStats={true}
                 isDead={!!metadata.deathCooldowns[card.id]}
-                isPlayed={card.cardType === 'spell' && card.location === 'base' && !!metadata.playedSpells[card.id]}
-                onTogglePlayed={card.cardType === 'spell' && card.location === 'base' ? () => handleToggleSpellPlayed(card) : undefined}
+                cooldownCounter={metadata.deathCooldowns[card.id]}
+                isPlayed={card.location === 'base' && !!metadata.playedSpells[card.id]}
+                onTogglePlayed={card.location === 'base' ? () => handleToggleSpellPlayed(card) : undefined}
               />
             ))
           ) : (

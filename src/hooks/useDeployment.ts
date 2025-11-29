@@ -62,13 +62,26 @@ export function useDeployment() {
       }
     }
     
-    // Check mana cost
+    // Check if hero is on cooldown (cannot deploy if cooldown counter > 0)
+    if (selectedCard.cardType === 'hero') {
+      const cooldownCounter = metadata.deathCooldowns[selectedCard.id]
+      if (cooldownCounter !== undefined && cooldownCounter > 0) {
+        alert(`Hero is on cooldown! ${cooldownCounter} turn${cooldownCounter !== 1 ? 's' : ''} remaining.`)
+        return
+      }
+    }
+    
+    // Check mana cost (spells don't cost mana to move to base, only when played)
+    const isSpell = selectedCard.cardType === 'spell'
     const manaCost = selectedCard.manaCost || 0
     const playerMana = selectedCard.owner === 'player1' ? metadata.player1Mana : metadata.player2Mana
     
-    if (manaCost > playerMana) {
-      alert(`Not enough mana! Need ${manaCost}, have ${playerMana}`)
-      return
+    // Only check mana for non-spells, or spells being deployed to battlefields (not base)
+    if (!isSpell || location !== 'base') {
+      if (manaCost > playerMana) {
+        alert(`Not enough mana! Need ${manaCost}, have ${playerMana}`)
+        return
+      }
     }
 
     // Check if deploying to battlefield and slots are full
@@ -153,8 +166,9 @@ export function useDeployment() {
           ? { ...selectedCard, location, currentHealth: (selectedCard as any).maxHealth, slot: undefined }
           : { ...selectedCard, location, slot: undefined }
         
-        // Deduct mana
+        // Deduct mana (spells don't cost mana to move to base, only when played)
         const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
+        const shouldDeductMana = !isSpell // Only deduct mana for non-spells
         
         return {
           ...prev,
@@ -171,7 +185,7 @@ export function useDeployment() {
           metadata: {
             ...prev.metadata,
             ...(isHero ? { [movedToBaseKey]: true } : {}),
-            [manaKey]: (prev.metadata[manaKey] as number) - manaCost,
+            ...(shouldDeductMana ? { [manaKey]: (prev.metadata[manaKey] as number) - manaCost } : {}),
           },
         }
       } else if (location === 'battlefieldA' || location === 'battlefieldB') {

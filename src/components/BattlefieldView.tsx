@@ -290,9 +290,60 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                   const towerKeyP1Result = battlefieldId === 'battlefieldA' ? 'towerA_player1' : 'towerB_player1'
                   const towerKeyP2Result = battlefieldId === 'battlefieldA' ? 'towerA_player2' : 'towerB_player2'
                   
+                  // Find heroes that were killed (in original battlefield but not in updated)
+                  const originalBattlefield = prev[battlefieldId]
+                  const updatedBattlefield = combatResult.updatedBattlefield
+                  
+                  const killedHeroes: { hero: import('../game/types').Hero, player: 'player1' | 'player2' }[] = []
+                  
+                  // Check player 1 heroes
+                  originalBattlefield.player1.forEach(originalCard => {
+                    if (originalCard.cardType === 'hero') {
+                      const stillAlive = updatedBattlefield.player1.some(c => c.id === originalCard.id)
+                      if (!stillAlive) {
+                        killedHeroes.push({ hero: originalCard as import('../game/types').Hero, player: 'player1' })
+                      }
+                    }
+                  })
+                  
+                  // Check player 2 heroes
+                  originalBattlefield.player2.forEach(originalCard => {
+                    if (originalCard.cardType === 'hero') {
+                      const stillAlive = updatedBattlefield.player2.some(c => c.id === originalCard.id)
+                      if (!stillAlive) {
+                        killedHeroes.push({ hero: originalCard as import('../game/types').Hero, player: 'player2' })
+                      }
+                    }
+                  })
+                  
+                  // Move killed heroes to base with cooldown counter
+                  const newPlayer1Base = [...prev.player1Base]
+                  const newPlayer2Base = [...prev.player2Base]
+                  const newDeathCooldowns = { ...prev.metadata.deathCooldowns }
+                  
+                  killedHeroes.forEach(({ hero, player }) => {
+                    const heroInBase = {
+                      ...hero,
+                      location: 'base' as const,
+                      currentHealth: 0, // Dead
+                      slot: undefined,
+                    }
+                    
+                    if (player === 'player1') {
+                      newPlayer1Base.push(heroInBase)
+                    } else {
+                      newPlayer2Base.push(heroInBase)
+                    }
+                    
+                    // Set cooldown counter to 2
+                    newDeathCooldowns[hero.id] = 2
+                  })
+                  
                   return {
                     ...prev,
                     [battlefieldId]: combatResult.updatedBattlefield,
+                    player1Base: newPlayer1Base,
+                    player2Base: newPlayer2Base,
                     metadata: {
                       ...prev.metadata,
                       [towerKeyP1]: combatResult.updatedTowerHP[towerKeyP1Result],
@@ -300,6 +351,8 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                       // Apply overflow damage to nexus
                       player1NexusHP: Math.max(0, prev.metadata.player1NexusHP - combatResult.overflowDamage.player1),
                       player2NexusHP: Math.max(0, prev.metadata.player2NexusHP - combatResult.overflowDamage.player2),
+                      // Update death cooldowns
+                      deathCooldowns: newDeathCooldowns,
                       // Reset pass flags
                       player1Passed: false,
                       player2Passed: false,

@@ -11,8 +11,9 @@ interface HeroCardProps {
   onIncreaseHealth?: () => void // For correcting mistakes
   showCombatControls?: boolean // Show decrease/increase health buttons
   isDead?: boolean // Show death cooldown overlay (black X)
-  isPlayed?: boolean // Show played overlay (black X) for spells in base
-  onTogglePlayed?: () => void // Toggle played state for spells
+  cooldownCounter?: number // Cooldown counter value (2, 1, or undefined if ready)
+  isPlayed?: boolean // Show played overlay (black X) for any card in base
+  onTogglePlayed?: () => void // Toggle played state for any card
 }
 
 // Color palette mapping
@@ -32,7 +33,7 @@ const COLOR_LIGHT_MAP: Record<Color, string> = {
   green: '#e8f5e9',
 }
 
-export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove, onDecreaseHealth, onIncreaseHealth, showCombatControls = false, isDead = false, isPlayed = false, onTogglePlayed }: HeroCardProps) {
+export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove, onDecreaseHealth, onIncreaseHealth, showCombatControls = false, isDead = false, cooldownCounter, isPlayed = false, onTogglePlayed }: HeroCardProps) {
   // Get card colors
   const cardColors: Color[] = 'colors' in card && card.colors ? card.colors : []
   
@@ -404,6 +405,33 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
         </div>
       )}
       
+      {/* Cooldown counter display (for heroes in base) */}
+      {cooldownCounter !== undefined && cooldownCounter > 0 && card.cardType === 'hero' && card.location === 'base' && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '4px',
+            right: '4px',
+            backgroundColor: 'rgba(255, 0, 0, 0.9)',
+            color: 'white',
+            borderRadius: '50%',
+            width: '28px',
+            height: '28px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            zIndex: 11,
+            border: '2px solid white',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+          }}
+          title={`Cooldown: ${cooldownCounter} turn${cooldownCounter !== 1 ? 's' : ''} remaining`}
+        >
+          {cooldownCounter}
+        </div>
+      )}
+      
       {/* Death cooldown overlay - black X */}
       {isDead && (
         <div
@@ -434,8 +462,8 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
         </div>
       )}
       
-      {/* Played spell overlay - black X (for spells in base) */}
-      {isPlayed && card.cardType === 'spell' && card.location === 'base' && (
+      {/* Played card overlay - black X (for any card in base) */}
+      {isPlayed && card.location === 'base' && (
         <div
           style={{
             position: 'absolute',

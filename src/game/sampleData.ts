@@ -1665,10 +1665,10 @@ export function createInitialGameState(): {
     towerB_player2_HP: TOWER_HP,
     player1Tier: 1,
     player2Tier: 1,
-    deathCooldowns: {}, // Track cards that died (1 round cooldown) - Record<cardId, turnDied>
+    deathCooldowns: {}, // Track hero death cooldowns - Record<cardId, counter> (starts at 2, decreases by 1 each turn)
     player1MovedToBase: false, // Track if player 1 moved a hero to base this turn
     player2MovedToBase: false, // Track if player 2 moved a hero to base this turn
-    playedSpells: {}, // Track spells that have been played (for toggle X overlay) - Record<spellId, true>
+    playedSpells: {}, // Track cards that have been played (for toggle X overlay) - Record<cardId, true> (works for any card type)
     player1BattlefieldBuffs: [], // Permanent battlefield upgrades for player 1
     player2BattlefieldBuffs: [], // Permanent battlefield upgrades for player 2
     battlefieldDeathCounters: {}, // Track death counters for RW-bf2 (death counter -> draw card) - Record<"player-battlefield", count>

@@ -39,19 +39,20 @@ export function useTurnManagement() {
     if (currentPhase === 'combatB') {
       // Next phase will be play for next player - reset movement flags
       setGameState(prev => {
-        // Clear death cooldowns that are 1+ turns old (can redeploy now)
+        // Decrease death cooldown counters by 1 each turn
         const newDeathCooldowns: Record<string, number> = {}
-        const currentTurn = prev.metadata.currentTurn
-        Object.entries(prev.metadata.deathCooldowns).forEach(([cardId, turnDied]) => {
-          // Keep cooldowns that are still active (died this turn or last turn)
-          if (currentTurn - turnDied < 1) {
-            newDeathCooldowns[cardId] = turnDied
+        Object.entries(prev.metadata.deathCooldowns).forEach(([cardId, counter]) => {
+          const newCounter = counter - 1
+          // Keep cooldowns that are still active (counter > 0)
+          if (newCounter > 0) {
+            newDeathCooldowns[cardId] = newCounter
           }
+          // Counter reaches 0 - hero can be redeployed, remove from cooldown tracking
         })
         
-        // Heal heroes in base that are no longer on death cooldown
+        // Heal heroes in base that are no longer on death cooldown (counter reached 0)
         const healHeroInBase = (c: Card): Card => {
-          if (c.cardType === 'hero' && c.location === 'base' && !newDeathCooldowns[c.id]) {
+          if (c.cardType === 'hero' && c.location === 'base' && !newDeathCooldowns[c.id] && prev.metadata.deathCooldowns[c.id]) {
             const hero = c as import('../game/types').Hero
             if (hero.currentHealth < hero.maxHealth) {
               return { ...hero, currentHealth: hero.maxHealth }
@@ -218,59 +219,27 @@ export function useTurnManagement() {
   }, [metadata, gameState, combatTargetsA, combatTargetsB, setGameState, setCombatTargetsA, setCombatTargetsB])
 
   const handleToggleSpellPlayed = useCallback((card: Card) => {
-    if (card.cardType !== 'spell' || card.location !== 'base') return
+    // Allow any card type to be marked as played (spells, units, heroes)
+    if (card.location !== 'base') return
     
     setGameState(prev => {
       const isCurrentlyPlayed = prev.metadata.playedSpells[card.id] || false
       const newPlayedSpells = { ...prev.metadata.playedSpells }
-      const spellCard = card as import('../game/types').SpellCard
       
       if (isCurrentlyPlayed) {
-        // Unmarking spell - don't change initiative
+        // Unmarking card - just remove the visual indicator
         delete newPlayedSpells[card.id]
-        return {
-          ...prev,
-          metadata: {
-            ...prev.metadata,
-            playedSpells: newPlayedSpells,
-          },
-        }
       } else {
-        // Playing spell - mark as played
+        // Marking card as played - just add the visual indicator (no mana cost, no initiative change)
         newPlayedSpells[card.id] = true
-        
-        // Check if spell gives initiative
-        const spellGivesInitiative = spellCard.initiative === true
-        
-        // If spell gives initiative, keep it. Otherwise, pass to opponent
-        // Exception: If opponent has no mana, pass initiative back
-        const currentPlayer = prev.metadata.initiativePlayer
-        const opponent = currentPlayer === 'player1' ? 'player2' : 'player1'
-        const opponentMana = opponent === 'player1' ? prev.metadata.player1Mana : prev.metadata.player2Mana
-        
-        let newInitiativePlayer = currentPlayer
-        if (spellGivesInitiative) {
-          // Spell gives initiative - keep it
-          newInitiativePlayer = currentPlayer
-        } else if (opponentMana === 0) {
-          // Opponent has no mana - pass initiative back to current player
-          newInitiativePlayer = currentPlayer
-        } else {
-          // Normal case - pass initiative to opponent
-          newInitiativePlayer = opponent
-        }
-        
-        return {
-          ...prev,
-          metadata: {
-            ...prev.metadata,
-            playedSpells: newPlayedSpells,
-            initiativePlayer: newInitiativePlayer,
-            // Reset pass flags when an action is taken
-            player1Passed: false,
-            player2Passed: false,
-          },
-        }
+      }
+      
+      return {
+        ...prev,
+        metadata: {
+          ...prev.metadata,
+          playedSpells: newPlayedSpells,
+        },
       }
     })
   }, [setGameState])
@@ -283,8 +252,32 @@ export function useTurnManagement() {
       const newPlayer1MaxMana = Math.min(prev.metadata.player1MaxMana + 1, 10)
       const newPlayer2MaxMana = Math.min(prev.metadata.player2MaxMana + 1, 10)
       
+      // Decrease death cooldown counters by 1 each turn
+      const newDeathCooldowns: Record<string, number> = {}
+      Object.entries(prev.metadata.deathCooldowns).forEach(([cardId, counter]) => {
+        const newCounter = counter - 1
+        // Keep cooldowns that are still active (counter > 0)
+        if (newCounter > 0) {
+          newDeathCooldowns[cardId] = newCounter
+        }
+        // Counter reaches 0 - hero can be redeployed, remove from cooldown tracking
+      })
+      
+      // Heal heroes in base that are no longer on death cooldown (counter reached 0)
+      const healHeroInBase = (c: Card): Card => {
+        if (c.cardType === 'hero' && c.location === 'base' && !newDeathCooldowns[c.id] && prev.metadata.deathCooldowns[c.id]) {
+          const hero = c as import('../game/types').Hero
+          if (hero.currentHealth < hero.maxHealth) {
+            return { ...hero, currentHealth: hero.maxHealth }
+          }
+        }
+        return c
+      }
+      
       return {
         ...prev,
+        player1Base: prev.player1Base.map(healHeroInBase),
+        player2Base: prev.player2Base.map(healHeroInBase),
         metadata: {
           ...prev.metadata,
           currentTurn: newTurn,
@@ -295,6 +288,11 @@ export function useTurnManagement() {
           player2MaxMana: newPlayer2MaxMana,
           // Reset initiative to player 1 at start of new turn
           initiativePlayer: 'player1',
+          // Update death cooldowns
+          deathCooldowns: newDeathCooldowns,
+          // Reset movement flags
+          player1MovedToBase: false,
+          player2MovedToBase: false,
         },
       }
     })

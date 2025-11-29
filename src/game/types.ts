@@ -89,13 +89,13 @@ export interface GameMetadata {
   towerB_player2_HP: number
   player1Tier: 1 | 2
   player2Tier: 1 | 2
-  // Death cooldown: Record of card ID -> turn they died (to track 1 round cooldown)
+  // Death cooldown: Record of card ID -> cooldown counter (starts at 2, decreases by 1 each turn, 0 = ready)
   // Using Record instead of Map for JSON serialization
   deathCooldowns: Record<string, number>
   // Movement tracking: Track if each player has moved a hero to base this turn
   player1MovedToBase: boolean
   player2MovedToBase: boolean
-  // Played spells: Record of spell card ID -> boolean (for toggle X overlay in base)
+  // Played cards: Record of card ID -> boolean (for toggle X overlay in base - works for any card type)
   // Using Record instead of Set for JSON serialization
   playedSpells: Record<string, boolean>
   // Battlefield buffs: Permanent upgrades that only affect owner's units in that battlefield

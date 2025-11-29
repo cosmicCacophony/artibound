@@ -46,7 +46,7 @@ export function useCombat() {
               [`${player}Gold`]: (prev.metadata[`${player}Gold` as keyof GameMetadata] as number) + 5,
               deathCooldowns: {
                 ...prev.metadata.deathCooldowns,
-                [card.id]: prev.metadata.currentTurn, // Track turn they died
+                [card.id]: 2, // Set cooldown counter to 2 (decreases by 1 each turn)
               },
             },
           }
@@ -69,7 +69,7 @@ export function useCombat() {
               [`${player}Gold`]: (prev.metadata[`${player}Gold` as keyof GameMetadata] as number) + 2,
               deathCooldowns: {
                 ...prev.metadata.deathCooldowns,
-                [card.id]: prev.metadata.currentTurn, // Track turn they died
+                [card.id]: 2, // Set cooldown counter to 2 (decreases by 1 each turn)
               },
             },
           }
