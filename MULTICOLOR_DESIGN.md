@@ -295,12 +295,18 @@ Battlefields that reward having multiple colors:
 
 ### UBG Convergence Cards
 
-#### Verdant Control
+#### Verdant Control (NEEDS REVISION)
 - **Cost**: 6 mana (3UBG)
 - **Colors**: Blue, Black, Green
 - **Type**: Spell
-- **Effect**: "Draw 2 cards. If you control heroes of 4 different colors, draw 3 cards instead."
-- **Design Notes**: Card advantage that scales with color diversity. Combines UB's control with Green's resource generation.
+- **Current Effect**: "Draw 2 cards. If you control heroes of 4 different colors, draw 3 cards instead."
+- **Problem**: 6 mana for drawing 2 cards is very expensive. Artifact Foundry's Foresight costs 3 mana to draw 2. Multicolor cards should provide MORE effect for their cost.
+- **Proposed Revisions**:
+  - **Option 1**: Draw 2 cards and create two 3/3 units
+  - **Option 2**: Draw 2 cards and deal 2 damage to each enemy unit
+  - **Option 3**: Draw 3 cards (50% more than Foresight for multicolor)
+  - **Option 4**: Draw 2 cards + additional effect that scales with color count
+- **Design Notes**: Card advantage that scales with color diversity. Combines UB's control with Green's resource generation. **MUST be revised to provide more value for 6 mana cost.**
 
 #### Shadow Growth
 - **Cost**: 4 mana (2BG)
@@ -391,6 +397,122 @@ Battlefields that reward having multiple colors:
 
 ---
 
-*Document created: 2025-01-XX*
+## Core Design Philosophy: Multicolor Balance & Counterplay
+
+### Terminology Note
+**Important**: When referring to "turn 5", we mean "when you have 5 mana" (which is actually turn 3 in the game). This terminology will be used throughout design discussions to refer to mana availability rather than actual turn number.
+
+### Multicolor Hero Vulnerability
+
+**Core Principle**: Multicolor heroes must be answerable and create meaningful risk/reward decisions.
+
+#### Hero Threat Assessment
+- **Heroes should be under threat from**:
+  - Other heroes + spells (combined damage)
+  - Enemy units being placed in front of them (if already damaged)
+  - Opponent setup on specific turns (e.g., if opponent knows you have strong 6-mana cards, they can setup to kill your multicolor commander on "turn 5" - when you have 5 mana)
+  
+#### Strategic Counterplay Windows
+- **Turn 5 Example**: If opponent has strong 6-mana multicolor cards, you can setup to kill their multicolor hero on turn 5 (when they have 5 mana), preventing them from casting their 6-mana spell on turn 6
+- **Saving Resources**: Players may need to save their most important spell for killing multicolor heroes at critical moments
+- **Tempo Decisions**: Killing a multicolor hero can set opponent back by a turn, which can decide the game tempo-wise
+
+#### Player Responses to Multicolor Hero Threats
+Players need strategic options when their multicolor heroes are threatened:
+1. **Retreat**: Move multicolor hero to base before important turns
+2. **Heal**: Use healing/mana to keep hero alive
+3. **Save Mana**: Keep mana available to respond if opponent casts a unit in front or threatens with a spell
+4. **Risk Assessment**: If you tap out, opponent might cast unit + spell in front and kill the hero
+
+**Design Goal**: Multicolor heroes should feel powerful but risky - players must actively manage their safety.
+
+### Mana Cost & Power Level Guidelines
+
+#### Artifact Foundry Reference: Foresight
+- **Foresight**: 3 mana to draw 2 cards
+- **Our Verdant Control**: 6 mana (3UBG) to draw 2 cards - **TOO EXPENSIVE**
+- **Multicolor cards should provide MORE effect** for their cost, not just be more expensive
+
+#### Revised Verdant Control Design
+**Current**: 6 mana (3UBG) - Draw 2 cards  
+**Problem**: 6 mana for drawing 2 cards is very expensive compared to Foundry's 3 mana Foresight
+
+**Proposed Options**:
+1. **Draw 2 + Create Units**: Draw 2 cards and create two 3/3 units (or similar)
+2. **Draw 2 + Immediate Effect**: Draw 2 cards and deal damage/remove unit
+3. **Draw 3**: If multicolor, should draw 3 cards for 6 mana (50% more than Foresight)
+4. **Scaling Effect**: Draw 2 cards, plus additional effect that scales with color count
+
+**Design Principle**: Multicolor cards at 6+ mana should feel significantly more powerful than their 2-color equivalents.
+
+### Artifact Foundry Multicolor Examples
+
+#### UB (Blue/Black) - Best Multicolor Card
+- **Effect**: Deal 2 damage to each unit and give 2 decay (damage added to combat)
+- **Multicolor Bonus**: If you have both color heroes, deals decay damage immediately instead
+- **Impact**: 4 damage pre-combat is much stronger than 2 + 2, since it's more likely to kill their hero/units before they can deal combat damage
+- **Design Insight**: Immediate effect is more powerful than delayed effect, even if numbers are the same
+
+#### RG (Red/Green) Examples
+- **Strong Creep at 6 mana**: Does AOE damage if you have both colors in lane
+- **Smaller Creep**: Leaves behind a tower enchantment that deals 1 damage to any unlocked units
+- **Design Insight**: Multicolor effects can be conditional (if both colors present) or permanent (tower enchantment)
+
+### Early vs Late Game Multicolor Design
+
+#### Early Game Multicolor Cards (1-4 Mana)
+**Design Philosophy**: Less powerful but above rate for multicolor
+- **Rewards**: Just drafting multicolor colors
+- **Safety**: Less likely to be punished since early drops will be castable (opponent doesn't have enough time to remove heroes yet)
+- **Examples**: 
+  - 2-mana multicolor unit that's slightly better than 2-mana mono-color
+  - 3-mana spell that's more efficient than 3-mana mono-color equivalent
+
+#### Late Game Multicolor Cards (5-7+ Mana)
+**Design Philosophy**: Require more build-up and thought around casting/playing around them
+- **Risk**: Opponent can setup to kill your multicolor hero before you can cast
+- **Reward**: Powerful effects that can decide games
+- **Strategic Depth**: Players must manage hero safety, save mana for responses, or retreat heroes
+- **Examples**:
+  - 6-mana multicolor spell that requires setup and protection
+  - 7-mana convergence card that's game-winning if cast
+
+**Design Goal**: Players should feel good about removing multicolor heroes at the right moments to set opponent back from casting certain spells by a turn.
+
+### Testing & Balance Framework
+
+#### Matchup Testing Plan
+1. **RWG vs UB**: Test 3-color deck against 2-color deck
+2. **UBG vs RW**: Test 3-color deck against 2-color deck
+3. **RWG vs UBG**: Test 3-color vs 3-color
+4. **RW vs UB**: Baseline 2-color vs 2-color
+
+#### Balance Goals
+- **3-color decks should be stronger** if built correctly
+- **2-color decks should still be viable** in niche situations (e.g., when you don't find proper synergies in draft)
+- **Multicolor heroes should feel powerful but risky**
+- **Late-game multicolor cards should feel impactful** but require setup
+
+#### Key Questions for Testing
+1. Do multicolor heroes feel too safe or too vulnerable?
+2. Are late-game multicolor cards worth the risk?
+3. Can 2-color decks compete with 3-color decks?
+4. Do players feel rewarded for managing multicolor hero safety?
+5. Are there enough counterplay options against multicolor strategies?
+
+### Design Checklist for Multicolor Cards
+
+When designing multicolor cards, consider:
+- [ ] **Mana Efficiency**: Is this card more powerful than equivalent 2-color card?
+- [ ] **Counterplay**: Can opponent reasonably answer this before it's cast?
+- [ ] **Risk/Reward**: Does the risk of losing multicolor hero balance the power?
+- [ ] **Timing**: Is this card castable early (safe) or late (risky)?
+- [ ] **Synergy**: Does this card reward having multiple colors?
+- [ ] **Artifact Foundry Comparison**: How does this compare to Foundry's multicolor cards?
+
+---
+
+*Document created: 2025-01-XX*  
+*Last updated: 2025-01-XX*  
 *Status: Design exploration - ready for implementation*
 
