@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
-import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT } from '../game/types'
+import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT, Hero, ItemCard } from '../game/types'
 import { useGameContext } from '../context/GameContext'
+import { tier1Items } from '../game/sampleData'
 
 export function useDeployment() {
   const { gameState, setGameState, selectedCard, selectedCardId, setSelectedCardId, getAvailableSlots } = useGameContext()
@@ -14,6 +15,51 @@ export function useDeployment() {
     if (!isPlayPhase) {
       alert(`Cannot deploy during ${metadata.currentPhase} phase!`)
       return
+    }
+    
+    // Turn 1 deployment sequence check
+    let shouldSkipInitiativePass = false
+    let newDeploymentPhase = metadata.turn1DeploymentPhase || 'initial'
+    
+    if (metadata.currentTurn === 1 && selectedCard.cardType === 'hero') {
+      const deploymentPhase = metadata.turn1DeploymentPhase || 'initial'
+      
+      if (deploymentPhase === 'initial') {
+        // Player A (player1) deploys first hero
+        if (selectedCard.owner !== 'player1') {
+          alert('Player 1 must deploy first hero on turn 1')
+          return
+        }
+        // After deployment, move to playerB phase
+        newDeploymentPhase = 'playerB'
+        // Initiative will be passed at the end, but we'll handle it there
+      } else if (deploymentPhase === 'playerB') {
+        // Player B deploys first hero
+        if (selectedCard.owner !== 'player2') {
+          alert('Player 2 must deploy first hero on turn 1')
+          return
+        }
+        // After deployment, move to secret phase
+        newDeploymentPhase = 'secret'
+        shouldSkipInitiativePass = true // Don't pass initiative during secret phase
+      } else if (deploymentPhase === 'secret') {
+        // Both players deploy secretly - no initiative check, no passing
+        shouldSkipInitiativePass = true
+        // We'll check hero count in the final state update after deployment happens
+      } else if (deploymentPhase === 'complete') {
+        // Turn 1 deployment complete - normal initiative rules apply
+        // Check initiative
+        if (metadata.initiativePlayer !== selectedCard.owner) {
+          alert('You do not have initiative!')
+          return
+        }
+      }
+    } else {
+      // Normal turn (not turn 1) - check initiative
+      if (metadata.initiativePlayer !== selectedCard.owner) {
+        alert('You do not have initiative!')
+        return
+      }
     }
     
     // Check mana cost
@@ -221,6 +267,72 @@ export function useDeployment() {
       }
       return prev
     })
+    
+    // Handle initiative passing and turn 1 deployment phase updates
+    setGameState(prev => {
+      const updatedMetadata = { ...prev.metadata }
+      
+      // Update turn 1 deployment phase if needed
+      if (metadata.currentTurn === 1 && selectedCard.cardType === 'hero') {
+        // If we're in secret phase, check if both players have deployed 2 heroes now
+        if (newDeploymentPhase === 'secret') {
+          // Count heroes AFTER this deployment (using prev state which includes the new deployment)
+          const player1HeroesDeployed = [
+            ...prev.battlefieldA.player1,
+            ...prev.battlefieldB.player1,
+          ].filter(c => c.cardType === 'hero').length
+          const player2HeroesDeployed = [
+            ...prev.battlefieldA.player2,
+            ...prev.battlefieldB.player2,
+          ].filter(c => c.cardType === 'hero').length
+          
+          // Check if both have deployed 2 heroes
+          if (player1HeroesDeployed >= 2 && player2HeroesDeployed >= 2) {
+            // Both players have deployed 2 heroes - complete turn 1 deployment
+            updatedMetadata.turn1DeploymentPhase = 'complete'
+            updatedMetadata.initiativePlayer = 'player1' // Player 1 gets initiative after deployment
+          } else {
+            // Still in secret phase
+            updatedMetadata.turn1DeploymentPhase = 'secret'
+            updatedMetadata.initiativePlayer = null // Keep initiative null during secret phase
+          }
+        } else {
+          updatedMetadata.turn1DeploymentPhase = newDeploymentPhase
+        }
+      }
+      
+      // Handle initiative passing
+      if (shouldSkipInitiativePass) {
+        // During secret deployment, initiative is already handled above
+        if (newDeploymentPhase !== 'secret') {
+          if (newDeploymentPhase === 'complete') {
+            // Turn 1 deployment complete - Player 1 gets initiative (already set above)
+          }
+        }
+        // Reset pass flags
+        updatedMetadata.player1Passed = false
+        updatedMetadata.player2Passed = false
+      } else if (metadata.currentTurn === 1 && newDeploymentPhase === 'playerB') {
+        // After Player 1 deploys, pass initiative to Player 2
+        updatedMetadata.initiativePlayer = 'player2'
+        updatedMetadata.player1Passed = false
+        updatedMetadata.player2Passed = false
+      } else if (metadata.currentTurn > 1 || (metadata.currentTurn === 1 && updatedMetadata.turn1DeploymentPhase === 'complete')) {
+        // Normal turn or turn 1 complete - pass initiative to opponent after deployment
+        // Only if we're not in secret phase
+        if (updatedMetadata.turn1DeploymentPhase !== 'secret') {
+          updatedMetadata.initiativePlayer = prev.metadata.initiativePlayer === 'player1' ? 'player2' : 'player1'
+          updatedMetadata.player1Passed = false
+          updatedMetadata.player2Passed = false
+        }
+      }
+      
+      return {
+        ...prev,
+        metadata: updatedMetadata,
+      }
+    })
+    
     setSelectedCardId(null)
   }, [selectedCard, selectedCardId, gameState, metadata, getAvailableSlots, setGameState, setSelectedCardId])
 
@@ -317,10 +429,76 @@ export function useDeployment() {
     }))
   }, [setGameState])
 
+  const handleEquipItem = useCallback((hero: Hero, itemCard: ItemCard, battlefieldId: 'battlefieldA' | 'battlefieldB') => {
+    // Check initiative
+    if (metadata.initiativePlayer !== itemCard.owner) {
+      alert('You do not have initiative!')
+      return
+    }
+    
+    // Items cost 0 mana (no mana check needed)
+    // Items can only be equipped to heroes (not units)
+    if (hero.cardType !== 'hero') {
+      alert('Items can only be equipped to heroes!')
+      return
+    }
+    
+    // Get the item template
+    const item = tier1Items.find(i => i.id === itemCard.itemId)
+    if (!item) {
+      alert('Item not found!')
+      return
+    }
+    
+    // Equip the item to the hero
+    setGameState(prev => {
+      const updatedBattlefield = prev[battlefieldId]
+      const player = hero.owner as 'player1' | 'player2'
+      
+      // Update the hero with the new item
+      const updatedHeroes = updatedBattlefield[player].map(c => {
+        if (c.id === hero.id && c.cardType === 'hero') {
+          const currentItems = (c as Hero).equippedItems || []
+          return {
+            ...c,
+            equippedItems: [...currentItems, itemCard.itemId],
+          } as Hero
+        }
+        return c
+      })
+      
+      // Remove item from hand
+      const updatedHand = (prev[`${itemCard.owner}Hand` as keyof typeof prev] as Card[])
+        .filter(c => c.id !== itemCard.id)
+      
+      // Pass initiative to opponent
+      const newInitiativePlayer = prev.metadata.initiativePlayer === 'player1' ? 'player2' : 'player1'
+      
+      return {
+        ...prev,
+        [battlefieldId]: {
+          ...prev[battlefieldId],
+          [player]: updatedHeroes,
+        },
+        [`${itemCard.owner}Hand`]: updatedHand,
+        metadata: {
+          ...prev.metadata,
+          initiativePlayer: newInitiativePlayer,
+          // Reset pass flags when an action is taken
+          player1Passed: false,
+          player2Passed: false,
+        },
+      }
+    })
+    
+    setSelectedCardId(null)
+  }, [metadata, setGameState, setSelectedCardId])
+
   return {
     handleDeploy,
     handleChangeSlot,
     handleRemoveFromBattlefield,
+    handleEquipItem,
   }
 }
 

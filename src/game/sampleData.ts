@@ -1674,6 +1674,9 @@ export function createInitialGameState(): {
     battlefieldDeathCounters: {}, // Track death counters for RW-bf2 (death counter -> draw card) - Record<"player-battlefield", count>
     initiativePlayer: 'player1', // Player 1 starts with initiative
     heroAbilityCooldowns: {}, // Track hero ability cooldowns - Record<heroId, turnLastUsed>
+    player1Passed: false, // Track if player 1 has passed this turn
+    player2Passed: false, // Track if player 2 has passed this turn
+    turn1DeploymentPhase: 'initial', // Turn 1 deployment phase: initial -> playerB -> secret -> complete
   }
 
   // Hardcoded battlefields for RW vs UB testing
@@ -1827,6 +1830,9 @@ export function createGameStateFromDraft(
     battlefieldDeathCounters: {}, // Track death counters for RW-bf2 (death counter -> draw card) - Record<"player-battlefield", count>
     initiativePlayer: 'player1', // Player 1 starts with initiative
     heroAbilityCooldowns: {}, // Track hero ability cooldowns - Record<heroId, turnLastUsed>
+    player1Passed: false, // Track if player 1 has passed this turn
+    player2Passed: false, // Track if player 2 has passed this turn
+    turn1DeploymentPhase: 'initial', // Turn 1 deployment phase: initial -> playerB -> secret -> complete
   }
 
   // Helper to detect archetype from heroes

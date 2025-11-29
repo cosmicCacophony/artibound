@@ -7,7 +7,8 @@ export type Color = 'red' | 'blue' | 'white' | 'black' | 'green'
 export type ColorCombo = Color | `${Color}${Color}` | `${Color}${Color}${Color}` // Single, dual, or triple color
 
 // Maximum colors allowed per deck
-export const MAX_COLORS_PER_DECK = 3
+// Increased to 4 to enable 3-4 color strategies (design advantage of 2-battlefield structure)
+export const MAX_COLORS_PER_DECK = 4
 
 // Archetype Types
 export type Archetype = 'rw-legion' | 'ub-control' | 'all'
@@ -108,6 +109,15 @@ export interface GameMetadata {
   // Hero ability cooldowns: Record of hero ID -> turn last used (to track cooldowns)
   // Format: `heroId` -> turn number
   heroAbilityCooldowns: Record<string, number>
+  // Pass tracking: Track if each player has passed this turn (for combat trigger)
+  player1Passed: boolean
+  player2Passed: boolean
+  // Turn 1 deployment state: Track turn 1 deployment phase
+  // 'initial' -> Player A deploys first hero
+  // 'playerB' -> Player B deploys first hero  
+  // 'secret' -> Both deploy secretly
+  // 'complete' -> Turn 1 deployment done
+  turn1DeploymentPhase?: 'initial' | 'playerB' | 'secret' | 'complete'
 }
 
 // Hero Ability Types

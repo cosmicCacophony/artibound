@@ -3,14 +3,31 @@ import { useGamePersistence } from '../hooks/useGamePersistence'
 import { useTurnManagement } from '../hooks/useTurnManagement'
 
 export function GameHeader() {
-  const { metadata, activePlayer, setShowCardLibrary } = useGameContext()
+  const { metadata, activePlayer, setShowCardLibrary, setGameState } = useGameContext()
   const { savedStates, exportGameState, importGameState } = useGamePersistence()
-  const { handleNextPhase, handleNextTurn } = useTurnManagement()
+  const { handleNextPhase, handleNextTurn, handlePass } = useTurnManagement()
 
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
       <h1 style={{ margin: 0 }}>Artibound - Hero Card Game</h1>
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        {/* Initiative Display - Prominent */}
+        {metadata.initiativePlayer && (
+          <div style={{ 
+            fontSize: '16px', 
+            fontWeight: 'bold',
+            padding: '8px 16px',
+            backgroundColor: metadata.initiativePlayer === 'player1' ? '#f44336' : '#4a90e2',
+            color: 'white',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}>
+            <span style={{ fontSize: '20px' }}>⚡</span>
+            Initiative: {metadata.initiativePlayer === 'player1' ? 'Player 1' : 'Player 2'}
+          </div>
+        )}
         <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
           Turn {metadata.currentTurn} - {activePlayer === 'player1' ? 'Player 1' : 'Player 2'}
         </div>
@@ -35,6 +52,25 @@ export function GameHeader() {
         >
           Next Turn
         </button>
+        {/* Pass Button - Show for whoever has initiative during play phase */}
+        {metadata.currentPhase === 'play' && metadata.initiativePlayer && (
+          <button
+            onClick={() => handlePass(metadata.initiativePlayer!)}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#ff9800',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold',
+            }}
+            title={`${metadata.initiativePlayer === 'player1' ? 'Player 1' : 'Player 2'} - Pass initiative to opponent (or go to combat if both passed)`}
+          >
+            Pass ({metadata.initiativePlayer === 'player1' ? 'P1' : 'P2'})
+          </button>
+        )}
         <button
           onClick={handleNextPhase}
           style={{

@@ -1661,6 +1661,285 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
 ]
 
 // ============================================================================
+// RWG (Red/White/Green) - Go-Wide Beatdown + Growth
+// ============================================================================
+
+export const rwgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
+  {
+    id: 'rwg-hero-wild-commander',
+    name: 'Wild Commander',
+    description: 'Combines RW aggression with Green growth',
+    cardType: 'hero',
+    colors: ['red', 'white', 'green'],
+    attack: 5,
+    health: 11,
+    maxHealth: 11,
+    currentHealth: 11,
+    supportEffect: 'Allies gain +1/+1. If you control heroes of 4 different colors, allies gain +2/+2 instead.',
+    signatureCardId: 'rwg-sig-commander-1',
+    equippedItems: [],
+    ability: {
+      name: 'Primal Rally',
+      description: 'All your units gain +2/+2 this turn. If you control heroes of 3+ different colors, they gain +3/+3 instead.',
+      manaCost: 1,
+      cooldown: 2,
+      effectType: 'buff_units',
+      effectValue: 2, // Base +2/+2, scales to +3/+3 with 3+ colors
+    },
+  },
+  {
+    id: 'rwg-hero-primal-warlord',
+    name: 'Primal Warlord',
+    description: 'Aggressive growth hero',
+    cardType: 'hero',
+    colors: ['red', 'green'],
+    attack: 6,
+    health: 9,
+    maxHealth: 9,
+    currentHealth: 9,
+    supportEffect: 'Allies gain +1 attack. When this attacks, put a +1/+1 counter on all your units.',
+    signatureCardId: 'rwg-sig-warlord-1',
+    equippedItems: [],
+    ability: {
+      name: 'Wild Growth',
+      description: 'All your units gain +2/+2 this turn. Put a +1/+1 counter on each of your units.',
+      manaCost: 1,
+      cooldown: 3,
+      effectType: 'buff_units',
+      effectValue: 2,
+    },
+  },
+]
+
+export const rwgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+  // Signature cards
+  {
+    id: 'rwg-sig-commander-1',
+    name: 'Convergence Banner',
+    description: 'Wild Commander signature - team buff. All allies gain +1/+1. If you control heroes of 3+ different colors, they gain +2/+2 instead.',
+    cardType: 'generic',
+    colors: ['red', 'white', 'green'],
+    manaCost: 4,
+    attack: 2,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+  },
+  {
+    id: 'rwg-sig-warlord-1',
+    name: 'Wild Standard',
+    description: 'Primal Warlord signature - growth. All allies gain +1/+1. Put a +1/+1 counter on each of your units.',
+    cardType: 'generic',
+    colors: ['red', 'green'],
+    manaCost: 4,
+    attack: 3,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+  },
+  // RWG Convergence Units
+  {
+    id: 'rwg-unit-wild-legionnaire',
+    name: 'Wild Legionnaire',
+    description: 'Legion. When this attacks, put a +1/+1 counter on it.',
+    cardType: 'generic',
+    colors: ['red', 'green'], // Can be cast with RG heroes
+    manaCost: 3,
+    attack: 3,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+  },
+  {
+    id: 'rwg-unit-primal-banner',
+    name: 'Primal Banner',
+    description: 'All your units gain +1/+1. At the start of your next turn, all your units gain +1/+1 again.',
+    cardType: 'generic',
+    colors: ['red', 'white', 'green'],
+    manaCost: 5, // 2RWG = 5 total mana
+    attack: 2,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+  },
+]
+
+export const rwgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  // Signature spells
+  {
+    id: 'rwg-sig-commander-2',
+    name: 'Primal Charge',
+    description: 'Wild Commander signature - aggressive. All allies gain +2 attack this turn and can attack immediately.',
+    cardType: 'spell',
+    colors: ['red', 'white', 'green'],
+    manaCost: 4,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for team buff + immediate attack
+      damage: 0,
+    },
+  },
+  // RWG Convergence Spells
+  {
+    id: 'rwg-spell-convergence-rally',
+    name: 'Convergence Rally',
+    description: 'All your units gain +2/+2 until end of turn. If you control heroes of 4 different colors, they gain +3/+3 instead.',
+    cardType: 'spell',
+    colors: ['red', 'white', 'green'],
+    manaCost: 6, // 3RWG = 6 total mana
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for team buff that scales with color count
+      damage: 0,
+    },
+  },
+  {
+    id: 'rwg-spell-growth-rally',
+    name: 'Growth Rally',
+    description: 'All your units gain +1/+1. Put a +1/+1 counter on each of your units.',
+    cardType: 'spell',
+    colors: ['red', 'white', 'green'],
+    manaCost: 4, // 1RWG = 4 total mana
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for team buff + permanent counters
+      damage: 0,
+    },
+  },
+]
+
+// ============================================================================
+// UBG (Blue/Black/Green) - Control + Resilience
+// ============================================================================
+
+export const ubgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
+  {
+    id: 'ubg-hero-void-druid',
+    name: 'Void Druid',
+    description: 'Combines UB control with Green resilience',
+    cardType: 'hero',
+    colors: ['blue', 'black', 'green'],
+    attack: 3,
+    health: 10,
+    maxHealth: 10,
+    currentHealth: 10,
+    supportEffect: 'When you cast a spell, draw a card. If you control heroes of 4 different colors, draw 2 cards instead.',
+    signatureCardId: 'ubg-sig-druid-1',
+    equippedItems: [],
+    ability: {
+      name: 'Verdant Control',
+      description: 'Draw 2 cards. For each different color among your heroes, deal 1 damage to target unit.',
+      manaCost: 1,
+      cooldown: 2,
+      effectType: 'draw_card',
+      effectValue: 2, // Base draw 2, scales damage with color count
+    },
+  },
+  {
+    id: 'ubg-hero-shadow-sage',
+    name: 'Shadow Sage',
+    description: 'Resilient control hero',
+    cardType: 'hero',
+    colors: ['black', 'green'],
+    attack: 2,
+    health: 11,
+    maxHealth: 11,
+    currentHealth: 11,
+    supportEffect: 'When an enemy unit dies, draw a card. This hero has +0/+1 for each different color among your heroes.',
+    signatureCardId: 'ubg-sig-sage-1',
+    equippedItems: [],
+    ability: {
+      name: 'Verdant Removal',
+      description: 'Destroy target unit with 4 or less health. If it had 4+ health, draw a card.',
+      manaCost: 1,
+      cooldown: 3,
+      effectType: 'custom', // Custom effect: conditional removal + card draw
+      effectValue: 4, // Health threshold
+    },
+  },
+]
+
+export const ubgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+  // Signature cards
+  {
+    id: 'ubg-sig-druid-2',
+    name: 'Prismatic Shield',
+    description: 'Void Druid signature - resilient. When this enters, draw a card. This has +0/+2 for each different color among your heroes.',
+    cardType: 'generic',
+    colors: ['blue', 'black', 'green'],
+    manaCost: 4,
+    attack: 2,
+    health: 4, // Base 4, scales with color count
+    maxHealth: 4,
+    currentHealth: 4,
+  },
+  {
+    id: 'ubg-sig-sage-1',
+    name: 'Shadow Growth',
+    description: 'Shadow Sage signature - removal. Destroy target unit. If it had 4+ health, draw a card.',
+    cardType: 'generic',
+    colors: ['black', 'green'],
+    manaCost: 4,
+    attack: 2,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+  },
+]
+
+export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  // Signature spells
+  {
+    id: 'ubg-sig-druid-1',
+    name: 'Verdant Bolt',
+    description: 'Void Druid signature - removal. Deal 3 damage to target unit. If it dies, draw a card.',
+    cardType: 'spell',
+    colors: ['blue', 'black', 'green'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage',
+      damage: 3,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+  // UBG Convergence Spells
+  {
+    id: 'ubg-spell-verdant-control',
+    name: 'Verdant Control',
+    description: 'Draw 2 cards. If you control heroes of 4 different colors, draw 3 cards instead.',
+    cardType: 'spell',
+    colors: ['blue', 'black', 'green'],
+    manaCost: 6, // 3UBG = 6 total mana
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for card draw that scales with color count
+      damage: 0,
+    },
+  },
+  {
+    id: 'ubg-spell-shadow-growth',
+    name: 'Shadow Growth',
+    description: 'Destroy target unit. If it had 4+ health, draw a card.',
+    cardType: 'spell',
+    colors: ['black', 'green'], // Can be cast with BG heroes
+    manaCost: 4, // 2BG = 4 total mana
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for destroy + conditional draw
+      damage: 0,
+    },
+  },
+  {
+    id: 'ubg-spell-prismatic-mastery',
+    name: 'Prismatic Mastery',
+    description: 'Draw 3 cards, then discard 1. For each different color among your heroes, deal 1 damage to all enemy units.',
+    cardType: 'spell',
+    colors: ['blue', 'black', 'green'],
+    manaCost: 7, // 3UBG = 7 total mana (high cost for powerful effect)
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for card draw + discard + scaling AOE damage
+      damage: 0,
+    },
+  },
+]
+
+// ============================================================================
 // UW (Blue/White) - Control but Proactive
 // ============================================================================
 
@@ -1806,6 +2085,8 @@ export const allHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   ...guHeroes,
   ...ubHeroes,
   ...uwHeroes,
+  ...rwgHeroes,
+  ...ubgHeroes,
 ]
 
 export const allCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
@@ -1818,6 +2099,8 @@ export const allCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
   ...guCards,
   ...ubCards,
   ...uwCards,
+  ...rwgCards,
+  ...ubgCards,
 ]
 
 export const allSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
@@ -1828,6 +2111,8 @@ export const allSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   ...guSpells,
   ...ubSpells,
   ...uwSpells,
+  ...rwgSpells,
+  ...ubgSpells,
 ]
 
 // ============================================================================

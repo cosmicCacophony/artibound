@@ -3,6 +3,7 @@ import { useGameContext } from '../context/GameContext'
 import { useDeployment } from '../hooks/useDeployment'
 import { useCombat } from '../hooks/useCombat'
 import { HeroCard } from './HeroCard'
+import { resolveSimultaneousCombat } from '../game/combatSystem'
 
 interface BattlefieldViewProps {
   battlefieldId: 'battlefieldA' | 'battlefieldB'
@@ -18,7 +19,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     getAvailableSlots,
     setGameState,
   } = useGameContext()
-  const { handleDeploy, handleChangeSlot, handleRemoveFromBattlefield } = useDeployment()
+  const { handleDeploy, handleChangeSlot, handleRemoveFromBattlefield, handleEquipItem } = useDeployment()
   const { handleDecreaseHealth, handleIncreaseHealth } = useCombat()
 
   const battlefield = gameState[battlefieldId]
@@ -67,6 +68,14 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     const canMoveHere = selectedCard && selectedCard.owner === player && 
       (selectedCard.location === battlefieldId || selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB' || selectedCard.location === 'hand' || selectedCard.location === 'base')
     
+    // Check if we can equip an item to a hero
+    const canEquipItem = selectedCard && 
+      selectedCard.cardType === 'item' && 
+      selectedCard.owner === player &&
+      cardInSlot && 
+      cardInSlot.cardType === 'hero' &&
+      cardInSlot.owner === player
+    
     const playerColor = player === 'player1' ? '#f44336' : '#4a90e2'
     const playerBgColor = player === 'player1' ? '#ffebee' : '#e3f2fd'
 
@@ -75,13 +84,20 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
         key={slotNum}
         style={{
           minHeight: '100px',
-          border: canMoveHere ? `2px dashed ${playerColor}` : '1px solid #ddd',
+          border: (canMoveHere || canEquipItem) ? `2px dashed ${playerColor}` : '1px solid #ddd',
           borderRadius: '4px',
           padding: '4px',
-          backgroundColor: canMoveHere ? playerBgColor : '#f9f9f9',
+          backgroundColor: (canMoveHere || canEquipItem) ? playerBgColor : '#f9f9f9',
           position: 'relative',
         }}
         onClick={() => {
+          // Check if equipping item to hero
+          if (canEquipItem && selectedCard && cardInSlot) {
+            handleEquipItem(cardInSlot as import('../game/types').Hero, selectedCard as import('../game/types').ItemCard, battlefieldId)
+            return
+          }
+          
+          // Normal deployment logic
           if (selectedCard && canMoveHere && selectedCard.owner === player) {
             if (selectedCard.location === battlefieldId) {
               handleChangeSlot(selectedCard, slotNum, battlefieldId)
@@ -112,7 +128,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
           </div>
         ) : (
           <div style={{ fontSize: '10px', color: '#ccc', textAlign: 'center', paddingTop: '20px' }}>
-            {canMoveHere ? 'Drop here' : 'Empty'}
+            {canEquipItem ? 'Equip Item' : canMoveHere ? 'Drop here' : 'Empty'}
           </div>
         )}
       </div>
@@ -234,6 +250,87 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
             </button>
           </div>
         </div>
+        {/* Go to Combat Button */}
+        {metadata.currentPhase === 'play' && (
+          <button
+            onClick={() => {
+              // Check if both players passed, if so resolve combat automatically
+              if (metadata.player1Passed && metadata.player2Passed) {
+                // Resolve simultaneous combat for both players
+                const battlefield = gameState[battlefieldId]
+                const initialTowerHP = {
+                  towerA_player1: metadata.towerA_player1_HP,
+                  towerA_player2: metadata.towerA_player2_HP,
+                  towerB_player1: metadata.towerB_player1_HP,
+                  towerB_player2: metadata.towerB_player2_HP,
+                }
+                
+                // Resolve simultaneous combat (units in front attack each other)
+                const combatResult = resolveSimultaneousCombat(
+                  battlefield,
+                  battlefieldId,
+                  initialTowerHP
+                )
+                
+                // Show combat results (before state update)
+                if (combatResult.combatLog.length > 0) {
+                  const logSummary = combatResult.combatLog.map(entry => 
+                    `${entry.attackerName} → ${entry.targetName || 'Tower'}: ${entry.damage} damage${entry.killed ? ' (KILLED)' : ''}`
+                  ).join('\n')
+                  // Show alert after a brief delay to allow state update
+                  setTimeout(() => {
+                    alert(`Combat resolved for Battlefield ${battlefieldName}!\n\n${logSummary}\n\nYou can manually adjust health if needed (e.g., for spell effects not tracked).`)
+                  }, 100)
+                }
+                
+                // Apply combat results
+                setGameState(prev => {
+                  const towerKeyP1 = battlefieldId === 'battlefieldA' ? 'towerA_player1_HP' : 'towerB_player1_HP'
+                  const towerKeyP2 = battlefieldId === 'battlefieldA' ? 'towerA_player2_HP' : 'towerB_player2_HP'
+                  const towerKeyP1Result = battlefieldId === 'battlefieldA' ? 'towerA_player1' : 'towerB_player1'
+                  const towerKeyP2Result = battlefieldId === 'battlefieldA' ? 'towerA_player2' : 'towerB_player2'
+                  
+                  return {
+                    ...prev,
+                    [battlefieldId]: combatResult.updatedBattlefield,
+                    metadata: {
+                      ...prev.metadata,
+                      [towerKeyP1]: combatResult.updatedTowerHP[towerKeyP1Result],
+                      [towerKeyP2]: combatResult.updatedTowerHP[towerKeyP2Result],
+                      // Apply overflow damage to nexus
+                      player1NexusHP: Math.max(0, prev.metadata.player1NexusHP - combatResult.overflowDamage.player1),
+                      player2NexusHP: Math.max(0, prev.metadata.player2NexusHP - combatResult.overflowDamage.player2),
+                      // Reset pass flags
+                      player1Passed: false,
+                      player2Passed: false,
+                      // Stay in play phase so players can adjust manually if needed
+                      // (e.g., if a spell gave +1/+1 that wasn't tracked in the system)
+                    },
+                  }
+                })
+              } else {
+                alert('Both players must pass before going to combat')
+              }
+            }}
+            disabled={!(metadata.player1Passed && metadata.player2Passed)}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: (metadata.player1Passed && metadata.player2Passed) ? '#4caf50' : '#ccc',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: (metadata.player1Passed && metadata.player2Passed) ? 'pointer' : 'not-allowed',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              marginLeft: '12px',
+            }}
+            title={(metadata.player1Passed && metadata.player2Passed) 
+              ? `Resolve Combat for Battlefield ${battlefieldName} (units in front attack each other)`
+              : 'Both players must pass before combat'}
+          >
+            Go to Combat {battlefieldName}
+          </button>
+        )}
       </div>
       
       {/* Player 2 side */}

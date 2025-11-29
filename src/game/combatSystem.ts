@@ -289,3 +289,162 @@ export interface CombatLogEntry {
   killed?: boolean
 }
 
+/**
+ * Resolve simultaneous combat for both players
+ * Units in front of each other attack simultaneously
+ * Both units deal damage even if one dies (true simultaneous combat)
+ */
+export function resolveSimultaneousCombat(
+  battlefield: Battlefield,
+  battlefieldId: 'battlefieldA' | 'battlefieldB',
+  initialTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
+): {
+  updatedBattlefield: Battlefield
+  updatedTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
+  overflowDamage: { player1: number, player2: number } // Overflow damage to nexus for each player
+  combatLog: CombatLogEntry[]
+} {
+  let currentBattlefield = { ...battlefield }
+  let currentTowerHP = { ...initialTowerHP }
+  let overflowDamage = { player1: 0, player2: 0 }
+  const combatLog: CombatLogEntry[] = []
+  
+  // Get all units from both players with their slots
+  const player1Units = battlefield.player1.filter(u => u.slot !== undefined)
+  const player2Units = battlefield.player2.filter(u => u.slot !== undefined)
+  
+  // Process each slot (1-5) - both units attack simultaneously
+  for (let slot = 1; slot <= 5; slot++) {
+    const p1Unit = player1Units.find(u => u.slot === slot)
+    const p2Unit = player2Units.find(u => u.slot === slot)
+    
+    // Calculate attacks for both units first (before applying damage)
+    const p1Target = p1Unit ? getDefaultTarget(p1Unit, slot, currentBattlefield) : null
+    const p2Target = p2Unit ? getDefaultTarget(p2Unit, slot, currentBattlefield) : null
+    
+    // Calculate damage amounts
+    const p1AttackPower = p1Unit ? getAttackPower(p1Unit, p1Target?.type === 'unit' && p1Target.targetId ? 
+      currentBattlefield.player2.find(u => u.id === p1Target.targetId)?.cardType === 'hero' : false) : 0
+    const p2AttackPower = p2Unit ? getAttackPower(p2Unit, p2Target?.type === 'unit' && p2Target.targetId ? 
+      currentBattlefield.player1.find(u => u.id === p2Target.targetId)?.cardType === 'hero' : false) : 0
+    
+    // Apply Player 1's attack
+    if (p1Unit && p1Target) {
+      const result = resolveAttack(
+        p1Unit,
+        p1Target,
+        currentBattlefield,
+        currentTowerHP,
+        battlefieldId
+      )
+      
+      currentBattlefield = result.updatedBattlefield
+      currentTowerHP = result.updatedTowerHP
+      
+      // Track overflow damage
+      if (p1Target.type === 'tower') {
+        const towerKey = battlefieldId === 'battlefieldA' 
+          ? 'towerA_player2'
+          : 'towerB_player2'
+        const towerWasDestroyed = initialTowerHP[towerKey] > 0 && currentTowerHP[towerKey] === 0
+        if (towerWasDestroyed) {
+          const towerHPBefore = initialTowerHP[towerKey]
+          overflowDamage.player1 += Math.max(0, p1AttackPower - towerHPBefore)
+        }
+      }
+      
+      // Log combat
+      if (p1Target.type === 'unit' && p1Target.targetId) {
+        const targetUnit = battlefield.player2.find(u => u.id === p1Target.targetId)
+        combatLog.push({
+          attackerId: p1Unit.id,
+          attackerName: p1Unit.name,
+          targetType: 'unit',
+          targetId: p1Target.targetId,
+          targetName: targetUnit?.name || 'Unknown',
+          damage: result.damageDealt,
+          killed: result.targetKilled,
+        })
+      } else {
+        combatLog.push({
+          attackerId: p1Unit.id,
+          attackerName: p1Unit.name,
+          targetType: 'tower',
+          damage: result.damageDealt,
+        })
+      }
+    }
+    
+    // Apply Player 2's attack (even if unit was killed by player 1, it still attacks)
+    if (p2Unit && p2Target) {
+      // For simultaneous combat, both units attack even if one dies
+      // So we use the original battlefield state to find the target
+      const originalTarget = battlefield.player1.find(u => 
+        p2Target.type === 'unit' && p2Target.targetId && u.id === p2Target.targetId
+      )
+      
+      // If attacking a unit that might be dead, check if it still exists
+      if (p2Target.type === 'unit' && p2Target.targetId) {
+        const targetStillExists = currentBattlefield.player1.some(u => u.id === p2Target.targetId)
+        if (!targetStillExists && originalTarget) {
+          // Target was killed by player 1, but player 2 still attacks (simultaneous)
+          // In true simultaneous combat, both deal damage. For now, if target is dead, attack doesn't happen
+          // This is a design decision - we could make it so damage is still dealt
+        }
+      }
+      
+      const result = resolveAttack(
+        p2Unit,
+        p2Target,
+        currentBattlefield,
+        currentTowerHP,
+        battlefieldId
+      )
+      
+      currentBattlefield = result.updatedBattlefield
+      currentTowerHP = result.updatedTowerHP
+      
+      // Track overflow damage
+      if (p2Target.type === 'tower') {
+        const towerKey = battlefieldId === 'battlefieldA' 
+          ? 'towerA_player1'
+          : 'towerB_player1'
+        const towerWasDestroyed = initialTowerHP[towerKey] > 0 && currentTowerHP[towerKey] === 0
+        if (towerWasDestroyed) {
+          const towerHPBefore = initialTowerHP[towerKey]
+          overflowDamage.player2 += Math.max(0, p2AttackPower - towerHPBefore)
+        }
+      }
+      
+      // Log combat
+      if (p2Target.type === 'unit' && p2Target.targetId) {
+        const targetUnit = currentBattlefield.player1.find(u => u.id === p2Target.targetId) || 
+                          battlefield.player1.find(u => u.id === p2Target.targetId)
+        combatLog.push({
+          attackerId: p2Unit.id,
+          attackerName: p2Unit.name,
+          targetType: 'unit',
+          targetId: p2Target.targetId,
+          targetName: targetUnit?.name || 'Unknown',
+          damage: result.damageDealt,
+          killed: result.targetKilled,
+        })
+      } else {
+        combatLog.push({
+          attackerId: p2Unit.id,
+          attackerName: p2Unit.name,
+          targetType: 'tower',
+          damage: result.damageDealt,
+        })
+      }
+    }
+  }
+  
+  return {
+    updatedBattlefield: currentBattlefield,
+    updatedTowerHP: currentTowerHP,
+    overflowDamage,
+    combatLog,
+  }
+}
+

@@ -152,6 +152,9 @@ export function useTurnManagement() {
       nextPhase = 'play'
       shouldIncrementTurn = nextPlayer === 'player1'
       
+      // Reset pass flags at start of new turn
+      const resetPassFlags = true
+      
       // Regenerate mana for next player (+1 max mana, restore to max)
       const nextPlayerMaxMana = Math.min(
         (nextPlayer === 'player1' ? metadata.player1MaxMana : metadata.player2MaxMana) + 1,
@@ -194,6 +197,11 @@ export function useTurnManagement() {
           currentPhase: nextPhase,
           [`${nextPlayer}MaxMana`]: nextPlayerMaxMana,
           [`${nextPlayer}Mana`]: nextPlayerMaxMana, // Restore to max
+          // Reset pass flags at start of new turn
+          player1Passed: false,
+          player2Passed: false,
+          // Reset turn 1 deployment phase if we're past turn 1
+          ...(shouldIncrementTurn && prev.metadata.currentTurn > 1 ? { turn1DeploymentPhase: 'complete' } : {}),
         },
       }))
       return
@@ -215,19 +223,54 @@ export function useTurnManagement() {
     setGameState(prev => {
       const isCurrentlyPlayed = prev.metadata.playedSpells[card.id] || false
       const newPlayedSpells = { ...prev.metadata.playedSpells }
+      const spellCard = card as import('../game/types').SpellCard
       
       if (isCurrentlyPlayed) {
+        // Unmarking spell - don't change initiative
         delete newPlayedSpells[card.id]
+        return {
+          ...prev,
+          metadata: {
+            ...prev.metadata,
+            playedSpells: newPlayedSpells,
+          },
+        }
       } else {
+        // Playing spell - mark as played
         newPlayedSpells[card.id] = true
-      }
-      
-      return {
-        ...prev,
-        metadata: {
-          ...prev.metadata,
-          playedSpells: newPlayedSpells,
-        },
+        
+        // Check if spell gives initiative
+        const spellGivesInitiative = spellCard.initiative === true
+        
+        // If spell gives initiative, keep it. Otherwise, pass to opponent
+        // Exception: If opponent has no mana, pass initiative back
+        const currentPlayer = prev.metadata.initiativePlayer
+        const opponent = currentPlayer === 'player1' ? 'player2' : 'player1'
+        const opponentMana = opponent === 'player1' ? prev.metadata.player1Mana : prev.metadata.player2Mana
+        
+        let newInitiativePlayer = currentPlayer
+        if (spellGivesInitiative) {
+          // Spell gives initiative - keep it
+          newInitiativePlayer = currentPlayer
+        } else if (opponentMana === 0) {
+          // Opponent has no mana - pass initiative back to current player
+          newInitiativePlayer = currentPlayer
+        } else {
+          // Normal case - pass initiative to opponent
+          newInitiativePlayer = opponent
+        }
+        
+        return {
+          ...prev,
+          metadata: {
+            ...prev.metadata,
+            playedSpells: newPlayedSpells,
+            initiativePlayer: newInitiativePlayer,
+            // Reset pass flags when an action is taken
+            player1Passed: false,
+            player2Passed: false,
+          },
+        }
       }
     })
   }, [setGameState])
@@ -257,10 +300,48 @@ export function useTurnManagement() {
     })
   }, [setGameState])
 
+  const handlePass = useCallback((player: 'player1' | 'player2') => {
+    setGameState(prev => {
+      const currentPlayerPassed = player === 'player1' ? prev.metadata.player1Passed : prev.metadata.player2Passed
+      const otherPlayerPassed = player === 'player1' ? prev.metadata.player2Passed : prev.metadata.player1Passed
+      
+      // If both players have passed, go to combat
+      if (currentPlayerPassed && otherPlayerPassed) {
+        // Both passed - go to combat for battlefield A
+        return {
+          ...prev,
+          metadata: {
+            ...prev.metadata,
+            currentPhase: 'combatA',
+            player1Passed: false, // Reset pass flags
+            player2Passed: false,
+          },
+        }
+      }
+      
+      // Mark this player as passed
+      const newMetadata = {
+        ...prev.metadata,
+        [`${player}Passed`]: true,
+      }
+      
+      // If other player hasn't passed, give them initiative
+      if (!otherPlayerPassed) {
+        newMetadata.initiativePlayer = player === 'player1' ? 'player2' : 'player1'
+      }
+      
+      return {
+        ...prev,
+        metadata: newMetadata,
+      }
+    })
+  }, [setGameState])
+
   return {
     handleNextPhase,
     handleNextTurn,
     handleToggleSpellPlayed,
+    handlePass,
   }
 }
 
