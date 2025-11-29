@@ -133,7 +133,7 @@ graph TB
 
 #### `colorSystem.ts` (Deck Building Rules)
 - **Color Validation**: Enforces deck constraints
-  - `validateDeckColors()`: Max 3 colors per deck
+  - `validateDeckColors()`: Max 4 colors per deck (3-4 color is a design pillar)
   - `canPlayCardInLane()`: Color requirement checking
 - **Color Utilities**: Helper functions
   - `getUniqueColors()`: Extract colors from cards
@@ -290,7 +290,7 @@ HeroCard.tsx
 - Mana system (3-10, +1 per turn)
 - Gold economy with item shop
 - Combat system with positional targeting
-- Color system (max 3 colors per deck)
+- Color system (max 4 colors per deck, 3-4 color is a design pillar)
 - Hero deployment and movement
 - Death cooldown system
 - Spell cards with effects

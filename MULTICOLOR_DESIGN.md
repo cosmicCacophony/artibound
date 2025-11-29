@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document explores how the 2-battlefield structure enables 3-4 color deck building, making it a core design strength that differentiates Artibound from Artifact Foundry's 3-lane system.
+This document explores how the 2-battlefield structure enables 3-4 color deck building, making it a **core design pillar** that differentiates Artibound from Artifact Foundry's 3-lane system. **3-4 color decks are the optimal strategy**, not just viable - players should be incentivized to build multi-color decks while being punished for greedy deck building that leaves them unable to cast pivotal spells on key turns.
 
 ## The Core Insight
 
@@ -18,6 +18,7 @@ This document explores how the 2-battlefield structure enables 3-4 color deck bu
 - More skill-intensive deck building
 - Synergy-driven gameplay
 - Unique strategic depth compared to Foundry
+- **Risk/reward balance**: Players must manage multicolor hero safety or face severe punishment for greedy builds
 
 ---
 
@@ -71,12 +72,74 @@ More colors = more power, but harder to cast:
 
 ## Multicolor Hero Philosophy
 
+### Artifact Foundry Draft Pattern (Reference)
+
+**2-Color Draft Strategy in Foundry:**
+- **Turn 1**: Deploy 1 strong-statted champion with weaker signature cards
+  - Purpose: Cast spells in 1/3 lanes
+  - Trade-off: Strong stats but weaker signature cards
+- **Turn 2-3**: Deploy weaker-statted but strong hero of that color in different lane
+  - Purpose: Have 2/3 lanes access to that color
+  - Trade-off: Weaker stats but enables color access across lanes
+
+**Design Insight**: Heroes are deployed strategically to enable color access, not just for their individual power.
+
 ### Dual-Color Heroes (Current)
 - **Purpose**: Enable 2-color strategies
 - **Power Level**: Stronger than mono-color, baseline for multi-color
 - **Examples**: 
   - RW heroes (Valiant Commander, War Captain)
   - UB heroes (Void Archmage, Shadow Necromancer)
+
+### Turn 1 Deployment Strategy in Artibound
+
+**Key Difference**: Artibound deploys 2 heroes on turn 1 (vs Foundry's 1 hero)
+
+**Turn 1 Hero Selection Options:**
+1. **Strong heroes that are a bit less strong** - Prioritize enabling colors over raw power
+2. **Heroes you don't mind dying** - Deploy heroes that enable colors but aren't critical to your game plan
+
+**Design Goal**: Turn 1 deployment should create interesting trade-offs between hero power and color access.
+
+**Important**: Draft should always provide enough heroes to make a deck, even if players choose poorly colored champions. There are no default heroes - players must draft all 4 heroes.
+
+### Multicolor Hero Balance Approaches
+
+Multicolor heroes (2-3 colors) should be balanced using one of two approaches:
+
+#### Approach A: Weaker Stats, Stronger Spells
+- **Stats**: Statted a bit weaker than mono-color heroes
+- **Rationale**: Balance having access to much stronger spells
+- **Example**: 2-color hero with 4/9 stats (vs 5/11 for mono-color) but enables powerful 2-color spells
+- **Trade-off**: Less durable but enables more powerful deck
+
+#### Approach B: Normal Stats, Weaker Signature, Enabler Role
+- **Stats**: Statted as normal color heroes (same as mono-color)
+- **Signature Cards**: Weaker than mono-color hero signatures
+- **Power Source**: Power comes from enabling other cards in your deck, not from signature cards
+- **Example**: 2-color hero with 5/11 stats but signature card is 3-mana instead of 4-mana, and weaker effect
+- **Trade-off**: Same durability but less individual power, more enabling power
+
+**Design Principle**: Multicolor heroes should not be strictly better than mono-color heroes. They should have trade-offs that balance their color access advantage.
+
+### Hero Deployment Patterns
+
+#### Pattern 1: Color Access Priority
+- **Turn 1**: Deploy heroes to enable color access for your deck
+- **Priority**: Color access > Individual hero power
+- **Risk**: Weaker heroes may die, but you can cast your spells
+
+#### Pattern 2: Power Priority
+- **Turn 1**: Deploy strongest heroes regardless of color
+- **Priority**: Individual hero power > Color access
+- **Risk**: May not be able to cast all your spells, but heroes are safer
+
+#### Pattern 3: Balanced Approach
+- **Turn 1**: Mix of strong heroes and color enablers
+- **Priority**: Balance between power and access
+- **Risk**: Moderate risk, moderate reward
+
+**Design Goal**: Create meaningful decisions about which heroes to deploy when, based on your deck's needs.
 
 ### Tri-Color Heroes (New)
 - **Purpose**: Enable 3-color strategies, powerful convergence effects
@@ -419,12 +482,13 @@ Battlefields that reward having multiple colors:
 
 #### Player Responses to Multicolor Hero Threats
 Players need strategic options when their multicolor heroes are threatened:
-1. **Retreat**: Move multicolor hero to base before important turns
-2. **Heal**: Use healing/mana to keep hero alive
-3. **Save Mana**: Keep mana available to respond if opponent casts a unit in front or threatens with a spell
-4. **Risk Assessment**: If you tap out, opponent might cast unit + spell in front and kill the hero
+1. **Retreat**: Move multicolor hero to base before important turns (heals to full)
+2. **Bounce During Deployment**: If you deploy a hero to the same battlefield as your multicolor hero, you can recall that hero to base, healing it and allowing you to replay it next turn - this "bouncing" mechanic is crucial for protecting multicolor heroes
+3. **Items**: Buy items to protect multicolor heroes (armor, health, defensive abilities)
+4. **Save Mana**: Keep mana available to respond if opponent casts a unit in front or threatens with a spell
+5. **Risk Assessment**: If you tap out, opponent might cast unit + spell in front and kill the hero
 
-**Design Goal**: Multicolor heroes should feel powerful but risky - players must actively manage their safety.
+**Design Goal**: Multicolor heroes should feel powerful but risky - players must actively manage their safety. Every turn counts - if your multicolor heroes die and you can't cast pivotal spells on key turns, you should be punished hard for greedy deck building.
 
 ### Mana Cost & Power Level Guidelines
 
@@ -479,6 +543,23 @@ Players need strategic options when their multicolor heroes are threatened:
 
 **Design Goal**: Players should feel good about removing multicolor heroes at the right moments to set opponent back from casting certain spells by a turn.
 
+### Hero Bouncing & Recall Strategy
+
+**Core Mechanic**: During deployment, if you place a hero into the same battlefield location as your existing multicolor hero, you can recall that hero to base. This heals the hero to full health and allows you to replay it next turn, ensuring you can cast whatever powerful spell you are preparing for.
+
+**Strategic Importance**:
+- **Protection**: Bouncing heroes back to base protects them from being killed before key turns
+- **Healing**: Heroes heal to full when moved to base, allowing you to redeploy them fresh
+- **Timing**: Critical for ensuring you can cast 6-7 mana multicolor spells on the exact turn you need them
+- **Counterplay**: Opponents can predict when you'll bounce and try to kill the hero before you can recall it
+
+**Example Scenario**:
+- Turn 5 (5 mana): You have a damaged RWG hero in Battlefield A and a powerful 6-mana RWG spell in hand
+- You deploy a new hero to Battlefield A, recalling your RWG hero to base (heals to full)
+- Turn 6 (6 mana): You redeploy your RWG hero fresh, now able to cast your 6-mana spell safely
+
+**Design Principle**: Bouncing heroes is a core strategic mechanic that rewards careful planning and punishes greedy deck building. Players who don't protect their multicolor heroes will be unable to cast pivotal spells on key turns.
+
 ### Testing & Balance Framework
 
 #### Matchup Testing Plan
@@ -509,6 +590,117 @@ When designing multicolor cards, consider:
 - [ ] **Timing**: Is this card castable early (safe) or late (risky)?
 - [ ] **Synergy**: Does this card reward having multiple colors?
 - [ ] **Artifact Foundry Comparison**: How does this compare to Foundry's multicolor cards?
+- [ ] **Answerability**: Can opponents answer multicolor heroes with units in front, direct damage, or other heroes?
+- [ ] **Item Protection**: Do items provide meaningful protection for multicolor heroes?
+- [ ] **Bounce Synergy**: Does this card work well with hero bouncing/recall strategies?
+
+---
+
+## New Multicolor Cards: Counterplay & Protection
+
+The following cards highlight key design principles: multicolor heroes being answerable, hero bouncing/recall strategies, item protection, and punishment for greedy deck building.
+
+### RWG (Red/White/Green) Cards
+
+#### 1. Primal Recall
+- **Cost**: 2 mana (1RWG)
+- **Colors**: Red, White, Green
+- **Type**: Spell
+- **Effect**: "Return target friendly hero to base. It heals to full health. Draw a card."
+- **Design Notes**:
+  - Enables hero bouncing strategy without needing to deploy another hero
+  - Provides card advantage to offset the tempo loss
+  - Low cost makes it accessible for protecting multicolor heroes
+  - Rewards careful planning and hero management
+  - **Highlights**: Hero bouncing/recall mechanics
+
+#### 2. Wild Protector
+- **Cost**: 4 mana (2RWG)
+- **Colors**: Red, White, Green
+- **Type**: Generic Unit
+- **Stats**: 2 Attack / 5 Health
+- **Effect**: "When this enters, target friendly hero gains +0/+3 until end of turn. If that hero is multicolor, it gains +0/+5 instead."
+- **Design Notes**:
+  - Provides immediate protection for multicolor heroes
+  - Can be placed in front of a multicolor hero to block incoming damage
+  - Scales better for multicolor heroes (reward for multi-color commitment)
+  - High health makes it a good blocker
+  - **Highlights**: Multicolor heroes being answerable (units in front), protection for multicolor heroes
+
+#### 3. Convergence Shield
+- **Cost**: 3 mana (1RWG)
+- **Colors**: Red, White, Green
+- **Type**: Spell
+- **Effect**: "Target friendly hero gains +2/+2 and 'Cannot be targeted by spells' until end of turn. If that hero is multicolor, it gains +3/+3 instead."
+- **Design Notes**:
+  - Protects heroes from direct damage spells (key counterplay option)
+  - Provides stat boost to survive combat
+  - Scales better for multicolor heroes
+  - Creates interesting timing decisions (when to use protection)
+  - **Highlights**: Multicolor heroes being answerable (direct damage), protection for multicolor heroes
+
+### UBW (Blue/Black/White) Cards
+
+#### 1. Tactical Retreat
+- **Cost**: 1 mana (1UBW)
+- **Colors**: Blue, Black, White
+- **Type**: Spell
+- **Effect**: "Return target friendly hero to base. It heals to full health. If that hero is multicolor, draw a card."
+- **Design Notes**:
+  - Even cheaper than Primal Recall (1 mana vs 2)
+  - Provides card advantage only for multicolor heroes (reward for commitment)
+  - Enables frequent hero bouncing for control strategies
+  - Low cost makes it easy to hold up mana for protection
+  - **Highlights**: Hero bouncing/recall mechanics, reward for multicolor commitment
+
+#### 2. Prismatic Ward
+- **Cost**: 2 mana (1UBW)
+- **Colors**: Blue, Black, White
+- **Type**: Spell
+- **Effect**: "Target friendly hero gains 'Spells and abilities cannot target this hero' until end of turn. If that hero is multicolor, it also gains +0/+2."
+- **Design Notes**:
+  - Complete protection from targeted removal and abilities
+  - Still vulnerable to units in front (maintains answerability)
+  - Scales better for multicolor heroes
+  - Creates interesting counterplay (opponent must use units, not spells)
+  - **Highlights**: Multicolor heroes being answerable (units in front), protection for multicolor heroes
+
+#### 3. Multicolor Guardian
+- **Cost**: 5 mana (2UBW)
+- **Colors**: Blue, Black, White
+- **Type**: Generic Unit
+- **Stats**: 1 Attack / 6 Health
+- **Effect**: "When this enters, you may return target friendly multicolor hero to base. If you do, that hero gains an item slot (max 3 items)."
+- **Design Notes**:
+  - Enables hero bouncing while providing item protection
+  - Extra item slot allows multicolor heroes to equip more protective items
+  - High health makes it a good blocker
+  - Rewards item-based protection strategies
+  - **Highlights**: Hero bouncing/recall mechanics, item protection for multicolor heroes
+
+### Design Principles Demonstrated
+
+These cards showcase:
+
+1. **Answerability**: Multicolor heroes can be answered by:
+   - Units placed in front (Wild Protector, Multicolor Guardian can block)
+   - Direct damage spells (Convergence Shield, Prismatic Ward protect against this)
+   - Other heroes attacking (protection spells help but don't make heroes invincible)
+
+2. **Hero Bouncing**: 
+   - Primal Recall, Tactical Retreat, and Multicolor Guardian enable hero recall
+   - Allows players to protect multicolor heroes and ensure they can cast pivotal spells
+   - Creates strategic depth around timing and resource management
+
+3. **Item Protection**:
+   - Multicolor Guardian provides extra item slots
+   - Players are incentivized to buy items to protect multicolor heroes
+   - Items become crucial for greedy multicolor strategies
+
+4. **Punishment for Greedy Building**:
+   - If multicolor heroes die, players can't cast pivotal spells
+   - Every turn counts - missing a key turn due to hero death is severe punishment
+   - Cards that protect multicolor heroes are essential, not optional
 
 ---
 
