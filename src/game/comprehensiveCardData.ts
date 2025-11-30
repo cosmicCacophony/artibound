@@ -1332,26 +1332,25 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     },
   },
   {
-    id: 'ub-hero-assassin',
-    name: 'Shadow Assassin',
-    description: 'Assassin control hero',
+    id: 'ub-hero-nature-guardian',
+    name: 'Nature Guardian',
+    description: 'Resilient control hero',
     cardType: 'hero',
-    colors: ['black'],
-    attack: 6,
-    health: 8,
-    maxHealth: 8,
-    currentHealth: 8,
-    supportEffect: 'When you kill an enemy unit, draw a card',
-    signatureCardId: 'ub-sig-assassin-1',
+    colors: ['green'],
+    attack: 3,
+    health: 11,
+    maxHealth: 11,
+    currentHealth: 11,
+    supportEffect: 'When an enemy unit dies, gain +1 max mana this turn',
+    signatureCardId: 'ub-sig-guardian-1',
     equippedItems: [],
-    bonusVsHeroes: 4, // Assassin bonus: +4 damage vs enemy heroes
     ability: {
-      name: 'Assassinate',
-      description: 'Deal 4 damage to target hero',
+      name: 'Nature\'s Revenge',
+      description: 'Deal 2 damage to target unit. If it dies, gain +1 max mana.',
       manaCost: 1,
-      cooldown: 3,
-      effectType: 'damage_target',
-      effectValue: 4,
+      cooldown: 2,
+      effectType: 'custom',
+      effectValue: 2,
     },
   },
   {
@@ -1514,16 +1513,16 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     },
   },
   {
-    id: 'ub-sig-assassin-1',
-    name: 'Assassinate',
-    description: 'Shadow Assassin signature - removal. Deal 5 damage to target hero.',
+    id: 'ub-sig-guardian-1',
+    name: 'Nature\'s Revenge',
+    description: 'Nature Guardian signature - removal and ramp. Deal 3 damage to target unit. If it dies, gain +1 max mana.',
     cardType: 'spell',
-    colors: ['black'],
-    manaCost: 4,
+    colors: ['green'],
+    manaCost: 3,
     effect: {
-      type: 'targeted_damage',
-      damage: 5,
-      affectsUnits: false,
+      type: 'targeted_damage', // Placeholder - would need custom effect for conditional mana ramp
+      damage: 3,
+      affectsUnits: true,
       affectsHeroes: true,
     },
   },
@@ -1599,11 +1598,11 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     },
   },
   {
-    id: 'ub-spell-dark-bolt',
-    name: 'Dark Bolt',
+    id: 'ub-spell-arcane-bolt',
+    name: 'Arcane Bolt',
     description: 'Deal 4 damage to target unit.',
     cardType: 'spell',
-    colors: ['black'],
+    colors: ['blue'],
     manaCost: 4,
     effect: {
       type: 'targeted_damage',
@@ -1643,14 +1642,14 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     },
   },
   {
-    id: 'ub-spell-soul-reap',
-    name: 'Soul Reap',
-    description: 'Destroy target unit. Draw a card.',
+    id: 'ub-spell-verdant-removal',
+    name: 'Verdant Removal',
+    description: 'Destroy target unit with 4 or less health. Draw a card.',
     cardType: 'spell',
-    colors: ['black'],
-    manaCost: 5,
+    colors: ['green'],
+    manaCost: 4,
     effect: {
-      type: 'targeted_damage',
+      type: 'targeted_damage', // Placeholder - would need custom effect for conditional destroy + draw
       damage: 999, // Effectively destroy
       affectsUnits: true,
       affectsHeroes: true,
@@ -1658,11 +1657,11 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   },
   // Early impactful spells
   {
-    id: 'ub-spell-hip-fire',
-    name: 'Hip Fire',
+    id: 'ub-spell-frost-bolt',
+    name: 'Frost Bolt',
     description: 'Deal 2 damage to enemy unit in front of your hero.',
     cardType: 'spell',
-    colors: ['black'],
+    colors: ['blue'],
     manaCost: 2,
     effect: {
       type: 'front_damage',
@@ -1672,11 +1671,11 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     },
   },
   {
-    id: 'ub-spell-exsanguinate',
-    name: 'Exsanguinate',
+    id: 'ub-spell-ice-lance',
+    name: 'Ice Lance',
     description: 'Deal 3 damage to enemy hero in front of your hero.',
     cardType: 'spell',
-    colors: ['black'],
+    colors: ['blue'],
     manaCost: 3,
     effect: {
       type: 'front_damage',
@@ -1686,11 +1685,11 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     },
   },
   {
-    id: 'ub-spell-pick-off',
-    name: 'Pick Off',
+    id: 'ub-spell-nature-strike',
+    name: 'Nature Strike',
     description: 'Deal 4 damage to enemy unit in front of your hero.',
     cardType: 'spell',
-    colors: ['black'],
+    colors: ['green'],
     manaCost: 3,
     effect: {
       type: 'front_damage',
@@ -1700,11 +1699,11 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     },
   },
   {
-    id: 'ub-spell-sacred-arrow',
-    name: 'Sacred Arrow',
+    id: 'ub-spell-arcane-arrow',
+    name: 'Arcane Arrow',
     description: 'Deal 3 damage to enemy hero in any lane.',
     cardType: 'spell',
-    colors: ['black'],
+    colors: ['blue'],
     manaCost: 3,
     effect: {
       type: 'targeted_damage',
@@ -1743,11 +1742,11 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     },
   },
   {
-    id: 'ub-spell-gank',
-    name: 'Gank',
+    id: 'ub-spell-arcane-advantage',
+    name: 'Arcane Advantage',
     description: 'Deal 3 damage to enemy hero in any lane. Draw a card.',
     cardType: 'spell',
-    colors: ['black'],
+    colors: ['blue'],
     manaCost: 4,
     effect: {
       type: 'targeted_damage',
@@ -1757,14 +1756,28 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     },
   },
   {
-    id: 'ub-spell-relentless-pursuit',
-    name: 'Relentless Pursuit',
+    id: 'ub-spell-nature-shift',
+    name: 'Nature Shift',
     description: 'Swap your hero with another hero in any lane.',
     cardType: 'spell',
-    colors: ['black'],
+    colors: ['green'],
     manaCost: 3,
     effect: {
       type: 'swap_heroes',
+    },
+  },
+  {
+    id: 'ub-spell-assassinate',
+    name: 'Assassinate',
+    description: 'Deal 5 damage to target hero.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 4,
+    effect: {
+      type: 'targeted_damage',
+      damage: 5,
+      affectsUnits: false,
+      affectsHeroes: true,
     },
   },
   // Generic Blue/Black spells (weaker)
@@ -1780,6 +1793,44 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 2,
       affectsUnits: true,
       affectsHeroes: true,
+    },
+  },
+  {
+    id: 'ub-spell-nature-bolt',
+    name: 'Nature Bolt',
+    description: 'Deal 3 damage to target unit.',
+    cardType: 'spell',
+    colors: ['green'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage',
+      damage: 3,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+  {
+    id: 'ub-spell-ramp-growth',
+    name: 'Ramp Growth',
+    description: 'Gain +1 max mana. Draw a card.',
+    cardType: 'spell',
+    colors: ['green'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for mana ramp + draw
+      damage: 0,
+    },
+  },
+  {
+    id: 'ub-spell-arcane-draw',
+    name: 'Arcane Draw',
+    description: 'Draw 2 cards.',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for card draw
+      damage: 0,
     },
   },
   // High-cost multicolor spells (5, 6, 8 mana)
@@ -2039,58 +2090,7 @@ export const ubgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
 ]
 
 export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
-  // Signature spells
-  {
-    id: 'ubg-sig-druid-1',
-    name: 'Verdant Bolt',
-    description: 'Void Druid signature - removal. Deal 3 damage to target unit. If it dies, draw a card.',
-    cardType: 'spell',
-    colors: ['blue', 'black', 'green'],
-    manaCost: 3,
-    effect: {
-      type: 'targeted_damage',
-      damage: 3,
-      affectsUnits: true,
-      affectsHeroes: true,
-    },
-  },
-  // UBG Convergence Spells
-  {
-    id: 'ubg-spell-verdant-control',
-    name: 'Verdant Control',
-    description: 'Draw 2 cards. If you control heroes of 4 different colors, draw 3 cards instead.',
-    cardType: 'spell',
-    colors: ['blue', 'black', 'green'],
-    manaCost: 6, // 3UBG = 6 total mana
-    effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect for card draw that scales with color count
-      damage: 0,
-    },
-  },
-  {
-    id: 'ubg-spell-shadow-growth',
-    name: 'Shadow Growth',
-    description: 'Destroy target unit. If it had 4+ health, draw a card.',
-    cardType: 'spell',
-    colors: ['black', 'green'], // Can be cast with BG heroes
-    manaCost: 4, // 2BG = 4 total mana
-    effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect for destroy + conditional draw
-      damage: 0,
-    },
-  },
-  {
-    id: 'ubg-spell-prismatic-mastery',
-    name: 'Prismatic Mastery',
-    description: 'Draw 3 cards, then discard 1. For each different color among your heroes, deal 1 damage to all enemy units.',
-    cardType: 'spell',
-    colors: ['blue', 'black', 'green'],
-    manaCost: 7, // 3UBG = 7 total mana (high cost for powerful effect)
-    effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect for card draw + discard + scaling AOE damage
-      damage: 0,
-    },
-  },
+  // Only UBG spell - Exorcism (8 mana, requires all 3 colors)
   {
     id: 'ubg-spell-exorcism',
     name: 'Exorcism',

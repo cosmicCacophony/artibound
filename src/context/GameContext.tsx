@@ -3,6 +3,7 @@ import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, Battlefi
 import { createInitialGameState, createCardLibrary, createGameStateFromDraft } from '../game/sampleData'
 import { draftableHeroes } from '../game/draftData'
 import { allCards, allSpells, allBattlefields, allHeroes } from '../game/cardData'
+import { ubHeroes } from '../game/comprehensiveCardData'
 import { heroMatchesArchetype, cardMatchesArchetype } from '../game/draftSystem'
 
 interface GameContextType {
@@ -154,8 +155,21 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const player2Archetype = archetypes[1]
     
     // Get heroes matching each player's archetype
-    const player1HeroPool = allHeroes.filter(h => heroMatchesArchetype(h, [player1Archetype]))
-    const player2HeroPool = allHeroes.filter(h => heroMatchesArchetype(h, [player2Archetype]))
+    // For UBG, use only ubHeroes to ensure correct lineup (UG, G, B, U)
+    let player1HeroPool: Omit<Hero, 'location' | 'owner'>[]
+    let player2HeroPool: Omit<Hero, 'location' | 'owner'>[]
+    
+    if (player1Archetype === 'ubg-control') {
+      player1HeroPool = ubHeroes
+    } else {
+      player1HeroPool = allHeroes.filter(h => heroMatchesArchetype(h, [player1Archetype]))
+    }
+    
+    if (player2Archetype === 'ubg-control') {
+      player2HeroPool = ubHeroes
+    } else {
+      player2HeroPool = allHeroes.filter(h => heroMatchesArchetype(h, [player2Archetype]))
+    }
     
     // Get cards matching each player's archetype (including spells)
     const allCardsAndSpells: BaseCard[] = [...allCards, ...allSpells]
