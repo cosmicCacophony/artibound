@@ -1687,7 +1687,7 @@ export function createInitialGameState(): {
       name: 'Training Grounds',
       description: 'RW battlefield - supports go wide',
       colors: ['red', 'white'],
-      staticAbility: 'You can deploy 6 units instead of 5',
+      staticAbility: 'You can deploy 5 units instead of 4',
       staticAbilityId: 'sixth-slot',
     },
     {
@@ -1836,7 +1836,7 @@ export function createGameStateFromDraft(
   }
 
   // Helper to detect archetype from heroes
-  const detectArchetype = (heroes: Hero[]): 'rw-legion' | 'ub-control' => {
+  const detectArchetype = (heroes: Hero[]): 'rw-legion' | 'ub-control' | 'ubg-control' => {
     if (heroes.length === 0) return 'rw-legion' // Default
     
     // Count colors across all heroes
@@ -1857,13 +1857,20 @@ export function createGameStateFromDraft(
     // UB: has blue or black, but NOT green, red, or white
     const isUB = (hasBlue || hasBlack) && !hasGreen && !hasRed && !hasWhite
     
+    // UBG: has blue, black, or green, but NOT red or white
+    const isUBG = (hasBlue || hasBlack || hasGreen) && !hasRed && !hasWhite
+    
     if (isRW) return 'rw-legion'
+    if (isUBG) return 'ubg-control'
     if (isUB) return 'ub-control'
     
     // Fallback: check first hero
     const firstHeroColors = heroes[0]?.colors || []
     if (firstHeroColors.includes('red') || firstHeroColors.includes('white')) {
       return 'rw-legion'
+    }
+    if (firstHeroColors.includes('green')) {
+      return 'ubg-control'
     }
     return 'ub-control'
   }
@@ -1879,7 +1886,7 @@ export function createGameStateFromDraft(
       name: 'Training Grounds',
       description: 'RW battlefield - supports go wide',
       colors: ['red', 'white'],
-      staticAbility: 'You can deploy 6 units instead of 5',
+      staticAbility: 'You can deploy 5 units instead of 4',
       staticAbilityId: 'sixth-slot',
     },
     {
@@ -1892,7 +1899,7 @@ export function createGameStateFromDraft(
     },
   ]
 
-  // UB Battlefields
+  // UB Battlefields (also used for UBG)
   const ubBattlefields: BattlefieldDefinition[] = [
     {
       id: 'battlefield-ru-spells',
@@ -1914,7 +1921,7 @@ export function createGameStateFromDraft(
 
   // Always assign hardcoded battlefields based on detected archetype
   // RW always gets Training Grounds + War Camp (2 battlefields)
-  // UB always gets Arcane Nexus + Shadow Library (2 battlefields)
+  // UB/UBG always gets Arcane Nexus + Shadow Library (2 battlefields)
   const player1Battlefields = player1Archetype === 'rw-legion' ? rwBattlefields : ubBattlefields
   const player2Battlefields = player2Archetype === 'rw-legion' ? rwBattlefields : ubBattlefields
 

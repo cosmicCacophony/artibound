@@ -389,16 +389,16 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       {/* Player 2 side */}
       <div style={{ marginBottom: '12px' }}>
         <h4 style={{ fontSize: '12px', marginBottom: '6px' }}>Player 2</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', marginBottom: '4px' }}>
-          {[1, 2, 3, 4, 5].map(slotNum => renderSlot(slotNum, 'player2'))}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', marginBottom: '4px' }}>
+          {[1, 2, 3, 4].map(slotNum => renderSlot(slotNum, 'player2'))}
         </div>
       </div>
 
       {/* Player 1 side */}
       <div>
         <h4 style={{ fontSize: '14px', marginBottom: '10px' }}>Player 1</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px' }}>
-          {[1, 2, 3, 4, 5].map(slotNum => renderSlot(slotNum, 'player1'))}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
+          {[1, 2, 3, 4].map(slotNum => renderSlot(slotNum, 'player1'))}
         </div>
       </div>
 

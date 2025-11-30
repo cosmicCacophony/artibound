@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react'
 import { TurnPhase, Card, GameMetadata, ShopItem } from '../game/types'
 import { useGameContext } from '../context/GameContext'
-import { getDefaultTargets, resolveCombat } from '../game/combatSystem'
+import { getDefaultTargets, resolveCombat, resolveSimultaneousCombat } from '../game/combatSystem'
 import { tier1Items } from '../game/sampleData'
 
 export function useTurnManagement() {
@@ -75,79 +75,49 @@ export function useTurnManagement() {
       })
     }
     
-    // Resolve combat before leaving combat phase
-    if (currentPhase === 'combatA') {
-      // Resolve combat for battlefield A
-      const targets = combatTargetsA.size > 0 ? combatTargetsA : getDefaultTargets(gameState.battlefieldA, player)
-      const result = resolveCombat(
+    // Resolve combat simultaneously on both battlefields when leaving play phase
+    if (currentPhase === 'play' && metadata.player1Passed && metadata.player2Passed) {
+      // Resolve simultaneous combat for both battlefields
+      const initialTowerHP = {
+        towerA_player1: metadata.towerA_player1_HP,
+        towerA_player2: metadata.towerA_player2_HP,
+        towerB_player1: metadata.towerB_player1_HP,
+        towerB_player2: metadata.towerB_player2_HP,
+      }
+      
+      const resultA = resolveSimultaneousCombat(
         gameState.battlefieldA,
         'battlefieldA',
-        targets,
-        player,
-        {
-          towerA_player1: metadata.towerA_player1_HP,
-          towerA_player2: metadata.towerA_player2_HP,
-          towerB_player1: metadata.towerB_player1_HP,
-          towerB_player2: metadata.towerB_player2_HP,
-        }
+        initialTowerHP
       )
       
-      // Apply combat results
-      setGameState(prev => {
-        const updatedState = {
-          ...prev,
-          battlefieldA: result.updatedBattlefield,
-          metadata: {
-            ...prev.metadata,
-            towerA_player1_HP: result.updatedTowerHP.towerA_player1,
-            towerA_player2_HP: result.updatedTowerHP.towerA_player2,
-            // Apply overflow damage to opponent's nexus
-            ...(player === 'player1' 
-              ? { player2NexusHP: Math.max(0, prev.metadata.player2NexusHP - result.overflowDamage) }
-              : { player1NexusHP: Math.max(0, prev.metadata.player1NexusHP - result.overflowDamage) }
-            ),
-          },
-        }
-        return updatedState
-      })
-      
-      nextPhase = 'adjust'
-    } else if (currentPhase === 'adjust') {
-      nextPhase = 'combatB'
-    } else if (currentPhase === 'combatB') {
-      // Resolve combat for battlefield B
-      const targets = combatTargetsB.size > 0 ? combatTargetsB : getDefaultTargets(gameState.battlefieldB, player)
-      const result = resolveCombat(
+      // Use updated tower HP from A for B's combat
+      const resultB = resolveSimultaneousCombat(
         gameState.battlefieldB,
         'battlefieldB',
-        targets,
-        player,
-        {
-          towerA_player1: metadata.towerA_player1_HP,
-          towerA_player2: metadata.towerA_player2_HP,
-          towerB_player1: metadata.towerB_player1_HP,
-          towerB_player2: metadata.towerB_player2_HP,
-        }
+        resultA.updatedTowerHP
       )
       
-      // Apply combat results
+      // Apply combat results from both battlefields
       setGameState(prev => {
         const updatedState = {
           ...prev,
-          battlefieldB: result.updatedBattlefield,
+          battlefieldA: resultA.updatedBattlefield,
+          battlefieldB: resultB.updatedBattlefield,
           metadata: {
             ...prev.metadata,
-            towerB_player1_HP: result.updatedTowerHP.towerB_player1,
-            towerB_player2_HP: result.updatedTowerHP.towerB_player2,
-            // Apply overflow damage to opponent's nexus
-            ...(player === 'player1' 
-              ? { player2NexusHP: Math.max(0, prev.metadata.player2NexusHP - result.overflowDamage) }
-              : { player1NexusHP: Math.max(0, prev.metadata.player1NexusHP - result.overflowDamage) }
-            ),
+            towerA_player1_HP: resultA.updatedTowerHP.towerA_player1,
+            towerA_player2_HP: resultA.updatedTowerHP.towerA_player2,
+            towerB_player1_HP: resultB.updatedTowerHP.towerB_player1,
+            towerB_player2_HP: resultB.updatedTowerHP.towerB_player2,
+            // Apply overflow damage to nexus (sum from both battlefields)
+            player1NexusHP: Math.max(0, prev.metadata.player1NexusHP - (resultA.overflowDamage.player1 + resultB.overflowDamage.player1)),
+            player2NexusHP: Math.max(0, prev.metadata.player2NexusHP - (resultA.overflowDamage.player2 + resultB.overflowDamage.player2)),
           },
         }
         return updatedState
       })
+      
       // End turn - switch player and reset to play phase
       nextPlayer = player === 'player1' ? 'player2' : 'player1'
       nextPhase = 'play'

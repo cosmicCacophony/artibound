@@ -884,8 +884,8 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   },
   {
     id: 'gw-sig-protector-2',
-    name: 'Guardian\'s Blessing',
-    description: 'Protector signature - protection',
+    name: 'Guardian Aegis',
+    description: 'Protector signature - protection. Adjacent units gain +1/+1. Retaliate 1 (deals 1 damage to attackers).',
     cardType: 'generic',
     colors: ['white'],
     manaCost: 4,
@@ -893,6 +893,7 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 6,
     maxHealth: 6,
     currentHealth: 6,
+    specialEffects: ['adjacent_buff', 'retaliate_1'], // Adjacent units +1/+1, retaliate 1 damage
   },
   // Generic GW cards
   {
@@ -1290,9 +1291,9 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     name: 'Dark Archmage',
     description: 'Control specialist',
     cardType: 'hero',
-    colors: ['blue', 'black'],
-    attack: 4, // Boosted from 3
-    health: 10, // Boosted from 9
+    colors: ['blue'],
+    attack: 4,
+    health: 10,
     maxHealth: 10,
     currentHealth: 10,
     supportEffect: 'Draw extra card each turn',
@@ -1313,8 +1314,8 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     description: 'Control and card advantage',
     cardType: 'hero',
     colors: ['black'],
-    attack: 5, // Boosted from 4
-    health: 9, // Boosted from 8
+    attack: 5,
+    health: 9,
     maxHealth: 9,
     currentHealth: 9,
     supportEffect: 'Gain gold when units die',
@@ -1330,6 +1331,51 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       effectValue: 1, // 1 damage
     },
   },
+  {
+    id: 'ub-hero-assassin',
+    name: 'Shadow Assassin',
+    description: 'Assassin control hero',
+    cardType: 'hero',
+    colors: ['black'],
+    attack: 6,
+    health: 8,
+    maxHealth: 8,
+    currentHealth: 8,
+    supportEffect: 'When you kill an enemy unit, draw a card',
+    signatureCardId: 'ub-sig-assassin-1',
+    equippedItems: [],
+    bonusVsHeroes: 4, // Assassin bonus: +4 damage vs enemy heroes
+    ability: {
+      name: 'Assassinate',
+      description: 'Deal 4 damage to target hero',
+      manaCost: 1,
+      cooldown: 3,
+      effectType: 'damage_target',
+      effectValue: 4,
+    },
+  },
+  {
+    id: 'ub-hero-druid',
+    name: 'Verdant Archmage',
+    description: 'Ramp and control',
+    cardType: 'hero',
+    colors: ['green', 'blue'],
+    attack: 3,
+    health: 9,
+    maxHealth: 9,
+    currentHealth: 9,
+    supportEffect: 'Gain +1 max mana each turn',
+    signatureCardId: 'ub-sig-druid-1',
+    equippedItems: [],
+    ability: {
+      name: 'Nature\'s Wrath',
+      description: 'Deal 2 damage to target unit. Gain +1 max mana.',
+      manaCost: 1,
+      cooldown: 2,
+      effectType: 'custom',
+      effectValue: 2,
+    },
+  },
 ]
 
 export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
@@ -1341,8 +1387,8 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['blue', 'black'],
     manaCost: 7,
-    attack: 5, // Changed from 6 to 5
-    health: 7, // Changed from 8 to 7
+    attack: 5,
+    health: 7,
     maxHealth: 7,
     currentHealth: 7,
   },
@@ -1358,6 +1404,56 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 3,
     currentHealth: 3,
   },
+  // Green cards added to UB deck (UBG)
+  {
+    id: 'ubg-ramp-1',
+    name: 'Verdant Growth',
+    description: '3/4. When this enters, gain +1 max mana.',
+    cardType: 'generic',
+    colors: ['green'],
+    manaCost: 4,
+    attack: 3,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+  },
+  {
+    id: 'ubg-ramp-2',
+    name: 'Nature\'s Embrace',
+    description: '2/5. Adjacent units gain +0/+1.',
+    cardType: 'generic',
+    colors: ['green'],
+    manaCost: 3,
+    attack: 2,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+    specialEffects: ['adjacent_buff'],
+  },
+  {
+    id: 'ubg-threat-1',
+    name: 'Verdant Colossus',
+    description: '6/8. Resilient threat for control deck.',
+    cardType: 'generic',
+    colors: ['green', 'blue'],
+    manaCost: 8,
+    attack: 6,
+    health: 8,
+    maxHealth: 8,
+    currentHealth: 8,
+  },
+  {
+    id: 'ubg-token-1',
+    name: 'Spawnling',
+    description: '2/2 token unit.',
+    cardType: 'generic',
+    colors: ['green', 'black'],
+    manaCost: 2,
+    attack: 2,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+  },
 ]
 
 export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
@@ -1365,13 +1461,13 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-sig-archmage-1',
     name: 'Void Bolt',
-    description: 'Archmage signature - removal. Deal 3 damage to target unit.',
+    description: 'Archmage signature - removal. Deal 4 damage to target unit.',
     cardType: 'spell',
     colors: ['blue', 'black'],
     manaCost: 3,
     effect: {
       type: 'targeted_damage',
-      damage: 3,
+      damage: 4,
       affectsUnits: true,
       affectsHeroes: true,
     },
@@ -1417,17 +1513,45 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       affectsHeroes: true,
     },
   },
+  {
+    id: 'ub-sig-assassin-1',
+    name: 'Assassinate',
+    description: 'Shadow Assassin signature - removal. Deal 5 damage to target hero.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 4,
+    effect: {
+      type: 'targeted_damage',
+      damage: 5,
+      affectsUnits: false,
+      affectsHeroes: true,
+    },
+  },
+  {
+    id: 'ub-sig-druid-1',
+    name: 'Nature\'s Wrath',
+    description: 'Verdant Archmage signature - ramp and removal. Deal 3 damage to target unit. Gain +1 max mana.',
+    cardType: 'spell',
+    colors: ['green', 'blue'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for damage + mana ramp
+      damage: 3,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
   // UB Control Archetype Spells
   {
     id: 'ub-spell-thunderstorm',
     name: 'Thunderstorm',
-    description: 'Deal 2 damage to all enemy units.',
+    description: 'Deal 3 damage to all enemy units.',
     cardType: 'spell',
     colors: ['blue', 'black'],
     manaCost: 4,
     effect: {
       type: 'aoe_damage',
-      damage: 2,
+      damage: 3,
       affectsUnits: true,
       affectsHeroes: true,
       affectsEnemyUnits: true,
@@ -1436,13 +1560,13 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-spell-tower-barrage',
     name: 'Tower Barrage',
-    description: 'Deal 3 damage to all enemy units and 2 damage to enemy tower.',
+    description: 'Deal 4 damage to all enemy units and 2 damage to enemy tower.',
     cardType: 'spell',
     colors: ['blue', 'black'],
     manaCost: 5,
     effect: {
       type: 'aoe_damage',
-      damage: 3,
+      damage: 4,
       affectsUnits: true,
       affectsHeroes: true,
       affectsEnemyUnits: true,
@@ -1505,13 +1629,13 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-spell-void-storm',
     name: 'Void Storm',
-    description: 'Deal 3 damage to all units.',
+    description: 'Deal 4 damage to all units.',
     cardType: 'spell',
     colors: ['blue', 'black'],
     manaCost: 6,
     effect: {
       type: 'aoe_damage',
-      damage: 3,
+      damage: 4,
       affectsUnits: true,
       affectsHeroes: true,
       affectsOwnUnits: true,
@@ -1656,6 +1780,36 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 2,
       affectsUnits: true,
       affectsHeroes: true,
+    },
+  },
+  // High-cost multicolor spells (5, 6, 8 mana)
+  {
+    id: 'ub-spell-5-cost',
+    name: 'Void Eruption',
+    description: 'Deal 6 damage to target unit. Draw a card.',
+    cardType: 'spell',
+    colors: ['blue', 'black'],
+    manaCost: 5,
+    effect: {
+      type: 'targeted_damage',
+      damage: 6,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+  {
+    id: 'ub-spell-6-cost',
+    name: 'Primal Devastation',
+    description: 'Deal 5 damage to all enemy units. Draw 2 cards.',
+    cardType: 'spell',
+    colors: ['blue', 'green'],
+    manaCost: 6,
+    effect: {
+      type: 'aoe_damage',
+      damage: 5,
+      affectsUnits: true,
+      affectsHeroes: true,
+      affectsEnemyUnits: true,
     },
   },
 ]
@@ -1937,6 +2091,20 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 0,
     },
   },
+  {
+    id: 'ubg-spell-exorcism',
+    name: 'Exorcism',
+    description: 'Deal 12 total damage distributed to enemy units in front and tower. 0 units: 12 to tower. 1 unit: 6 to unit, 6 to tower. 2 units: 4 to each unit, 4 to tower. 3 units: 3 to each unit, 3 to tower.',
+    cardType: 'spell',
+    colors: ['blue', 'black', 'green'], // Requires all 3 colors (UBG)
+    manaCost: 8,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for Exorcism damage distribution
+      damage: 12, // Total damage, distribution handled by custom logic based on units in front
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
 ]
 
 // ============================================================================
@@ -2126,7 +2294,7 @@ export const archetypeBattlefields: BattlefieldDefinition[] = [
     name: 'Training Grounds',
     description: 'RW battlefield - supports go wide',
     colors: ['red', 'white'],
-    staticAbility: 'You can deploy 6 units instead of 5',
+    staticAbility: 'You can deploy 5 units instead of 4',
     staticAbilityId: 'sixth-slot',
   },
   // RG - Beefy

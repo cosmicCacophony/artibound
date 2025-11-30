@@ -11,7 +11,7 @@ export type ColorCombo = Color | `${Color}${Color}` | `${Color}${Color}${Color}`
 export const MAX_COLORS_PER_DECK = 4
 
 // Archetype Types
-export type Archetype = 'rw-legion' | 'ub-control' | 'all'
+export type Archetype = 'rw-legion' | 'ub-control' | 'ubg-control' | 'all'
 
 export interface BaseCard {
   id: string
@@ -338,7 +338,7 @@ export interface GameState {
   player2Battlefields?: BattlefieldDefinition[]
 }
 
-export const BATTLEFIELD_SLOT_LIMIT = 5
+export const BATTLEFIELD_SLOT_LIMIT = 4
 export const TOWER_HP = 20
 export const NEXUS_HP = 30
 export const STARTING_GOLD = 5

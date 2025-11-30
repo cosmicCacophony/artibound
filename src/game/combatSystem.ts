@@ -313,8 +313,8 @@ export function resolveSimultaneousCombat(
   const player1Units = battlefield.player1.filter(u => u.slot !== undefined)
   const player2Units = battlefield.player2.filter(u => u.slot !== undefined)
   
-  // Process each slot (1-5) - both units attack simultaneously
-  for (let slot = 1; slot <= 5; slot++) {
+  // Process each slot (1-4) - both units attack simultaneously
+  for (let slot = 1; slot <= 4; slot++) {
     const p1Unit = player1Units.find(u => u.slot === slot)
     const p2Unit = player2Units.find(u => u.slot === slot)
     

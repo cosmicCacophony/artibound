@@ -93,7 +93,7 @@ export function useDeployment() {
       const availableSlots = getAvailableSlots(battlefield)
       
       if (selectedCard.cardType !== 'generic' && availableSlots <= 0 && !targetSlot) {
-        alert('Battlefield is full! Maximum 5 slots.')
+        alert('Battlefield is full! Maximum 4 slots.')
         return
       }
 

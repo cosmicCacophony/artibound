@@ -109,7 +109,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   
   // Helper function
   const getAvailableSlots = useCallback((battlefield: Card[]) => {
-    const BATTLEFIELD_SLOT_LIMIT = 5
+    const BATTLEFIELD_SLOT_LIMIT = 4
     const uniqueCards = battlefield.filter(card => 
       card.cardType !== 'generic' || !('stackedWith' in card && card.stackedWith)
     )
@@ -146,10 +146,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [setGameState, setPlayer1SidebarCards, setPlayer2SidebarCards])
 
   const initializeRandomGame = useCallback(() => {
-    // Assign RW to one player and UB to the other (randomly)
+    // Assign RW to one player and UBG to the other (randomly)
     const archetypes: [Archetype, Archetype] = Math.random() > 0.5 
-      ? ['rw-legion', 'ub-control']
-      : ['ub-control', 'rw-legion']
+      ? ['rw-legion', 'ubg-control']
+      : ['ubg-control', 'rw-legion']
     const player1Archetype = archetypes[0]
     const player2Archetype = archetypes[1]
     
@@ -235,7 +235,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     
     // Don't pass battlefields - createGameStateFromDraft will assign hardcoded ones based on archetype
     // RW always gets Training Grounds + War Camp
-    // UB always gets Arcane Nexus + Shadow Library
+    // UBG always gets Arcane Nexus + Shadow Library
     
     // Create final selections (battlefield will be ignored, but required by type)
     const player1Selection: FinalDraftSelection = {

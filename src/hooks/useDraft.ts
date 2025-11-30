@@ -280,10 +280,10 @@ export function useDraft() {
   // Auto-build complete decks: Assign archetypes and build decks automatically
   const autoBuildDecks = useCallback(() => {
     setDraftState(prevState => {
-      // Assign RW to one player and UB to the other (randomly)
+      // Assign RW to one player and UBG to the other (randomly)
       const archetypes: [Archetype, Archetype] = Math.random() > 0.5 
-        ? ['rw-legion', 'ub-control']
-        : ['ub-control', 'rw-legion']
+        ? ['rw-legion', 'ubg-control']
+        : ['ubg-control', 'rw-legion']
       const player1Archetype = archetypes[0]
       const player2Archetype = archetypes[1]
       

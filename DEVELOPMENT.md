@@ -10,7 +10,7 @@ This file documents major architectural decisions, design learnings, implementat
 - **Component-Based UI**: React functional components with hooks for state management
 - **Mana System**: Start with 3 mana, gain +1 per turn, cap at 10
 - **Turn Phases**: Play → Combat A → Adjust → Combat B structure for strategic depth
-- **Color System**: 5 colors (Red, Blue, White, Black, Green), max 4 colors per deck (3-4 color is a design pillar)
+- **Color System**: Planned - 5 colors (Red, Blue, White, Black, Green), max 3 colors per deck
 
 ### Future Architecture Considerations
 - **Draft System**: Will need dedicated draft state management and UI component
@@ -44,10 +44,9 @@ This file documents major architectural decisions, design learnings, implementat
 
 1. **Color System Implementation**
    - 5-color system with deck building constraints
-   - Max 4 colors per deck (3-4 color is a design pillar)
+   - Max 3 colors per deck
    - Color-based playability rules (cards only playable in lanes with matching heroes)
    - Color-based buff restrictions
-   - Draft always provides enough heroes to make a deck (no default heroes)
 
 2. **Draft System**
    - Turn-based draft: P1-hero, P2-hero-hero, P1-hero-hero, P2-hero-battlefield, P1-hero-battlefield...

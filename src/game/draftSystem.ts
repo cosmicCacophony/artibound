@@ -82,6 +82,14 @@ export function heroMatchesArchetype(hero: Omit<Hero, 'location' | 'owner'>, act
     if (hasBlue || hasBlack) return true
   }
   
+  // UBG Control: needs blue, black, AND/OR green (but NO red or white)
+  if (activeArchetypes.includes('ubg-control')) {
+    // Exclude heroes with red or white
+    if (hasRed || hasWhite) return false
+    // Allow blue, black, green, or any combination
+    if (hasBlue || hasBlack || hasGreen) return true
+  }
+  
   return false
 }
 
@@ -169,6 +177,18 @@ export function cardMatchesArchetype(card: BaseCard, activeArchetypes: Archetype
     if (hasBlue && !hasBlack) return true
     // Allow pure black cards
     if (hasBlack && !hasBlue) return true
+  }
+  
+  // UBG Control: Only blue, black, green, or combinations (NO red or white)
+  if (activeArchetypes.includes('ubg-control')) {
+    // Exclude any card with red or white
+    if (hasRed || hasWhite) return false
+    
+    // Allow generic cards that are blue/black/green
+    if (isGeneric && (hasBlue || hasBlack || hasGreen)) return true
+    
+    // Allow any combination of blue, black, green
+    if (hasBlue || hasBlack || hasGreen) return true
   }
   
   return false
@@ -288,8 +308,8 @@ export function generateAllDraftPacks(): DraftPack[] {
 }
 
 // Generate a single random pack for the new round-based system
-// By default, limit to RW and UB archetypes for testing
-export function generateRandomPack(roundNumber: number, activeArchetypes: Archetype[] = ['rw-legion', 'ub-control']): DraftPack {
+// By default, limit to RW and UBG archetypes for testing
+export function generateRandomPack(roundNumber: number, activeArchetypes: Archetype[] = ['rw-legion', 'ubg-control']): DraftPack {
   return generateDraftPack(roundNumber, activeArchetypes)
 }
 
