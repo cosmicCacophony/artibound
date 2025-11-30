@@ -38,10 +38,6 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
   const bgColor = battlefieldId === 'battlefieldA' ? '#e3f2fd' : '#fff3e0'
   const battlefieldName = battlefieldId === 'battlefieldA' ? 'A' : 'B'
 
-  // Get player battlefields (global bonuses apply to both lanes)
-  const player1Battlefields = gameState.player1Battlefields || []
-  const player2Battlefields = gameState.player2Battlefields || []
-
   const handleCardClick = (cardId: string, e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation()
@@ -152,31 +148,6 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
               ({getAvailableSlots(allCards)} slots)
             </span>
           </h3>
-          {/* Global Battlefield Bonuses */}
-          {(player1Battlefields.length > 0 || player2Battlefields.length > 0) && (
-            <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              {player1Battlefields.length > 0 && (
-                <div style={{ fontSize: '10px', color: '#f44336', lineHeight: '1.3' }}>
-                  <strong>P1 Bonuses:</strong> {player1Battlefields.map((bf, idx) => (
-                    <span key={bf.id}>
-                      {idx > 0 && ' • '}
-                      <span style={{ fontStyle: 'italic' }}>{bf.staticAbility}</span>
-                    </span>
-                  ))}
-                </div>
-              )}
-              {player2Battlefields.length > 0 && (
-                <div style={{ fontSize: '10px', color: '#4a90e2', lineHeight: '1.3' }}>
-                  <strong>P2 Bonuses:</strong> {player2Battlefields.map((bf, idx) => (
-                    <span key={bf.id}>
-                      {idx > 0 && ' • '}
-                      <span style={{ fontStyle: 'italic' }}>{bf.staticAbility}</span>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>

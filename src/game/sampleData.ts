@@ -1599,8 +1599,6 @@ export function createInitialGameState(): {
   battlefieldA: { player1: Card[], player2: Card[] }
   battlefieldB: { player1: Card[], player2: Card[] }
   metadata: GameMetadata
-  player1Battlefields?: BattlefieldDefinition[]
-  player2Battlefields?: BattlefieldDefinition[]
 } {
   // Player 1: First 2 heroes ready to deploy on turn 1 (can move freely)
   const player1AllHeroes = warriorTestDeckHeroes.map(hero => 
@@ -1679,47 +1677,6 @@ export function createInitialGameState(): {
     turn1DeploymentPhase: 'initial', // Turn 1 deployment phase: initial -> playerB -> secret -> complete
   }
 
-  // Hardcoded battlefields for RW vs UB testing
-  // RW (Player 1): Training Grounds + War Camp
-  const player1Battlefields: BattlefieldDefinition[] = [
-    {
-      id: 'battlefield-rw-wide',
-      name: 'Training Grounds',
-      description: 'RW battlefield - supports go wide',
-      colors: ['red', 'white'],
-      staticAbility: 'You can deploy 5 units instead of 4',
-      staticAbilityId: 'sixth-slot',
-    },
-    {
-      id: 'battlefield-rw-war-camp',
-      name: 'War Camp',
-      description: 'RW battlefield - aggressive combat',
-      colors: ['red', 'white'],
-      staticAbility: 'All your units have +1/+0',
-      staticAbilityId: 'unit-power-buff',
-    },
-  ]
-
-  // UB (Player 2): Arcane Nexus + Shadow Library
-  const player2Battlefields: BattlefieldDefinition[] = [
-    {
-      id: 'battlefield-ru-spells',
-      name: 'Arcane Nexus',
-      description: 'RU battlefield - spell focus',
-      colors: ['red', 'blue'],
-      staticAbility: 'Your spells deal +1 damage',
-      staticAbilityId: 'spell-damage-buff',
-    },
-    {
-      id: 'battlefield-ub-shadow-library',
-      name: 'Shadow Library',
-      description: 'UB battlefield - spell card advantage',
-      colors: ['blue', 'black'],
-      staticAbility: 'When you cast a spell, draw a card',
-      staticAbilityId: 'spell-draw',
-    },
-  ]
-
   return {
     player1Hand: player1Hand,
     player2Hand: player2Hand,
@@ -1728,8 +1685,6 @@ export function createInitialGameState(): {
     battlefieldA: { player1: [], player2: [] },
     battlefieldB: { player1: [], player2: [] },
     metadata,
-    player1Battlefields,
-    player2Battlefields,
   }
 }
 
@@ -1773,8 +1728,6 @@ export function createGameStateFromDraft(
   player1Library: BaseCard[]
   player2Library: BaseCard[]
   metadata: GameMetadata
-  player1Battlefields?: BattlefieldDefinition[]
-  player2Battlefields?: BattlefieldDefinition[]
 } {
   // Create heroes in base for each player (all 4 heroes)
   const player1Heroes = player1Selection.heroes.map(hero => {
@@ -1875,55 +1828,7 @@ export function createGameStateFromDraft(
     return 'ub-control'
   }
 
-  // Detect archetypes
-  const player1Archetype = detectArchetype(player1Selection.heroes)
-  const player2Archetype = detectArchetype(player2Selection.heroes)
-
-  // RW Battlefields
-  const rwBattlefields: BattlefieldDefinition[] = [
-    {
-      id: 'battlefield-rw-wide',
-      name: 'Training Grounds',
-      description: 'RW battlefield - supports go wide',
-      colors: ['red', 'white'],
-      staticAbility: 'You can deploy 5 units instead of 4',
-      staticAbilityId: 'sixth-slot',
-    },
-    {
-      id: 'battlefield-rw-war-camp',
-      name: 'War Camp',
-      description: 'RW battlefield - aggressive combat',
-      colors: ['red', 'white'],
-      staticAbility: 'All your units have +1/+0',
-      staticAbilityId: 'unit-power-buff',
-    },
-  ]
-
-  // UB Battlefields (also used for UBG)
-  const ubBattlefields: BattlefieldDefinition[] = [
-    {
-      id: 'battlefield-ru-spells',
-      name: 'Arcane Nexus',
-      description: 'RU battlefield - spell focus',
-      colors: ['red', 'blue'],
-      staticAbility: 'Your spells deal +1 damage',
-      staticAbilityId: 'spell-damage-buff',
-    },
-    {
-      id: 'battlefield-ub-shadow-library',
-      name: 'Shadow Library',
-      description: 'UB battlefield - spell card advantage',
-      colors: ['blue', 'black'],
-      staticAbility: 'When you cast a spell, draw a card',
-      staticAbilityId: 'spell-draw',
-    },
-  ]
-
-  // Always assign hardcoded battlefields based on detected archetype
-  // RW always gets Training Grounds + War Camp (2 battlefields)
-  // UB/UBG always gets Arcane Nexus + Shadow Library (2 battlefields)
-  const player1Battlefields = player1Archetype === 'rw-legion' ? rwBattlefields : ubBattlefields
-  const player2Battlefields = player2Archetype === 'rw-legion' ? rwBattlefields : ubBattlefields
+  // Battlefields removed - simplifying game to focus on color system and combat
 
   return {
     player1Hand,
@@ -1936,7 +1841,5 @@ export function createGameStateFromDraft(
     player1Library: player1LibraryCards,
     player2Library: player2LibraryCards,
     metadata,
-    player1Battlefields,
-    player2Battlefields,
   }
 }

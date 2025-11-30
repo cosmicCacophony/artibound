@@ -64,8 +64,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return {
       ...initialState,
       cardLibrary: [],
-      player1Battlefields: initialState.player1Battlefields,
-      player2Battlefields: initialState.player2Battlefields,
     }
   })
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
@@ -137,8 +135,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setGameState({
       ...newGameState,
       cardLibrary: newGameState.cardLibrary,
-      player1Battlefields: newGameState.player1Battlefields,
-      player2Battlefields: newGameState.player2Battlefields,
     })
     
     // Update card libraries with the remaining cards
