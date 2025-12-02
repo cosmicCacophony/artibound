@@ -12,68 +12,21 @@ export function useTurnManagement() {
     setCombatTargetsA, 
     combatTargetsB, 
     setCombatTargetsB,
+    setShowCombatSummary,
+    setCombatSummaryData,
   } = useGameContext()
   const metadata = gameState.metadata
 
-  // Initialize combat targets when entering combat phase
-  useEffect(() => {
-    if (metadata.currentPhase === 'combatA') {
-      const defaults = getDefaultTargets(gameState.battlefieldA, metadata.activePlayer)
-      setCombatTargetsA(new Map(defaults))
-    } else if (metadata.currentPhase === 'combatB') {
-      const defaults = getDefaultTargets(gameState.battlefieldB, metadata.activePlayer)
-      setCombatTargetsB(new Map(defaults))
-    }
-  }, [metadata.currentPhase, metadata.activePlayer, gameState.battlefieldA, gameState.battlefieldB, setCombatTargetsA, setCombatTargetsB])
+  // Combat is now resolved automatically when both players pass, no separate combat phases
 
   const handleNextPhase = useCallback(() => {
     const player = metadata.activePlayer
     const currentPhase = metadata.currentPhase
     
-    // Phase progression: play -> combatA -> adjust -> combatB -> play (next player)
+    // Phase progression: play -> play (next player) - combat happens automatically when both pass
     let nextPhase: TurnPhase = 'play'
     let nextPlayer: 'player1' | 'player2' = player
     let shouldIncrementTurn = false
-    
-    // When starting a new turn (play phase), reset movement flags and clear expired death cooldowns
-    if (currentPhase === 'combatB') {
-      // Next phase will be play for next player - reset movement flags
-      setGameState(prev => {
-        // Decrease death cooldown counters by 1 each turn
-        const newDeathCooldowns: Record<string, number> = {}
-        Object.entries(prev.metadata.deathCooldowns).forEach(([cardId, counter]) => {
-          const newCounter = counter - 1
-          // Keep cooldowns that are still active (counter > 0)
-          if (newCounter > 0) {
-            newDeathCooldowns[cardId] = newCounter
-          }
-          // Counter reaches 0 - hero can be redeployed, remove from cooldown tracking
-        })
-        
-        // Heal heroes in base that are no longer on death cooldown (counter reached 0)
-        const healHeroInBase = (c: Card): Card => {
-          if (c.cardType === 'hero' && c.location === 'base' && !newDeathCooldowns[c.id] && prev.metadata.deathCooldowns[c.id]) {
-            const hero = c as import('../game/types').Hero
-            if (hero.currentHealth < hero.maxHealth) {
-              return { ...hero, currentHealth: hero.maxHealth }
-            }
-          }
-          return c
-        }
-        
-        return {
-          ...prev,
-          player1Base: prev.player1Base.map(healHeroInBase),
-          player2Base: prev.player2Base.map(healHeroInBase),
-          metadata: {
-            ...prev.metadata,
-            deathCooldowns: newDeathCooldowns,
-            player1MovedToBase: false,
-            player2MovedToBase: false,
-          },
-        }
-      })
-    }
     
     // Resolve combat simultaneously on both battlefields when leaving play phase
     if (currentPhase === 'play' && metadata.player1Passed && metadata.player2Passed) {
@@ -98,12 +51,96 @@ export function useTurnManagement() {
         resultA.updatedTowerHP
       )
       
+      // Process killed heroes (same logic as in BattlefieldView)
+      const processKilledHeroes = (
+        originalBattlefield: typeof gameState.battlefieldA,
+        updatedBattlefield: typeof gameState.battlefieldA,
+        playerBase: Card[],
+        deathCooldowns: Record<string, number>
+      ) => {
+        const killedHeroes: { hero: import('../game/types').Hero, player: 'player1' | 'player2' }[] = []
+        
+        originalBattlefield.player1.forEach(originalCard => {
+          if (originalCard.cardType === 'hero') {
+            const stillAlive = updatedBattlefield.player1.some(c => c.id === originalCard.id)
+            if (!stillAlive) {
+              killedHeroes.push({ hero: originalCard as import('../game/types').Hero, player: 'player1' })
+            }
+          }
+        })
+        
+        originalBattlefield.player2.forEach(originalCard => {
+          if (originalCard.cardType === 'hero') {
+            const stillAlive = updatedBattlefield.player2.some(c => c.id === originalCard.id)
+            if (!stillAlive) {
+              killedHeroes.push({ hero: originalCard as import('../game/types').Hero, player: 'player2' })
+            }
+          }
+        })
+        
+        const newBase = [...playerBase]
+        const newCooldowns = { ...deathCooldowns }
+        
+        killedHeroes.forEach(({ hero, player }) => {
+          const heroInBase = {
+            ...hero,
+            location: 'base' as const,
+            currentHealth: 0,
+            slot: undefined,
+          }
+          newBase.push(heroInBase)
+          newCooldowns[hero.id] = 2
+        })
+        
+        return { newBase, newCooldowns }
+      }
+      
+      const { newBase: newP1BaseA, newCooldowns: newCooldownsA } = processKilledHeroes(
+        gameState.battlefieldA,
+        resultA.updatedBattlefield,
+        gameState.player1Base,
+        metadata.deathCooldowns
+      )
+      
+      const { newBase: newP1BaseB, newCooldowns: newCooldownsB } = processKilledHeroes(
+        gameState.battlefieldB,
+        resultB.updatedBattlefield,
+        newP1BaseA,
+        newCooldownsA
+      )
+      
+      // Process player 2 killed heroes
+      const allKilledHeroesP2: { hero: import('../game/types').Hero, player: 'player2' }[] = []
+      ;[gameState.battlefieldA, gameState.battlefieldB].forEach((original, idx) => {
+        const updated = idx === 0 ? resultA.updatedBattlefield : resultB.updatedBattlefield
+        original.player2.forEach(originalCard => {
+          if (originalCard.cardType === 'hero') {
+            const stillAlive = updated.player2.some(c => c.id === originalCard.id)
+            if (!stillAlive) {
+              allKilledHeroesP2.push({ hero: originalCard as import('../game/types').Hero, player: 'player2' })
+            }
+          }
+        })
+      })
+      
+      const newP2Base = [...gameState.player2Base]
+      allKilledHeroesP2.forEach(({ hero }) => {
+        newP2Base.push({
+          ...hero,
+          location: 'base' as const,
+          currentHealth: 0,
+          slot: undefined,
+        })
+      })
+      
       // Apply combat results from both battlefields
       setGameState(prev => {
         const updatedState = {
           ...prev,
           battlefieldA: resultA.updatedBattlefield,
           battlefieldB: resultB.updatedBattlefield,
+          player1Base: newP1BaseB,
+          player2Base: newP2Base,
           metadata: {
             ...prev.metadata,
             towerA_player1_HP: resultA.updatedTowerHP.towerA_player1,
@@ -113,10 +150,34 @@ export function useTurnManagement() {
             // Apply overflow damage to nexus (sum from both battlefields)
             player1NexusHP: Math.max(0, prev.metadata.player1NexusHP - (resultA.overflowDamage.player1 + resultB.overflowDamage.player1)),
             player2NexusHP: Math.max(0, prev.metadata.player2NexusHP - (resultA.overflowDamage.player2 + resultB.overflowDamage.player2)),
+            deathCooldowns: newCooldownsB,
           },
         }
         return updatedState
       })
+      
+      // Show combat summary modal
+      setCombatSummaryData({
+        battlefieldA: {
+          name: 'Battlefield A',
+          combatLog: resultA.combatLog,
+          towerHP: {
+            player1: resultA.updatedTowerHP.towerA_player1,
+            player2: resultA.updatedTowerHP.towerA_player2,
+          },
+          overflowDamage: resultA.overflowDamage,
+        },
+        battlefieldB: {
+          name: 'Battlefield B',
+          combatLog: resultB.combatLog,
+          towerHP: {
+            player1: resultB.updatedTowerHP.towerB_player1,
+            player2: resultB.updatedTowerHP.towerB_player2,
+          },
+          overflowDamage: resultB.overflowDamage,
+        },
+      })
+      setShowCombatSummary(true)
       
       // End turn - switch player and reset to play phase
       nextPlayer = player === 'player1' ? 'player2' : 'player1'
@@ -273,20 +334,6 @@ export function useTurnManagement() {
       const currentPlayerPassed = player === 'player1' ? prev.metadata.player1Passed : prev.metadata.player2Passed
       const otherPlayerPassed = player === 'player1' ? prev.metadata.player2Passed : prev.metadata.player1Passed
       
-      // If both players have passed, go to combat
-      if (currentPlayerPassed && otherPlayerPassed) {
-        // Both passed - go to combat for battlefield A
-        return {
-          ...prev,
-          metadata: {
-            ...prev.metadata,
-            currentPhase: 'combatA',
-            player1Passed: false, // Reset pass flags
-            player2Passed: false,
-          },
-        }
-      }
-      
       // Mark this player as passed
       const newMetadata = {
         ...prev.metadata,
@@ -297,6 +344,9 @@ export function useTurnManagement() {
       if (!otherPlayerPassed) {
         newMetadata.initiativePlayer = player === 'player1' ? 'player2' : 'player1'
       }
+      
+      // Note: Combat will be resolved automatically in handleNextPhase when both players have passed
+      // No need to change phase here
       
       return {
         ...prev,

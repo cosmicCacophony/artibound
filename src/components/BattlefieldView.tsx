@@ -1,4 +1,4 @@
-import { } from '../game/types'
+import { Card } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { useDeployment } from '../hooks/useDeployment'
 import { useCombat } from '../hooks/useCombat'
@@ -18,6 +18,8 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     metadata,
     getAvailableSlots,
     setGameState,
+    setShowCombatSummary,
+    setCombatSummaryData,
   } = useGameContext()
   const { handleDeploy, handleChangeSlot, handleRemoveFromBattlefield, handleEquipItem } = useDeployment()
   const { handleDecreaseHealth, handleIncreaseHealth } = useCombat()
@@ -221,14 +223,13 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
             </button>
           </div>
         </div>
-        {/* Go to Combat Button */}
-        {metadata.currentPhase === 'play' && (
+        {/* Go to Combat Button - Resolves Both Battlefields Simultaneously */}
+        {metadata.currentPhase === 'play' && battlefieldId === 'battlefieldA' && (
           <button
             onClick={() => {
-              // Check if both players passed, if so resolve combat automatically
+              // Check if both players passed, if so resolve combat for both battlefields
               if (metadata.player1Passed && metadata.player2Passed) {
-                // Resolve simultaneous combat for both players
-                const battlefield = gameState[battlefieldId]
+                // Resolve simultaneous combat for both battlefields
                 const initialTowerHP = {
                   towerA_player1: metadata.towerA_player1_HP,
                   towerA_player2: metadata.towerA_player2_HP,
@@ -236,38 +237,28 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                   towerB_player2: metadata.towerB_player2_HP,
                 }
                 
-                // Resolve simultaneous combat (units in front attack each other)
-                const combatResult = resolveSimultaneousCombat(
-                  battlefield,
-                  battlefieldId,
+                // Resolve combat for both battlefields simultaneously
+                const resultA = resolveSimultaneousCombat(
+                  gameState.battlefieldA,
+                  'battlefieldA',
                   initialTowerHP
                 )
                 
-                // Show combat results (before state update)
-                if (combatResult.combatLog.length > 0) {
-                  const logSummary = combatResult.combatLog.map(entry => 
-                    `${entry.attackerName} → ${entry.targetName || 'Tower'}: ${entry.damage} damage${entry.killed ? ' (KILLED)' : ''}`
-                  ).join('\n')
-                  // Show alert after a brief delay to allow state update
-                  setTimeout(() => {
-                    alert(`Combat resolved for Battlefield ${battlefieldName}!\n\n${logSummary}\n\nYou can manually adjust health if needed (e.g., for spell effects not tracked).`)
-                  }, 100)
-                }
+                const resultB = resolveSimultaneousCombat(
+                  gameState.battlefieldB,
+                  'battlefieldB',
+                  resultA.updatedTowerHP
+                )
                 
-                // Apply combat results
-                setGameState(prev => {
-                  const towerKeyP1 = battlefieldId === 'battlefieldA' ? 'towerA_player1_HP' : 'towerB_player1_HP'
-                  const towerKeyP2 = battlefieldId === 'battlefieldA' ? 'towerA_player2_HP' : 'towerB_player2_HP'
-                  const towerKeyP1Result = battlefieldId === 'battlefieldA' ? 'towerA_player1' : 'towerB_player1'
-                  const towerKeyP2Result = battlefieldId === 'battlefieldA' ? 'towerA_player2' : 'towerB_player2'
-                  
-                  // Find heroes that were killed (in original battlefield but not in updated)
-                  const originalBattlefield = prev[battlefieldId]
-                  const updatedBattlefield = combatResult.updatedBattlefield
-                  
+                // Process killed heroes for both battlefields
+                const processKilledHeroes = (
+                  originalBattlefield: typeof gameState.battlefieldA,
+                  updatedBattlefield: typeof gameState.battlefieldA,
+                  playerBase: Card[],
+                  deathCooldowns: Record<string, number>
+                ) => {
                   const killedHeroes: { hero: import('../game/types').Hero, player: 'player1' | 'player2' }[] = []
                   
-                  // Check player 1 heroes
                   originalBattlefield.player1.forEach(originalCard => {
                     if (originalCard.cardType === 'hero') {
                       const stillAlive = updatedBattlefield.player1.some(c => c.id === originalCard.id)
@@ -277,7 +268,6 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                     }
                   })
                   
-                  // Check player 2 heroes
                   originalBattlefield.player2.forEach(originalCard => {
                     if (originalCard.cardType === 'hero') {
                       const stillAlive = updatedBattlefield.player2.some(c => c.id === originalCard.id)
@@ -287,51 +277,104 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                     }
                   })
                   
-                  // Move killed heroes to base with cooldown counter
-                  const newPlayer1Base = [...prev.player1Base]
-                  const newPlayer2Base = [...prev.player2Base]
-                  const newDeathCooldowns = { ...prev.metadata.deathCooldowns }
+                  const newBase = [...playerBase]
+                  const newCooldowns = { ...deathCooldowns }
                   
                   killedHeroes.forEach(({ hero, player }) => {
                     const heroInBase = {
                       ...hero,
                       location: 'base' as const,
-                      currentHealth: 0, // Dead
+                      currentHealth: 0,
                       slot: undefined,
                     }
-                    
-                    if (player === 'player1') {
-                      newPlayer1Base.push(heroInBase)
-                    } else {
-                      newPlayer2Base.push(heroInBase)
-                    }
-                    
-                    // Set cooldown counter to 2
-                    newDeathCooldowns[hero.id] = 2
+                    newBase.push(heroInBase)
+                    newCooldowns[hero.id] = 2
                   })
                   
-                  return {
-                    ...prev,
-                    [battlefieldId]: combatResult.updatedBattlefield,
-                    player1Base: newPlayer1Base,
-                    player2Base: newPlayer2Base,
-                    metadata: {
-                      ...prev.metadata,
-                      [towerKeyP1]: combatResult.updatedTowerHP[towerKeyP1Result],
-                      [towerKeyP2]: combatResult.updatedTowerHP[towerKeyP2Result],
-                      // Apply overflow damage to nexus
-                      player1NexusHP: Math.max(0, prev.metadata.player1NexusHP - combatResult.overflowDamage.player1),
-                      player2NexusHP: Math.max(0, prev.metadata.player2NexusHP - combatResult.overflowDamage.player2),
-                      // Update death cooldowns
-                      deathCooldowns: newDeathCooldowns,
-                      // Reset pass flags
-                      player1Passed: false,
-                      player2Passed: false,
-                      // Stay in play phase so players can adjust manually if needed
-                      // (e.g., if a spell gave +1/+1 that wasn't tracked in the system)
-                    },
-                  }
+                  return { newBase, newCooldowns }
+                }
+                
+                const { newBase: newP1BaseA, newCooldowns: newCooldownsA } = processKilledHeroes(
+                  gameState.battlefieldA,
+                  resultA.updatedBattlefield,
+                  gameState.player1Base,
+                  metadata.deathCooldowns
+                )
+                
+                const { newBase: newP1BaseB, newCooldowns: newCooldownsB } = processKilledHeroes(
+                  gameState.battlefieldB,
+                  resultB.updatedBattlefield,
+                  newP1BaseA,
+                  newCooldownsA
+                )
+                
+                // Merge player 2 base updates
+                const allKilledHeroesP2: { hero: import('../game/types').Hero, player: 'player2' }[] = []
+                ;[gameState.battlefieldA, gameState.battlefieldB].forEach((original, idx) => {
+                  const updated = idx === 0 ? resultA.updatedBattlefield : resultB.updatedBattlefield
+                  original.player2.forEach(originalCard => {
+                    if (originalCard.cardType === 'hero') {
+                      const stillAlive = updated.player2.some(c => c.id === originalCard.id)
+                      if (!stillAlive) {
+                        allKilledHeroesP2.push({ hero: originalCard as import('../game/types').Hero, player: 'player2' })
+                      }
+                    }
+                  })
                 })
+                
+                const newP2Base = [...gameState.player2Base]
+                allKilledHeroesP2.forEach(({ hero }) => {
+                  newP2Base.push({
+                    ...hero,
+                    location: 'base' as const,
+                    currentHealth: 0,
+                    slot: undefined,
+                  })
+                })
+                
+                // Apply combat results
+                setGameState(prev => ({
+                  ...prev,
+                  battlefieldA: resultA.updatedBattlefield,
+                  battlefieldB: resultB.updatedBattlefield,
+                  player1Base: newP1BaseB,
+                  player2Base: newP2Base,
+                  metadata: {
+                    ...prev.metadata,
+                    towerA_player1_HP: resultA.updatedTowerHP.towerA_player1,
+                    towerA_player2_HP: resultA.updatedTowerHP.towerA_player2,
+                    towerB_player1_HP: resultB.updatedTowerHP.towerB_player1,
+                    towerB_player2_HP: resultB.updatedTowerHP.towerB_player2,
+                    player1NexusHP: Math.max(0, prev.metadata.player1NexusHP - (resultA.overflowDamage.player1 + resultB.overflowDamage.player1)),
+                    player2NexusHP: Math.max(0, prev.metadata.player2NexusHP - (resultA.overflowDamage.player2 + resultB.overflowDamage.player2)),
+                    deathCooldowns: newCooldownsB,
+                    player1Passed: false,
+                    player2Passed: false,
+                  },
+                }))
+                
+                // Show combat summary modal
+                setCombatSummaryData({
+                  battlefieldA: {
+                    name: 'Battlefield A',
+                    combatLog: resultA.combatLog,
+                    towerHP: {
+                      player1: resultA.updatedTowerHP.towerA_player1,
+                      player2: resultA.updatedTowerHP.towerA_player2,
+                    },
+                    overflowDamage: resultA.overflowDamage,
+                  },
+                  battlefieldB: {
+                    name: 'Battlefield B',
+                    combatLog: resultB.combatLog,
+                    towerHP: {
+                      player1: resultB.updatedTowerHP.towerB_player1,
+                      player2: resultB.updatedTowerHP.towerB_player2,
+                    },
+                    overflowDamage: resultB.overflowDamage,
+                  },
+                })
+                setShowCombatSummary(true)
               } else {
                 alert('Both players must pass before going to combat')
               }
@@ -349,10 +392,10 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
               marginLeft: '12px',
             }}
             title={(metadata.player1Passed && metadata.player2Passed) 
-              ? `Resolve Combat for Battlefield ${battlefieldName} (units in front attack each other)`
+              ? 'Resolve Combat for Both Battlefields (units in front attack each other simultaneously)'
               : 'Both players must pass before combat'}
           >
-            Go to Combat {battlefieldName}
+            ⚔️ Resolve Combat (Both Battlefields)
           </button>
         )}
       </div>

@@ -39,6 +39,25 @@ interface GameContextType {
   combatTargetsB: Map<string, AttackTarget>
   setCombatTargetsB: React.Dispatch<React.SetStateAction<Map<string, AttackTarget>>>
   
+  // Combat Summary Modal
+  showCombatSummary: boolean
+  setShowCombatSummary: (show: boolean) => void
+  combatSummaryData: {
+    battlefieldA: {
+      name: string
+      combatLog: any[]
+      towerHP: { player1: number, player2: number }
+      overflowDamage: { player1: number, player2: number }
+    }
+    battlefieldB: {
+      name: string
+      combatLog: any[]
+      towerHP: { player1: number, player2: number }
+      overflowDamage: { player1: number, player2: number }
+    }
+  } | null
+  setCombatSummaryData: (data: any) => void
+  
   // Computed values
   selectedCard: Card | null
   metadata: GameMetadata
@@ -87,6 +106,23 @@ export function GameProvider({ children }: { children: ReactNode }) {
   // Combat targets
   const [combatTargetsA, setCombatTargetsA] = useState<Map<string, AttackTarget>>(new Map())
   const [combatTargetsB, setCombatTargetsB] = useState<Map<string, AttackTarget>>(new Map())
+  
+  // Combat Summary Modal
+  const [showCombatSummary, setShowCombatSummary] = useState(false)
+  const [combatSummaryData, setCombatSummaryData] = useState<{
+    battlefieldA: {
+      name: string
+      combatLog: any[]
+      towerHP: { player1: number, player2: number }
+      overflowDamage: { player1: number, player2: number }
+    }
+    battlefieldB: {
+      name: string
+      combatLog: any[]
+      towerHP: { player1: number, player2: number }
+      overflowDamage: { player1: number, player2: number }
+    }
+  } | null>(null)
   
   // Computed values
   const metadata = gameState.metadata
@@ -176,40 +212,58 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const player1BattlefieldPool = allBattlefields
     const player2BattlefieldPool = allBattlefields
     
-    // Shuffle and select
-    const shuffle = <T extends unknown>(arr: T[]): T[] => {
+    // Consistent shuffle using fixed seed for reproducible games
+    // This ensures the same cards appear every time for testing
+    const seededShuffle = <T extends unknown>(arr: T[], seed: number = 12345): T[] => {
       const copy = [...arr]
+      // Simple seeded random number generator
+      let rng = seed
+      const random = () => {
+        rng = (rng * 9301 + 49297) % 233280
+        return rng / 233280
+      }
       for (let i = copy.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(random() * (i + 1));
         [copy[i], copy[j]] = [copy[j], copy[i]]
       }
       return copy
     }
     
-    // Select 4 heroes for each player (allow duplicates if not enough unique heroes)
+    // Select 4 heroes for each player (use consistent order)
     const player1Heroes: Hero[] = []
     const player2Heroes: Hero[] = []
     
-    // Fill up to HEROES_REQUIRED, allowing duplicates if needed
+    // Fill up to HEROES_REQUIRED, using consistent order
     for (let i = 0; i < HEROES_REQUIRED; i++) {
       const p1Hero = player1HeroPool[i % player1HeroPool.length]
       const p2Hero = player2HeroPool[i % player2HeroPool.length]
       
       player1Heroes.push({
         ...p1Hero,
-        id: `${p1Hero.id}-player1-random-${Date.now()}-${i}-${Math.random()}`,
+        id: `${p1Hero.id}-player1-consistent-${i}`,
       } as Hero)
       
       player2Heroes.push({
         ...p2Hero,
-        id: `${p2Hero.id}-player2-random-${Date.now()}-${i}-${Math.random()}`,
+        id: `${p2Hero.id}-player2-consistent-${i}`,
       } as Hero)
     }
     
     // Select 12 cards for each player (signature cards will be auto-added)
+    // Use consistent shuffle so same cards appear every time
     const DRAFTED_CARDS_REQUIRED = 12
-    const player1DraftedCards = shuffle(player1CardPool).slice(0, DRAFTED_CARDS_REQUIRED)
-    const player2DraftedCards = shuffle(player2CardPool).slice(0, DRAFTED_CARDS_REQUIRED)
+    
+    // For UBG player, ensure Exorcism is included
+    let player2DraftedCards = seededShuffle(player2CardPool, 54321)
+    const exorcismCard = player2CardPool.find(c => c.id === 'ubg-spell-exorcism')
+    if (exorcismCard && player2Archetype === 'ubg-control') {
+      // Remove Exorcism from shuffled list and add it at the start
+      player2DraftedCards = player2DraftedCards.filter(c => c.id !== 'ubg-spell-exorcism')
+      player2DraftedCards = [exorcismCard, ...player2DraftedCards]
+    }
+    
+    const player1DraftedCards = seededShuffle(player1CardPool, 12345).slice(0, DRAFTED_CARDS_REQUIRED)
+    player2DraftedCards = player2DraftedCards.slice(0, DRAFTED_CARDS_REQUIRED)
     
     // Add 2 copies of each hero's signature card (4 heroes × 2 copies = 8 signature cards)
     const player1SignatureCards: BaseCard[] = []
@@ -285,6 +339,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setCombatTargetsA,
     combatTargetsB,
     setCombatTargetsB,
+    showCombatSummary,
+    setShowCombatSummary,
+    combatSummaryData,
+    setCombatSummaryData,
     selectedCard,
     metadata,
     activePlayer,

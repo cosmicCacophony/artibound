@@ -1737,9 +1737,25 @@ export function createGameStateFromDraft(
     return createCardFromTemplate(hero, 'player2', 'base') as Hero
   })
 
-  // Shuffle cards and select 4 random cards for each hand
-  const player1ShuffledCards = shuffleArray([...player1Selection.cards])
-  const player2ShuffledCards = shuffleArray([...player2Selection.cards])
+  // Shuffle cards with consistent seed for reproducible games
+  // This ensures the same 4 cards are always in hand and 16 in library
+  const seededShuffle = <T extends unknown>(arr: T[], seed: number = 12345): T[] => {
+    const copy = [...arr]
+    // Simple seeded random number generator
+    let rng = seed
+    const random = () => {
+      rng = (rng * 9301 + 49297) % 233280
+      return rng / 233280
+    }
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]]
+    }
+    return copy
+  }
+  
+  const player1ShuffledCards = seededShuffle([...player1Selection.cards], 11111)
+  const player2ShuffledCards = seededShuffle([...player2Selection.cards], 22222)
   
   const player1HandCards = player1ShuffledCards.slice(0, 4)
   const player1LibraryCards = player1ShuffledCards.slice(4)

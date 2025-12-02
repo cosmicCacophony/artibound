@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { DraftState, Hero, BaseCard, BattlefieldDefinition, HEROES_REQUIRED, CARDS_REQUIRED, Color } from '../game/types'
-import { defaultGenericHeroes } from '../game/comprehensiveCardData'
+import { allHeroes } from '../game/cardData'
 
 interface DraftSelectionProps {
   draftState: DraftState
@@ -104,7 +104,8 @@ export default function DraftSelection({ draftState, onFinalSelection, autoFillD
   const addDefaultHero = (color: Color) => {
     if (!canAddDefaultHero) return
     
-    const defaultHero = defaultGenericHeroes.find(h => h.colors[0] === color)
+    // Use first hero of this color from allHeroes as fallback
+    const defaultHero = allHeroes.find(h => h.colors[0] === color)
     if (!defaultHero) return
 
     // Create a new hero instance with unique ID
@@ -386,7 +387,8 @@ export default function DraftSelection({ draftState, onFinalSelection, autoFillD
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   {availableColors.map(color => {
                     const alreadyAdded = currentDefaultHeroes.has(color)
-                    const defaultHero = defaultGenericHeroes.find(h => h.colors[0] === color)
+                    // Use first hero of this color from allHeroes as fallback
+                    const defaultHero = allHeroes.find(h => h.colors[0] === color)
                     if (!defaultHero) return null
                     
                     return (

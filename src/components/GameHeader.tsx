@@ -35,7 +35,11 @@ export function GameHeader() {
           Phase: {metadata.currentPhase}
         </div>
         <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
-          P1 Mana: {metadata.player1Mana}/{metadata.player1MaxMana} | P2 Mana: {metadata.player2Mana}/{metadata.player2MaxMana}
+          P1 Mana: {metadata.player1Mana}/{metadata.player1MaxMana}
+          {metadata.player1Mana > metadata.player1MaxMana && ` (+${metadata.player1Mana - metadata.player1MaxMana})`}
+          {' | '}
+          P2 Mana: {metadata.player2Mana}/{metadata.player2MaxMana}
+          {metadata.player2Mana > metadata.player2MaxMana && ` (+${metadata.player2Mana - metadata.player2MaxMana})`}
         </div>
         <button
           onClick={handleNextTurn}

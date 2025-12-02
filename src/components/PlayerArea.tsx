@@ -11,7 +11,8 @@ interface PlayerAreaProps {
 
 export function PlayerArea({ player }: PlayerAreaProps) {
   const { 
-    gameState, 
+    gameState,
+    setGameState,
     selectedCard, 
     selectedCardId, 
     setSelectedCardId, 
@@ -60,8 +61,67 @@ export function PlayerArea({ player }: PlayerAreaProps) {
           )}
         </h2>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-          <div style={{ fontSize: '16px', fontWeight: 'bold', color: playerManaColor }}>
-            Mana: {playerMana}/{playerMaxMana}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ fontSize: '16px', fontWeight: 'bold', color: playerManaColor }}>
+              Mana: {playerMana}/{playerMaxMana}
+              {playerMana > playerMaxMana && (
+                <span style={{ color: '#4caf50', marginLeft: '4px' }} title="Current mana exceeds max (from effects like +1 mana per turn)">
+                  (+{playerMana - playerMaxMana})
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setGameState(prev => ({
+                    ...prev,
+                    metadata: {
+                      ...prev.metadata,
+                      [`${player}Mana`]: Math.max(0, (prev.metadata[`${player}Mana` as keyof typeof prev.metadata] as number) - 1),
+                    },
+                  }))
+                }}
+                style={{
+                  padding: '4px 8px',
+                  backgroundColor: '#f44336',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                }}
+                title="Decrease mana by 1"
+              >
+                -1
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setGameState(prev => ({
+                    ...prev,
+                    metadata: {
+                      ...prev.metadata,
+                      [`${player}Mana`]: (prev.metadata[`${player}Mana` as keyof typeof prev.metadata] as number) + 1,
+                    },
+                  }))
+                }}
+                style={{
+                  padding: '4px 8px',
+                  backgroundColor: '#4caf50',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                }}
+                title="Increase mana by 1 (for effects like +1 mana per turn)"
+              >
+                +1
+              </button>
+            </div>
           </div>
           <div style={{ fontSize: '16px', fontWeight: 'bold' }}>
             Gold: {playerGold}
