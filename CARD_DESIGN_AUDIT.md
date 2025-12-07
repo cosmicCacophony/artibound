@@ -32,10 +32,10 @@ This document audits RW and UBG cards against our design philosophy. Each card i
 |------|------|--------|-------------|-------------|-----------|-----------|-------------|-------|-----------|-------|
 | Rally Banner (sig) | 3 | RW | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Team buff, signature card |
 | Battle Standard (sig) | 4 | R | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Team buff, signature card |
-| Bronze Legionnaire | 2 | RW | ⚠️ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 2 mana dual color - should be single? |
+| Bronze Legionnaire | 2 | R | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **FIXED**: Changed to single color (R) |
 | Imperial Herald | 3 | RW | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Legion synergy, hero ability trigger |
 | Legion Standard Bearer | 3 | RW | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Spell synergy for Legion |
-| Soldier (generic) | 3 | W | ✅ | ❌ | ⚠️ | ❌ | ✅ | ❌ | ✅ | Vanilla - acceptable filler |
+| ~~Soldier (generic)~~ | - | - | - | - | - | - | - | - | - | **REMOVED**: Vanilla filler not needed |
 
 ### RW Spells
 
@@ -43,14 +43,16 @@ This document audits RW and UBG cards against our design philosophy. Each card i
 |------|------|--------|-------------|-------------|-----------|-----------|-------------|-------|-----------|-------|
 | Charge Order (sig) | 3 | RW | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Team-wide immediate action |
 | War Cry (sig) | 3 | R | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Team pump, signature card |
-| Path of Valor | 2 | RW | ⚠️ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 2 mana dual - positioning spell |
+| Path of Valor | 2 | R | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **FIXED**: Changed to single color (R) |
 | Rally the Legion | 4 | RW | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Legion tribal pump |
 | Whirling Death | 2 | R | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | AOE with debuff, positioning |
-| Unbreakable Column | 2 | RW | ⚠️ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Defensive positioning, 2 mana dual |
+| Unbreakable Column | 2 | W | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **FIXED**: Changed to single color (W) |
 | Fighting Words | 1 | R | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **Combat trick!** Perfect for bluff game |
 | Into the Fray | 3 | RW | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Combat trick, pump spell |
 | Rally Banner | 4 | RW | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Team buff + card draw |
 | Battle Cry | 2 | R | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Team pump, efficient |
+| Soul of Spring | 3 | W | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **NEW**: Risky combat trick - Regeneration (combat only) |
+| Living Armor | 3 | W | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **NEW**: Risky combat trick - +0/+5, death prevention |
 
 ### RW Design Analysis
 
@@ -61,21 +63,22 @@ This document audits RW and UBG cards against our design philosophy. Each card i
 - ✅ Team buffs support go-wide strategy
 - ✅ Signature cards feel impactful
 
-**Potential Issues:**
-- ⚠️ Some 2-mana cards are dual color (Bronze Legionnaire, Path of Valor, Unbreakable Column)
-  - **Question**: Should these be single color for easier early casting?
-  - **Consideration**: They're not too powerful, but dual color at 2 mana might be restrictive
-- ❌ Soldier is vanilla - acceptable as filler, but could be more interesting
-- ⚠️ Missing some combat tricks for "bluff game" (need more 1-2 mana tricks)
-- ⚠️ Missing tower pressure cards (Tower Focus, Execute, etc. from mastery moments)
-- ⚠️ Missing timing cards (AOE protection, commit cards)
+**Changes Made:**
+- ✅ Fixed 2-mana dual color cards (Bronze Legionnaire → R, Path of Valor → R, Unbreakable Column → W)
+- ✅ Removed Soldier (vanilla filler not needed)
+- ✅ Added combat tricks: Soul of Spring, Living Armor (risky but powerful, must commit before combat)
+
+**Remaining Issues:**
+- ⚠️ Missing tower pressure cards (Tower Focus, Execute)
+- ⚠️ Missing timing cards (Disperse, All-In)
+- ⚠️ Could use more 1-2 mana combat tricks for bluff game
 
 **Recommendations:**
-1. Consider making Bronze Legionnaire single color (R or W) if 2 mana dual is too restrictive
-2. Add more combat tricks (1-2 mana) for bluff game
-3. Add tower pressure cards (Tower Focus, Execute)
-4. Add timing cards (Disperse, All-In)
-5. Soldier is fine as vanilla filler
+1. ✅ **DONE**: Fixed color requirements for 2-mana cards
+2. ✅ **DONE**: Added risky combat tricks (Soul of Spring, Living Armor)
+3. [ ] Add tower pressure cards (Tower Focus, Execute)
+4. [ ] Add timing cards (Disperse, All-In)
+5. ✅ **DONE**: Removed Soldier
 
 ---
 
@@ -115,24 +118,30 @@ This document audits RW and UBG cards against our design philosophy. Each card i
 | Arcane Scholar | 3 | UB | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Hero ability synergy, card advantage |
 | Verdant Growth | 4 | G | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Ramp, enables big spells |
 | Nature's Embrace | 3 | G | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Defensive, adjacent buff |
-| Verdant Colossus | 8 | UG | ⚠️ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ | 8 mana dual - should be triple? |
-| Spawnling | 2 | GB | ⚠️ | ⚠️ | ✅ | ❌ | ✅ | ❌ | ✅ | 2 mana dual, vanilla token |
+| Verdant Colossus | 8 | UBG | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **FIXED**: Changed to triple color (UBG) |
+| ~~Spawnling~~ | - | - | - | - | - | - | - | - | - | **REMOVED**: Vanilla token not needed |
 
 ### UB Spells (Included in UBG)
 
 | Card | Mana | Colors | Power→Color | Game States | Archetype | Decisions | Counterplay | Skill | Mana Cost | Notes |
 |------|------|--------|-------------|-------------|-----------|-----------|-------------|-------|-----------|-------|
 | Void Bolt (sig) | 3 | UB | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Removal, signature card |
-| Arcane Sweep (sig) | 6 | U | ⚠️ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ | 6 mana single color - should be dual/triple? |
+| Arcane Sweep (sig) | 6 | UB | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **FIXED**: Changed to dual color (UB) |
 | Death Ritual (sig) | 4 | B | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Card draw, signature |
 | Soul Drain (sig) | 5 | B | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Removal + draw, signature |
 | Nature's Revenge (sig) | 3 | G | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Removal + ramp, signature |
-| Nature's Wrath (sig) | 3 | UG | ⚠️ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 3 mana dual - removal + ramp |
+| Nature's Wrath (sig) | 3 | G | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **FIXED**: Changed to single color (G) |
 | Thunderstorm | 4 | UB | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | AOE, board wipe |
-| Arcane Removal | 2 | UB | ⚠️ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 2 mana dual - conditional removal |
-| Arcane Bolt | 4 | U | ⚠️ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ | 4 mana single - should be dual? |
+| Arcane Removal | 2 | B | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **FIXED**: Changed to single color (B) |
+| Arcane Bolt | 4 | UB | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **FIXED**: Changed to dual color (UB) |
 | Frost Bolt | 2 | U | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Positioning removal |
 | Light Strike Array | 2 | U | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Positioning removal + stun |
+| Tactical Strike | 3 | B | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **NEW**: Deal 3 + initiative |
+| Assassinate | 4 | UB | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **NEW**: Kill hero + discard |
+| Reflective Shield | 2 | B | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **NEW**: Invulnerable + reflect (combat setup!) |
+| Tactical Repositioning | 1 | B | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **NEW**: Move hero (positioning) |
+| Frost Wave | 3 | U | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **NEW**: Deal 2 to all (AOE) |
+| Arcane Barrage | 4 | UB | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **NEW**: Deal 6 distributed (spell timing!) |
 
 ### UBG Design Analysis
 
@@ -142,41 +151,27 @@ This document audits RW and UBG cards against our design philosophy. Each card i
 - ✅ Ramp units enable big spells
 - ✅ Defensive units fit control archetype
 
-**Potential Issues:**
-- ⚠️ Verdant Colossus is 8 mana dual color (UG) - should this be triple color (UBG)?
-  - **Question**: Is 8 mana too powerful for dual color?
-  - **Consideration**: 6/8 is strong but not game-breaking, dual might be okay
-- ⚠️ Spawnling is 2 mana dual color (GB) - vanilla token
-  - **Question**: Should 2 mana dual be single color?
-  - **Consideration**: Token is fine, but dual color at 2 mana might be restrictive
-- ⚠️ Arcane Sweep is 6 mana single color (U) - very powerful AOE
-  - **Question**: Should 6 mana powerful effect be dual/triple color?
-  - **Consideration**: 4 damage to all is very strong, might need color requirement
-- ⚠️ Arcane Bolt is 4 mana single color (U) - good removal
-  - **Question**: Should 4 mana removal be dual color?
-  - **Consideration**: 4 damage is strong, but single color keeps it accessible
-- ⚠️ Arcane Removal is 2 mana dual color (UB) - conditional removal
-  - **Question**: Should 2 mana dual be single color?
-  - **Consideration**: Conditional (3 or less health) might justify dual color
-- ❌ Missing removal spells (from ARTIFACT_CARD_ANALYSIS.md)
-  - Need: 3 mana deal 3 + initiative (B)
-  - Need: 4 mana kill hero + discard (UB)
-  - Need: 2 mana invulnerable + reflect (B) - **KEY for combat setup!**
-- ❌ Missing AOE spells
-  - Need: 3 mana deal 2 to all (U)
-  - Need: 4 mana deal 6 distributed (UB) - for spell timing decisions
-- ❌ Missing positioning spells
-  - Need: 1 mana move hero (B)
-- ❌ Missing combat setup spells
-  - Need: 2 mana invulnerable + reflect (B) - **KEY for early game decisions!**
-  - Need: 2 mana stun (B or U) - Light Strike Array is close but positioning-specific
+**Changes Made:**
+- ✅ Fixed Verdant Colossus (8 mana UG → UBG triple color)
+- ✅ Removed Spawnling (vanilla token not needed)
+- ✅ Fixed Arcane Sweep (6 mana U → UB dual color)
+- ✅ Fixed Arcane Bolt (4 mana U → UB dual color)
+- ✅ Fixed Arcane Removal (2 mana UB → B single color)
+- ✅ Fixed Nature's Wrath (3 mana UG → G single color)
+- ✅ Added removal spells: Tactical Strike, Assassinate, Reflective Shield
+- ✅ Added AOE spells: Frost Wave, Arcane Barrage
+- ✅ Added positioning spell: Tactical Repositioning
+- ✅ Added combat setup: Reflective Shield (invulnerable + reflect)
+
+**Remaining Issues:**
+- ⚠️ Could use more AOE options at different mana costs
+- ⚠️ Could use more combat setup options
 
 **Recommendations:**
-1. Consider making Verdant Colossus triple color (UBG) if 8 mana dual is too powerful
-2. Add removal spells from ARTIFACT_CARD_ANALYSIS.md
-3. Add AOE spells for spell timing decisions
-4. Add positioning and combat setup spells
-5. Spawnling is fine as vanilla token, but consider single color if 2 mana dual is too restrictive
+1. ✅ **DONE**: Fixed all color requirements
+2. ✅ **DONE**: Added key removal and AOE spells
+3. ✅ **DONE**: Added positioning and combat setup spells
+4. ✅ **DONE**: Removed Spawnling
 
 ---
 
@@ -221,19 +216,28 @@ This document audits RW and UBG cards against our design philosophy. Each card i
 ## Action Items
 
 ### For RW:
-1. [ ] Review 2-mana dual color cards (Bronze Legionnaire, Path of Valor, Unbreakable Column)
-2. [ ] Add more combat tricks (1-2 mana) for bluff game
+1. [x] Review 2-mana dual color cards (Bronze Legionnaire → R, Path of Valor → R, Unbreakable Column → W)
+2. [x] Add more combat tricks (Soul of Spring, Living Armor) - risky but powerful
 3. [ ] Add tower pressure cards (Tower Focus, Execute)
 4. [ ] Add timing cards (Disperse, All-In)
-5. [ ] Keep Soldier as vanilla filler (acceptable)
+5. [x] Remove Soldier (vanilla filler not needed)
 
 ### For UBG:
-1. [ ] Review Verdant Colossus (8 mana dual vs triple color)
-2. [ ] Add removal spells from ARTIFACT_CARD_ANALYSIS.md
-3. [ ] Add AOE spells for spell timing decisions
-4. [ ] Add positioning spells (move hero)
-5. [ ] Add combat setup spells (invulnerable + reflect, stun)
-6. [ ] Review Spawnling (2 mana dual vs single color)
+1. [x] Review Verdant Colossus (8 mana dual → UBG triple color)
+2. [x] Add removal spells from ARTIFACT_CARD_ANALYSIS.md
+   - [x] Tactical Strike (3 mana, B, deal 3 + initiative)
+   - [x] Assassinate (4 mana, UB, kill hero + discard)
+   - [x] Reflective Shield (2 mana, B, invulnerable + reflect)
+3. [x] Add AOE spells for spell timing decisions
+   - [x] Frost Wave (3 mana, U, deal 2 to all)
+   - [x] Arcane Barrage (4 mana, UB, deal 6 distributed)
+4. [x] Add positioning spells (Tactical Repositioning, 1 mana, B)
+5. [x] Add combat setup spells (Reflective Shield - invulnerable + reflect)
+6. [x] Remove Spawnling (vanilla token not needed)
+7. [x] Fix Arcane Sweep (6 mana U → UB)
+8. [x] Fix Arcane Bolt (4 mana U → UB)
+9. [x] Fix Arcane Removal (2 mana UB → B)
+10. [x] Fix Nature's Wrath (3 mana UG → G)
 
 ---
 

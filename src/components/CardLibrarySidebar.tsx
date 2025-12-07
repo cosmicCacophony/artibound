@@ -76,9 +76,11 @@ export function CardLibrarySidebar({ player, cards, setCards }: CardLibrarySideb
       {cards.map((template, index) => {
         const colorStyles = getCardColorStyles(template.colors)
         const cardColors = template.colors || []
+        // Use a stable key that includes the index to help React track removals
+        const cardKey = template.id ? `${template.id}-${index}` : `card-${index}`
         return (
           <div
-            key={template.id || index}
+            key={cardKey}
             style={{
               border: `${colorStyles.borderWidth || '1px'} solid ${colorStyles.borderColor}`,
               borderRadius: '4px',
@@ -104,7 +106,10 @@ export function CardLibrarySidebar({ player, cards, setCards }: CardLibrarySideb
             }}
           >
             <div
-              onClick={() => handleAddToHand(index, player)}
+              onClick={() => {
+                // Pass both index and template for reliable removal
+                handleAddToHand(index, player)
+              }}
               style={{
                 cursor: 'pointer',
                 paddingRight: '20px',

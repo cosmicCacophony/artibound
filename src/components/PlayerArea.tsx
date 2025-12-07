@@ -3,6 +3,7 @@ import { useGameContext } from '../context/GameContext'
 import { useDeployment } from '../hooks/useDeployment'
 import { useTurnManagement } from '../hooks/useTurnManagement'
 import { useItemShop } from '../hooks/useItemShop'
+import { useHeroAbilities } from '../hooks/useHeroAbilities'
 import { HeroCard } from './HeroCard'
 
 interface PlayerAreaProps {
@@ -23,6 +24,7 @@ export function PlayerArea({ player }: PlayerAreaProps) {
   const { handleDeploy } = useDeployment()
   const { handleToggleSpellPlayed } = useTurnManagement()
   const { generateItemShop } = useItemShop()
+  const { handleAbilityClick } = useHeroAbilities()
 
   const playerHand = player === 'player1' ? gameState.player1Hand : gameState.player2Hand
   const playerBase = player === 'player1' ? gameState.player1Base : gameState.player2Base
@@ -56,8 +58,11 @@ export function PlayerArea({ player }: PlayerAreaProps) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
         <h2 style={{ marginTop: 0, color: playerTitleColor, display: 'flex', alignItems: 'center', gap: '8px' }}>
           Player {player === 'player1' ? '1' : '2'}
+          {metadata.actionPlayer === player && (
+            <span style={{ fontSize: '20px' }} title="Has Action">🎯</span>
+          )}
           {metadata.initiativePlayer === player && (
-            <span style={{ fontSize: '20px' }} title="Has Initiative">⚡</span>
+            <span style={{ fontSize: '20px', opacity: metadata.actionPlayer === player ? 0.6 : 1 }} title="Has Initiative (will act first next turn)">⚡</span>
           )}
         </h2>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
@@ -161,11 +166,12 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                 card={card}
                 onClick={(e) => handleCardClick(card.id, e)}
                 isSelected={selectedCardId === card.id}
-                showStats={false}
+                showStats={true}
                 isDead={!!metadata.deathCooldowns[card.id]}
                 cooldownCounter={metadata.deathCooldowns[card.id]}
                 isPlayed={!!metadata.playedSpells[card.id]}
                 onTogglePlayed={() => handleToggleSpellPlayed(card)}
+                onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, card.owner)}
               />
             ))
           ) : (
@@ -218,6 +224,7 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                 cooldownCounter={metadata.deathCooldowns[card.id]}
                 isPlayed={card.location === 'base' && !!metadata.playedSpells[card.id]}
                 onTogglePlayed={card.location === 'base' ? () => handleToggleSpellPlayed(card) : undefined}
+                onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, card.owner)}
               />
             ))
           ) : (

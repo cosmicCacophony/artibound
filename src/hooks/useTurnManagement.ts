@@ -305,6 +305,10 @@ export function useTurnManagement() {
         return c
       }
       
+      // At start of new turn, action goes to whoever has initiative
+      // If no one has initiative (shouldn't happen), default to player1
+      const nextAction = prev.metadata.initiativePlayer || 'player1'
+      
       return {
         ...prev,
         player1Base: prev.player1Base.map(healHeroInBase),
@@ -317,8 +321,10 @@ export function useTurnManagement() {
           player2Mana: newPlayer2MaxMana,
           player1MaxMana: newPlayer1MaxMana,
           player2MaxMana: newPlayer2MaxMana,
-          // Reset initiative to player 1 at start of new turn
-          initiativePlayer: 'player1',
+          // Action goes to whoever has initiative
+          actionPlayer: nextAction,
+          // Initiative carries over (unless it was null, then default to player1)
+          initiativePlayer: prev.metadata.initiativePlayer || 'player1',
           // Update death cooldowns
           deathCooldowns: newDeathCooldowns,
           // Reset movement flags
@@ -340,9 +346,12 @@ export function useTurnManagement() {
         [`${player}Passed`]: true,
       }
       
-      // If other player hasn't passed, give them initiative
+      // If other player hasn't passed, give them ACTION (but this player RETAINS initiative)
       if (!otherPlayerPassed) {
-        newMetadata.initiativePlayer = player === 'player1' ? 'player2' : 'player1'
+        // Action goes to opponent
+        newMetadata.actionPlayer = player === 'player1' ? 'player2' : 'player1'
+        // Initiative STAYS with the player who passed (they locked it in)
+        // Don't change initiativePlayer - it stays with the player who passed
       }
       
       // Note: Combat will be resolved automatically in handleNextPhase when both players have passed

@@ -331,7 +331,73 @@ This document catalogs **interesting game states** - board positions and scenari
 
 ---
 
-### Game State 8: Tower vs Units - Gold vs Pressure
+### Game State 8: Post-Tower Destruction - Lane Positioning Strategy
+
+**The Situation:**
+- One tower is destroyed (20 HP → 0)
+- RW has 4-power hero in destroyed tower's lane
+- RW needs to apply pressure in other lane to destroy second tower
+- Or RW can deal damage to nexus now (less efficient)
+- UB has 2-power hero in destroyed tower's lane
+
+**The Decision (RW):**
+- **Option A**: Keep 4-power hero in destroyed lane
+  - Problem: Hero can't help destroy second tower
+  - Problem: High attack wasted (4 power doing nothing)
+  - Result: Devastating positioning mistake
+- **Option B**: Bounce/redeploy 4-power hero to active lane
+  - Benefit: Hero can help destroy second tower
+  - Benefit: High attack applied where needed
+  - Cost: Mana for bounce, lose positioning
+  - Result: Better positioning, can apply pressure
+
+**The Decision (UB):**
+- **Option A**: Keep 2-power hero in destroyed lane
+  - Less Problem: Low attack anyway (2 power not critical)
+  - Benefit: Can still cast spells from any lane
+  - Result: Less game-impacting mistake
+- **Option B**: Bounce/redeploy 2-power hero
+  - Benefit: Better positioning
+  - Cost: Mana for bounce
+  - Result: Slightly better, but less critical
+
+**Why It's Interesting:**
+- **Stats matter more for combat decks**: High-attack heroes need correct positioning
+- **Spells are more flexible**: Can cast from any lane
+- **Creates skill expression**: Better players position combat heroes correctly
+- **Punishes mistakes**: Wrong positioning is more costly for RW than UB
+- Tests understanding of win condition (destroy both towers vs immediate nexus damage)
+- Tests resource management (pressure vs efficiency)
+
+**Cards That Create This:**
+- **High-attack heroes** (4+ attack) - need correct positioning
+- **Low-attack heroes** (2-3 attack) - more flexible
+- **Bounce mechanic** - allows repositioning
+- **Tower destruction** - creates the decision point
+- **Nexus damage system** - creates win condition
+
+**Cards That Should Exist:**
+- ✅ Bounce mechanic (already exists)
+- ✅ High-attack heroes for RW (4+ attack)
+- ✅ Low-attack heroes for UB (2-3 attack)
+- [ ] More positioning spells (move heroes between lanes)
+- [ ] More cards that reward correct positioning
+- [ ] More cards that punish wrong positioning
+
+**Porting Opportunities:**
+- Artifact Foundry: Positioning cards that work with destroyed towers
+- Magic: Cards that reward positioning
+- Hearthstone: Cards that interact with destroyed lanes
+
+**Design Note:**
+- This dynamic becomes more relevant when towers are destroyed
+- Combat-focused decks (RW) should feel more punished for wrong positioning
+- Spell-focused decks (UB) should feel more flexible
+- Creates meaningful skill expression for RW players
+
+---
+
+### Game State 9: Tower vs Units - Gold vs Pressure
 
 **The Situation:**
 - Turn 4-6, mid game

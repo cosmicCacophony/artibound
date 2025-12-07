@@ -11,10 +11,10 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     description: 'Leads the charge with team buffs',
     cardType: 'hero',
     colors: ['red', 'white'],
-    attack: 5,
-    health: 9,
-    maxHealth: 9,
-    currentHealth: 9,
+    attack: 4,
+    health: 8,
+    maxHealth: 8,
+    currentHealth: 8,
     supportEffect: 'Allies gain +1/+1',
     signatureCardId: 'rw-sig-commander-1',
     equippedItems: [],
@@ -83,7 +83,7 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     name: 'Bronze Legionnaire',
     description: 'Legion. When you use a hero ability, this gains +1/+1.',
     cardType: 'generic',
-    colors: ['red', 'white'],
+    colors: ['red'], // Changed from RW to R - 2 mana should be single color
     manaCost: 2,
     attack: 2,
     health: 3, // Changed from 2 to 3 for better defensive statline
@@ -110,19 +110,6 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     colors: ['red', 'white'],
     manaCost: 3,
     attack: 1,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  // Generic Red/White cards (weaker, work in any deck)
-  {
-    id: 'rw-generic-soldier',
-    name: 'Soldier',
-    description: 'Standard infantry',
-    cardType: 'generic',
-    colors: ['white'],
-    manaCost: 3,
-    attack: 2,
     health: 3,
     maxHealth: 3,
     currentHealth: 3,
@@ -161,7 +148,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     name: 'Path of Valor',
     description: 'Blocked units get +1 attack. When you cast a spell or unit in this lane, put a +1/+1 counter on all blocked units.',
     cardType: 'spell',
-    colors: ['red', 'white'],
+    colors: ['red'], // Changed from RW to R - 2 mana should be single color
     manaCost: 2,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for counters
@@ -200,7 +187,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     name: 'Unbreakable Column',
     description: 'Caster and neighbors ignore incoming damage of 2 or less this turn.',
     cardType: 'spell',
-    colors: ['red', 'white'],
+    colors: ['white'], // Changed from RW to W - 2 mana should be single color
     manaCost: 2,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for damage reduction
@@ -250,8 +237,29 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red'],
     manaCost: 2,
+  },
+  // RW Combat Tricks - Risky but powerful
+  {
+    id: 'rw-spell-soul-of-spring',
+    name: 'Soul of Spring',
+    description: 'Target hero gains Regeneration (heals 3 damage at end of each combat phase). Regeneration only affects combat damage - other damage sources bypass it.',
+    cardType: 'spell',
+    colors: ['white'],
+    manaCost: 3,
     effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect
+      type: 'targeted_damage', // Placeholder - would need custom effect for regeneration
+      damage: 0,
+    },
+  },
+  {
+    id: 'rw-spell-living-armor',
+    name: 'Living Armor',
+    description: 'Target hero gains +0/+5 until end of turn. If it would die this turn, it survives with 1 health instead.',
+    cardType: 'spell',
+    colors: ['white'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for temporary health and death prevention
       damage: 0,
     },
   },
@@ -738,6 +746,14 @@ export const gwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     supportEffect: 'Allies gain +1/+1',
     signatureCardId: 'gw-sig-protector-1',
     equippedItems: [],
+    ability: {
+      name: 'Divine Shield',
+      description: 'Neighbors gain +3 attack this combat phase',
+      manaCost: 1,
+      cooldown: 1,
+      effectType: 'buff_units',
+      effectValue: 3, // +3 attack to neighbors
+    },
   },
 ]
 
@@ -1332,24 +1348,12 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     name: 'Verdant Colossus',
     description: '6/8. Resilient threat for control deck.',
     cardType: 'generic',
-    colors: ['green', 'blue'],
+    colors: ['blue', 'black', 'green'], // Changed from UG to UBG - 8 mana should be triple color
     manaCost: 8,
     attack: 6,
     health: 8,
     maxHealth: 8,
     currentHealth: 8,
-  },
-  {
-    id: 'ubg-token-1',
-    name: 'Spawnling',
-    description: '2/2 token unit.',
-    cardType: 'generic',
-    colors: ['green', 'black'],
-    manaCost: 2,
-    attack: 2,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
   },
 ]
 
@@ -1374,7 +1378,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     name: 'Arcane Sweep',
     description: 'Archmage signature - board wipe. Deal 4 damage to all enemy units.',
     cardType: 'spell',
-    colors: ['blue'],
+    colors: ['blue', 'black'], // Changed from U to UB - 6 mana powerful effect should be dual color
     manaCost: 6,
     effect: {
       type: 'aoe_damage',
@@ -1429,7 +1433,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     name: 'Nature\'s Wrath',
     description: 'Verdant Archmage signature - ramp and removal. Deal 3 damage to target unit. Gain +1 max mana.',
     cardType: 'spell',
-    colors: ['green', 'blue'],
+    colors: ['green'], // Changed from UG to G - 3 mana should be single color, ramp + removal is medium power
     manaCost: 3,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for damage + mana ramp
@@ -1459,7 +1463,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     name: 'Arcane Removal',
     description: 'Destroy target unit with 3 or less health.',
     cardType: 'spell',
-    colors: ['blue', 'black'],
+    colors: ['black'], // Changed from UB to B - 2 mana should be single color
     manaCost: 2,
     effect: {
       type: 'targeted_damage',
@@ -1473,7 +1477,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     name: 'Arcane Bolt',
     description: 'Deal 4 damage to target unit.',
     cardType: 'spell',
-    colors: ['blue'],
+    colors: ['blue', 'black'], // Changed from U to UB - 4 mana good removal should be dual color
     manaCost: 4,
     effect: {
       type: 'targeted_damage',
@@ -1510,6 +1514,89 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       affectsUnits: true,
       affectsHeroes: true,
       stunDuration: 1,
+    },
+  },
+  // UBG Removal Spells (from ARTIFACT_CARD_ANALYSIS.md)
+  {
+    id: 'ubg-spell-deal-3-initiative',
+    name: 'Tactical Strike',
+    description: 'Deal 3 damage to target unit. You get initiative (play next card first).',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage',
+      damage: 3,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+  {
+    id: 'ubg-spell-kill-hero-discard',
+    name: 'Assassinate',
+    description: 'Destroy target hero. Opponent discards a random card.',
+    cardType: 'spell',
+    colors: ['blue', 'black'],
+    manaCost: 4,
+    effect: {
+      type: 'targeted_damage',
+      damage: 999, // Effectively destroy
+      affectsUnits: false,
+      affectsHeroes: true,
+    },
+  },
+  {
+    id: 'ubg-spell-invulnerable-reflect',
+    name: 'Reflective Shield',
+    description: 'Target hero gains invulnerable this turn. Any damage that hero would take is reflected back to the source.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 2,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for invulnerable + reflect
+      damage: 0,
+    },
+  },
+  {
+    id: 'ubg-spell-move-hero',
+    name: 'Tactical Repositioning',
+    description: 'Move target hero to be directly in front of target unit in different battlefield.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 1,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for hero movement
+      damage: 0,
+    },
+  },
+  {
+    id: 'ubg-spell-aoe-2-all',
+    name: 'Frost Wave',
+    description: 'Deal 2 damage to all enemy units in target battlefield.',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 3,
+    effect: {
+      type: 'aoe_damage',
+      damage: 2,
+      affectsUnits: true,
+      affectsHeroes: true,
+      affectsEnemyUnits: true,
+    },
+  },
+  {
+    id: 'ubg-spell-aoe-6-distributed',
+    name: 'Arcane Barrage',
+    description: 'Deal 6 damage evenly divided to target unit and adjacent units. 0 units: 6 to tower. 1 unit: 3+3. 2 units: 2+2+2. 3 units: 2+2+2.',
+    cardType: 'spell',
+    colors: ['blue', 'black'],
+    manaCost: 4,
+    effect: {
+      type: 'adjacent_damage',
+      damage: 6,
+      adjacentCount: 3,
+      affectsUnits: true,
+      affectsHeroes: true,
     },
   },
 ]

@@ -14,6 +14,7 @@ interface HeroCardProps {
   cooldownCounter?: number // Cooldown counter value (2, 1, or undefined if ready)
   isPlayed?: boolean // Show played overlay (black X) for any card in base
   onTogglePlayed?: () => void // Toggle played state for any card
+  onAbilityClick?: (heroId: string, ability: import('../game/types').HeroAbility) => void // Handler for ability clicks
 }
 
 // Color palette mapping
@@ -33,7 +34,7 @@ const COLOR_LIGHT_MAP: Record<Color, string> = {
   green: '#e8f5e9',
 }
 
-export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove, onDecreaseHealth, onIncreaseHealth, showCombatControls = false, isDead = false, cooldownCounter, isPlayed = false, onTogglePlayed }: HeroCardProps) {
+export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove, onDecreaseHealth, onIncreaseHealth, showCombatControls = false, isDead = false, cooldownCounter, isPlayed = false, onTogglePlayed, onAbilityClick }: HeroCardProps) {
   // Get card colors
   const cardColors: Color[] = 'colors' in card && card.colors ? card.colors : []
   
@@ -252,7 +253,8 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
       <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 'bold' }}>{card.name}</h3>
       <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#666' }}>{card.description}</p>
       
-      {showStats && (card.cardType === 'hero' || card.cardType === 'signature' || card.cardType === 'hybrid' || card.cardType === 'generic') && (
+      {/* Always show stats for heroes, units, and generic cards - full clarity */}
+      {(card.cardType === 'hero' || card.cardType === 'signature' || card.cardType === 'hybrid' || card.cardType === 'generic') && (
         <div style={{ marginTop: '8px', fontSize: '12px' }}>
           {'manaCost' in card && card.manaCost !== undefined && (
             <div style={{ fontSize: '11px', color: '#1976d2', marginBottom: '4px', fontWeight: 'bold' }}>
@@ -357,6 +359,58 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
       {card.cardType === 'hero' && 'supportEffect' in card && (card as import('../game/types').Hero).supportEffect && (
         <div style={{ marginTop: '4px', fontSize: '11px', color: '#2196f3' }}>
           🛡️ {(card as import('../game/types').Hero).supportEffect}
+        </div>
+      )}
+      
+      {card.cardType === 'hero' && 'ability' in card && (card as import('../game/types').Hero).ability && (
+        <div 
+          onClick={(e) => {
+            e.stopPropagation() // Prevent card click when clicking ability
+            if (onAbilityClick) {
+              onAbilityClick(card.id, (card as import('../game/types').Hero).ability!)
+            }
+          }}
+          style={{ 
+            marginTop: '8px', 
+            padding: '6px',
+            backgroundColor: onAbilityClick ? '#e3f2fd' : '#f0f0f0',
+            borderRadius: '4px',
+            border: onAbilityClick ? '2px solid #1976d2' : '1px solid #ddd',
+            cursor: onAbilityClick ? 'pointer' : 'default',
+            transition: 'all 0.2s',
+            opacity: onAbilityClick ? 1 : 0.9,
+          }}
+          onMouseEnter={(e) => {
+            if (onAbilityClick) {
+              e.currentTarget.style.backgroundColor = '#bbdefb'
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (onAbilityClick) {
+              e.currentTarget.style.backgroundColor = '#e3f2fd'
+            }
+          }}
+        >
+          <div style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '4px', color: '#1976d2' }}>
+            ⚡ {(card as import('../game/types').Hero).ability.name}
+            {onAbilityClick && <span style={{ fontSize: '10px', marginLeft: '4px', color: '#666' }}>(Click to use)</span>}
+          </div>
+          <div style={{ fontSize: '10px', color: '#666', marginBottom: '4px' }}>
+            {(card as import('../game/types').Hero).ability.description}
+          </div>
+          <div style={{ display: 'flex', gap: '8px', fontSize: '10px', alignItems: 'center' }}>
+            <span style={{ color: '#1976d2', fontWeight: 'bold' }}>
+              💎 {(card as import('../game/types').Hero).ability.manaCost}
+            </span>
+            <span style={{ color: '#f57c00', fontWeight: 'bold' }}>
+              ⏱️ Cooldown: {(card as import('../game/types').Hero).ability.cooldown} 
+              {(card as import('../game/types').Hero).ability.cooldown === 1 
+                ? ' (every turn)' 
+                : (card as import('../game/types').Hero).ability.cooldown === 2
+                ? ' (every other turn)'
+                : ` (wait ${(card as import('../game/types').Hero).ability.cooldown - 1} turns)`}
+            </span>
+          </div>
         </div>
       )}
       

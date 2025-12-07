@@ -11,21 +11,38 @@ export function GameHeader() {
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
       <h1 style={{ margin: 0 }}>Artibound - Hero Card Game</h1>
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-        {/* Initiative Display - Prominent */}
-        {metadata.initiativePlayer && (
+        {/* Action Display - Prominent */}
+        {metadata.actionPlayer && (
           <div style={{ 
             fontSize: '16px', 
             fontWeight: 'bold',
             padding: '8px 16px',
-            backgroundColor: metadata.initiativePlayer === 'player1' ? '#f44336' : '#4a90e2',
+            backgroundColor: metadata.actionPlayer === 'player1' ? '#f44336' : '#4a90e2',
             color: 'white',
             borderRadius: '4px',
             display: 'flex',
             alignItems: 'center',
             gap: '6px'
           }}>
-            <span style={{ fontSize: '20px' }}>⚡</span>
-            Initiative: {metadata.initiativePlayer === 'player1' ? 'Player 1' : 'Player 2'}
+            <span style={{ fontSize: '20px' }}>🎯</span>
+            Action: {metadata.actionPlayer === 'player1' ? 'Player 1' : 'Player 2'}
+          </div>
+        )}
+        {/* Initiative Display - Separate */}
+        {metadata.initiativePlayer && (
+          <div style={{ 
+            fontSize: '14px', 
+            fontWeight: 'bold',
+            padding: '6px 12px',
+            backgroundColor: metadata.initiativePlayer === 'player1' ? '#ff9800' : '#9c27b0',
+            color: 'white',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}>
+            <span style={{ fontSize: '16px' }}>⚡</span>
+            Initiative: {metadata.initiativePlayer === 'player1' ? 'P1' : 'P2'}
           </div>
         )}
         <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
@@ -56,10 +73,10 @@ export function GameHeader() {
         >
           Next Turn
         </button>
-        {/* Pass Button - Show for whoever has initiative during play phase */}
-        {metadata.currentPhase === 'play' && metadata.initiativePlayer && (
+        {/* Pass Button - Show for whoever has action during play phase */}
+        {metadata.currentPhase === 'play' && metadata.actionPlayer && (
           <button
-            onClick={() => handlePass(metadata.initiativePlayer!)}
+            onClick={() => handlePass(metadata.actionPlayer!)}
             style={{
               padding: '8px 16px',
               backgroundColor: '#ff9800',
@@ -70,9 +87,9 @@ export function GameHeader() {
               fontSize: '14px',
               fontWeight: 'bold',
             }}
-            title={`${metadata.initiativePlayer === 'player1' ? 'Player 1' : 'Player 2'} - Pass initiative to opponent (or go to combat if both passed)`}
+            title={`${metadata.actionPlayer === 'player1' ? 'Player 1' : 'Player 2'} - Pass without action (retain initiative for next turn, or go to combat if both passed)`}
           >
-            Pass ({metadata.initiativePlayer === 'player1' ? 'P1' : 'P2'})
+            Pass ({metadata.actionPlayer === 'player1' ? 'P1' : 'P2'})
           </button>
         )}
         <button

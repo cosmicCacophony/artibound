@@ -2,6 +2,7 @@ import { Card } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { useDeployment } from '../hooks/useDeployment'
 import { useCombat } from '../hooks/useCombat'
+import { useHeroAbilities } from '../hooks/useHeroAbilities'
 import { HeroCard } from './HeroCard'
 import { resolveSimultaneousCombat } from '../game/combatSystem'
 
@@ -23,6 +24,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
   } = useGameContext()
   const { handleDeploy, handleChangeSlot, handleRemoveFromBattlefield, handleEquipItem } = useDeployment()
   const { handleDecreaseHealth, handleIncreaseHealth } = useCombat()
+  const { handleAbilityClick } = useHeroAbilities()
 
   const battlefield = gameState[battlefieldId]
   const battlefieldAP1 = gameState.battlefieldA.player1
@@ -122,6 +124,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
               onIncreaseHealth={() => handleIncreaseHealth(cardInSlot)}
               showCombatControls={true}
               isDead={!!metadata.deathCooldowns[cardInSlot.id]}
+              onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, cardInSlot.owner)}
             />
           </div>
         ) : (

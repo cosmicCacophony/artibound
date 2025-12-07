@@ -293,3 +293,4 @@ RW: 5/8 hero attacks UB: 3/6 hero (with invulnerable)
 
 *This analysis follows the power level → color system: lower mana = single color, higher mana = multicolor.*
 
+

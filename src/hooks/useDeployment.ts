@@ -47,17 +47,17 @@ export function useDeployment() {
         shouldSkipInitiativePass = true
         // We'll check hero count in the final state update after deployment happens
       } else if (deploymentPhase === 'complete') {
-        // Turn 1 deployment complete - normal initiative rules apply
-        // Check initiative
-        if (metadata.initiativePlayer !== selectedCard.owner) {
-          alert('You do not have initiative!')
+        // Turn 1 deployment complete - normal action rules apply
+        // Check action
+        if (metadata.actionPlayer !== selectedCard.owner) {
+          alert('It\'s not your turn to act!')
           return
         }
       }
     } else {
-      // Normal turn (not turn 1) - check initiative
-      if (metadata.initiativePlayer !== selectedCard.owner) {
-        alert('You do not have initiative!')
+      // Normal turn (not turn 1) - check action
+      if (metadata.actionPlayer !== selectedCard.owner) {
+        alert('It\'s not your turn to act!')
         return
       }
     }
@@ -304,10 +304,13 @@ export function useDeployment() {
           if (player1HeroesDeployed >= 2 && player2HeroesDeployed >= 2) {
             // Both players have deployed 2 heroes - complete turn 1 deployment
             updatedMetadata.turn1DeploymentPhase = 'complete'
-            updatedMetadata.initiativePlayer = 'player1' // Player 1 gets initiative after deployment
+            updatedMetadata.actionPlayer = 'player1' // Player 1 gets action after deployment
+            updatedMetadata.initiativePlayer = 'player1' // Player 1 also gets initiative
           } else {
             // Still in secret phase
             updatedMetadata.turn1DeploymentPhase = 'secret'
+            updatedMetadata.actionPlayer = null // Keep action null during secret phase
+            updatedMetadata.actionPlayer = null // Keep action null during secret phase
             updatedMetadata.initiativePlayer = null // Keep initiative null during secret phase
           }
         } else {
@@ -327,15 +330,18 @@ export function useDeployment() {
         updatedMetadata.player1Passed = false
         updatedMetadata.player2Passed = false
       } else if (metadata.currentTurn === 1 && newDeploymentPhase === 'playerB') {
-        // After Player 1 deploys, pass initiative to Player 2
+        // After Player 1 deploys, pass both action and initiative to Player 2
+        updatedMetadata.actionPlayer = 'player2'
         updatedMetadata.initiativePlayer = 'player2'
         updatedMetadata.player1Passed = false
         updatedMetadata.player2Passed = false
       } else if (metadata.currentTurn > 1 || (metadata.currentTurn === 1 && updatedMetadata.turn1DeploymentPhase === 'complete')) {
-        // Normal turn or turn 1 complete - pass initiative to opponent after deployment
+        // Normal turn or turn 1 complete - pass both action and initiative to opponent after deployment
         // Only if we're not in secret phase
         if (updatedMetadata.turn1DeploymentPhase !== 'secret') {
-          updatedMetadata.initiativePlayer = prev.metadata.initiativePlayer === 'player1' ? 'player2' : 'player1'
+          const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
+          updatedMetadata.actionPlayer = otherPlayer
+          updatedMetadata.initiativePlayer = otherPlayer
           updatedMetadata.player1Passed = false
           updatedMetadata.player2Passed = false
         }
@@ -444,9 +450,9 @@ export function useDeployment() {
   }, [setGameState])
 
   const handleEquipItem = useCallback((hero: Hero, itemCard: ItemCard, battlefieldId: 'battlefieldA' | 'battlefieldB') => {
-    // Check initiative
-    if (metadata.initiativePlayer !== itemCard.owner) {
-      alert('You do not have initiative!')
+    // Check action
+    if (metadata.actionPlayer !== itemCard.owner) {
+      alert('It\'s not your turn to act!')
       return
     }
     
@@ -498,6 +504,8 @@ export function useDeployment() {
         metadata: {
           ...prev.metadata,
           initiativePlayer: newInitiativePlayer,
+          // Equipping an item is an action, so clear next turn initiative
+          nextTurnInitiativePlayer: null,
           // Reset pass flags when an action is taken
           player1Passed: false,
           player2Passed: false,

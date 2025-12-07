@@ -104,7 +104,10 @@ export interface GameMetadata {
   // Battlefield death counters: For RW-bf2 (death counter -> draw card mechanic)
   // Format: `player-battlefield` -> count
   battlefieldDeathCounters: Record<string, number>
-  // Initiative: Which player has initiative (can play next card)
+  // Action: Which player can act right now (current turn)
+  actionPlayer: PlayerId | null
+  // Initiative: Which player has initiative (will have action first next turn)
+  // Initiative is separate from action - you can have action but not initiative
   initiativePlayer: PlayerId | null
   // Hero ability cooldowns: Record of hero ID -> turn last used (to track cooldowns)
   // Format: `heroId` -> turn number

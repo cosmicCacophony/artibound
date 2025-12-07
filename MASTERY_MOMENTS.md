@@ -473,6 +473,55 @@ When designing cards, ask:
 - Tests game state reading (when is it safe?)
 - Better players commit at right times
 
+#### 4. Lane Positioning - Wrong Lane Punishment
+
+**The Situation (Artifact Foundry):**
+- Combat-focused deck (RW) has 4-power hero
+- Spell-focused deck (UB) has 2-power hero
+- Hero is deployed in "wrong lane" (not where pressure is needed)
+- Tower is destroyed in one lane, now need to apply pressure in other lane
+
+**The Punishment:**
+- **RW (4-power hero)**: Stranded in wrong lane = devastating
+  - High attack wasted (4 power doing nothing)
+  - Can't apply pressure where needed
+  - Opponent can ignore that lane
+  - Game-losing mistake
+- **UB (2-power hero)**: Stranded in wrong lane = less punishing
+  - Low attack anyway (2 power not critical)
+  - Can still cast spells from any lane
+  - Less game-impacting mistake
+
+**Why This Matters:**
+- **Stats matter more for combat decks**: High-attack heroes need to be in the right place
+- **Spells are more flexible**: Can cast from any lane, less positioning-dependent
+- **Creates skill expression**: Better players position combat heroes correctly
+- **Punishes mistakes**: Wrong positioning is more costly for RW than UB
+
+**The Decision (Post-Tower Destruction):**
+- **Option A**: Focus on destroying second tower
+  - Benefit: Can then deal more damage to nexus
+  - Cost: Need to apply pressure in other lane
+  - Risk: Heroes in wrong lane can't help
+- **Option B**: Deal damage to nexus now
+  - Benefit: Apply immediate pressure
+  - Cost: Less efficient (both towers still up)
+  - Risk: Opponent can stabilize
+
+**Why It's Interesting:**
+- Tests understanding of win condition
+- Tests positioning (where to deploy heroes)
+- Tests resource management (pressure vs efficiency)
+- Better players balance these correctly
+- **This is where RW skill shows**: Positioning combat heroes correctly matters more than positioning spell heroes
+
+**Future Implementation:**
+- This dynamic becomes more relevant when towers are destroyed
+- Need to balance: destroy both towers (more nexus damage) vs destroy one tower (immediate pressure)
+- Combat-focused heroes (high attack) need to be in the right lane
+- Spell-focused heroes (low attack) are more flexible
+- Creates meaningful positioning decisions for RW
+
 ---
 
 ## Artibound Adaptation
