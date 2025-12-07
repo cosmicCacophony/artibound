@@ -61,15 +61,9 @@ Result: RW gets better value, either keeps mana or plays creep safely
 
 ### Artibound Design
 
-**Option A: Single Color (B) - 2 Mana**
+**Single Color (B) - 2 Mana**
 - Effect: Target hero gains invulnerable this turn. Any damage that hero would take is reflected back to the source.
 - Rationale: Strong defensive/combat trick, single color keeps it accessible early
-
-**Option B: Dual Color (UB) - 2 Mana**
-- Same effect, but requires Blue + Black
-- Rationale: Very powerful effect, dual color balances it
-
-**Recommendation: Option A (B, 2 Mana)** - This is a combat trick that should be accessible early game.
 
 ### Why This Card is Strong Turn 1
 
@@ -319,48 +313,6 @@ Result: RW ahead, both players saved mana for next turn
 - Passing should be a viable option
 - Board position should matter
 - Mana efficiency should be rewarded
-
----
-
-## Testing Scenarios
-
-### Scenario 1: RW Has Initiative, Stronger Board
-
-**Question**: Should RW cast creep or pass?
-
-**Test Setup:**
-- RW: 5/8 hero, 2-mana creep in hand, 3 mana
-- UB: 3/6 hero, 2-mana invulnerable in hand, 3 mana
-- RW has initiative
-
-**Test Cases:**
-1. RW casts creep → UB removes it
-2. RW passes → UB casts invulnerable → RW casts creep
-3. RW passes → UB also passes → Combat
-
-**Success Criteria:**
-- Passing should be viable
-- UB should have reason to act
-- RW should get value from passing
-
-### Scenario 2: UB Behind on Board
-
-**Question**: Should UB pass or spend mana?
-
-**Test Setup:**
-- RW: 5/8 hero, 3 mana
-- UB: 3/6 hero, 2-mana invulnerable, 3 mana
-- RW has initiative, passes
-
-**Test Cases:**
-1. UB passes → Combat (UB loses)
-2. UB casts invulnerable → Combat (UB wins trade)
-3. UB casts removal → Try to kill RW hero
-
-**Success Criteria:**
-- UB should have viable options
-- Spending mana should be worth it
-- Combat setup should matter
 
 ---
 

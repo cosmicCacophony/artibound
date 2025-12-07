@@ -47,30 +47,7 @@ Instead of playing a full game to see if Exorcism is balanced:
 - UB card advantage vs RW tempo
 - Late game win conditions
 
-### B. Automated/Simulated Testing
-
-**Create Test Scenarios with Fixed Outcomes:**
-
-```typescript
-// Example: Test Exorcism damage distribution
-const testScenario = {
-  battlefieldA: {
-    player1: [/* RW heroes in specific slots */],
-    player2: [/* UBG hero in slot 2 */]
-  },
-  player2Hand: [/* Exorcism card */],
-  // ... other state
-}
-
-// Run test, check if damage matches expected
-```
-
-**Benefits:**
-- Test 10 scenarios in the time of 1 full game
-- Reproducible results
-- Can test edge cases quickly
-
-### C. Focused Testing Sessions
+### B. Focused Testing Sessions
 
 **Instead of**: "Let's play a full game and see what happens"
 
@@ -88,7 +65,7 @@ const testScenario = {
 - "Is Exorcism balanced at 8 mana?"
 - "Do bounce decisions feel meaningful?"
 
-### D. Use Save States Strategically
+### C. Use Save States Strategically
 
 **You already have save/load!** Use it more:
 
@@ -105,24 +82,7 @@ const testScenario = {
    - Which choice was better?
    - Was the decision meaningful?
 
-### E. Create "Test Mode" Features
-
-**Quick Setup Options:**
-- Set specific mana amounts
-- Set specific hand contents
-- Set specific board states
-- Skip to specific turn numbers
-
-**Example UI:**
-```
-[Test Mode]
-- Set Mana: P1 [3] P2 [8]
-- Set Turn: [5]
-- Load Scenario: [Exorcism Test] [Bounce Test] [Combat Test]
-- Quick Reset: [Reset to Turn 1]
-```
-
-### F. Documentation Templates
+### D. Documentation Templates
 
 **Quick Test Template:**
 ```
@@ -199,53 +159,10 @@ Focus: Tempo, Pressure, Board Presence
 Weakness: Card Advantage, Late Game
 ```
 
-**UBG (Control) Identity:**
-```
-Early Game:  ██░░░░░░ (Weak)
-Mid Game:    ██████░░ (Moderate)
-Late Game:   ████████ (Strong)
-
-Focus: Card Advantage, Removal, Value
-Weakness: Early Pressure, Tempo
-```
-
 **Shows:**
 - What each archetype should do
 - Where cards should fit
 - What's missing
-
-#### C. Synergy Maps
-
-**Example: RW Legion Synergy**
-```
-Bronze Legionnaire (2 mana)
-    ↓
-Imperial Herald (3 mana) - Buffs all Legion
-    ↓
-Legion Standard Bearer (3 mana) - More buffs
-    ↓
-Rally Banner (3 mana) - Team pump
-```
-
-**Shows:**
-- How cards work together
-- Missing synergy pieces
-- Where to add cards
-
-#### D. Counterplay Matrix
-
-**Example:**
-```
-RW Strategy          →  UBG Counter
-Go-wide (Legion)     →  AOE spells (Exorcism)
-Tower pressure       →  Removal + blockers
-Early aggression     →  Defensive units + healing
-```
-
-**Shows:**
-- What counters what
-- Missing counterplay options
-- Balance relationships
 
 ### How This Helps Card Suggestions:
 
@@ -358,70 +275,6 @@ Early aggression     →  Defensive units + healing
 - Very powerful effects
 - Exorcism-level power
 
-### Example: Artifact Foundry Card Analysis
-
-**You provide:**
-```
-Culling Blade (2 mana) - High power
-Bronze Legionnaire (2 mana) - Low power
-Exorcism (8 mana) - Very High power
-Thunderstorm (3 mana) - Medium power
-```
-
-**I suggest:**
-```
-Culling Blade (2 mana, High power)
-→ Artibound: 3 mana, Single color (R)
-  (High power but low mana = slightly higher cost, still single color)
-
-Bronze Legionnaire (2 mana, Low power)
-→ Artibound: 2 mana, Single color (R or W)
-  (Low power, low mana = keep cheap, single color)
-
-Exorcism (8 mana, Very High power)
-→ Artibound: 8 mana, Triple color (UBG)
-  (Very high power = triple color requirement)
-
-Thunderstorm (3 mana, Medium power)
-→ Artibound: 3 mana, Single color (U) OR 4 mana, Dual color (UB)
-  (Medium power at 3 mana = could be single or dual)
-```
-
-### Template for Card Analysis
-
-**Create a document with this format:**
-
-```markdown
-## Artifact Foundry → Artibound Card Conversion
-
-### Low Power Cards (Single Color, 1-3 Mana)
-
-| Artifact Card | Mana | Effect | Artibound Design |
-|---------------|------|--------|------------------|
-| Bronze Legionnaire | 2 | 2/2, Legion, +1 attack on attack | 2 mana, R or W, 2/2 or 2/3 |
-| ... | ... | ... | ... |
-
-### Medium Power Cards (Dual Color, 4-5 Mana)
-
-| Artifact Card | Mana | Effect | Artibound Design |
-|---------------|------|--------|------------------|
-| ... | ... | ... | ... |
-
-### High Power Cards (Triple Color, 6-8 Mana)
-
-| Artifact Card | Mana | Effect | Artibound Design |
-|---------------|------|--------|------------------|
-| Exorcism | 8 | 12 damage distributed | 8 mana, UBG, same effect |
-| ... | ... | ... | ... |
-```
-
-### Benefits of This System
-
-1. **Systematic approach** - No guessing about color requirements
-2. **Balanced by design** - Lower mana = easier to cast = less powerful
-3. **Clear guidelines** - Know where cards should go
-4. **Scalable** - Works for any number of cards
-
 ---
 
 ## Combined Workflow
@@ -450,59 +303,6 @@ Thunderstorm (3 mana, Medium power)
    - Diagrams guide what to test
    - Testing validates diagrams
    - Adjust both as needed
-
----
-
-## Quick Start Checklist
-
-### For Faster Testing:
-- [ ] Create 5-10 scenario templates
-- [ ] Use save states at key decision points
-- [ ] Test specific questions, not full games
-- [ ] Document with quick templates
-
-### For Better Card Suggestions:
-- [ ] Create power curve diagram
-- [ ] Create archetype identity diagrams
-- [ ] Create synergy maps
-- [ ] Create counterplay matrix
-
-### For Power Level → Color System:
-- [ ] List Artifact Foundry cards with power ratings
-- [ ] Create conversion table
-- [ ] Apply system to new cards
-- [ ] Adjust based on testing
-
----
-
-## Example: Complete Workflow
-
-**Step 1: Create Power Curve**
-```
-I see you need a 4-mana RW card here.
-Based on your curve, it should be 3/4 or 4/3.
-```
-
-**Step 2: Analyze Artifact Card**
-```
-You rated "War Banner" as Medium power, 3 mana.
-Since it's Medium power, I suggest: 4 mana, RW (dual color).
-Or keep at 3 mana but make it slightly weaker.
-```
-
-**Step 3: Test Scenario**
-```
-Test: "Can RW win with War Banner on turn 4?"
-Setup: Turn 4, 4 mana, War Banner in hand, 2 RW heroes on board.
-Result: [Your test result]
-```
-
-**Step 4: Iterate**
-```
-Based on test: War Banner at 4 mana feels too slow.
-Adjust to: 3 mana, RW, slightly weaker effect.
-Test again.
-```
 
 ---
 
