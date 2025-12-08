@@ -50,6 +50,14 @@ export function GameHeader() {
         </div>
         <div style={{ fontSize: '14px', fontWeight: 'bold', textTransform: 'capitalize' }}>
           Phase: {metadata.currentPhase}
+          {metadata.currentTurn === 1 && metadata.turn1DeploymentPhase && metadata.turn1DeploymentPhase !== 'complete' && (
+            <span style={{ marginLeft: '8px', color: '#ff9800' }}>
+              (Deployment: {metadata.turn1DeploymentPhase === 'p1_lane1' ? 'P1 → Lane 1' :
+                            metadata.turn1DeploymentPhase === 'p2_lane1' ? 'P2 → Lane 1 (counter)' :
+                            metadata.turn1DeploymentPhase === 'p2_lane2' ? 'P2 → Lane 2' :
+                            'P1 → Lane 2 (counter)'})
+            </span>
+          )}
         </div>
         <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
           P1 Mana: {metadata.player1Mana}/{metadata.player1MaxMana}
@@ -73,8 +81,30 @@ export function GameHeader() {
         >
           Next Turn
         </button>
+        {/* Pass Button - Show during turn 1 deployment (counter-deployment) or play phase */}
+        {metadata.currentTurn === 1 && metadata.turn1DeploymentPhase && metadata.turn1DeploymentPhase !== 'complete' && (
+          (metadata.turn1DeploymentPhase === 'p2_lane1' || metadata.turn1DeploymentPhase === 'p1_lane2') && (
+            <button
+              onClick={() => handlePass(metadata.turn1DeploymentPhase === 'p2_lane1' ? 'player2' : 'player1')}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#ff9800',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 'bold',
+              }}
+              title={`${metadata.turn1DeploymentPhase === 'p2_lane1' ? 'Player 2' : 'Player 1'} - Skip counter-deployment`}
+            >
+              Pass Counter-Deploy ({metadata.turn1DeploymentPhase === 'p2_lane1' ? 'P2' : 'P1'})
+            </button>
+          )
+        )}
         {/* Pass Button - Show for whoever has action during play phase */}
-        {metadata.currentPhase === 'play' && metadata.actionPlayer && (
+        {metadata.currentPhase === 'play' && metadata.actionPlayer && 
+         !(metadata.currentTurn === 1 && metadata.turn1DeploymentPhase && metadata.turn1DeploymentPhase !== 'complete') && (
           <button
             onClick={() => handlePass(metadata.actionPlayer!)}
             style={{

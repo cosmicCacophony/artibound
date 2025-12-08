@@ -17,35 +17,69 @@ export function useDeployment() {
       return
     }
     
-    // Turn 1 deployment sequence check
+    // Turn 1 deployment sequence check (Artifact-style counter-deployment)
     let shouldSkipInitiativePass = false
-    let newDeploymentPhase = metadata.turn1DeploymentPhase || 'initial'
+    let newDeploymentPhase = metadata.turn1DeploymentPhase || 'p1_lane1'
     
     if (metadata.currentTurn === 1 && selectedCard.cardType === 'hero') {
-      const deploymentPhase = metadata.turn1DeploymentPhase || 'initial'
+      const deploymentPhase = metadata.turn1DeploymentPhase || 'p1_lane1'
       
-      if (deploymentPhase === 'initial') {
-        // Player A (player1) deploys first hero
+      if (deploymentPhase === 'p1_lane1') {
+        // Player 1 deploys hero to lane 1 (battlefieldA)
         if (selectedCard.owner !== 'player1') {
-          alert('Player 1 must deploy first hero on turn 1')
+          alert('Player 1 must deploy first hero to lane 1 (Battlefield A)')
           return
         }
-        // After deployment, move to playerB phase
-        newDeploymentPhase = 'playerB'
-        // Initiative will be passed at the end, but we'll handle it there
-      } else if (deploymentPhase === 'playerB') {
-        // Player B deploys first hero
+        if (location !== 'battlefieldA') {
+          alert('Player 1 must deploy to lane 1 (Battlefield A) first')
+          return
+        }
+        // After deployment, Player 2 can counter-deploy to lane 1
+        newDeploymentPhase = 'p2_lane1'
+      } else if (deploymentPhase === 'p2_lane1') {
+        // Player 2 can counter-deploy to lane 1 (battlefieldA) OR pass
+        // If deploying, must be to battlefieldA
+        if (selectedCard.owner === 'player2' && location !== 'battlefieldA') {
+          alert('Player 2 can only counter-deploy to lane 1 (Battlefield A) or pass')
+          return
+        }
+        // If player 2 is deploying, move to next phase
+        if (selectedCard.owner === 'player2') {
+          newDeploymentPhase = 'p2_lane2'
+        }
+        // If player 1 tries to deploy (shouldn't happen), block it
+        if (selectedCard.owner === 'player1') {
+          alert('Player 2 can counter-deploy to lane 1 or pass')
+          return
+        }
+      } else if (deploymentPhase === 'p2_lane2') {
+        // Player 2 deploys hero to lane 2 (battlefieldB)
         if (selectedCard.owner !== 'player2') {
-          alert('Player 2 must deploy first hero on turn 1')
+          alert('Player 2 must deploy hero to lane 2 (Battlefield B)')
           return
         }
-        // After deployment, move to secret phase
-        newDeploymentPhase = 'secret'
-        shouldSkipInitiativePass = true // Don't pass initiative during secret phase
-      } else if (deploymentPhase === 'secret') {
-        // Both players deploy secretly - no initiative check, no passing
-        shouldSkipInitiativePass = true
-        // We'll check hero count in the final state update after deployment happens
+        if (location !== 'battlefieldB') {
+          alert('Player 2 must deploy to lane 2 (Battlefield B)')
+          return
+        }
+        // After deployment, Player 1 can counter-deploy to lane 2
+        newDeploymentPhase = 'p1_lane2'
+      } else if (deploymentPhase === 'p1_lane2') {
+        // Player 1 can counter-deploy to lane 2 (battlefieldB) OR pass
+        // If deploying, must be to battlefieldB
+        if (selectedCard.owner === 'player1' && location !== 'battlefieldB') {
+          alert('Player 1 can only counter-deploy to lane 2 (Battlefield B) or pass')
+          return
+        }
+        // If player 1 is deploying, deployment is complete
+        if (selectedCard.owner === 'player1') {
+          newDeploymentPhase = 'complete'
+        }
+        // If player 2 tries to deploy (shouldn't happen), block it
+        if (selectedCard.owner === 'player2') {
+          alert('Player 1 can counter-deploy to lane 2 or pass')
+          return
+        }
       } else if (deploymentPhase === 'complete') {
         // Turn 1 deployment complete - normal action rules apply
         // Check action
@@ -288,63 +322,31 @@ export function useDeployment() {
       
       // Update turn 1 deployment phase if needed
       if (metadata.currentTurn === 1 && selectedCard.cardType === 'hero') {
-        // If we're in secret phase, check if both players have deployed 2 heroes now
-        if (newDeploymentPhase === 'secret') {
-          // Count heroes AFTER this deployment (using prev state which includes the new deployment)
-          const player1HeroesDeployed = [
-            ...prev.battlefieldA.player1,
-            ...prev.battlefieldB.player1,
-          ].filter(c => c.cardType === 'hero').length
-          const player2HeroesDeployed = [
-            ...prev.battlefieldA.player2,
-            ...prev.battlefieldB.player2,
-          ].filter(c => c.cardType === 'hero').length
-          
-          // Check if both have deployed 2 heroes
-          if (player1HeroesDeployed >= 2 && player2HeroesDeployed >= 2) {
-            // Both players have deployed 2 heroes - complete turn 1 deployment
-            updatedMetadata.turn1DeploymentPhase = 'complete'
-            updatedMetadata.actionPlayer = 'player1' // Player 1 gets action after deployment
-            updatedMetadata.initiativePlayer = 'player1' // Player 1 also gets initiative
-          } else {
-            // Still in secret phase
-            updatedMetadata.turn1DeploymentPhase = 'secret'
-            updatedMetadata.actionPlayer = null // Keep action null during secret phase
-            updatedMetadata.actionPlayer = null // Keep action null during secret phase
-            updatedMetadata.initiativePlayer = null // Keep initiative null during secret phase
-          }
+        updatedMetadata.turn1DeploymentPhase = newDeploymentPhase
+        
+        // When deployment is complete, set action and initiative
+        if (newDeploymentPhase === 'complete') {
+          updatedMetadata.actionPlayer = 'player1' // Player 1 gets action after deployment
+          updatedMetadata.initiativePlayer = 'player1' // Player 1 also gets initiative
         } else {
-          updatedMetadata.turn1DeploymentPhase = newDeploymentPhase
+          // During deployment, no action/initiative (players are deploying, not acting)
+          updatedMetadata.actionPlayer = null
+          updatedMetadata.initiativePlayer = null
         }
       }
       
-      // Handle initiative passing
-      if (shouldSkipInitiativePass) {
-        // During secret deployment, initiative is already handled above
-        if (newDeploymentPhase !== 'secret') {
-          if (newDeploymentPhase === 'complete') {
-            // Turn 1 deployment complete - Player 1 gets initiative (already set above)
-          }
-        }
-        // Reset pass flags
+      // Handle initiative passing (only after turn 1 deployment is complete)
+      if (metadata.currentTurn === 1 && updatedMetadata.turn1DeploymentPhase === 'complete') {
+        // Turn 1 deployment complete - action and initiative already set above
         updatedMetadata.player1Passed = false
         updatedMetadata.player2Passed = false
-      } else if (metadata.currentTurn === 1 && newDeploymentPhase === 'playerB') {
-        // After Player 1 deploys, pass both action and initiative to Player 2
-        updatedMetadata.actionPlayer = 'player2'
-        updatedMetadata.initiativePlayer = 'player2'
+      } else if (metadata.currentTurn > 1) {
+        // Normal turn - pass both action and initiative to opponent after deployment
+        const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
+        updatedMetadata.actionPlayer = otherPlayer
+        updatedMetadata.initiativePlayer = otherPlayer
         updatedMetadata.player1Passed = false
         updatedMetadata.player2Passed = false
-      } else if (metadata.currentTurn > 1 || (metadata.currentTurn === 1 && updatedMetadata.turn1DeploymentPhase === 'complete')) {
-        // Normal turn or turn 1 complete - pass both action and initiative to opponent after deployment
-        // Only if we're not in secret phase
-        if (updatedMetadata.turn1DeploymentPhase !== 'secret') {
-          const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
-          updatedMetadata.actionPlayer = otherPlayer
-          updatedMetadata.initiativePlayer = otherPlayer
-          updatedMetadata.player1Passed = false
-          updatedMetadata.player2Passed = false
-        }
       }
       
       return {

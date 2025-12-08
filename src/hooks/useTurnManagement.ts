@@ -337,6 +337,39 @@ export function useTurnManagement() {
 
   const handlePass = useCallback((player: 'player1' | 'player2') => {
     setGameState(prev => {
+      // Handle turn 1 deployment passing (counter-deployment phases)
+      if (prev.metadata.currentTurn === 1 && prev.metadata.turn1DeploymentPhase && 
+          prev.metadata.turn1DeploymentPhase !== 'complete') {
+        const phase = prev.metadata.turn1DeploymentPhase
+        
+        // During counter-deployment phases, passing skips counter-deployment
+        if (phase === 'p2_lane1' && player === 'player2') {
+          // Player 2 passes counter-deployment to lane 1, move to lane 2 deployment
+          return {
+            ...prev,
+            metadata: {
+              ...prev.metadata,
+              turn1DeploymentPhase: 'p2_lane2',
+            },
+          }
+        } else if (phase === 'p1_lane2' && player === 'player1') {
+          // Player 1 passes counter-deployment to lane 2, deployment complete
+          return {
+            ...prev,
+            metadata: {
+              ...prev.metadata,
+              turn1DeploymentPhase: 'complete',
+              actionPlayer: 'player1',
+              initiativePlayer: 'player1',
+            },
+          }
+        } else {
+          // Wrong player trying to pass, or wrong phase
+          return prev
+        }
+      }
+      
+      // Normal turn passing (play phase)
       const currentPlayerPassed = player === 'player1' ? prev.metadata.player1Passed : prev.metadata.player2Passed
       const otherPlayerPassed = player === 'player1' ? prev.metadata.player2Passed : prev.metadata.player1Passed
       

@@ -1675,7 +1675,7 @@ export function createInitialGameState(): {
     heroAbilityCooldowns: {}, // Track hero ability cooldowns - Record<heroId, turnLastUsed>
     player1Passed: false, // Track if player 1 has passed this turn
     player2Passed: false, // Track if player 2 has passed this turn
-    turn1DeploymentPhase: 'initial', // Turn 1 deployment phase: initial -> playerB -> secret -> complete
+    turn1DeploymentPhase: 'p1_lane1', // Turn 1 deployment phase: p1_lane1 -> p2_lane1 -> p2_lane2 -> p1_lane2 -> complete
   }
 
   return {
@@ -1917,7 +1917,7 @@ export function createGameStateFromDraft(
     heroAbilityCooldowns: {}, // Track hero ability cooldowns - Record<heroId, turnLastUsed>
     player1Passed: false, // Track if player 1 has passed this turn
     player2Passed: false, // Track if player 2 has passed this turn
-    turn1DeploymentPhase: 'complete', // Skip deployment phase - heroes randomly assigned at start
+    turn1DeploymentPhase: 'p1_lane1', // Turn 1 deployment: Player 1 deploys to lane 1 first
   }
 
   // Battlefields removed - simplifying game to focus on color system and combat
