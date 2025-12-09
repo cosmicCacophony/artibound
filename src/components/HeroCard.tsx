@@ -355,27 +355,48 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
               {isPlayed ? '✓ Played' : 'Mark Played'}
             </button>
           )}
-          {card.cardType === 'hero' && onToggleStun && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
+        </div>
+      )}
+      
+      {/* Hero stun toggle - available in all locations */}
+      {card.cardType === 'hero' && onToggleStun && (
+        <div 
+          style={{ marginTop: '8px' }}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+          }}
+        >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              if (onToggleStun) {
                 onToggleStun()
-              }}
-              style={{
-                marginTop: '4px',
-                padding: '2px 6px',
-                background: isStunned ? '#ff9800' : '#9e9e9e',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                fontSize: '10px',
-                cursor: 'pointer',
-              }}
-              title={isStunned ? 'Unstun hero (will deal combat damage)' : 'Stun hero (won\'t deal combat damage, only receive it)'}
-            >
-              {isStunned ? '⚡ Stunned' : 'Stun'}
-            </button>
-          )}
+              }
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+            style={{
+              padding: '4px 8px',
+              background: isStunned ? '#ff9800' : '#9e9e9e',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              fontSize: '11px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              width: '100%',
+            }}
+            title={isStunned 
+              ? 'Click to unstun - Hero will deal normal combat damage' 
+              : 'Click to stun - Hero will deal 0 combat damage (still receives damage)'}
+          >
+            {isStunned ? '⚡ Stunned (0 damage)' : 'Stun (Toggle)'}
+          </button>
         </div>
       )}
       
@@ -584,6 +605,7 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
             justifyContent: 'center',
             zIndex: 9,
             borderRadius: '4px',
+            pointerEvents: 'none', // Allow clicks to pass through to buttons and abilities
           }}
         >
           <div
@@ -592,6 +614,7 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
               color: '#fff',
               fontWeight: 'bold',
               textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+              pointerEvents: 'none', // Also disable pointer events on the icon
             }}
           >
             ⚡

@@ -171,7 +171,7 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                 cooldownCounter={metadata.deathCooldowns[card.id]}
                 isPlayed={!!metadata.playedSpells[card.id]}
                 onTogglePlayed={() => handleToggleSpellPlayed(card)}
-                isStunned={card.cardType === 'hero' && !!(metadata.stunnedHeroes && metadata.stunnedHeroes[card.id])}
+                isStunned={card.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[card.id])}
                 onToggleStun={card.cardType === 'hero' ? () => handleToggleStun(card) : undefined}
                 onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, card.owner)}
               />

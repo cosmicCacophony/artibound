@@ -126,7 +126,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
               onIncreaseHealth={() => handleIncreaseHealth(cardInSlot)}
               showCombatControls={true}
               isDead={!!metadata.deathCooldowns[cardInSlot.id]}
-              isStunned={cardInSlot.cardType === 'hero' && !!(metadata.stunnedHeroes && metadata.stunnedHeroes[cardInSlot.id])}
+              isStunned={cardInSlot.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[cardInSlot.id])}
               onToggleStun={cardInSlot.cardType === 'hero' ? () => handleToggleStun(cardInSlot) : undefined}
               onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, cardInSlot.owner)}
             />

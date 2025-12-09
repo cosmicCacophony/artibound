@@ -285,14 +285,15 @@ export function useTurnManagement() {
       // Ensure stunnedHeroes exists (for backward compatibility with old game states)
       const currentStunnedHeroes = prev.metadata.stunnedHeroes || {}
       const isCurrentlyStunned = currentStunnedHeroes[hero.id] || false
-      const newStunnedHeroes = { ...currentStunnedHeroes }
       
+      let newStunnedHeroes: Record<string, boolean>
       if (isCurrentlyStunned) {
-        // Unstunning hero
-        delete newStunnedHeroes[hero.id]
+        // Unstunning hero - create new object without this hero's ID
+        const { [hero.id]: _, ...rest } = currentStunnedHeroes
+        newStunnedHeroes = rest
       } else {
         // Stunning hero - they won't deal combat damage, only receive it
-        newStunnedHeroes[hero.id] = true
+        newStunnedHeroes = { ...currentStunnedHeroes, [hero.id]: true }
       }
       
       return {
