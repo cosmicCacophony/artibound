@@ -115,6 +115,9 @@ export interface GameMetadata {
   // Pass tracking: Track if each player has passed this turn (for combat trigger)
   player1Passed: boolean
   player2Passed: boolean
+  // Stunned heroes: Record of hero ID -> boolean (stunned heroes don't deal combat damage, only receive it)
+  // Using Record instead of Set for JSON serialization
+  stunnedHeroes: Record<string, boolean>
   // Turn 1 deployment state: Track turn 1 deployment phase (Artifact-style counter-deployment)
   // 'p1_lane1' -> Player 1 deploys hero to lane 1 (battlefieldA)
   // 'p2_lane1' -> Player 2 can counter-deploy to lane 1 (battlefieldA)

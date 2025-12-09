@@ -22,7 +22,7 @@ export function PlayerArea({ player }: PlayerAreaProps) {
     itemShopPlayer,
   } = useGameContext()
   const { handleDeploy } = useDeployment()
-  const { handleToggleSpellPlayed } = useTurnManagement()
+  const { handleToggleSpellPlayed, handleToggleStun } = useTurnManagement()
   const { generateItemShop } = useItemShop()
   const { handleAbilityClick } = useHeroAbilities()
 
@@ -171,6 +171,8 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                 cooldownCounter={metadata.deathCooldowns[card.id]}
                 isPlayed={!!metadata.playedSpells[card.id]}
                 onTogglePlayed={() => handleToggleSpellPlayed(card)}
+                isStunned={card.cardType === 'hero' && !!(metadata.stunnedHeroes && metadata.stunnedHeroes[card.id])}
+                onToggleStun={card.cardType === 'hero' ? () => handleToggleStun(card) : undefined}
                 onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, card.owner)}
               />
             ))

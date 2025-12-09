@@ -335,13 +335,15 @@ export function useDeployment() {
         }
       }
       
-      // Handle initiative passing (only after turn 1 deployment is complete)
-      if (metadata.currentTurn === 1 && updatedMetadata.turn1DeploymentPhase === 'complete') {
-        // Turn 1 deployment complete - action and initiative already set above
+      // Handle action/initiative passing
+      // During turn 1 deployment phase (before complete), don't pass action/initiative
+      if (metadata.currentTurn === 1 && selectedCard.cardType === 'hero' && updatedMetadata.turn1DeploymentPhase !== 'complete') {
+        // Still in deployment phase - action/initiative handled above
         updatedMetadata.player1Passed = false
         updatedMetadata.player2Passed = false
-      } else if (metadata.currentTurn > 1) {
-        // Normal turn - pass both action and initiative to opponent after deployment
+      } else {
+        // Any action (deploy, spell, ability, etc.) passes BOTH action AND initiative to opponent
+        // This includes: turn 1 after deployment complete, or any turn > 1
         const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
         updatedMetadata.actionPlayer = otherPlayer
         updatedMetadata.initiativePlayer = otherPlayer
@@ -493,8 +495,8 @@ export function useDeployment() {
       const updatedHand = (prev[`${itemCard.owner}Hand` as keyof typeof prev] as Card[])
         .filter(c => c.id !== itemCard.id)
       
-      // Pass initiative to opponent
-      const newInitiativePlayer = prev.metadata.initiativePlayer === 'player1' ? 'player2' : 'player1'
+      // Equipping an item is an action - pass both action AND initiative to opponent
+      const otherPlayer = itemCard.owner === 'player1' ? 'player2' : 'player1'
       
       return {
         ...prev,
@@ -505,9 +507,8 @@ export function useDeployment() {
         [`${itemCard.owner}Hand`]: updatedHand,
         metadata: {
           ...prev.metadata,
-          initiativePlayer: newInitiativePlayer,
-          // Equipping an item is an action, so clear next turn initiative
-          nextTurnInitiativePlayer: null,
+          actionPlayer: otherPlayer,
+          initiativePlayer: otherPlayer,
           // Reset pass flags when an action is taken
           player1Passed: false,
           player2Passed: false,

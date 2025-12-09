@@ -14,6 +14,8 @@ interface HeroCardProps {
   cooldownCounter?: number // Cooldown counter value (2, 1, or undefined if ready)
   isPlayed?: boolean // Show played overlay (black X) for any card in base
   onTogglePlayed?: () => void // Toggle played state for any card
+  isStunned?: boolean // Show stun overlay (hero doesn't deal combat damage)
+  onToggleStun?: () => void // Toggle stun state for heroes
   onAbilityClick?: (heroId: string, ability: import('../game/types').HeroAbility) => void // Handler for ability clicks
 }
 
@@ -34,7 +36,7 @@ const COLOR_LIGHT_MAP: Record<Color, string> = {
   green: '#e8f5e9',
 }
 
-export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove, onDecreaseHealth, onIncreaseHealth, showCombatControls = false, isDead = false, cooldownCounter, isPlayed = false, onTogglePlayed, onAbilityClick }: HeroCardProps) {
+export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove, onDecreaseHealth, onIncreaseHealth, showCombatControls = false, isDead = false, cooldownCounter, isPlayed = false, onTogglePlayed, isStunned = false, onToggleStun, onAbilityClick }: HeroCardProps) {
   // Get card colors
   const cardColors: Color[] = 'colors' in card && card.colors ? card.colors : []
   
@@ -353,6 +355,27 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
               {isPlayed ? '✓ Played' : 'Mark Played'}
             </button>
           )}
+          {card.cardType === 'hero' && onToggleStun && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggleStun()
+              }}
+              style={{
+                marginTop: '4px',
+                padding: '2px 6px',
+                background: isStunned ? '#ff9800' : '#9e9e9e',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                fontSize: '10px',
+                cursor: 'pointer',
+              }}
+              title={isStunned ? 'Unstun hero (will deal combat damage)' : 'Stun hero (won\'t deal combat damage, only receive it)'}
+            >
+              {isStunned ? '⚡ Stunned' : 'Stun'}
+            </button>
+          )}
         </div>
       )}
       
@@ -542,6 +565,36 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
             }}
           >
             ✕
+          </div>
+        </div>
+      )}
+      
+      {/* Stunned hero overlay - orange/yellow tint (heroes don't deal combat damage) */}
+      {isStunned && card.cardType === 'hero' && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(255, 152, 0, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9,
+            borderRadius: '4px',
+          }}
+        >
+          <div
+            style={{
+              fontSize: '36px',
+              color: '#fff',
+              fontWeight: 'bold',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+            }}
+          >
+            ⚡
           </div>
         </div>
       )}

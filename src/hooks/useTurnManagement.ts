@@ -41,14 +41,16 @@ export function useTurnManagement() {
       const resultA = resolveSimultaneousCombat(
         gameState.battlefieldA,
         'battlefieldA',
-        initialTowerHP
+        initialTowerHP,
+        metadata.stunnedHeroes || {}
       )
       
       // Use updated tower HP from A for B's combat
       const resultB = resolveSimultaneousCombat(
         gameState.battlefieldB,
         'battlefieldB',
-        resultA.updatedTowerHP
+        resultA.updatedTowerHP,
+        metadata.stunnedHeroes || {}
       )
       
       // Process killed heroes (same logic as in BattlefieldView)
@@ -275,6 +277,34 @@ export function useTurnManagement() {
     })
   }, [setGameState])
 
+  const handleToggleStun = useCallback((hero: Card) => {
+    // Only heroes can be stunned
+    if (hero.cardType !== 'hero') return
+    
+    setGameState(prev => {
+      // Ensure stunnedHeroes exists (for backward compatibility with old game states)
+      const currentStunnedHeroes = prev.metadata.stunnedHeroes || {}
+      const isCurrentlyStunned = currentStunnedHeroes[hero.id] || false
+      const newStunnedHeroes = { ...currentStunnedHeroes }
+      
+      if (isCurrentlyStunned) {
+        // Unstunning hero
+        delete newStunnedHeroes[hero.id]
+      } else {
+        // Stunning hero - they won't deal combat damage, only receive it
+        newStunnedHeroes[hero.id] = true
+      }
+      
+      return {
+        ...prev,
+        metadata: {
+          ...prev.metadata,
+          stunnedHeroes: newStunnedHeroes,
+        },
+      }
+    })
+  }, [setGameState])
+
   const handleNextTurn = useCallback(() => {
     setGameState(prev => {
       const newTurn = prev.metadata.currentTurn + 1
@@ -401,6 +431,7 @@ export function useTurnManagement() {
     handleNextPhase,
     handleNextTurn,
     handleToggleSpellPlayed,
+    handleToggleStun,
     handlePass,
   }
 }

@@ -1675,6 +1675,7 @@ export function createInitialGameState(): {
     heroAbilityCooldowns: {}, // Track hero ability cooldowns - Record<heroId, turnLastUsed>
     player1Passed: false, // Track if player 1 has passed this turn
     player2Passed: false, // Track if player 2 has passed this turn
+    stunnedHeroes: {}, // Track stunned heroes (don't deal combat damage, only receive it)
     turn1DeploymentPhase: 'p1_lane1', // Turn 1 deployment phase: p1_lane1 -> p2_lane1 -> p2_lane2 -> p1_lane2 -> complete
   }
 
@@ -1782,75 +1783,10 @@ export function createGameStateFromDraft(
   const player1Archetype = detectArchetype(player1Heroes)
   const player2Archetype = detectArchetype(player2Heroes)
   
-  // Find specific heroes by ID or name
-  const findHeroById = (heroes: Hero[], id: string, name?: string): Hero | undefined => {
-    // Try to find by ID (exact match or contains the base ID)
-    let hero = heroes.find(h => h.id === id || h.id.includes(id))
-    // If not found and name provided, try by name
-    if (!hero && name) {
-      hero = heroes.find(h => h.name === name)
-    }
-    return hero
-  }
-  
-  // Assign specific heroes to battlefields (1 per battlefield per player)
-  const assignHeroToBattlefield = (hero: Hero, battlefield: 'battlefieldA' | 'battlefieldB'): Hero => {
-    // Pick random slot from 1-4
-    const randomSlot = Math.floor(Math.random() * 4) + 1
-    return {
-      ...hero,
-      location: battlefield,
-      slot: randomSlot,
-    }
-  }
-  
-  // Player 1 heroes
-  let player1BattlefieldAHero: Hero | undefined
-  let player1BattlefieldBHero: Hero | undefined
-  
-  if (player1Archetype === 'rw-legion') {
-    // RW: Valiant Commander and War Captain
-    player1BattlefieldAHero = findHeroById(player1Heroes, 'rw-hero-commander', 'Valiant Commander')
-    player1BattlefieldBHero = findHeroById(player1Heroes, 'rw-hero-captain', 'War Captain')
-  } else if (player1Archetype === 'ubg-control') {
-    // UBG: Verdant Archmage and Void Necromancer
-    player1BattlefieldAHero = findHeroById(player1Heroes, 'ub-hero-druid', 'Verdant Archmage')
-    player1BattlefieldBHero = findHeroById(player1Heroes, 'ub-hero-necromancer', 'Void Necromancer')
-  }
-  
-  // Player 2 heroes
-  let player2BattlefieldAHero: Hero | undefined
-  let player2BattlefieldBHero: Hero | undefined
-  
-  if (player2Archetype === 'rw-legion') {
-    // RW: Valiant Commander and War Captain
-    player2BattlefieldAHero = findHeroById(player2Heroes, 'rw-hero-commander', 'Valiant Commander')
-    player2BattlefieldBHero = findHeroById(player2Heroes, 'rw-hero-captain', 'War Captain')
-  } else if (player2Archetype === 'ubg-control') {
-    // UBG: Verdant Archmage and Void Necromancer
-    player2BattlefieldAHero = findHeroById(player2Heroes, 'ub-hero-druid', 'Verdant Archmage')
-    player2BattlefieldBHero = findHeroById(player2Heroes, 'ub-hero-necromancer', 'Void Necromancer')
-  }
-  
-  // Fallback: if heroes not found, use first two
-  if (!player1BattlefieldAHero) player1BattlefieldAHero = player1Heroes[0]
-  if (!player1BattlefieldBHero) player1BattlefieldBHero = player1Heroes[1] || player1Heroes[0]
-  if (!player2BattlefieldAHero) player2BattlefieldAHero = player2Heroes[0]
-  if (!player2BattlefieldBHero) player2BattlefieldBHero = player2Heroes[1] || player2Heroes[0]
-  
-  // Assign heroes to battlefields with random slots
-  const player1BattlefieldAHeroes = player1BattlefieldAHero ? [assignHeroToBattlefield(player1BattlefieldAHero, 'battlefieldA')] : []
-  const player1BattlefieldBHeroes = player1BattlefieldBHero ? [assignHeroToBattlefield(player1BattlefieldBHero, 'battlefieldB')] : []
-  const player2BattlefieldAHeroes = player2BattlefieldAHero ? [assignHeroToBattlefield(player2BattlefieldAHero, 'battlefieldA')] : []
-  const player2BattlefieldBHeroes = player2BattlefieldBHero ? [assignHeroToBattlefield(player2BattlefieldBHero, 'battlefieldB')] : []
-  
-  // Remaining heroes stay in base
-  const player1Base = player1Heroes.filter(h => 
-    h.id !== player1BattlefieldAHero?.id && h.id !== player1BattlefieldBHero?.id
-  )
-  const player2Base = player2Heroes.filter(h => 
-    h.id !== player2BattlefieldAHero?.id && h.id !== player2BattlefieldBHero?.id
-  )
+  // All heroes start in base (they will be deployed during the counter-deployment phase)
+  // Battlefields start empty
+  const player1Base = player1Heroes
+  const player2Base = player2Heroes
 
   // Shuffle cards with consistent seed for reproducible games
   // This ensures the same 4 cards are always in hand and 16 in library
@@ -1928,12 +1864,12 @@ export function createGameStateFromDraft(
     player1Base,
     player2Base,
     battlefieldA: { 
-      player1: player1BattlefieldAHeroes, 
-      player2: player2BattlefieldAHeroes 
+      player1: [], // Empty - heroes will be deployed during counter-deployment phase
+      player2: [] 
     },
     battlefieldB: { 
-      player1: player1BattlefieldBHeroes, 
-      player2: player2BattlefieldBHeroes 
+      player1: [], // Empty - heroes will be deployed during counter-deployment phase
+      player2: [] 
     },
     cardLibrary: [], // Card library is managed separately via player1SidebarCards/player2SidebarCards
     player1Library: player1LibraryCards,

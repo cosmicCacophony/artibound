@@ -92,7 +92,8 @@ export function resolveAttack(
   target: AttackTarget,
   battlefield: Battlefield,
   towerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
-  battlefieldId: 'battlefieldA' | 'battlefieldB'
+  battlefieldId: 'battlefieldA' | 'battlefieldB',
+  stunnedHeroes?: Record<string, boolean>
 ): {
   updatedBattlefield: Battlefield
   updatedTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
@@ -105,6 +106,9 @@ export function resolveAttack(
   let targetKilled = false
   let attackPower = 0
   
+  // Check if attacker is stunned - if so, they deal 0 damage (but still receive damage)
+  const isStunned = stunnedHeroes && attacker.cardType === 'hero' && stunnedHeroes[attacker.id]
+  
   if (target.type === 'unit' && target.targetId) {
     // Attacking a unit
     const opponent = attacker.owner === 'player1' ? 'player2' : 'player1'
@@ -114,7 +118,8 @@ export function resolveAttack(
     if (targetUnit && 'currentHealth' in targetUnit) {
       // Check if target is a hero for bonus damage
       const targetIsHero = targetUnit.cardType === 'hero'
-      const attackPower = getAttackPower(attacker, targetIsHero)
+      // If stunned, deal 0 damage; otherwise calculate normally
+      const attackPower = isStunned ? 0 : getAttackPower(attacker, targetIsHero)
       const newHealth = Math.max(0, targetUnit.currentHealth - attackPower)
       damageDealt = Math.min(attackPower, targetUnit.currentHealth)
       
@@ -144,7 +149,8 @@ export function resolveAttack(
       ? (opponent === 'player1' ? 'towerA_player1' : 'towerA_player2')
       : (opponent === 'player1' ? 'towerB_player1' : 'towerB_player2')
     const currentHP = towerHP[towerKey]
-    attackPower = getAttackPower(attacker, false) // No hero bonus vs towers
+    // If stunned, deal 0 damage; otherwise calculate normally
+    attackPower = isStunned ? 0 : getAttackPower(attacker, false) // No hero bonus vs towers
     const newHP = Math.max(0, currentHP - attackPower)
     damageDealt = Math.min(attackPower, currentHP)
     
@@ -198,7 +204,8 @@ export function resolveCombat(
   battlefieldId: 'battlefieldA' | 'battlefieldB',
   combatActions: Map<string, AttackTarget>, // Map of unit ID -> target (only active player's units)
   activePlayer: PlayerId,
-  initialTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
+  initialTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
+  stunnedHeroes?: Record<string, boolean>
 ): {
   updatedBattlefield: Battlefield
   updatedTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
@@ -222,7 +229,8 @@ export function resolveCombat(
         target,
         currentBattlefield,
         currentTowerHP,
-        battlefieldId
+        battlefieldId,
+        stunnedHeroes
       )
       
       currentBattlefield = result.updatedBattlefield
@@ -297,7 +305,8 @@ export interface CombatLogEntry {
 export function resolveSimultaneousCombat(
   battlefield: Battlefield,
   battlefieldId: 'battlefieldA' | 'battlefieldB',
-  initialTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
+  initialTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
+  stunnedHeroes?: Record<string, boolean>
 ): {
   updatedBattlefield: Battlefield
   updatedTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
@@ -322,10 +331,12 @@ export function resolveSimultaneousCombat(
     const p1Target = p1Unit ? getDefaultTarget(p1Unit, slot, currentBattlefield) : null
     const p2Target = p2Unit ? getDefaultTarget(p2Unit, slot, currentBattlefield) : null
     
-    // Calculate damage amounts
-    const p1AttackPower = p1Unit ? getAttackPower(p1Unit, p1Target?.type === 'unit' && p1Target.targetId ? 
+    // Calculate damage amounts (check for stun)
+    const p1IsStunned = p1Unit && p1Unit.cardType === 'hero' && stunnedHeroes && stunnedHeroes[p1Unit.id]
+    const p2IsStunned = p2Unit && p2Unit.cardType === 'hero' && stunnedHeroes && stunnedHeroes[p2Unit.id]
+    const p1AttackPower = p1Unit && !p1IsStunned ? getAttackPower(p1Unit, p1Target?.type === 'unit' && p1Target.targetId ? 
       currentBattlefield.player2.find(u => u.id === p1Target.targetId)?.cardType === 'hero' : false) : 0
-    const p2AttackPower = p2Unit ? getAttackPower(p2Unit, p2Target?.type === 'unit' && p2Target.targetId ? 
+    const p2AttackPower = p2Unit && !p2IsStunned ? getAttackPower(p2Unit, p2Target?.type === 'unit' && p2Target.targetId ? 
       currentBattlefield.player1.find(u => u.id === p2Target.targetId)?.cardType === 'hero' : false) : 0
     
     // Apply Player 1's attack
@@ -335,7 +346,8 @@ export function resolveSimultaneousCombat(
         p1Target,
         currentBattlefield,
         currentTowerHP,
-        battlefieldId
+        battlefieldId,
+        stunnedHeroes
       )
       
       currentBattlefield = result.updatedBattlefield
@@ -398,7 +410,8 @@ export function resolveSimultaneousCombat(
         p2Target,
         currentBattlefield,
         currentTowerHP,
-        battlefieldId
+        battlefieldId,
+        stunnedHeroes
       )
       
       currentBattlefield = result.updatedBattlefield

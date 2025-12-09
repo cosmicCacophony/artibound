@@ -3,6 +3,7 @@ import { useGameContext } from '../context/GameContext'
 import { useDeployment } from '../hooks/useDeployment'
 import { useCombat } from '../hooks/useCombat'
 import { useHeroAbilities } from '../hooks/useHeroAbilities'
+import { useTurnManagement } from '../hooks/useTurnManagement'
 import { HeroCard } from './HeroCard'
 import { resolveSimultaneousCombat } from '../game/combatSystem'
 
@@ -25,6 +26,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
   const { handleDeploy, handleChangeSlot, handleRemoveFromBattlefield, handleEquipItem } = useDeployment()
   const { handleDecreaseHealth, handleIncreaseHealth } = useCombat()
   const { handleAbilityClick } = useHeroAbilities()
+  const { handleToggleStun } = useTurnManagement()
 
   const battlefield = gameState[battlefieldId]
   const battlefieldAP1 = gameState.battlefieldA.player1
@@ -124,6 +126,8 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
               onIncreaseHealth={() => handleIncreaseHealth(cardInSlot)}
               showCombatControls={true}
               isDead={!!metadata.deathCooldowns[cardInSlot.id]}
+              isStunned={cardInSlot.cardType === 'hero' && !!(metadata.stunnedHeroes && metadata.stunnedHeroes[cardInSlot.id])}
+              onToggleStun={cardInSlot.cardType === 'hero' ? () => handleToggleStun(cardInSlot) : undefined}
               onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, cardInSlot.owner)}
             />
           </div>
@@ -244,13 +248,15 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                 const resultA = resolveSimultaneousCombat(
                   gameState.battlefieldA,
                   'battlefieldA',
-                  initialTowerHP
+                  initialTowerHP,
+                  metadata.stunnedHeroes || {}
                 )
                 
                 const resultB = resolveSimultaneousCombat(
                   gameState.battlefieldB,
                   'battlefieldB',
-                  resultA.updatedTowerHP
+                  resultA.updatedTowerHP,
+                  metadata.stunnedHeroes || {}
                 )
                 
                 // Process killed heroes for both battlefields
