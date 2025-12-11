@@ -8,7 +8,7 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   {
     id: 'rw-hero-commander',
     name: 'Valiant Commander',
-    description: 'Leads the charge with team buffs',
+    description: 'Legion. Leads the charge with team buffs',
     cardType: 'hero',
     colors: ['red', 'white'],
     attack: 4,
@@ -30,7 +30,7 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   {
     id: 'rw-hero-captain',
     name: 'War Captain',
-    description: 'Aggressive leader',
+    description: 'Legion. Aggressive leader',
     cardType: 'hero',
     colors: ['red'],
     attack: 7,
@@ -47,6 +47,28 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       cooldown: 3,
       effectType: 'custom', // Custom effect: buff + immediate attack
       effectValue: 3, // +3 attack
+    },
+  },
+  {
+    id: 'rw-hero-vanguard',
+    name: 'Battle Vanguard',
+    description: 'Mobile warrior. Can reposition to support the front lines.',
+    cardType: 'hero',
+    colors: ['red'],
+    attack: 5,
+    health: 9,
+    maxHealth: 9,
+    currentHealth: 9,
+    supportEffect: 'Allies gain +1 attack',
+    signatureCardId: 'rw-sig-vanguard-1',
+    equippedItems: [],
+    ability: {
+      name: 'Tactical Reposition',
+      description: 'Swap this hero to an adjacent location. If you also control a white hero, you can swap to any location.',
+      manaCost: 1,
+      cooldown: 2,
+      effectType: 'swap_heroes',
+      effectValue: 1,
     },
   },
 ]
@@ -76,6 +98,18 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 5,
     maxHealth: 5,
     currentHealth: 5,
+  },
+  {
+    id: 'rw-sig-vanguard-1',
+    name: 'Vanguard Banner',
+    description: 'Vanguard signature - mobile support. All allies gain +1 attack. When this enters, you may move a hero to an adjacent slot.',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 3,
+    attack: 3,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
   },
   // Legion Tribal Units (RW archetype)
   {
@@ -113,6 +147,30 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 3,
     maxHealth: 3,
     currentHealth: 3,
+  },
+  {
+    id: 'rw-legion-veteran',
+    name: 'Legion Veteran',
+    description: 'Legion. When this enters, all Legion units gain +1 attack this turn.',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 3,
+    attack: 3,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+  },
+  {
+    id: 'rw-legion-champion',
+    name: 'Legion Champion',
+    description: 'Legion. When this attacks, all Legion units gain +1/+1 until end of turn.',
+    cardType: 'generic',
+    colors: ['red', 'white'],
+    manaCost: 4,
+    attack: 4,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
   },
 ]
 
@@ -212,7 +270,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Target unit gains +3/+3 this turn.',
     cardType: 'spell',
     colors: ['red', 'white'],
-    manaCost: 3,
+    manaCost: 2,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect
       damage: 0,
@@ -786,7 +844,7 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'gw-sig-protector-1',
     name: 'Divine Aura',
-    description: 'Protector signature - buff',
+    description: 'Protector signature - buff. Adjacent units gain +1/+1.',
     cardType: 'generic',
     colors: ['white'],
     manaCost: 3,
@@ -794,6 +852,7 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 4,
     maxHealth: 4,
     currentHealth: 4,
+    specialEffects: ['adjacent_buff'], // Adjacent units gain +1/+1
   },
   {
     id: 'gw-sig-protector-2',
@@ -1420,7 +1479,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Nature Guardian signature - removal and ramp. Deal 3 damage to target unit. If it dies, gain +1 max mana.',
     cardType: 'spell',
     colors: ['green'],
-    manaCost: 3,
+    manaCost: 4,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for conditional mana ramp
       damage: 3,

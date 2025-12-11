@@ -9,6 +9,8 @@ interface HeroCardProps {
   onRemove?: () => void // For removing from battlefields
   onDecreaseHealth?: () => void // For combat simulation
   onIncreaseHealth?: () => void // For correcting mistakes
+  onDecreaseAttack?: () => void // For manual stat adjustment
+  onIncreaseAttack?: () => void // For manual stat adjustment
   showCombatControls?: boolean // Show decrease/increase health buttons
   isDead?: boolean // Show death cooldown overlay (black X)
   cooldownCounter?: number // Cooldown counter value (2, 1, or undefined if ready)
@@ -36,7 +38,7 @@ const COLOR_LIGHT_MAP: Record<Color, string> = {
   green: '#e8f5e9',
 }
 
-export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove, onDecreaseHealth, onIncreaseHealth, showCombatControls = false, isDead = false, cooldownCounter, isPlayed = false, onTogglePlayed, isStunned = false, onToggleStun, onAbilityClick }: HeroCardProps) {
+export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove, onDecreaseHealth, onIncreaseHealth, onDecreaseAttack, onIncreaseAttack, showCombatControls = false, isDead = false, cooldownCounter, isPlayed = false, onTogglePlayed, isStunned = false, onToggleStun, onAbilityClick }: HeroCardProps) {
   // Get card colors
   const cardColors: Color[] = 'colors' in card && card.colors ? card.colors : []
   
@@ -263,53 +265,101 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
               💎 {card.manaCost}
             </div>
           )}
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <span>⚔️ {getAttack()}</span>
-            <span>❤️ {getHealth()}{getMaxHealth() !== getHealth() ? `/${getMaxHealth()}` : ''}</span>
-            {showCombatControls && (
-              <div style={{ display: 'flex', gap: '4px', marginLeft: '4px' }}>
-                {onDecreaseHealth && getHealth() > 0 && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onDecreaseHealth()
-                    }}
-                    style={{
-                      background: '#f44336',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      padding: '2px 6px',
-                      fontSize: '10px',
-                      cursor: 'pointer',
-                    }}
-                    title="Decrease health (simulate damage)"
-                  >
-                    -1
-                  </button>
-                )}
-                {onIncreaseHealth && getHealth() < getMaxHealth() && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onIncreaseHealth()
-                    }}
-                    style={{
-                      background: '#4caf50',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      padding: '2px 6px',
-                      fontSize: '10px',
-                      cursor: 'pointer',
-                    }}
-                    title="Increase health (correct mistake)"
-                  >
-                    +1
-                  </button>
-                )}
-              </div>
-            )}
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              <span>⚔️ {getAttack()}</span>
+              {showCombatControls && (card.cardType === 'hero' || card.cardType === 'generic') && 'attack' in card && (
+                <>
+                  {onDecreaseAttack && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onDecreaseAttack()
+                      }}
+                      style={{
+                        background: '#f44336',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontSize: '10px',
+                        cursor: 'pointer',
+                      }}
+                      title="Decrease attack (manual adjustment)"
+                    >
+                      -1
+                    </button>
+                  )}
+                  {onIncreaseAttack && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onIncreaseAttack()
+                      }}
+                      style={{
+                        background: '#4caf50',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontSize: '10px',
+                        cursor: 'pointer',
+                      }}
+                      title="Increase attack (manual adjustment)"
+                    >
+                      +1
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              <span>❤️ {getHealth()}{getMaxHealth() !== getHealth() ? `/${getMaxHealth()}` : ''}</span>
+              {showCombatControls && (
+                <>
+                  {onDecreaseHealth && getHealth() > 0 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onDecreaseHealth()
+                      }}
+                      style={{
+                        background: '#f44336',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontSize: '10px',
+                        cursor: 'pointer',
+                      }}
+                      title="Decrease health (simulate damage)"
+                    >
+                      -1
+                    </button>
+                  )}
+                  {onIncreaseHealth && getHealth() < getMaxHealth() && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onIncreaseHealth()
+                      }}
+                      style={{
+                        background: '#4caf50',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontSize: '10px',
+                        cursor: 'pointer',
+                      }}
+                      title="Increase health (correct mistake)"
+                    >
+                      +1
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
           {isStacked && (
             <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>

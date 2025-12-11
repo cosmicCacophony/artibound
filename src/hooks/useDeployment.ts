@@ -479,13 +479,27 @@ export function useDeployment() {
       const updatedBattlefield = prev[battlefieldId]
       const player = hero.owner as 'player1' | 'player2'
       
-      // Update the hero with the new item
+      // Update the hero with the new item and immediately apply stat bonuses
       const updatedHeroes = updatedBattlefield[player].map(c => {
         if (c.id === hero.id && c.cardType === 'hero') {
           const currentItems = (c as Hero).equippedItems || []
+          const newItems = [...currentItems, itemCard.itemId]
+          
+          // Calculate bonuses from the newly equipped item
+          const attackBonus = item.attackBonus || 0
+          const hpBonus = item.hpBonus || 0
+          
+          // Apply bonuses directly to current stats
+          const newAttack = (c as Hero).attack + attackBonus
+          const newMaxHealth = (c as Hero).maxHealth + hpBonus
+          const newCurrentHealth = Math.max(1, (c as Hero).currentHealth + hpBonus) // Ensure at least 1 HP
+          
           return {
             ...c,
-            equippedItems: [...currentItems, itemCard.itemId],
+            attack: newAttack,
+            maxHealth: newMaxHealth,
+            currentHealth: newCurrentHealth,
+            equippedItems: newItems,
           } as Hero
         }
         return c

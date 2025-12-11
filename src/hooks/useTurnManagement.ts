@@ -53,87 +53,90 @@ export function useTurnManagement() {
         metadata.stunnedHeroes || {}
       )
       
-      // Process killed heroes (same logic as in BattlefieldView)
+      // Process killed heroes (same logic as in BattlefieldView) - separate by player
       const processKilledHeroes = (
         originalBattlefield: typeof gameState.battlefieldA,
         updatedBattlefield: typeof gameState.battlefieldA,
-        playerBase: Card[],
-        deathCooldowns: Record<string, number>
+        player1Base: Card[],
+        player2Base: Card[],
+        deathCooldowns: Record<string, number>,
+        goldRewards: { player1: number, player2: number }
       ) => {
-        const killedHeroes: { hero: import('../game/types').Hero, player: 'player1' | 'player2' }[] = []
+        const newP1Base = [...player1Base]
+        const newP2Base = [...player2Base]
+        const newCooldowns = { ...deathCooldowns }
         
+        // Process player1 heroes
         originalBattlefield.player1.forEach(originalCard => {
           if (originalCard.cardType === 'hero') {
             const stillAlive = updatedBattlefield.player1.some(c => c.id === originalCard.id)
             if (!stillAlive) {
-              killedHeroes.push({ hero: originalCard as import('../game/types').Hero, player: 'player1' })
+              const hero = originalCard as import('../game/types').Hero
+              newP1Base.push({
+                ...hero,
+                location: 'base' as const,
+                currentHealth: 0,
+                slot: undefined,
+              })
+              newCooldowns[hero.id] = 2
+              // Opponent (player2) gets 5 gold for killing hero
+              goldRewards.player2 += 5
+            }
+          } else if (originalCard.cardType === 'generic') {
+            const stillAlive = updatedBattlefield.player1.some(c => c.id === originalCard.id)
+            if (!stillAlive) {
+              // Opponent (player2) gets 2 gold for killing unit
+              goldRewards.player2 += 2
             }
           }
         })
         
+        // Process player2 heroes
         originalBattlefield.player2.forEach(originalCard => {
           if (originalCard.cardType === 'hero') {
             const stillAlive = updatedBattlefield.player2.some(c => c.id === originalCard.id)
             if (!stillAlive) {
-              killedHeroes.push({ hero: originalCard as import('../game/types').Hero, player: 'player2' })
+              const hero = originalCard as import('../game/types').Hero
+              newP2Base.push({
+                ...hero,
+                location: 'base' as const,
+                currentHealth: 0,
+                slot: undefined,
+              })
+              newCooldowns[hero.id] = 2
+              // Opponent (player1) gets 5 gold for killing hero
+              goldRewards.player1 += 5
+            }
+          } else if (originalCard.cardType === 'generic') {
+            const stillAlive = updatedBattlefield.player2.some(c => c.id === originalCard.id)
+            if (!stillAlive) {
+              // Opponent (player1) gets 2 gold for killing unit
+              goldRewards.player1 += 2
             }
           }
         })
         
-        const newBase = [...playerBase]
-        const newCooldowns = { ...deathCooldowns }
-        
-        killedHeroes.forEach(({ hero, player }) => {
-          const heroInBase = {
-            ...hero,
-            location: 'base' as const,
-            currentHealth: 0,
-            slot: undefined,
-          }
-          newBase.push(heroInBase)
-          newCooldowns[hero.id] = 2
-        })
-        
-        return { newBase, newCooldowns }
+        return { newP1Base, newP2Base, newCooldowns }
       }
       
-      const { newBase: newP1BaseA, newCooldowns: newCooldownsA } = processKilledHeroes(
+      const goldRewards = { player1: 0, player2: 0 }
+      const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA } = processKilledHeroes(
         gameState.battlefieldA,
         resultA.updatedBattlefield,
         gameState.player1Base,
-        metadata.deathCooldowns
+        gameState.player2Base,
+        metadata.deathCooldowns,
+        goldRewards
       )
       
-      const { newBase: newP1BaseB, newCooldowns: newCooldownsB } = processKilledHeroes(
+      const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB } = processKilledHeroes(
         gameState.battlefieldB,
         resultB.updatedBattlefield,
         newP1BaseA,
-        newCooldownsA
+        newP2BaseA,
+        newCooldownsA,
+        goldRewards
       )
-      
-      // Process player 2 killed heroes
-      const allKilledHeroesP2: { hero: import('../game/types').Hero, player: 'player2' }[] = []
-      ;[gameState.battlefieldA, gameState.battlefieldB].forEach((original, idx) => {
-        const updated = idx === 0 ? resultA.updatedBattlefield : resultB.updatedBattlefield
-        original.player2.forEach(originalCard => {
-          if (originalCard.cardType === 'hero') {
-            const stillAlive = updated.player2.some(c => c.id === originalCard.id)
-            if (!stillAlive) {
-              allKilledHeroesP2.push({ hero: originalCard as import('../game/types').Hero, player: 'player2' })
-            }
-          }
-        })
-      })
-      
-      const newP2Base = [...gameState.player2Base]
-      allKilledHeroesP2.forEach(({ hero }) => {
-        newP2Base.push({
-          ...hero,
-          location: 'base' as const,
-          currentHealth: 0,
-          slot: undefined,
-        })
-      })
       
       // Apply combat results from both battlefields
       setGameState(prev => {
@@ -142,7 +145,7 @@ export function useTurnManagement() {
           battlefieldA: resultA.updatedBattlefield,
           battlefieldB: resultB.updatedBattlefield,
           player1Base: newP1BaseB,
-          player2Base: newP2Base,
+          player2Base: newP2BaseB,
           metadata: {
             ...prev.metadata,
             towerA_player1_HP: resultA.updatedTowerHP.towerA_player1,
@@ -152,6 +155,8 @@ export function useTurnManagement() {
             // Apply overflow damage to nexus (sum from both battlefields)
             player1NexusHP: Math.max(0, prev.metadata.player1NexusHP - (resultA.overflowDamage.player1 + resultB.overflowDamage.player1)),
             player2NexusHP: Math.max(0, prev.metadata.player2NexusHP - (resultA.overflowDamage.player2 + resultB.overflowDamage.player2)),
+            player1Gold: (prev.metadata.player1Gold as number) + goldRewards.player1,
+            player2Gold: (prev.metadata.player2Gold as number) + goldRewards.player2,
             deathCooldowns: newCooldownsB,
           },
         }
@@ -352,6 +357,9 @@ export function useTurnManagement() {
           player2Mana: newPlayer2MaxMana,
           player1MaxMana: newPlayer1MaxMana,
           player2MaxMana: newPlayer2MaxMana,
+          // Both players get 2 gold at the start of each turn
+          player1Gold: (prev.metadata.player1Gold as number) + 2,
+          player2Gold: (prev.metadata.player2Gold as number) + 2,
           // Action goes to whoever has initiative
           actionPlayer: nextAction,
           // Initiative carries over (unless it was null, then default to player1)

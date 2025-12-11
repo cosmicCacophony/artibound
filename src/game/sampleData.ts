@@ -7,18 +7,18 @@ export const tier1Items: Item[] = [
   {
     id: 'item-armor',
     name: 'Armor',
-    description: '+2 HP',
+    description: '+3 HP',
     cost: 5,
     tier: 1,
-    hpBonus: 2,
+    hpBonus: 3,
   },
   {
     id: 'item-weapon',
     name: 'Weapon',
-    description: '+2 Attack',
+    description: '+3 Attack',
     cost: 5,
     tier: 1,
-    attackBonus: 2,
+    attackBonus: 3,
   },
   {
     id: 'item-goldmine',

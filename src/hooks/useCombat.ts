@@ -41,9 +41,8 @@ export function useCombat() {
             }],
             metadata: {
               ...prev.metadata,
-              // TODO: Gold should go to opponent who killed the unit, not the owner
-              // Currently this is a placeholder - gold should be awarded in combat resolution
-              [`${player}Gold`]: (prev.metadata[`${player}Gold` as keyof GameMetadata] as number) + 5,
+              // Opponent gets gold for killing the hero
+              [`${opponent}Gold`]: (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 5,
               deathCooldowns: {
                 ...prev.metadata.deathCooldowns,
                 [card.id]: 2, // Set cooldown counter to 2 (decreases by 1 each turn)
@@ -64,9 +63,8 @@ export function useCombat() {
             },
             metadata: {
               ...prev.metadata,
-              // TODO: Gold should go to opponent who killed the unit, not the owner
-              // Currently this is a placeholder - gold should be awarded in combat resolution
-              [`${player}Gold`]: (prev.metadata[`${player}Gold` as keyof GameMetadata] as number) + 2,
+              // Opponent gets gold for killing the unit
+              [`${opponent}Gold`]: (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 2,
               deathCooldowns: {
                 ...prev.metadata.deathCooldowns,
                 [card.id]: 2, // Set cooldown counter to 2 (decreases by 1 each turn)
@@ -125,9 +123,63 @@ export function useCombat() {
     })
   }, [setGameState])
 
+  const handleDecreaseAttack = useCallback((card: Card) => {
+    if (!('attack' in card)) return
+    
+    const newAttack = Math.max(0, card.attack - 1)
+    const player = card.owner
+    
+    setGameState(prev => {
+      const updateCardInArray = (cards: Card[]): Card[] => 
+        cards.map(c => c.id === card.id ? { ...c, attack: newAttack } as Card : c)
+
+      return {
+        ...prev,
+        [`${player}Hand`]: updateCardInArray(prev[`${player}Hand` as keyof typeof prev] as Card[]),
+        [`${player}Base`]: updateCardInArray(prev[`${player}Base` as keyof typeof prev] as Card[]),
+        battlefieldA: {
+          ...prev.battlefieldA,
+          [player]: updateCardInArray(prev.battlefieldA[player as 'player1' | 'player2']),
+        },
+        battlefieldB: {
+          ...prev.battlefieldB,
+          [player]: updateCardInArray(prev.battlefieldB[player as 'player1' | 'player2']),
+        },
+      }
+    })
+  }, [setGameState])
+
+  const handleIncreaseAttack = useCallback((card: Card) => {
+    if (!('attack' in card)) return
+    
+    const newAttack = card.attack + 1
+    const player = card.owner
+    
+    setGameState(prev => {
+      const updateCardInArray = (cards: Card[]): Card[] => 
+        cards.map(c => c.id === card.id ? { ...c, attack: newAttack } as Card : c)
+
+      return {
+        ...prev,
+        [`${player}Hand`]: updateCardInArray(prev[`${player}Hand` as keyof typeof prev] as Card[]),
+        [`${player}Base`]: updateCardInArray(prev[`${player}Base` as keyof typeof prev] as Card[]),
+        battlefieldA: {
+          ...prev.battlefieldA,
+          [player]: updateCardInArray(prev.battlefieldA[player as 'player1' | 'player2']),
+        },
+        battlefieldB: {
+          ...prev.battlefieldB,
+          [player]: updateCardInArray(prev.battlefieldB[player as 'player1' | 'player2']),
+        },
+      }
+    })
+  }, [setGameState])
+
   return {
     handleDecreaseHealth,
     handleIncreaseHealth,
+    handleDecreaseAttack,
+    handleIncreaseAttack,
   }
 }
 
