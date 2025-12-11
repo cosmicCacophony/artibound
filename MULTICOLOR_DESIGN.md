@@ -1,5 +1,12 @@
 # Multicolor Design Philosophy
 
+> **Created:** 2024-12-XX  
+> **Last Updated:** 2024-12-XX  
+> **Status:** Active  
+> **Relevance:** High  
+> **Category:** Design  
+> **Notes:** Core system design document - fundamental to understanding the game
+
 ## Core System: 3-4 Color Decks with Strategic Hero Rotation
 
 ### The Foundation

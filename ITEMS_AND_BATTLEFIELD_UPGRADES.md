@@ -1,5 +1,12 @@
 # Items and Battlefield Upgrades
 
+> **Created:** 2024-12-XX  
+> **Last Updated:** 2024-12-XX  
+> **Status:** Reference  
+> **Relevance:** Medium  
+> **Category:** Design  
+> **Notes:** Items currently optional/disabled - kept for potential future use
+
 ## Overview
 
 This document describes the new items and battlefield upgrades added to Artibound, inspired by Artifact Foundry.

@@ -1,5 +1,12 @@
 # Fast Testing & Design Workflow
 
+> **Created:** 2024-12-XX  
+> **Last Updated:** 2024-12-XX  
+> **Status:** Active  
+> **Relevance:** High  
+> **Category:** Workflow  
+> **Notes:** Efficient testing approaches and design workflow
+
 ## Overview
 
 This document addresses three key questions:

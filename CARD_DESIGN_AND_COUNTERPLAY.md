@@ -1,5 +1,12 @@
 # Card Design and Counterplay Mechanics
 
+> **Created:** 2024-12-XX  
+> **Last Updated:** 2024-12-XX  
+> **Status:** Active  
+> **Relevance:** High  
+> **Category:** Design  
+> **Notes:** Counterplay mechanics, items, hero abilities, deployment strategy
+
 ## Overview
 
 This document outlines card changes, new mechanics, and design rationale for improving counterplay and skill expression in Artibound, inspired by Artifact Foundry.

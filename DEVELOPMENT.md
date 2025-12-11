@@ -1,5 +1,12 @@
 # Artibound - Development Documentation
 
+> **Created:** 2024-12-XX  
+> **Last Updated:** 2024-12-XX  
+> **Status:** Active  
+> **Relevance:** High  
+> **Category:** Architecture  
+> **Notes:** Living document - update existing sections rather than creating new files
+
 This file documents major architectural decisions, design learnings, implementation notes, and future plans. Update existing sections rather than creating new files.
 
 ## Architecture Decisions

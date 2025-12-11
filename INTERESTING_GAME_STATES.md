@@ -1,5 +1,12 @@
 # Interesting Game States & Decision Points
 
+> **Created:** 2024-12-XX  
+> **Last Updated:** 2024-12-XX  
+> **Status:** Active  
+> **Relevance:** High  
+> **Category:** Design  
+> **Notes:** Catalog of interesting game states to guide card design
+
 ## Overview
 
 This document catalogs **interesting game states** - board positions and scenarios where players face **fun, meaningful decisions**. Cards should be designed to create these moments.

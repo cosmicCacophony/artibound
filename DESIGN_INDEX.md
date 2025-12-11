@@ -1,5 +1,31 @@
 # Artibound Design Documentation Index
 
+> **Last Updated:** 2024-12-XX  
+> **Purpose:** Central index of all design documentation with metadata for tracking relevance and cleanup
+
+## Document Metadata System
+
+All documentation files should include a metadata header with:
+- **Created:** Date created
+- **Last Updated:** Date last modified
+- **Status:** `Active` | `Reference` | `Archived` | `Deprecated`
+- **Relevance:** `High` | `Medium` | `Low`
+- **Category:** `Design` | `Testing` | `Architecture` | `Analysis` | `Workflow`
+- **Notes:** Optional notes about current relevance
+
+**Status Definitions:**
+- **Active:** Currently being used/updated, relevant to current development
+- **Reference:** Useful reference material, but not actively maintained
+- **Archived:** Historical record, kept for context but not actively used
+- **Deprecated:** Superseded by other docs, can be deleted after review
+
+**Relevance Definitions:**
+- **High:** Core to understanding the game, frequently referenced
+- **Medium:** Useful for specific tasks, occasionally referenced
+- **Low:** Historical context, rarely referenced, candidate for cleanup
+
+---
+
 ## Core Design Documents
 
 ### **MULTICOLOR_DESIGN.md** ⭐
@@ -71,10 +97,6 @@
 - How diagrams help card suggestions
 - Testing templates
 
-### **TURN1_TESTING_CHECKLIST.md**
-**Purpose**: Specific turn 1 testing checklist
-**When to reference**: Testing early game flow
-
 ---
 
 ## Design Principles Summary
@@ -144,21 +166,45 @@
 
 ---
 
-## Document Status
+## Document Metadata Tracking
 
-⭐ = Important document
+| Document | Status | Relevance | Category | Last Updated | Notes |
+|----------|--------|-----------|----------|--------------|-------|
+| **ARCHITECTURE.md** | Active | High | Architecture | 2024-12-XX | Technical architecture |
+| **DEVELOPMENT.md** | Active | High | Architecture | 2024-12-XX | Living document - update existing sections |
+| **MULTICOLOR_DESIGN.md** | Active | High | Design | 2024-12-XX | Core system design |
+| **CARD_DESIGN_AND_COUNTERPLAY.md** | Active | High | Design | TBD | Counterplay mechanics |
+| **TESTING_PLAN.md** | Active | High | Testing | 2024-12-XX | Comprehensive testing approach |
+| **FAST_TESTING_AND_DESIGN.md** | Active | High | Workflow | 2024-12-XX | Efficient testing approaches |
+| **STRATEGY_TESTING.md** | Active | High | Testing | 2024-12-XX | Focused RW strategy tests |
+| **ARTIFACT_CARD_ANALYSIS.md** | Reference | High | Analysis | TBD | Artifact Foundry card analysis |
+| **EXORCISM_BOARD_STATES.md** | Reference | Medium | Analysis | TBD | Exorcism positioning analysis |
+| **EARLY_GAME_DECISIONS.md** | Reference | Medium | Analysis | TBD | Early game strategy |
+| **INTERESTING_GAME_STATES.md** | Active | High | Design | TBD | Game state catalog |
+| **MASTERY_MOMENTS.md** | Active | Medium | Design | TBD | Skill expression analysis |
+| **CARD_BRAINSTORM.md** | Active | Medium | Design | 2024-12-XX | RW/UBG card brainstorming |
+| **RW_UB_CARDS.md** | Reference | Medium | Design | TBD | Specific RW/UB card designs |
+| **MULTICOLOR_CARD_EXAMPLES.md** | Reference | Medium | Design | TBD | Multicolor card examples |
+| **ITEMS_AND_BATTLEFIELD_UPGRADES.md** | Reference | Medium | Design | TBD | Items and upgrades |
+| **BATTLEFIELD_DESIGN.md** | Reference | Medium | Design | TBD | Battlefield design |
+| **DOCUMENTATION_METADATA.md** | Active | High | Workflow | 2024-12-XX | Metadata system guide |
 
-**Current Status:**
-- ✅ MULTICOLOR_DESIGN.md
-- ✅ CARD_DESIGN_AND_COUNTERPLAY.md
-- ✅ TESTING_PLAN.md
-- ✅ ARTIFACT_CARD_ANALYSIS.md (recreated)
-- ✅ EXORCISM_BOARD_STATES.md (recreated)
-- ✅ EARLY_GAME_DECISIONS.md (recreated)
-- ✅ FAST_TESTING_AND_DESIGN.md (recreated)
-- ✅ INTERESTING_GAME_STATES.md (new!)
+**Legend:**
+- ⭐ = Important document (High relevance)
+- Status: Active = in use, Reference = useful but not maintained, Archived = historical, Deprecated = can delete
+- Relevance: High = core, Medium = useful, Low = candidate for cleanup
+
+### Recently Cleaned Up
+The following low-relevance documents have been removed:
+- ✅ `TURN1_TESTING_CHECKLIST.md` - Redundant with TESTING_PLAN.md
+- ✅ `TURN1_DEPLOYMENT_DESIGN.md` - Covered in other design docs
+- ✅ `EARLY_GAME_PROBLEM_AND_SOLUTIONS.md` - Redundant with EARLY_GAME_DECISIONS.md
+- ✅ `UB_BATTLEFIELD_DESIGN.md` - Covered in BATTLEFIELD_DESIGN.md
+- ✅ `THREE_COLOR_DECKLISTS.md` - Outdated
+- ✅ `CARD_DESIGN_AUDIT.md` - Outdated
+- ✅ `CARD_EDITING_GUIDE.md` - Outdated
 
 ---
 
-*This index helps navigate the design documentation. Each document has a specific purpose and should be referenced when working on related topics.*
+*This index helps navigate the design documentation. Each document has a specific purpose and should be referenced when working on related topics. Update metadata as documents are created, updated, or deprecated.*
 

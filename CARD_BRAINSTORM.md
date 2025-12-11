@@ -1,5 +1,12 @@
 # Card Brainstorming - RW & UBG Decks
 
+> **Created:** 2024-12-XX  
+> **Last Updated:** 2024-12-XX  
+> **Status:** Active  
+> **Relevance:** Medium  
+> **Category:** Design  
+> **Notes:** Brainstorming document for RW/UBG card ideas
+
 ## Design Principles
 
 Based on our multicolor design discussion:
