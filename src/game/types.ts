@@ -89,7 +89,7 @@ export interface GameMetadata {
   towerB_player2_HP: number
   player1Tier: 1 | 2
   player2Tier: 1 | 2
-  // Death cooldown: Record of card ID -> cooldown counter (starts at 2, decreases by 1 each turn, 0 = ready)
+  // Death cooldown: Record of card ID -> cooldown counter (starts at 1, decreases by 1 each turn, 0 = ready)
   // Using Record instead of Map for JSON serialization
   deathCooldowns: Record<string, number>
   // Movement tracking: Track if each player has moved a hero to base this turn

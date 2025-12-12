@@ -78,7 +78,7 @@ export function useTurnManagement() {
                 currentHealth: 0,
                 slot: undefined,
               })
-              newCooldowns[hero.id] = 2
+              newCooldowns[hero.id] = 1
               // Opponent (player2) gets 5 gold for killing hero
               goldRewards.player2 += 5
             }
@@ -103,7 +103,7 @@ export function useTurnManagement() {
                 currentHealth: 0,
                 slot: undefined,
               })
-              newCooldowns[hero.id] = 2
+              newCooldowns[hero.id] = 1
               // Opponent (player1) gets 5 gold for killing hero
               goldRewards.player1 += 5
             }

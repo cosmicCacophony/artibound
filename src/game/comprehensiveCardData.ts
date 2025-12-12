@@ -1658,6 +1658,24 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       affectsHeroes: true,
     },
   },
+  // Verdant Wrath - Strong sweeper for UBG decks (UG colors for flexible deployment)
+  // Design Note: Currently UG (requires UG hero or U+G heroes). May become UBG in future
+  // to create draft incentives around hero stats (survivability) vs signature power (greed).
+  {
+    id: 'ug-spell-verdant-wrath',
+    name: 'Verdant Wrath',
+    description: 'Deal 5 damage to all enemy units in target battlefield.',
+    cardType: 'spell',
+    colors: ['blue', 'green'], // UG - flexible deployment, may become UBG in future
+    manaCost: 5,
+    effect: {
+      type: 'aoe_damage',
+      damage: 5,
+      affectsUnits: true,
+      affectsHeroes: true,
+      affectsEnemyUnits: true,
+    },
+  },
 ]
 
 // ============================================================================

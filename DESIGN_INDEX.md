@@ -38,6 +38,11 @@ All documentation files should include a metadata header with:
 **When to reference**: Designing cards with counterplay, understanding skill expression
 **Key concepts**: Counterplay items, hero abilities, secret deployment, initiative
 
+### **DRAFT_PHILOSOPHY_AND_DEVELOPMENT_APPROACH.md** ⭐
+**Purpose**: Core philosophy for archetype development and future draft environment
+**When to reference**: Making design decisions, understanding development approach, planning archetypes
+**Key concepts**: Gameplay-first development, archetype power tiers, draft skill expression, build-around design
+
 ---
 
 ## Card Design & Analysis
@@ -142,6 +147,9 @@ All documentation files should include a metadata header with:
 **Understanding the core system?**
 → `MULTICOLOR_DESIGN.md`
 
+**Understanding draft philosophy and development approach?**
+→ `DRAFT_PHILOSOPHY_AND_DEVELOPMENT_APPROACH.md`
+
 ---
 
 ## New: Game State Design
@@ -174,6 +182,7 @@ All documentation files should include a metadata header with:
 | **DEVELOPMENT.md** | Active | High | Architecture | 2024-12-XX | Living document - update existing sections |
 | **MULTICOLOR_DESIGN.md** | Active | High | Design | 2024-12-XX | Core system design |
 | **CARD_DESIGN_AND_COUNTERPLAY.md** | Active | High | Design | TBD | Counterplay mechanics |
+| **DRAFT_PHILOSOPHY_AND_DEVELOPMENT_APPROACH.md** | Active | High | Design | 2025-01-XX | Draft philosophy & development approach |
 | **TESTING_PLAN.md** | Active | High | Testing | 2024-12-XX | Comprehensive testing approach |
 | **FAST_TESTING_AND_DESIGN.md** | Active | High | Workflow | 2024-12-XX | Efficient testing approaches |
 | **STRATEGY_TESTING.md** | Active | High | Testing | 2024-12-XX | Focused RW strategy tests |
