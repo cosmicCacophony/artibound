@@ -247,8 +247,13 @@ export function resolveCombat(
           // Calculate overflow: if we dealt more damage than the tower had HP
           const towerHPBefore = initialTowerHP[towerKey]
           const attackPowerForTower = getAttackPower(attacker, false) // No hero bonus vs towers
-          const overflow = Math.max(0, attackPowerForTower - towerHPBefore)
-          overflowDamage += overflow
+          const totalOverflow = Math.max(0, attackPowerForTower - towerHPBefore)
+          // Only half the overflow damage (rounded up) goes to nexus on the killing blow
+          overflowDamage += Math.ceil(totalOverflow / 2)
+        } else if (currentTowerHP[towerKey] === 0) {
+          // Tower already dead - all damage goes to nexus
+          const attackPowerForTower = getAttackPower(attacker, false)
+          overflowDamage += attackPowerForTower
         }
       }
       
@@ -318,6 +323,14 @@ export function resolveSimultaneousCombat(
   let overflowDamage = { player1: 0, player2: 0 }
   const combatLog: CombatLogEntry[] = []
   
+  // Helper to check if tower is dead for a given battlefield and player
+  const isTowerDead = (battlefieldId: 'battlefieldA' | 'battlefieldB', player: 'player1' | 'player2'): boolean => {
+    const towerKey = battlefieldId === 'battlefieldA'
+      ? (player === 'player1' ? 'towerA_player1' : 'towerA_player2')
+      : (player === 'player1' ? 'towerB_player1' : 'towerB_player2')
+    return currentTowerHP[towerKey] === 0
+  }
+  
   // Get all units from both players with their slots
   const player1Units = battlefield.player1.filter(u => u.slot !== undefined)
   const player2Units = battlefield.player2.filter(u => u.slot !== undefined)
@@ -328,6 +341,7 @@ export function resolveSimultaneousCombat(
     const p2Unit = player2Units.find(u => u.slot === slot)
     
     // Calculate attacks for both units first (before applying damage)
+    // If tower is dead, units still target tower (damage goes to nexus)
     const p1Target = p1Unit ? getDefaultTarget(p1Unit, slot, currentBattlefield) : null
     const p2Target = p2Unit ? getDefaultTarget(p2Unit, slot, currentBattlefield) : null
     
@@ -361,7 +375,12 @@ export function resolveSimultaneousCombat(
         const towerWasDestroyed = initialTowerHP[towerKey] > 0 && currentTowerHP[towerKey] === 0
         if (towerWasDestroyed) {
           const towerHPBefore = initialTowerHP[towerKey]
-          overflowDamage.player1 += Math.max(0, p1AttackPower - towerHPBefore)
+          const totalOverflow = Math.max(0, p1AttackPower - towerHPBefore)
+          // Only half the overflow damage (rounded up) goes to nexus on the killing blow
+          overflowDamage.player1 += Math.ceil(totalOverflow / 2)
+        } else if (currentTowerHP[towerKey] === 0) {
+          // Tower already dead - all damage goes to nexus
+          overflowDamage.player1 += p1AttackPower
         }
       }
       
@@ -425,7 +444,12 @@ export function resolveSimultaneousCombat(
         const towerWasDestroyed = initialTowerHP[towerKey] > 0 && currentTowerHP[towerKey] === 0
         if (towerWasDestroyed) {
           const towerHPBefore = initialTowerHP[towerKey]
-          overflowDamage.player2 += Math.max(0, p2AttackPower - towerHPBefore)
+          const totalOverflow = Math.max(0, p2AttackPower - towerHPBefore)
+          // Only half the overflow damage (rounded up) goes to nexus on the killing blow
+          overflowDamage.player2 += Math.ceil(totalOverflow / 2)
+        } else if (currentTowerHP[towerKey] === 0) {
+          // Tower already dead - all damage goes to nexus
+          overflowDamage.player2 += p2AttackPower
         }
       }
       

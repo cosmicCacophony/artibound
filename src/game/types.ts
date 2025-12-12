@@ -154,6 +154,7 @@ export interface Hero extends BaseCard {
   health: number
   maxHealth: number // Track max health for restoration
   currentHealth: number // Track current health for combat
+  temporaryHP?: number // Temporary HP bonus (resets at end of turn)
   supportEffect?: string
   location: Location
   owner: PlayerId
@@ -195,6 +196,7 @@ export interface GenericUnit extends BaseCard {
   health: number
   maxHealth: number
   currentHealth: number
+  temporaryHP?: number // Temporary HP bonus (resets at end of turn)
   location: Location
   owner: PlayerId
   slot?: number

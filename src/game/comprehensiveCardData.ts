@@ -561,7 +561,7 @@ export const ruSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Deal 4 damage',
     cardType: 'spell',
     colors: ['red', 'blue'],
-    manaCost: 3,
+    manaCost: 2,
     effect: {
       type: 'targeted_damage',
       damage: 4,
@@ -575,7 +575,7 @@ export const ruSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Deal 5 damage',
     cardType: 'spell',
     colors: ['red'],
-    manaCost: 4,
+    manaCost: 3,
     effect: {
       type: 'targeted_damage',
       damage: 5,
@@ -722,7 +722,7 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Assassin signature - removal. Deal 4 damage to target unit.',
     cardType: 'spell',
     colors: ['black'],
-    manaCost: 3,
+    manaCost: 2,
     effect: {
       type: 'targeted_damage',
       damage: 4,
@@ -847,7 +847,7 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     description: 'Protector signature - buff. Adjacent units gain +1/+1.',
     cardType: 'generic',
     colors: ['white'],
-    manaCost: 3,
+    manaCost: 2,
     attack: 2,
     health: 4,
     maxHealth: 4,
@@ -898,7 +898,7 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     description: 'Aura - +1/+1 to all',
     cardType: 'generic',
     colors: ['white'],
-    manaCost: 4,
+    manaCost: 2,
     attack: 2,
     health: 3,
     maxHealth: 3,
@@ -1244,7 +1244,7 @@ export const guSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Deal 10 damage',
     cardType: 'spell',
     colors: ['green', 'blue'],
-    manaCost: 8,
+    manaCost: 7,
     effect: {
       type: 'targeted_damage',
       damage: 10,
@@ -1262,10 +1262,10 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   {
     id: 'ub-hero-archmage',
     name: 'Dark Archmage',
-    description: 'Control specialist',
+    description: 'Control specialist. At the start of each turn, spawns a 2/3 Void Apprentice in an adjacent slot that deals 2 damage to the nearest enemy unit.',
     cardType: 'hero',
     colors: ['blue'],
-    attack: 5,
+    attack: 2,
     health: 9,
     maxHealth: 9,
     currentHealth: 9,
@@ -1287,21 +1287,21 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     description: 'Control and card advantage',
     cardType: 'hero',
     colors: ['black'],
-    attack: 4,
-    health: 8,
-    maxHealth: 8,
-    currentHealth: 8,
+    attack: 3,
+    health: 11,
+    maxHealth: 11,
+    currentHealth: 11,
     supportEffect: 'Gain gold when units die',
     signatureCardId: 'ub-sig-necromancer-1',
     equippedItems: [],
     bonusVsHeroes: 4, // Assassin: deals double damage to heroes (4 base attack = 8 vs heroes)
     ability: {
-      name: 'Soul Drain',
-      description: 'Deal 1 damage to target unit. Draw a card.',
+      name: 'Void Strike',
+      description: 'Deal 4 damage to target unit in any lane.',
       manaCost: 1,
-      cooldown: 3,
-      effectType: 'custom', // Custom effect: damage + draw
-      effectValue: 1, // 1 damage
+      cooldown: 2,
+      effectType: 'damage_target',
+      effectValue: 4, // 4 damage
     },
   },
   {
@@ -1402,18 +1402,7 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     currentHealth: 5,
     specialEffects: ['adjacent_buff'],
   },
-  {
-    id: 'ubg-threat-1',
-    name: 'Verdant Colossus',
-    description: '6/8. Resilient threat for control deck.',
-    cardType: 'generic',
-    colors: ['blue', 'black', 'green'], // Changed from UG to UBG - 8 mana should be triple color
-    manaCost: 8,
-    attack: 6,
-    health: 8,
-    maxHealth: 8,
-    currentHealth: 8,
-  },
+  // Verdant Colossus removed - replaced with Void Cascade AOE spell
 ]
 
 export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
@@ -1424,12 +1413,28 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Archmage signature - removal. Deal 4 damage to target unit.',
     cardType: 'spell',
     colors: ['blue', 'black'],
-    manaCost: 3,
+    manaCost: 2,
     effect: {
       type: 'targeted_damage',
       damage: 4,
       affectsUnits: true,
       affectsHeroes: true,
+    },
+  },
+  // UB AOE spell - replaces one direct damage spell
+  {
+    id: 'ub-spell-void-cascade',
+    name: 'Void Cascade',
+    description: 'Deal 5 damage to all enemy units.',
+    cardType: 'spell',
+    colors: ['blue', 'black'],
+    manaCost: 5,
+    effect: {
+      type: 'aoe_damage',
+      damage: 5,
+      affectsUnits: true,
+      affectsHeroes: true,
+      affectsEnemyUnits: true,
     },
   },
   {
@@ -1465,7 +1470,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Necromancer signature - advantage. Deal 2 damage to target unit, draw a card.',
     cardType: 'spell',
     colors: ['black'],
-    manaCost: 5,
+    manaCost: 4,
     effect: {
       type: 'targeted_damage',
       damage: 2,
@@ -1479,7 +1484,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Nature Guardian signature - removal and ramp. Deal 3 damage to target unit. If it dies, gain +1 max mana.',
     cardType: 'spell',
     colors: ['green'],
-    manaCost: 4,
+    manaCost: 3,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for conditional mana ramp
       damage: 3,
@@ -1493,7 +1498,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Verdant Archmage signature - ramp and removal. Deal 3 damage to target unit. Gain +1 max mana.',
     cardType: 'spell',
     colors: ['green'], // Changed from UG to G - 3 mana should be single color, ramp + removal is medium power
-    manaCost: 3,
+    manaCost: 2,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for damage + mana ramp
       damage: 3,
@@ -1520,27 +1525,13 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-spell-removal',
     name: 'Arcane Removal',
-    description: 'Destroy target unit with 3 or less health.',
+    description: 'Deal 6 damage to target unit or hero.',
     cardType: 'spell',
-    colors: ['black'], // Changed from UB to B - 2 mana should be single color
+    colors: ['black'],
     manaCost: 2,
     effect: {
       type: 'targeted_damage',
-      damage: 999, // Effectively destroy
-      affectsUnits: true,
-      affectsHeroes: false,
-    },
-  },
-  {
-    id: 'ub-spell-arcane-bolt',
-    name: 'Arcane Bolt',
-    description: 'Deal 4 damage to target unit.',
-    cardType: 'spell',
-    colors: ['blue', 'black'], // Changed from U to UB - 4 mana good removal should be dual color
-    manaCost: 4,
-    effect: {
-      type: 'targeted_damage',
-      damage: 4,
+      damage: 6,
       affectsUnits: true,
       affectsHeroes: true,
     },
@@ -1582,7 +1573,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Deal 3 damage to target unit. You get initiative (play next card first).',
     cardType: 'spell',
     colors: ['black'],
-    manaCost: 3,
+    manaCost: 2,
     effect: {
       type: 'targeted_damage',
       damage: 3,
@@ -1593,14 +1584,14 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ubg-spell-kill-hero-discard',
     name: 'Assassinate',
-    description: 'Destroy target hero. Opponent discards a random card.',
+    description: 'Deal 7 damage to target unit or hero. Opponent discards a random card.',
     cardType: 'spell',
     colors: ['blue', 'black'],
     manaCost: 4,
     effect: {
       type: 'targeted_damage',
-      damage: 999, // Effectively destroy
-      affectsUnits: false,
+      damage: 7,
+      affectsUnits: true,
       affectsHeroes: true,
     },
   },
@@ -1658,24 +1649,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       affectsHeroes: true,
     },
   },
-  // Verdant Wrath - Strong sweeper for UBG decks (UG colors for flexible deployment)
-  // Design Note: Currently UG (requires UG hero or U+G heroes). May become UBG in future
-  // to create draft incentives around hero stats (survivability) vs signature power (greed).
-  {
-    id: 'ug-spell-verdant-wrath',
-    name: 'Verdant Wrath',
-    description: 'Deal 5 damage to all enemy units in target battlefield.',
-    cardType: 'spell',
-    colors: ['blue', 'green'], // UG - flexible deployment, may become UBG in future
-    manaCost: 5,
-    effect: {
-      type: 'aoe_damage',
-      damage: 5,
-      affectsUnits: true,
-      affectsHeroes: true,
-      affectsEnemyUnits: true,
-    },
-  },
+  // Verdant Wrath removed - Void Cascade already provides the same AOE effect (5 damage to all enemy units)
 ]
 
 // ============================================================================
@@ -1892,7 +1866,7 @@ export const ubgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
   {
     id: 'ubg-sig-sage-1',
     name: 'Shadow Growth',
-    description: 'Shadow Sage signature - removal. Destroy target unit. If it had 4+ health, draw a card.',
+    description: 'Shadow Sage signature - removal. Deal 6 damage to target unit or hero. If it had 4+ health, draw a card.',
     cardType: 'generic',
     colors: ['black', 'green'],
     manaCost: 4,
@@ -1904,14 +1878,14 @@ export const ubgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
 ]
 
 export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
-  // Only UBG spell - Exorcism (8 mana, requires all 3 colors)
+  // Only UBG spell - Exorcism (7 mana, requires all 3 colors)
   {
     id: 'ubg-spell-exorcism',
     name: 'Exorcism',
     description: 'Deal 12 total damage distributed to enemy units in front and tower. 0 units: 12 to tower. 1 unit: 6 to unit, 6 to tower. 2 units: 4 to each unit, 4 to tower. 3 units: 3 to each unit, 3 to tower.',
     cardType: 'spell',
     colors: ['blue', 'black', 'green'], // Requires all 3 colors (UBG)
-    manaCost: 8,
+    manaCost: 7,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for Exorcism damage distribution
       damage: 12, // Total damage, distribution handled by custom logic based on units in front
@@ -1920,6 +1894,20 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     },
   },
 ]
+
+// Void Apprentice - Spawned by Dark Archmage (not a playable card, only spawned)
+export const voidApprenticeTemplate: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'> = {
+  id: 'ub-spawn-void-apprentice',
+  name: 'Void Apprentice',
+  description: 'Spawned by Dark Archmage. At the start of each turn, deals 2 damage to the nearest enemy unit.',
+  cardType: 'generic',
+  colors: ['blue'],
+  manaCost: 0, // Not playable, only spawned
+  attack: 2,
+  health: 3,
+  maxHealth: 3,
+  currentHealth: 3,
+}
 
 // ============================================================================
 // UW (Blue/White) - Control but Proactive

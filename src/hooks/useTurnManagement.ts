@@ -345,8 +345,58 @@ export function useTurnManagement() {
       // If no one has initiative (shouldn't happen), default to player1
       const nextAction = prev.metadata.initiativePlayer || 'player1'
       
+      // Dark Archmage spawn logic: spawn Void Apprentice in adjacent slot at start of each turn
+      const spawnVoidApprentices = (battlefield: typeof prev.battlefieldA, battlefieldId: 'battlefieldA' | 'battlefieldB') => {
+        const updatedBattlefield = { ...battlefield }
+        
+        // Check both players for Dark Archmage
+        for (const player of ['player1', 'player2'] as const) {
+          const darkArchmage = updatedBattlefield[player].find(
+            c => c.cardType === 'hero' && c.id.startsWith('ub-hero-archmage') && c.slot !== undefined
+          )
+          
+          if (darkArchmage && darkArchmage.slot !== undefined) {
+            const archmageSlot = darkArchmage.slot
+            // Find adjacent slots (slot - 1 and slot + 1, within 1-4 range)
+            const adjacentSlots = [archmageSlot - 1, archmageSlot + 1].filter(s => s >= 1 && s <= 4)
+            
+            // Find an available adjacent slot
+            for (const slot of adjacentSlots) {
+              const slotOccupied = updatedBattlefield[player].some(c => c.slot === slot)
+              if (!slotOccupied) {
+                // Spawn Void Apprentice
+                const voidApprentice: import('../game/types').GenericUnit = {
+                  id: `ub-spawn-void-apprentice-${player}-${battlefieldId}-${slot}-${newTurn}`,
+                  name: 'Void Apprentice',
+                  description: 'Spawned by Dark Archmage. At the start of each turn, deals 2 damage to the nearest enemy unit.',
+                  cardType: 'generic',
+                  colors: ['blue'],
+                  manaCost: 0,
+                  attack: 2,
+                  health: 3,
+                  maxHealth: 3,
+                  currentHealth: 3,
+                  location: battlefieldId,
+                  owner: player,
+                  slot: slot,
+                }
+                updatedBattlefield[player] = [...updatedBattlefield[player], voidApprentice]
+                break // Only spawn one per archmage per turn
+              }
+            }
+          }
+        }
+        
+        return updatedBattlefield
+      }
+      
+      const updatedBattlefieldA = spawnVoidApprentices(prev.battlefieldA, 'battlefieldA')
+      const updatedBattlefieldB = spawnVoidApprentices(prev.battlefieldB, 'battlefieldB')
+      
       return {
         ...prev,
+        battlefieldA: updatedBattlefieldA,
+        battlefieldB: updatedBattlefieldB,
         player1Base: prev.player1Base.map(healHeroInBase),
         player2Base: prev.player2Base.map(healHeroInBase),
         metadata: {
