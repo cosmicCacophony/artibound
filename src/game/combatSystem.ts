@@ -119,7 +119,7 @@ export function resolveAttack(
       // Check if target is a hero for bonus damage
       const targetIsHero = targetUnit.cardType === 'hero'
       // If stunned, deal 0 damage; otherwise calculate normally
-      const attackPower = isStunned ? 0 : getAttackPower(attacker, targetIsHero)
+      attackPower = isStunned ? 0 : getAttackPower(attacker, targetIsHero)
       
       // Calculate effective health (currentHealth + temporaryHP)
       const tempHP = (targetUnit.cardType === 'hero' || targetUnit.cardType === 'generic') && 'temporaryHP' in targetUnit
@@ -166,21 +166,23 @@ export function resolveAttack(
       ? (opponent === 'player1' ? 'towerA_player1' : 'towerA_player2')
       : (opponent === 'player1' ? 'towerB_player1' : 'towerB_player2')
     const currentHP = towerHP[towerKey]
-    // If stunned, deal 0 damage; otherwise calculate normally
-    attackPower = isStunned ? 0 : getAttackPower(attacker, false) // No hero bonus vs towers
-    const newHP = Math.max(0, currentHP - attackPower)
-    damageDealt = Math.min(attackPower, currentHP)
     
-    updatedTowerHP = {
-      ...updatedTowerHP,
-      [towerKey]: newHP,
-    }
-    
-    // If tower dies, overflow damage goes to nexus
-    if (newHP === 0 && damageDealt < attackPower) {
-      const overflowDamage = attackPower - damageDealt
-      // We'll handle nexus damage separately in the main combat resolution
-      // This keeps the function focused
+    // If tower is already dead, all damage goes to nexus (handled in combat resolution)
+    // Otherwise, damage hits tower first
+    if (currentHP > 0) {
+      // If stunned, deal 0 damage; otherwise calculate normally
+      attackPower = isStunned ? 0 : getAttackPower(attacker, false) // No hero bonus vs towers
+      const newHP = Math.max(0, currentHP - attackPower)
+      damageDealt = Math.min(attackPower, currentHP)
+      
+      updatedTowerHP = {
+        ...updatedTowerHP,
+        [towerKey]: newHP,
+      }
+    } else {
+      // Tower already dead - all damage goes to nexus (will be handled in combat resolution)
+      attackPower = isStunned ? 0 : getAttackPower(attacker, false)
+      damageDealt = 0 // No damage to tower (it's already dead)
     }
   }
   
@@ -193,7 +195,7 @@ export function resolveAttack(
 }
 
 /**
- * Get attack power of a unit (handles stacked units and hero bonuses)
+ * Get attack power of a unit (handles stacked units, hero bonuses, and temporary attack)
  */
 function getAttackPower(unit: Card, targetIsHero: boolean = false): number {
   let baseAttack = 0
@@ -202,6 +204,12 @@ function getAttackPower(unit: Card, targetIsHero: boolean = false): number {
   } else if ('attack' in unit) {
     baseAttack = unit.attack
   }
+  
+  // Add temporary attack bonus (if present)
+  const tempAttack = (unit.cardType === 'hero' || unit.cardType === 'generic') && 'temporaryAttack' in unit
+    ? (unit.temporaryAttack || 0)
+    : 0
+  baseAttack += tempAttack
   
   // Apply hero bonus vs heroes (e.g., assassins +3 vs heroes)
   if (targetIsHero && unit.cardType === 'hero' && 'bonusVsHeroes' in unit && unit.bonusVsHeroes) {
@@ -253,23 +261,26 @@ export function resolveCombat(
       currentBattlefield = result.updatedBattlefield
       currentTowerHP = result.updatedTowerHP
       
-      // Check for tower overflow damage
+      // Check for tower damage and overflow
       if (target.type === 'tower') {
         const opponent = activePlayer === 'player1' ? 'player2' : 'player1'
         const towerKey = battlefieldId === 'battlefieldA' 
           ? (opponent === 'player1' ? 'towerA_player1' : 'towerA_player2')
           : (opponent === 'player1' ? 'towerB_player1' : 'towerB_player2')
-        const towerWasDestroyed = initialTowerHP[towerKey] > 0 && currentTowerHP[towerKey] === 0
-        if (towerWasDestroyed) {
-          // Calculate overflow: if we dealt more damage than the tower had HP
-          const towerHPBefore = initialTowerHP[towerKey]
-          const attackPowerForTower = getAttackPower(attacker, false) // No hero bonus vs towers
-          const totalOverflow = Math.max(0, attackPowerForTower - towerHPBefore)
-          // All overflow damage goes directly to nexus
-          overflowDamage += totalOverflow
-        } else if (currentTowerHP[towerKey] === 0) {
-          // Tower already dead - all damage goes to nexus
-          const attackPowerForTower = getAttackPower(attacker, false)
+        const towerHPBefore = initialTowerHP[towerKey]
+        const towerHPAfter = currentTowerHP[towerKey]
+        const attackPowerForTower = getAttackPower(attacker, false) // No hero bonus vs towers
+        
+        if (towerHPBefore > 0) {
+          // Tower was alive - check if we destroyed it
+          if (towerHPAfter === 0) {
+            // Tower destroyed this attack - calculate overflow
+            const totalOverflow = Math.max(0, attackPowerForTower - towerHPBefore)
+            overflowDamage += totalOverflow
+          }
+          // If tower is still alive, no overflow (all damage went to tower)
+        } else {
+          // Tower was already dead - all damage goes to nexus
           overflowDamage += attackPowerForTower
         }
       }
@@ -372,6 +383,15 @@ export function resolveSimultaneousCombat(
     
     // Apply Player 1's attack
     if (p1Unit && p1Target) {
+      // Capture tower HP BEFORE this attack for overflow calculation
+      let towerHPBeforeAttack = 0
+      if (p1Target.type === 'tower') {
+        const towerKey = battlefieldId === 'battlefieldA' 
+          ? 'towerA_player2'
+          : 'towerB_player2'
+        towerHPBeforeAttack = currentTowerHP[towerKey]
+      }
+      
       const result = resolveAttack(
         p1Unit,
         p1Target,
@@ -389,14 +409,18 @@ export function resolveSimultaneousCombat(
         const towerKey = battlefieldId === 'battlefieldA' 
           ? 'towerA_player2'
           : 'towerB_player2'
-        const towerWasDestroyed = initialTowerHP[towerKey] > 0 && currentTowerHP[towerKey] === 0
-        if (towerWasDestroyed) {
-          const towerHPBefore = initialTowerHP[towerKey]
-          const totalOverflow = Math.max(0, p1AttackPower - towerHPBefore)
-          // All overflow damage goes directly to nexus
-          overflowDamage.player1 += totalOverflow
-        } else if (currentTowerHP[towerKey] === 0) {
-          // Tower already dead - all damage goes to nexus
+        const towerHPAfter = currentTowerHP[towerKey]
+        
+        if (towerHPBeforeAttack > 0) {
+          // Tower was alive - check if we destroyed it
+          if (towerHPAfter === 0) {
+            // Tower destroyed this attack - calculate overflow
+            const totalOverflow = Math.max(0, p1AttackPower - towerHPBeforeAttack)
+            overflowDamage.player1 += totalOverflow
+          }
+          // If tower is still alive, no overflow (all damage went to tower)
+        } else {
+          // Tower was already dead - all damage goes to nexus
           overflowDamage.player1 += p1AttackPower
         }
       }
@@ -441,6 +465,15 @@ export function resolveSimultaneousCombat(
         }
       }
       
+      // Capture tower HP BEFORE this attack for overflow calculation
+      let towerHPBeforeAttack = 0
+      if (p2Target.type === 'tower') {
+        const towerKey = battlefieldId === 'battlefieldA' 
+          ? 'towerA_player1'
+          : 'towerB_player1'
+        towerHPBeforeAttack = currentTowerHP[towerKey]
+      }
+      
       const result = resolveAttack(
         p2Unit,
         p2Target,
@@ -458,14 +491,18 @@ export function resolveSimultaneousCombat(
         const towerKey = battlefieldId === 'battlefieldA' 
           ? 'towerA_player1'
           : 'towerB_player1'
-        const towerWasDestroyed = initialTowerHP[towerKey] > 0 && currentTowerHP[towerKey] === 0
-        if (towerWasDestroyed) {
-          const towerHPBefore = initialTowerHP[towerKey]
-          const totalOverflow = Math.max(0, p2AttackPower - towerHPBefore)
-          // All overflow damage goes directly to nexus
-          overflowDamage.player2 += totalOverflow
-        } else if (currentTowerHP[towerKey] === 0) {
-          // Tower already dead - all damage goes to nexus
+        const towerHPAfter = currentTowerHP[towerKey]
+        
+        if (towerHPBeforeAttack > 0) {
+          // Tower was alive - check if we destroyed it
+          if (towerHPAfter === 0) {
+            // Tower destroyed this attack - calculate overflow
+            const totalOverflow = Math.max(0, p2AttackPower - towerHPBeforeAttack)
+            overflowDamage.player2 += totalOverflow
+          }
+          // If tower is still alive, no overflow (all damage went to tower)
+        } else {
+          // Tower was already dead - all damage goes to nexus
           overflowDamage.player2 += p2AttackPower
         }
       }

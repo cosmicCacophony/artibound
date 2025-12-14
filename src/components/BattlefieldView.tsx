@@ -347,27 +347,38 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                 )
                 
                 // Apply combat results
-                setGameState(prev => ({
-                  ...prev,
-                  battlefieldA: resultA.updatedBattlefield,
-                  battlefieldB: resultB.updatedBattlefield,
-                  player1Base: newP1BaseB,
-                  player2Base: newP2BaseB,
-                  metadata: {
-                    ...prev.metadata,
-                    towerA_player1_HP: resultA.updatedTowerHP.towerA_player1,
-                    towerA_player2_HP: resultA.updatedTowerHP.towerA_player2,
-                    towerB_player1_HP: resultB.updatedTowerHP.towerB_player1,
-                    towerB_player2_HP: resultB.updatedTowerHP.towerB_player2,
-                    player1NexusHP: Math.max(0, prev.metadata.player1NexusHP - (resultA.overflowDamage.player1 + resultB.overflowDamage.player1)),
-                    player2NexusHP: Math.max(0, prev.metadata.player2NexusHP - (resultA.overflowDamage.player2 + resultB.overflowDamage.player2)),
-                    player1Gold: (prev.metadata.player1Gold as number) + goldRewards.player1,
-                    player2Gold: (prev.metadata.player2Gold as number) + goldRewards.player2,
-                    deathCooldowns: newCooldownsB,
-                    player1Passed: false,
-                    player2Passed: false,
-                  },
-                }))
+                // Calculate total overflow damage TO each player's nexus
+                // overflowDamage.player1 = damage dealt BY player1 (goes TO player2's nexus)
+                // overflowDamage.player2 = damage dealt BY player2 (goes TO player1's nexus)
+                const totalDamageToP1Nexus = resultA.overflowDamage.player2 + resultB.overflowDamage.player2
+                const totalDamageToP2Nexus = resultA.overflowDamage.player1 + resultB.overflowDamage.player1
+                
+                setGameState(prev => {
+                  const newP1NexusHP = Math.max(0, prev.metadata.player1NexusHP - totalDamageToP1Nexus)
+                  const newP2NexusHP = Math.max(0, prev.metadata.player2NexusHP - totalDamageToP2Nexus)
+                  
+                  return {
+                    ...prev,
+                    battlefieldA: resultA.updatedBattlefield,
+                    battlefieldB: resultB.updatedBattlefield,
+                    player1Base: newP1BaseB,
+                    player2Base: newP2BaseB,
+                    metadata: {
+                      ...prev.metadata,
+                      towerA_player1_HP: resultA.updatedTowerHP.towerA_player1,
+                      towerA_player2_HP: resultA.updatedTowerHP.towerA_player2,
+                      towerB_player1_HP: resultB.updatedTowerHP.towerB_player1,
+                      towerB_player2_HP: resultB.updatedTowerHP.towerB_player2,
+                      player1NexusHP: newP1NexusHP,
+                      player2NexusHP: newP2NexusHP,
+                      player1Gold: (prev.metadata.player1Gold as number) + goldRewards.player1,
+                      player2Gold: (prev.metadata.player2Gold as number) + goldRewards.player2,
+                      deathCooldowns: newCooldownsB,
+                      player1Passed: false,
+                      player2Passed: false,
+                    },
+                  }
+                })
                 
                 // Show combat summary modal
                 setCombatSummaryData({

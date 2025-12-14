@@ -100,12 +100,27 @@ export function useCombat() {
   const handleIncreaseHealth = useCallback((card: Card) => {
     if (!('currentHealth' in card) || !('maxHealth' in card)) return
     
-    const newHealth = Math.min(card.currentHealth + 1, card.maxHealth)
     const player = card.owner
+    const isHeroOrGeneric = card.cardType === 'hero' || card.cardType === 'generic'
+    const currentTempHP = isHeroOrGeneric && 'temporaryHP' in card ? (card.temporaryHP || 0) : 0
     
     setGameState(prev => {
       const updateCardInArray = (cards: Card[]): Card[] => 
-        cards.map(c => c.id === card.id ? { ...c, currentHealth: newHealth } as Card : c)
+        cards.map(c => {
+          if (c.id === card.id) {
+            // If at max health, add to temporary HP instead (allows overflow like mana)
+            if (c.currentHealth >= c.maxHealth) {
+              const newTempHP = currentTempHP + 1
+              if (isHeroOrGeneric) {
+                return { ...c, temporaryHP: newTempHP } as Card
+              }
+            } else {
+              // Not at max yet, increase currentHealth
+              return { ...c, currentHealth: c.currentHealth + 1 } as Card
+            }
+          }
+          return c
+        })
 
       return {
         ...prev,
@@ -126,12 +141,26 @@ export function useCombat() {
   const handleDecreaseAttack = useCallback((card: Card) => {
     if (!('attack' in card)) return
     
-    const newAttack = Math.max(0, card.attack - 1)
     const player = card.owner
+    const isHeroOrGeneric = card.cardType === 'hero' || card.cardType === 'generic'
+    const currentTempAttack = isHeroOrGeneric && 'temporaryAttack' in card ? (card.temporaryAttack || 0) : 0
     
     setGameState(prev => {
       const updateCardInArray = (cards: Card[]): Card[] => 
-        cards.map(c => c.id === card.id ? { ...c, attack: newAttack } as Card : c)
+        cards.map(c => {
+          if (c.id === card.id) {
+            if (isHeroOrGeneric && currentTempAttack > 0) {
+              // Decrease temporaryAttack first
+              const newTempAttack = Math.max(0, currentTempAttack - 1)
+              return { ...c, temporaryAttack: newTempAttack } as Card
+            } else {
+              // Decrease base attack if no temporaryAttack
+              const newAttack = Math.max(0, c.attack - 1)
+              return { ...c, attack: newAttack } as Card
+            }
+          }
+          return c
+        })
 
       return {
         ...prev,
@@ -152,12 +181,25 @@ export function useCombat() {
   const handleIncreaseAttack = useCallback((card: Card) => {
     if (!('attack' in card)) return
     
-    const newAttack = card.attack + 1
     const player = card.owner
+    const isHeroOrGeneric = card.cardType === 'hero' || card.cardType === 'generic'
+    const currentTempAttack = isHeroOrGeneric && 'temporaryAttack' in card ? (card.temporaryAttack || 0) : 0
     
     setGameState(prev => {
       const updateCardInArray = (cards: Card[]): Card[] => 
-        cards.map(c => c.id === card.id ? { ...c, attack: newAttack } as Card : c)
+        cards.map(c => {
+          if (c.id === card.id) {
+            // Always add to temporaryAttack (allows overflow like mana/HP)
+            if (isHeroOrGeneric) {
+              const newTempAttack = currentTempAttack + 1
+              return { ...c, temporaryAttack: newTempAttack } as Card
+            } else {
+              // For other card types, just increase base attack
+              return { ...c, attack: c.attack + 1 } as Card
+            }
+          }
+          return c
+        })
 
       return {
         ...prev,

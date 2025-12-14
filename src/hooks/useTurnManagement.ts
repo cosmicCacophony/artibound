@@ -139,8 +139,17 @@ export function useTurnManagement() {
       )
       
       // Apply combat results from both battlefields
+      // Calculate total overflow damage TO each player's nexus
+      // overflowDamage.player1 = damage dealt BY player1 (goes TO player2's nexus)
+      // overflowDamage.player2 = damage dealt BY player2 (goes TO player1's nexus)
+      const totalDamageToP1Nexus = resultA.overflowDamage.player2 + resultB.overflowDamage.player2
+      const totalDamageToP2Nexus = resultA.overflowDamage.player1 + resultB.overflowDamage.player1
+      
       setGameState(prev => {
-        const updatedState = {
+        const newP1NexusHP = Math.max(0, prev.metadata.player1NexusHP - totalDamageToP1Nexus)
+        const newP2NexusHP = Math.max(0, prev.metadata.player2NexusHP - totalDamageToP2Nexus)
+        
+        return {
           ...prev,
           battlefieldA: resultA.updatedBattlefield,
           battlefieldB: resultB.updatedBattlefield,
@@ -153,14 +162,13 @@ export function useTurnManagement() {
             towerB_player1_HP: resultB.updatedTowerHP.towerB_player1,
             towerB_player2_HP: resultB.updatedTowerHP.towerB_player2,
             // Apply overflow damage to nexus (sum from both battlefields)
-            player1NexusHP: Math.max(0, prev.metadata.player1NexusHP - (resultA.overflowDamage.player1 + resultB.overflowDamage.player1)),
-            player2NexusHP: Math.max(0, prev.metadata.player2NexusHP - (resultA.overflowDamage.player2 + resultB.overflowDamage.player2)),
+            player1NexusHP: newP1NexusHP,
+            player2NexusHP: newP2NexusHP,
             player1Gold: (prev.metadata.player1Gold as number) + goldRewards.player1,
             player2Gold: (prev.metadata.player2Gold as number) + goldRewards.player2,
             deathCooldowns: newCooldownsB,
           },
         }
-        return updatedState
       })
       
       // Show combat summary modal
@@ -393,19 +401,32 @@ export function useTurnManagement() {
       const updatedBattlefieldA = spawnVoidApprentices(prev.battlefieldA, 'battlefieldA')
       const updatedBattlefieldB = spawnVoidApprentices(prev.battlefieldB, 'battlefieldB')
       
-      // Reset temporary HP at start of new turn
-      const resetTemporaryHP = (c: Card): Card => {
-        if ((c.cardType === 'hero' || c.cardType === 'generic') && 'temporaryHP' in c) {
-          const cardWithTempHP = c as import('../game/types').Hero | import('../game/types').GenericUnit
-          if (cardWithTempHP.temporaryHP && cardWithTempHP.temporaryHP > 0) {
+      // Reset temporary HP and attack at start of new turn
+      const resetTemporaryStats = (c: Card): Card => {
+        if (c.cardType === 'hero' || c.cardType === 'generic') {
+          const cardWithTempStats = c as import('../game/types').Hero | import('../game/types').GenericUnit
+          let updatedCard = { ...cardWithTempStats }
+          
+          // Reset temporary HP
+          if ('temporaryHP' in cardWithTempStats && cardWithTempStats.temporaryHP && cardWithTempStats.temporaryHP > 0) {
             // Remove temporary HP, but don't let currentHealth go below 0
-            const newCurrentHealth = Math.max(0, cardWithTempHP.currentHealth - cardWithTempHP.temporaryHP)
-            return {
-              ...cardWithTempHP,
+            const newCurrentHealth = Math.max(0, cardWithTempStats.currentHealth - cardWithTempStats.temporaryHP)
+            updatedCard = {
+              ...updatedCard,
               temporaryHP: 0,
               currentHealth: newCurrentHealth,
             }
           }
+          
+          // Reset temporary attack
+          if ('temporaryAttack' in cardWithTempStats && cardWithTempStats.temporaryAttack && cardWithTempStats.temporaryAttack > 0) {
+            updatedCard = {
+              ...updatedCard,
+              temporaryAttack: 0,
+            }
+          }
+          
+          return updatedCard
         }
         return c
       }
@@ -413,17 +434,17 @@ export function useTurnManagement() {
       return {
         ...prev,
         battlefieldA: {
-          player1: updatedBattlefieldA.player1.map(resetTemporaryHP),
-          player2: updatedBattlefieldA.player2.map(resetTemporaryHP),
+          player1: updatedBattlefieldA.player1.map(resetTemporaryStats),
+          player2: updatedBattlefieldA.player2.map(resetTemporaryStats),
         },
         battlefieldB: {
-          player1: updatedBattlefieldB.player1.map(resetTemporaryHP),
-          player2: updatedBattlefieldB.player2.map(resetTemporaryHP),
+          player1: updatedBattlefieldB.player1.map(resetTemporaryStats),
+          player2: updatedBattlefieldB.player2.map(resetTemporaryStats),
         },
-        player1Hand: prev.player1Hand.map(resetTemporaryHP),
-        player2Hand: prev.player2Hand.map(resetTemporaryHP),
-        player1Base: prev.player1Base.map(c => resetTemporaryHP(healHeroInBase(c))),
-        player2Base: prev.player2Base.map(c => resetTemporaryHP(healHeroInBase(c))),
+        player1Hand: prev.player1Hand.map(resetTemporaryStats),
+        player2Hand: prev.player2Hand.map(resetTemporaryStats),
+        player1Base: prev.player1Base.map(c => resetTemporaryStats(healHeroInBase(c))),
+        player2Base: prev.player2Base.map(c => resetTemporaryStats(healHeroInBase(c))),
         metadata: {
           ...prev.metadata,
           currentTurn: newTurn,

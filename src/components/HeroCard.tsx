@@ -105,7 +105,19 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
     if (card.cardType === 'generic' && 'stackPower' in card && card.stackPower !== undefined) {
       return card.stackPower
     }
-    return 'attack' in card ? card.attack : 0
+    const baseAttack = 'attack' in card ? card.attack : 0
+    // Add temporary attack bonus (if present)
+    const tempAttack = (card.cardType === 'hero' || card.cardType === 'generic') && 'temporaryAttack' in card
+      ? (card.temporaryAttack || 0)
+      : 0
+    return baseAttack + tempAttack
+  }
+  
+  const getTemporaryAttack = () => {
+    if (card.cardType === 'hero' || card.cardType === 'generic') {
+      return 'temporaryAttack' in card ? (card.temporaryAttack || 0) : 0
+    }
+    return 0
   }
 
   const getHealth = () => {
@@ -130,12 +142,15 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
     if (card.cardType === 'generic' && 'stackHealth' in card && card.stackHealth !== undefined) {
       return card.stackHealth
     }
-    const baseMaxHealth = 'maxHealth' in card ? card.maxHealth : ('health' in card ? card.health : 0)
-    // Add temporary HP to max display (temporary HP can exceed base maxHealth)
-    const tempHP = (card.cardType === 'hero' || card.cardType === 'generic') && 'temporaryHP' in card 
-      ? (card.temporaryHP || 0) 
-      : 0
-    return baseMaxHealth + tempHP
+    // Max health is always the base maxHealth (temporary HP is shown separately)
+    return 'maxHealth' in card ? card.maxHealth : ('health' in card ? card.health : 0)
+  }
+  
+  const getTemporaryHP = () => {
+    if (card.cardType === 'hero' || card.cardType === 'generic') {
+      return 'temporaryHP' in card ? (card.temporaryHP || 0) : 0
+    }
+    return 0
   }
 
   const isStacked = card.cardType === 'generic' && 'stackedWith' in card && card.stackedWith !== undefined
@@ -276,7 +291,14 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
           )}
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-              <span>⚔️ {getAttack()}</span>
+              <span>
+                ⚔️ {getAttack()}
+                {getTemporaryAttack() > 0 && (
+                  <span style={{ color: '#4caf50', marginLeft: '4px' }} title="Temporary attack bonus">
+                    (+{getTemporaryAttack()})
+                  </span>
+                )}
+              </span>
               {showCombatControls && (card.cardType === 'hero' || card.cardType === 'generic') && 'attack' in card && (
                 <>
                   {onDecreaseAttack && (
@@ -323,7 +345,14 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
               )}
             </div>
             <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-              <span>❤️ {getHealth()}{getMaxHealth() !== getHealth() ? `/${getMaxHealth()}` : ''}</span>
+              <span>
+                ❤️ {getHealth()}{getMaxHealth() !== getHealth() ? `/${getMaxHealth()}` : ''}
+                {getTemporaryHP() > 0 && (
+                  <span style={{ color: '#4caf50', marginLeft: '4px' }} title="Temporary HP (exceeds max)">
+                    (+{getTemporaryHP()})
+                  </span>
+                )}
+              </span>
               {showCombatControls && (
                 <>
                   {onDecreaseHealth && getHealth() > 0 && (
