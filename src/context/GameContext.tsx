@@ -212,49 +212,44 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const player1BattlefieldPool = allBattlefields
     const player2BattlefieldPool = allBattlefields
     
-    // Consistent shuffle using fixed seed for reproducible games
-    // This ensures the same cards appear every time for testing
-    const seededShuffle = <T extends unknown>(arr: T[], seed: number = 12345): T[] => {
+    // Random shuffle for variety in each game
+    const randomShuffle = <T extends unknown>(arr: T[]): T[] => {
       const copy = [...arr]
-      // Simple seeded random number generator
-      let rng = seed
-      const random = () => {
-        rng = (rng * 9301 + 49297) % 233280
-        return rng / 233280
-      }
       for (let i = copy.length - 1; i > 0; i--) {
-        const j = Math.floor(random() * (i + 1));
+        const j = Math.floor(Math.random() * (i + 1));
         [copy[i], copy[j]] = [copy[j], copy[i]]
       }
       return copy
     }
     
-    // Select 4 heroes for each player (use consistent order)
+    // Shuffle hero pools and select 4 heroes for each player
+    const shuffledPlayer1HeroPool = randomShuffle(player1HeroPool)
+    const shuffledPlayer2HeroPool = randomShuffle(player2HeroPool)
+    
     const player1Heroes: Hero[] = []
     const player2Heroes: Hero[] = []
     
-    // Fill up to HEROES_REQUIRED, using consistent order
+    // Fill up to HEROES_REQUIRED, using shuffled order
     for (let i = 0; i < HEROES_REQUIRED; i++) {
-      const p1Hero = player1HeroPool[i % player1HeroPool.length]
-      const p2Hero = player2HeroPool[i % player2HeroPool.length]
+      const p1Hero = shuffledPlayer1HeroPool[i % shuffledPlayer1HeroPool.length]
+      const p2Hero = shuffledPlayer2HeroPool[i % shuffledPlayer2HeroPool.length]
       
       player1Heroes.push({
         ...p1Hero,
-        id: `${p1Hero.id}-player1-consistent-${i}`,
+        id: `${p1Hero.id}-player1-${Date.now()}-${i}`,
       } as Hero)
       
       player2Heroes.push({
         ...p2Hero,
-        id: `${p2Hero.id}-player2-consistent-${i}`,
+        id: `${p2Hero.id}-player2-${Date.now()}-${i}`,
       } as Hero)
     }
     
     // Select 12 cards for each player (signature cards will be auto-added)
-    // Use consistent shuffle so same cards appear every time
     const DRAFTED_CARDS_REQUIRED = 12
     
     // For UBG player, ensure Exorcism is included
-    let player2DraftedCards = seededShuffle(player2CardPool, 54321)
+    let player2DraftedCards = randomShuffle(player2CardPool)
     const exorcismCard = player2CardPool.find(c => c.id === 'ubg-spell-exorcism')
     if (exorcismCard && player2Archetype === 'ubg-control') {
       // Remove Exorcism from shuffled list and add it at the start
@@ -262,7 +257,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       player2DraftedCards = [exorcismCard, ...player2DraftedCards]
     }
     
-    const player1DraftedCards = seededShuffle(player1CardPool, 12345).slice(0, DRAFTED_CARDS_REQUIRED)
+    const player1DraftedCards = randomShuffle(player1CardPool).slice(0, DRAFTED_CARDS_REQUIRED)
     player2DraftedCards = player2DraftedCards.slice(0, DRAFTED_CARDS_REQUIRED)
     
     // Add 2 copies of each hero's signature card (4 heroes × 2 copies = 8 signature cards)

@@ -214,6 +214,17 @@ export const tier1Items: Item[] = [
     attackBonus: 5,
     specialEffects: ['bonus_vs_heroes'], // +3 damage vs heroes
   },
+  // Late game power item
+  {
+    id: 'item-strike-weapon',
+    name: 'Strike Weapon',
+    description: '+5 Attack. When this hero attacks, it strikes the enemy (deals damage equal to attack).',
+    cost: 30,
+    tier: 2,
+    attackBonus: 5,
+    hasActivatedAbility: true,
+    activatedAbilityDescription: 'When this hero attacks, it strikes the enemy (deals damage equal to attack).',
+  },
 ]
 
 // Battlefield Buff definitions (templates - will be instantiated with playerId and battlefieldId)
@@ -1663,7 +1674,7 @@ export function createInitialGameState(): {
     towerB_player2_HP: TOWER_HP,
     player1Tier: 1,
     player2Tier: 1,
-    deathCooldowns: {}, // Track hero death cooldowns - Record<cardId, counter> (starts at 1, decreases by 1 each turn)
+    deathCooldowns: {}, // Track hero death cooldowns - Record<cardId, counter> (starts at 2, decreases by 1 each turn, prevents deployment for 1 full round)
     player1MovedToBase: false, // Track if player 1 moved a hero to base this turn
     player2MovedToBase: false, // Track if player 2 moved a hero to base this turn
     playedSpells: {}, // Track cards that have been played (for toggle X overlay) - Record<cardId, true> (works for any card type)
@@ -1788,25 +1799,18 @@ export function createGameStateFromDraft(
   const player1Base = player1Heroes
   const player2Base = player2Heroes
 
-  // Shuffle cards with consistent seed for reproducible games
-  // This ensures the same 4 cards are always in hand and 16 in library
-  const seededShuffle = <T extends unknown>(arr: T[], seed: number = 12345): T[] => {
+  // Shuffle cards randomly for variety in each game
+  const randomShuffle = <T extends unknown>(arr: T[]): T[] => {
     const copy = [...arr]
-    // Simple seeded random number generator
-    let rng = seed
-    const random = () => {
-      rng = (rng * 9301 + 49297) % 233280
-      return rng / 233280
-    }
     for (let i = copy.length - 1; i > 0; i--) {
-      const j = Math.floor(random() * (i + 1));
+      const j = Math.floor(Math.random() * (i + 1));
       [copy[i], copy[j]] = [copy[j], copy[i]]
     }
     return copy
   }
   
-  const player1ShuffledCards = seededShuffle([...player1Selection.cards], 11111)
-  const player2ShuffledCards = seededShuffle([...player2Selection.cards], 22222)
+  const player1ShuffledCards = randomShuffle([...player1Selection.cards])
+  const player2ShuffledCards = randomShuffle([...player2Selection.cards])
   
   const player1HandCards = player1ShuffledCards.slice(0, 4)
   const player1LibraryCards = player1ShuffledCards.slice(4)

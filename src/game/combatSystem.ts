@@ -120,8 +120,19 @@ export function resolveAttack(
       const targetIsHero = targetUnit.cardType === 'hero'
       // If stunned, deal 0 damage; otherwise calculate normally
       const attackPower = isStunned ? 0 : getAttackPower(attacker, targetIsHero)
-      const newHealth = Math.max(0, targetUnit.currentHealth - attackPower)
-      damageDealt = Math.min(attackPower, targetUnit.currentHealth)
+      
+      // Calculate effective health (currentHealth + temporaryHP)
+      const tempHP = (targetUnit.cardType === 'hero' || targetUnit.cardType === 'generic') && 'temporaryHP' in targetUnit
+        ? (targetUnit.temporaryHP || 0)
+        : 0
+      const effectiveHealth = targetUnit.currentHealth + tempHP
+      
+      // Apply damage - temporary HP absorbs damage first
+      const damageAfterTempHP = Math.max(0, attackPower - tempHP)
+      const newHealth = Math.max(0, targetUnit.currentHealth - damageAfterTempHP)
+      const newTempHP = Math.max(0, tempHP - attackPower)
+      
+      damageDealt = Math.min(attackPower, effectiveHealth)
       
       if (newHealth <= 0) {
         // Unit died
@@ -134,11 +145,17 @@ export function resolveAttack(
         // Unit damaged but alive
         updatedBattlefield = {
           ...updatedBattlefield,
-          [opponent]: opponentUnits.map(u =>
-            u.id === target.targetId
-              ? { ...u, currentHealth: newHealth }
-              : u
-          ),
+          [opponent]: opponentUnits.map(u => {
+            if (u.id === target.targetId) {
+              // Update health and temporary HP
+              const updatedUnit = { ...u, currentHealth: newHealth }
+              if ((u.cardType === 'hero' || u.cardType === 'generic') && 'temporaryHP' in u) {
+                (updatedUnit as any).temporaryHP = newTempHP
+              }
+              return updatedUnit
+            }
+            return u
+          }),
         }
       }
     }
@@ -248,8 +265,8 @@ export function resolveCombat(
           const towerHPBefore = initialTowerHP[towerKey]
           const attackPowerForTower = getAttackPower(attacker, false) // No hero bonus vs towers
           const totalOverflow = Math.max(0, attackPowerForTower - towerHPBefore)
-          // Only half the overflow damage (rounded up) goes to nexus on the killing blow
-          overflowDamage += Math.ceil(totalOverflow / 2)
+          // All overflow damage goes directly to nexus
+          overflowDamage += totalOverflow
         } else if (currentTowerHP[towerKey] === 0) {
           // Tower already dead - all damage goes to nexus
           const attackPowerForTower = getAttackPower(attacker, false)
@@ -376,8 +393,8 @@ export function resolveSimultaneousCombat(
         if (towerWasDestroyed) {
           const towerHPBefore = initialTowerHP[towerKey]
           const totalOverflow = Math.max(0, p1AttackPower - towerHPBefore)
-          // Only half the overflow damage (rounded up) goes to nexus on the killing blow
-          overflowDamage.player1 += Math.ceil(totalOverflow / 2)
+          // All overflow damage goes directly to nexus
+          overflowDamage.player1 += totalOverflow
         } else if (currentTowerHP[towerKey] === 0) {
           // Tower already dead - all damage goes to nexus
           overflowDamage.player1 += p1AttackPower
@@ -445,8 +462,8 @@ export function resolveSimultaneousCombat(
         if (towerWasDestroyed) {
           const towerHPBefore = initialTowerHP[towerKey]
           const totalOverflow = Math.max(0, p2AttackPower - towerHPBefore)
-          // Only half the overflow damage (rounded up) goes to nexus on the killing blow
-          overflowDamage.player2 += Math.ceil(totalOverflow / 2)
+          // All overflow damage goes directly to nexus
+          overflowDamage.player2 += totalOverflow
         } else if (currentTowerHP[towerKey] === 0) {
           // Tower already dead - all damage goes to nexus
           overflowDamage.player2 += p2AttackPower

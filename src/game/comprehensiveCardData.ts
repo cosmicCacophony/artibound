@@ -225,6 +225,31 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 0,
     },
   },
+  // RW Fight Spells - Hero combat initiation
+  {
+    id: 'rw-spell-heroic-duel',
+    name: 'Heroic Duel',
+    description: 'Your hero initiates combat with target enemy hero. Players resolve combat manually.',
+    cardType: 'spell',
+    colors: ['red'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage', // Placeholder - manual resolution, no game tracking
+      damage: 0,
+    },
+  },
+  {
+    id: 'rw-spell-champion-challenge',
+    name: 'Champion Challenge',
+    description: 'Your hero initiates combat with target enemy hero. Players resolve combat manually.',
+    cardType: 'spell',
+    colors: ['red', 'white'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage', // Placeholder - manual resolution, no game tracking
+      damage: 0,
+    },
+  },
   {
     id: 'rw-spell-whirling-death',
     name: 'Whirling Death',

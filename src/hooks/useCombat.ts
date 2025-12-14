@@ -45,7 +45,7 @@ export function useCombat() {
               [`${opponent}Gold`]: (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 5,
               deathCooldowns: {
                 ...prev.metadata.deathCooldowns,
-                [card.id]: 1, // Set cooldown counter to 1 (decreases by 1 each turn, can redeploy next turn)
+                [card.id]: 2, // Set cooldown counter to 2 (decreases by 1 each turn, prevents deployment for 1 full round)
               },
             },
           }
@@ -67,7 +67,7 @@ export function useCombat() {
               [`${opponent}Gold`]: (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 2,
               deathCooldowns: {
                 ...prev.metadata.deathCooldowns,
-                [card.id]: 1, // Set cooldown counter to 1 (decreases by 1 each turn, can redeploy next turn)
+                [card.id]: 2, // Set cooldown counter to 2 (decreases by 1 each turn, prevents deployment for 1 full round)
               },
             },
           }

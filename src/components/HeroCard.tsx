@@ -113,20 +113,29 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
       return card.stackHealth
     }
     // Use currentHealth if available (for combat simulation), otherwise use health
+    let baseHealth = 0
     if ('currentHealth' in card && card.currentHealth !== undefined) {
-      return card.currentHealth
+      baseHealth = card.currentHealth
+    } else {
+      baseHealth = 'health' in card ? card.health : 0
     }
-    return 'health' in card ? card.health : 0
+    // Add temporary HP (can exceed maxHealth)
+    const tempHP = (card.cardType === 'hero' || card.cardType === 'generic') && 'temporaryHP' in card 
+      ? (card.temporaryHP || 0) 
+      : 0
+    return baseHealth + tempHP
   }
-
+  
   const getMaxHealth = () => {
     if (card.cardType === 'generic' && 'stackHealth' in card && card.stackHealth !== undefined) {
       return card.stackHealth
     }
-    if ('maxHealth' in card && card.maxHealth !== undefined) {
-      return card.maxHealth
-    }
-    return 'health' in card ? card.health : 0
+    const baseMaxHealth = 'maxHealth' in card ? card.maxHealth : ('health' in card ? card.health : 0)
+    // Add temporary HP to max display (temporary HP can exceed base maxHealth)
+    const tempHP = (card.cardType === 'hero' || card.cardType === 'generic') && 'temporaryHP' in card 
+      ? (card.temporaryHP || 0) 
+      : 0
+    return baseMaxHealth + tempHP
   }
 
   const isStacked = card.cardType === 'generic' && 'stackedWith' in card && card.stackedWith !== undefined
@@ -337,7 +346,7 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
                       -1
                     </button>
                   )}
-                  {onIncreaseHealth && getHealth() < getMaxHealth() && (
+                  {onIncreaseHealth && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation()

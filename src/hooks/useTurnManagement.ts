@@ -393,12 +393,37 @@ export function useTurnManagement() {
       const updatedBattlefieldA = spawnVoidApprentices(prev.battlefieldA, 'battlefieldA')
       const updatedBattlefieldB = spawnVoidApprentices(prev.battlefieldB, 'battlefieldB')
       
+      // Reset temporary HP at start of new turn
+      const resetTemporaryHP = (c: Card): Card => {
+        if ((c.cardType === 'hero' || c.cardType === 'generic') && 'temporaryHP' in c) {
+          const cardWithTempHP = c as import('../game/types').Hero | import('../game/types').GenericUnit
+          if (cardWithTempHP.temporaryHP && cardWithTempHP.temporaryHP > 0) {
+            // Remove temporary HP, but don't let currentHealth go below 0
+            const newCurrentHealth = Math.max(0, cardWithTempHP.currentHealth - cardWithTempHP.temporaryHP)
+            return {
+              ...cardWithTempHP,
+              temporaryHP: 0,
+              currentHealth: newCurrentHealth,
+            }
+          }
+        }
+        return c
+      }
+      
       return {
         ...prev,
-        battlefieldA: updatedBattlefieldA,
-        battlefieldB: updatedBattlefieldB,
-        player1Base: prev.player1Base.map(healHeroInBase),
-        player2Base: prev.player2Base.map(healHeroInBase),
+        battlefieldA: {
+          player1: updatedBattlefieldA.player1.map(resetTemporaryHP),
+          player2: updatedBattlefieldA.player2.map(resetTemporaryHP),
+        },
+        battlefieldB: {
+          player1: updatedBattlefieldB.player1.map(resetTemporaryHP),
+          player2: updatedBattlefieldB.player2.map(resetTemporaryHP),
+        },
+        player1Hand: prev.player1Hand.map(resetTemporaryHP),
+        player2Hand: prev.player2Hand.map(resetTemporaryHP),
+        player1Base: prev.player1Base.map(c => resetTemporaryHP(healHeroInBase(c))),
+        player2Base: prev.player2Base.map(c => resetTemporaryHP(healHeroInBase(c))),
         metadata: {
           ...prev.metadata,
           currentTurn: newTurn,
