@@ -1,5 +1,12 @@
 # Artibound - Comprehensive Testing Plan
 
+> **Created:** 2024-12-XX  
+> **Last Updated:** 2024-12-XX  
+> **Status:** Active  
+> **Relevance:** High  
+> **Category:** Testing  
+> **Notes:** Comprehensive testing approach and checklists
+
 ## Overview
 
 This document provides a structured approach to efficiently playtest Artibound against yourself. The goal is to systematically identify what works, what doesn't, and what needs adjustment in cards, mechanics, and balance.
@@ -471,5 +478,11 @@ Use this plan to structure your testing, then document findings in `PLAYTESTING.
 4. **Iterate** - Test, adjust, test again
 
 Remember: The goal isn't to play perfectly, but to learn what works and what doesn't. Every playtest session should teach you something about your game.
+
+
+
+
+
+
 
 

@@ -54,3 +54,9 @@ The script will:
 - You can stop and restart the script - it will skip cards that already have descriptions
 
 
+
+
+
+
+
+

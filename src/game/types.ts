@@ -7,10 +7,11 @@ export type Color = 'red' | 'blue' | 'white' | 'black' | 'green'
 export type ColorCombo = Color | `${Color}${Color}` | `${Color}${Color}${Color}` // Single, dual, or triple color
 
 // Maximum colors allowed per deck
-export const MAX_COLORS_PER_DECK = 3
+// Increased to 4 to enable 3-4 color strategies (design advantage of 2-battlefield structure)
+export const MAX_COLORS_PER_DECK = 4
 
 // Archetype Types
-export type Archetype = 'rw-legion' | 'ub-control' | 'all'
+export type Archetype = 'rw-legion' | 'ub-control' | 'ubg-control' | 'all'
 
 export interface BaseCard {
   id: string
@@ -88,13 +89,13 @@ export interface GameMetadata {
   towerB_player2_HP: number
   player1Tier: 1 | 2
   player2Tier: 1 | 2
-  // Death cooldown: Record of card ID -> turn they died (to track 1 round cooldown)
+  // Death cooldown: Record of card ID -> cooldown counter (starts at 2, decreases by 1 each turn, 0 = ready)
   // Using Record instead of Map for JSON serialization
   deathCooldowns: Record<string, number>
   // Movement tracking: Track if each player has moved a hero to base this turn
   player1MovedToBase: boolean
   player2MovedToBase: boolean
-  // Played spells: Record of spell card ID -> boolean (for toggle X overlay in base)
+  // Played cards: Record of card ID -> boolean (for toggle X overlay in base - works for any card type)
   // Using Record instead of Set for JSON serialization
   playedSpells: Record<string, boolean>
   // Battlefield buffs: Permanent upgrades that only affect owner's units in that battlefield
@@ -103,8 +104,47 @@ export interface GameMetadata {
   // Battlefield death counters: For RW-bf2 (death counter -> draw card mechanic)
   // Format: `player-battlefield` -> count
   battlefieldDeathCounters: Record<string, number>
-  // Initiative: Which player has initiative (can play next card)
+  // Action: Which player can act right now (current turn)
+  actionPlayer: PlayerId | null
+  // Initiative: Which player has initiative (will have action first next turn)
+  // Initiative is separate from action - you can have action but not initiative
   initiativePlayer: PlayerId | null
+  // Hero ability cooldowns: Record of hero ID -> turn last used (to track cooldowns)
+  // Format: `heroId` -> turn number
+  heroAbilityCooldowns: Record<string, number>
+  // Pass tracking: Track if each player has passed this turn (for combat trigger)
+  player1Passed: boolean
+  player2Passed: boolean
+  // Stunned heroes: Record of hero ID -> boolean (stunned heroes don't deal combat damage, only receive it)
+  // Using Record instead of Set for JSON serialization
+  stunnedHeroes: Record<string, boolean>
+  // Turn 1 deployment state: Track turn 1 deployment phase (Artifact-style counter-deployment)
+  // 'p1_lane1' -> Player 1 deploys hero to lane 1 (battlefieldA)
+  // 'p2_lane1' -> Player 2 can counter-deploy to lane 1 (battlefieldA)
+  // 'p2_lane2' -> Player 2 deploys hero to lane 2 (battlefieldB)
+  // 'p1_lane2' -> Player 1 can counter-deploy to lane 2 (battlefieldB)
+  // 'complete' -> Turn 1 deployment done
+  turn1DeploymentPhase?: 'p1_lane1' | 'p2_lane1' | 'p2_lane2' | 'p1_lane2' | 'complete'
+}
+
+// Hero Ability Types
+export type HeroAbilityEffectType = 
+  | 'buff_units' // Buff all units
+  | 'damage_target' // Deal damage to target
+  | 'draw_card' // Draw card(s)
+  | 'heal_target' // Heal target
+  | 'move_hero' // Move hero
+  | 'custom' // Custom effect
+
+export interface HeroAbility {
+  name: string
+  description: string
+  manaCost: number // Typically 1
+  cooldown: number // Turns until can use again (typically 2-3)
+  effectType: HeroAbilityEffectType
+  effectValue?: number // Value for the effect (damage, heal amount, etc.)
+  // For tracking cooldown: Record<heroId, turnLastUsed>
+  // Stored in GameMetadata.heroAbilityCooldowns
 }
 
 export interface Hero extends BaseCard {
@@ -114,6 +154,8 @@ export interface Hero extends BaseCard {
   health: number
   maxHealth: number // Track max health for restoration
   currentHealth: number // Track current health for combat
+  temporaryHP?: number // Temporary HP bonus (resets at end of turn)
+  temporaryAttack?: number // Temporary attack bonus (resets at end of turn)
   supportEffect?: string
   location: Location
   owner: PlayerId
@@ -121,6 +163,7 @@ export interface Hero extends BaseCard {
   equippedItems?: string[] // Array of item IDs
   signatureCardId?: string // ID of the signature card for this hero (2 copies added to deck)
   bonusVsHeroes?: number // Bonus damage when attacking heroes (e.g., +3 for assassins)
+  ability?: HeroAbility // Hero's activated ability (mana cost + cooldown)
 }
 
 export interface SignatureCard extends BaseCard {
@@ -154,6 +197,8 @@ export interface GenericUnit extends BaseCard {
   health: number
   maxHealth: number
   currentHealth: number
+  temporaryHP?: number // Temporary HP bonus (resets at end of turn)
+  temporaryAttack?: number // Temporary attack bonus (resets at end of turn)
   location: Location
   owner: PlayerId
   slot?: number
@@ -304,7 +349,7 @@ export interface GameState {
   player2Battlefields?: BattlefieldDefinition[]
 }
 
-export const BATTLEFIELD_SLOT_LIMIT = 5
+export const BATTLEFIELD_SLOT_LIMIT = 4
 export const TOWER_HP = 20
 export const NEXUS_HP = 30
 export const STARTING_GOLD = 5

@@ -1,14 +1,14 @@
 import { Hero, BattlefieldDefinition, BaseCard, Color } from './types'
-import { allHeroes, allBattlefields, defaultGenericHeroes } from './cardData'
+import { allHeroes, allBattlefields } from './cardData'
 
 // Default Heroes (used if player doesn't draft 4 heroes)
-// Use the default generic heroes from comprehensive data
+// Use first heroes from allHeroes as fallback (players should always draft 4, but this is a safety net)
 export const defaultHeroes: {
   passable: Omit<Hero, 'location' | 'owner'>[]
   disappointing: Omit<Hero, 'location' | 'owner'>[]
 } = {
-  passable: defaultGenericHeroes.slice(0, 2), // First 2 as passable
-  disappointing: defaultGenericHeroes.slice(2), // Rest as disappointing
+  passable: allHeroes.slice(0, 2), // First 2 as passable
+  disappointing: allHeroes.slice(2, 4), // Next 2 as disappointing
 }
 
 // Default Battlefield (used if player doesn't draft a battlefield)

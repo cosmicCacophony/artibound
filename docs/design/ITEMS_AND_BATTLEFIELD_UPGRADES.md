@@ -1,8 +1,17 @@
 # Items and Battlefield Upgrades
 
+> **Created:** 2024-12-XX  
+> **Last Updated:** 2024-12-XX  
+> **Status:** Reference  
+> **Relevance:** Medium  
+> **Category:** Design  
+> **Notes:** Items currently optional/disabled - kept for potential future use
+
 ## Overview
 
 This document describes the new items and battlefield upgrades added to Artibound, inspired by Artifact Foundry.
+
+**Note:** Items are currently **optional/disabled** for playtesting. The item system is implemented but can be ignored during gameplay. Items may be more relevant in a 3-lane system, and with only 2 lanes, the game may not need the additional complexity. Items are kept in the codebase for potential future use.
 
 ---
 
@@ -215,5 +224,6 @@ The `GameMetadata` interface now includes:
 - Create meaningful strategic choices about which battlefield to upgrade
 - Should be powerful enough to influence game strategy
 - Cost should reflect their impact
+
 
 

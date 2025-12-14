@@ -41,12 +41,11 @@ export function useCombat() {
             }],
             metadata: {
               ...prev.metadata,
-              // TODO: Gold should go to opponent who killed the unit, not the owner
-              // Currently this is a placeholder - gold should be awarded in combat resolution
-              [`${player}Gold`]: (prev.metadata[`${player}Gold` as keyof GameMetadata] as number) + 5,
+              // Opponent gets gold for killing the hero
+              [`${opponent}Gold`]: (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 5,
               deathCooldowns: {
                 ...prev.metadata.deathCooldowns,
-                [card.id]: prev.metadata.currentTurn, // Track turn they died
+                [card.id]: 2, // Set cooldown counter to 2 (decreases by 1 each turn, prevents deployment for 1 full round)
               },
             },
           }
@@ -64,12 +63,11 @@ export function useCombat() {
             },
             metadata: {
               ...prev.metadata,
-              // TODO: Gold should go to opponent who killed the unit, not the owner
-              // Currently this is a placeholder - gold should be awarded in combat resolution
-              [`${player}Gold`]: (prev.metadata[`${player}Gold` as keyof GameMetadata] as number) + 2,
+              // Opponent gets gold for killing the unit
+              [`${opponent}Gold`]: (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 2,
               deathCooldowns: {
                 ...prev.metadata.deathCooldowns,
-                [card.id]: prev.metadata.currentTurn, // Track turn they died
+                [card.id]: 2, // Set cooldown counter to 2 (decreases by 1 each turn, prevents deployment for 1 full round)
               },
             },
           }
@@ -102,12 +100,106 @@ export function useCombat() {
   const handleIncreaseHealth = useCallback((card: Card) => {
     if (!('currentHealth' in card) || !('maxHealth' in card)) return
     
-    const newHealth = Math.min(card.currentHealth + 1, card.maxHealth)
     const player = card.owner
+    const isHeroOrGeneric = card.cardType === 'hero' || card.cardType === 'generic'
+    const currentTempHP = isHeroOrGeneric && 'temporaryHP' in card ? (card.temporaryHP || 0) : 0
     
     setGameState(prev => {
       const updateCardInArray = (cards: Card[]): Card[] => 
-        cards.map(c => c.id === card.id ? { ...c, currentHealth: newHealth } as Card : c)
+        cards.map(c => {
+          if (c.id === card.id) {
+            // If at max health, add to temporary HP instead (allows overflow like mana)
+            if (c.currentHealth >= c.maxHealth) {
+              const newTempHP = currentTempHP + 1
+              if (isHeroOrGeneric) {
+                return { ...c, temporaryHP: newTempHP } as Card
+              }
+            } else {
+              // Not at max yet, increase currentHealth
+              return { ...c, currentHealth: c.currentHealth + 1 } as Card
+            }
+          }
+          return c
+        })
+
+      return {
+        ...prev,
+        [`${player}Hand`]: updateCardInArray(prev[`${player}Hand` as keyof typeof prev] as Card[]),
+        [`${player}Base`]: updateCardInArray(prev[`${player}Base` as keyof typeof prev] as Card[]),
+        battlefieldA: {
+          ...prev.battlefieldA,
+          [player]: updateCardInArray(prev.battlefieldA[player as 'player1' | 'player2']),
+        },
+        battlefieldB: {
+          ...prev.battlefieldB,
+          [player]: updateCardInArray(prev.battlefieldB[player as 'player1' | 'player2']),
+        },
+      }
+    })
+  }, [setGameState])
+
+  const handleDecreaseAttack = useCallback((card: Card) => {
+    if (!('attack' in card)) return
+    
+    const player = card.owner
+    const isHeroOrGeneric = card.cardType === 'hero' || card.cardType === 'generic'
+    const currentTempAttack = isHeroOrGeneric && 'temporaryAttack' in card ? (card.temporaryAttack || 0) : 0
+    
+    setGameState(prev => {
+      const updateCardInArray = (cards: Card[]): Card[] => 
+        cards.map(c => {
+          if (c.id === card.id) {
+            if (isHeroOrGeneric && currentTempAttack > 0) {
+              // Decrease temporaryAttack first
+              const newTempAttack = Math.max(0, currentTempAttack - 1)
+              return { ...c, temporaryAttack: newTempAttack } as Card
+            } else {
+              // Decrease base attack if no temporaryAttack
+              const newAttack = Math.max(0, c.attack - 1)
+              return { ...c, attack: newAttack } as Card
+            }
+          }
+          return c
+        })
+
+      return {
+        ...prev,
+        [`${player}Hand`]: updateCardInArray(prev[`${player}Hand` as keyof typeof prev] as Card[]),
+        [`${player}Base`]: updateCardInArray(prev[`${player}Base` as keyof typeof prev] as Card[]),
+        battlefieldA: {
+          ...prev.battlefieldA,
+          [player]: updateCardInArray(prev.battlefieldA[player as 'player1' | 'player2']),
+        },
+        battlefieldB: {
+          ...prev.battlefieldB,
+          [player]: updateCardInArray(prev.battlefieldB[player as 'player1' | 'player2']),
+        },
+      }
+    })
+  }, [setGameState])
+
+  const handleIncreaseAttack = useCallback((card: Card) => {
+    if (!('attack' in card)) return
+    
+    const player = card.owner
+    const isHeroOrGeneric = card.cardType === 'hero' || card.cardType === 'generic'
+    const currentTempAttack = isHeroOrGeneric && 'temporaryAttack' in card ? (card.temporaryAttack || 0) : 0
+    
+    setGameState(prev => {
+      const updateCardInArray = (cards: Card[]): Card[] => 
+        cards.map(c => {
+          if (c.id === card.id) {
+            // Always add to temporaryAttack (allows overflow like mana/HP)
+            if (isHeroOrGeneric) {
+              const newTempAttack = currentTempAttack + 1
+              return { ...c, temporaryAttack: newTempAttack } as Card
+            } else {
+              // For other card types, just increase base attack
+              return { ...c, attack: c.attack + 1 } as Card
+            }
+          }
+          return c
+        })
 
       return {
         ...prev,
@@ -128,6 +220,8 @@ export function useCombat() {
   return {
     handleDecreaseHealth,
     handleIncreaseHealth,
+    handleDecreaseAttack,
+    handleIncreaseAttack,
   }
 }
 

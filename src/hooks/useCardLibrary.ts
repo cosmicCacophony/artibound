@@ -17,16 +17,19 @@ export function useCardLibrary() {
     const sidebar = player === 'player1' ? player1SidebarCards : player2SidebarCards
     const setSidebar = player === 'player1' ? setPlayer1SidebarCards : setPlayer2SidebarCards
     const template = sidebar[templateIndex]
+    
     if (!template) return
     
+    // Create the card instance
     const newCard = createCardFromTemplate(template, player, 'hand')
     
-    // Remove the card from the sidebar
+    // Remove from sidebar first using functional update to ensure we work with latest state
     setSidebar(prev => prev.filter((_, index) => index !== templateIndex))
     
+    // Add to hand
     setGameState(prev => ({
       ...prev,
-      [`${player}Hand`]: [...prev[`${player}Hand` as keyof typeof prev] as Card[], newCard],
+      [`${player}Hand`]: [...(prev[`${player}Hand` as keyof typeof prev] as Card[] || []), newCard],
     }))
   }, [player1SidebarCards, player2SidebarCards, setPlayer1SidebarCards, setPlayer2SidebarCards, setGameState])
 

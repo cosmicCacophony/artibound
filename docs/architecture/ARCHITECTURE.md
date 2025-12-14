@@ -1,5 +1,12 @@
 # Artibound - Software Architecture Diagram
 
+> **Created:** 2024-12-XX  
+> **Last Updated:** 2024-12-XX  
+> **Status:** Active  
+> **Relevance:** High  
+> **Category:** Architecture  
+> **Notes:** Technical architecture documentation
+
 ## System Overview
 
 Artibound is a two-player hero card game built with React + TypeScript. The architecture follows a component-based structure with clear separation between UI components and game logic.

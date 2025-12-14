@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
-import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT } from '../game/types'
+import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT, Hero, ItemCard } from '../game/types'
 import { useGameContext } from '../context/GameContext'
+import { tier1Items } from '../game/sampleData'
 
 export function useDeployment() {
   const { gameState, setGameState, selectedCard, selectedCardId, setSelectedCardId, getAvailableSlots } = useGameContext()
@@ -16,13 +17,105 @@ export function useDeployment() {
       return
     }
     
-    // Check mana cost
+    // Turn 1 deployment sequence check (Artifact-style counter-deployment)
+    let shouldSkipInitiativePass = false
+    let newDeploymentPhase = metadata.turn1DeploymentPhase || 'p1_lane1'
+    
+    if (metadata.currentTurn === 1 && selectedCard.cardType === 'hero') {
+      const deploymentPhase = metadata.turn1DeploymentPhase || 'p1_lane1'
+      
+      if (deploymentPhase === 'p1_lane1') {
+        // Player 1 deploys hero to lane 1 (battlefieldA)
+        if (selectedCard.owner !== 'player1') {
+          alert('Player 1 must deploy first hero to lane 1 (Battlefield A)')
+          return
+        }
+        if (location !== 'battlefieldA') {
+          alert('Player 1 must deploy to lane 1 (Battlefield A) first')
+          return
+        }
+        // After deployment, Player 2 can counter-deploy to lane 1
+        newDeploymentPhase = 'p2_lane1'
+      } else if (deploymentPhase === 'p2_lane1') {
+        // Player 2 can counter-deploy to lane 1 (battlefieldA) OR pass
+        // If deploying, must be to battlefieldA
+        if (selectedCard.owner === 'player2' && location !== 'battlefieldA') {
+          alert('Player 2 can only counter-deploy to lane 1 (Battlefield A) or pass')
+          return
+        }
+        // If player 2 is deploying, move to next phase
+        if (selectedCard.owner === 'player2') {
+          newDeploymentPhase = 'p2_lane2'
+        }
+        // If player 1 tries to deploy (shouldn't happen), block it
+        if (selectedCard.owner === 'player1') {
+          alert('Player 2 can counter-deploy to lane 1 or pass')
+          return
+        }
+      } else if (deploymentPhase === 'p2_lane2') {
+        // Player 2 deploys hero to lane 2 (battlefieldB)
+        if (selectedCard.owner !== 'player2') {
+          alert('Player 2 must deploy hero to lane 2 (Battlefield B)')
+          return
+        }
+        if (location !== 'battlefieldB') {
+          alert('Player 2 must deploy to lane 2 (Battlefield B)')
+          return
+        }
+        // After deployment, Player 1 can counter-deploy to lane 2
+        newDeploymentPhase = 'p1_lane2'
+      } else if (deploymentPhase === 'p1_lane2') {
+        // Player 1 can counter-deploy to lane 2 (battlefieldB) OR pass
+        // If deploying, must be to battlefieldB
+        if (selectedCard.owner === 'player1' && location !== 'battlefieldB') {
+          alert('Player 1 can only counter-deploy to lane 2 (Battlefield B) or pass')
+          return
+        }
+        // If player 1 is deploying, deployment is complete
+        if (selectedCard.owner === 'player1') {
+          newDeploymentPhase = 'complete'
+        }
+        // If player 2 tries to deploy (shouldn't happen), block it
+        if (selectedCard.owner === 'player2') {
+          alert('Player 1 can counter-deploy to lane 2 or pass')
+          return
+        }
+      } else if (deploymentPhase === 'complete') {
+        // Turn 1 deployment complete - normal action rules apply
+        // Check action
+        if (metadata.actionPlayer !== selectedCard.owner) {
+          alert('It\'s not your turn to act!')
+          return
+        }
+      }
+    } else {
+      // Normal turn (not turn 1) - check action
+      if (metadata.actionPlayer !== selectedCard.owner) {
+        alert('It\'s not your turn to act!')
+        return
+      }
+    }
+    
+    // Check if hero is on cooldown (cannot deploy if cooldown counter > 0)
+    if (selectedCard.cardType === 'hero') {
+      const cooldownCounter = metadata.deathCooldowns[selectedCard.id]
+      if (cooldownCounter !== undefined && cooldownCounter > 0) {
+        alert(`Hero is on cooldown! ${cooldownCounter} turn${cooldownCounter !== 1 ? 's' : ''} remaining.`)
+        return
+      }
+    }
+    
+    // Check mana cost (spells don't cost mana to move to base, only when played)
+    const isSpell = selectedCard.cardType === 'spell'
     const manaCost = selectedCard.manaCost || 0
     const playerMana = selectedCard.owner === 'player1' ? metadata.player1Mana : metadata.player2Mana
     
-    if (manaCost > playerMana) {
-      alert(`Not enough mana! Need ${manaCost}, have ${playerMana}`)
-      return
+    // Only check mana for non-spells, or spells being deployed to battlefields (not base)
+    if (!isSpell || location !== 'base') {
+      if (manaCost > playerMana) {
+        alert(`Not enough mana! Need ${manaCost}, have ${playerMana}`)
+        return
+      }
     }
 
     // Check if deploying to battlefield and slots are full
@@ -34,7 +127,7 @@ export function useDeployment() {
       const availableSlots = getAvailableSlots(battlefield)
       
       if (selectedCard.cardType !== 'generic' && availableSlots <= 0 && !targetSlot) {
-        alert('Battlefield is full! Maximum 5 slots.')
+        alert('Battlefield is full! Maximum 4 slots.')
         return
       }
 
@@ -107,8 +200,9 @@ export function useDeployment() {
           ? { ...selectedCard, location, currentHealth: (selectedCard as any).maxHealth, slot: undefined }
           : { ...selectedCard, location, slot: undefined }
         
-        // Deduct mana
+        // Deduct mana (spells don't cost mana to move to base, only when played)
         const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
+        const shouldDeductMana = !isSpell // Only deduct mana for non-spells
         
         return {
           ...prev,
@@ -125,7 +219,7 @@ export function useDeployment() {
           metadata: {
             ...prev.metadata,
             ...(isHero ? { [movedToBaseKey]: true } : {}),
-            [manaKey]: (prev.metadata[manaKey] as number) - manaCost,
+            ...(shouldDeductMana ? { [manaKey]: (prev.metadata[manaKey] as number) - manaCost } : {}),
           },
         }
       } else if (location === 'battlefieldA' || location === 'battlefieldB') {
@@ -221,6 +315,48 @@ export function useDeployment() {
       }
       return prev
     })
+    
+    // Handle initiative passing and turn 1 deployment phase updates
+    setGameState(prev => {
+      const updatedMetadata = { ...prev.metadata }
+      
+      // Update turn 1 deployment phase if needed
+      if (metadata.currentTurn === 1 && selectedCard.cardType === 'hero') {
+        updatedMetadata.turn1DeploymentPhase = newDeploymentPhase
+        
+        // When deployment is complete, set action and initiative
+        if (newDeploymentPhase === 'complete') {
+          updatedMetadata.actionPlayer = 'player1' // Player 1 gets action after deployment
+          updatedMetadata.initiativePlayer = 'player1' // Player 1 also gets initiative
+        } else {
+          // During deployment, no action/initiative (players are deploying, not acting)
+          updatedMetadata.actionPlayer = null
+          updatedMetadata.initiativePlayer = null
+        }
+      }
+      
+      // Handle action/initiative passing
+      // During turn 1 deployment phase (before complete), don't pass action/initiative
+      if (metadata.currentTurn === 1 && selectedCard.cardType === 'hero' && updatedMetadata.turn1DeploymentPhase !== 'complete') {
+        // Still in deployment phase - action/initiative handled above
+        updatedMetadata.player1Passed = false
+        updatedMetadata.player2Passed = false
+      } else {
+        // Any action (deploy, spell, ability, etc.) passes BOTH action AND initiative to opponent
+        // This includes: turn 1 after deployment complete, or any turn > 1
+        const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
+        updatedMetadata.actionPlayer = otherPlayer
+        updatedMetadata.initiativePlayer = otherPlayer
+        updatedMetadata.player1Passed = false
+        updatedMetadata.player2Passed = false
+      }
+      
+      return {
+        ...prev,
+        metadata: updatedMetadata,
+      }
+    })
+    
     setSelectedCardId(null)
   }, [selectedCard, selectedCardId, gameState, metadata, getAvailableSlots, setGameState, setSelectedCardId])
 
@@ -317,10 +453,91 @@ export function useDeployment() {
     }))
   }, [setGameState])
 
+  const handleEquipItem = useCallback((hero: Hero, itemCard: ItemCard, battlefieldId: 'battlefieldA' | 'battlefieldB') => {
+    // Check action
+    if (metadata.actionPlayer !== itemCard.owner) {
+      alert('It\'s not your turn to act!')
+      return
+    }
+    
+    // Items cost 0 mana (no mana check needed)
+    // Items can only be equipped to heroes (not units)
+    if (hero.cardType !== 'hero') {
+      alert('Items can only be equipped to heroes!')
+      return
+    }
+    
+    // Get the item template
+    const item = tier1Items.find(i => i.id === itemCard.itemId)
+    if (!item) {
+      alert('Item not found!')
+      return
+    }
+    
+    // Equip the item to the hero
+    setGameState(prev => {
+      const updatedBattlefield = prev[battlefieldId]
+      const player = hero.owner as 'player1' | 'player2'
+      
+      // Update the hero with the new item and immediately apply stat bonuses
+      const updatedHeroes = updatedBattlefield[player].map(c => {
+        if (c.id === hero.id && c.cardType === 'hero') {
+          const currentItems = (c as Hero).equippedItems || []
+          const newItems = [...currentItems, itemCard.itemId]
+          
+          // Calculate bonuses from the newly equipped item
+          const attackBonus = item.attackBonus || 0
+          const hpBonus = item.hpBonus || 0
+          
+          // Apply bonuses directly to current stats
+          const newAttack = (c as Hero).attack + attackBonus
+          const newMaxHealth = (c as Hero).maxHealth + hpBonus
+          const newCurrentHealth = Math.max(1, (c as Hero).currentHealth + hpBonus) // Ensure at least 1 HP
+          
+          return {
+            ...c,
+            attack: newAttack,
+            maxHealth: newMaxHealth,
+            currentHealth: newCurrentHealth,
+            equippedItems: newItems,
+          } as Hero
+        }
+        return c
+      })
+      
+      // Remove item from hand
+      const updatedHand = (prev[`${itemCard.owner}Hand` as keyof typeof prev] as Card[])
+        .filter(c => c.id !== itemCard.id)
+      
+      // Equipping an item is an action - pass both action AND initiative to opponent
+      const otherPlayer = itemCard.owner === 'player1' ? 'player2' : 'player1'
+      
+      return {
+        ...prev,
+        [battlefieldId]: {
+          ...prev[battlefieldId],
+          [player]: updatedHeroes,
+        },
+        [`${itemCard.owner}Hand`]: updatedHand,
+        metadata: {
+          ...prev.metadata,
+          actionPlayer: otherPlayer,
+          initiativePlayer: otherPlayer,
+          // Reset pass flags when an action is taken
+          player1Passed: false,
+          player2Passed: false,
+        },
+      }
+    })
+    
+    setSelectedCardId(null)
+  }, [metadata, setGameState, setSelectedCardId])
+
   return {
     handleDeploy,
     handleChangeSlot,
     handleRemoveFromBattlefield,
+    handleEquipItem,
   }
 }
 

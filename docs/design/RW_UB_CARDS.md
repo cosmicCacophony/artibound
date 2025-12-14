@@ -327,3 +327,10 @@ This document contains card designs for **RW (Red/White)** and **UB (Blue/Black)
 *Inspired by Artifact Foundry card designs*
 
 
+
+
+
+
+
+
+

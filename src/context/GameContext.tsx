@@ -3,6 +3,7 @@ import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, Battlefi
 import { createInitialGameState, createCardLibrary, createGameStateFromDraft } from '../game/sampleData'
 import { draftableHeroes } from '../game/draftData'
 import { allCards, allSpells, allBattlefields, allHeroes } from '../game/cardData'
+import { ubHeroes } from '../game/comprehensiveCardData'
 import { heroMatchesArchetype, cardMatchesArchetype } from '../game/draftSystem'
 
 interface GameContextType {
@@ -38,6 +39,25 @@ interface GameContextType {
   combatTargetsB: Map<string, AttackTarget>
   setCombatTargetsB: React.Dispatch<React.SetStateAction<Map<string, AttackTarget>>>
   
+  // Combat Summary Modal
+  showCombatSummary: boolean
+  setShowCombatSummary: (show: boolean) => void
+  combatSummaryData: {
+    battlefieldA: {
+      name: string
+      combatLog: any[]
+      towerHP: { player1: number, player2: number }
+      overflowDamage: { player1: number, player2: number }
+    }
+    battlefieldB: {
+      name: string
+      combatLog: any[]
+      towerHP: { player1: number, player2: number }
+      overflowDamage: { player1: number, player2: number }
+    }
+  } | null
+  setCombatSummaryData: (data: any) => void
+  
   // Computed values
   selectedCard: Card | null
   metadata: GameMetadata
@@ -63,8 +83,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return {
       ...initialState,
       cardLibrary: [],
-      player1Battlefields: initialState.player1Battlefields,
-      player2Battlefields: initialState.player2Battlefields,
     }
   })
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
@@ -89,6 +107,23 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [combatTargetsA, setCombatTargetsA] = useState<Map<string, AttackTarget>>(new Map())
   const [combatTargetsB, setCombatTargetsB] = useState<Map<string, AttackTarget>>(new Map())
   
+  // Combat Summary Modal
+  const [showCombatSummary, setShowCombatSummary] = useState(false)
+  const [combatSummaryData, setCombatSummaryData] = useState<{
+    battlefieldA: {
+      name: string
+      combatLog: any[]
+      towerHP: { player1: number, player2: number }
+      overflowDamage: { player1: number, player2: number }
+    }
+    battlefieldB: {
+      name: string
+      combatLog: any[]
+      towerHP: { player1: number, player2: number }
+      overflowDamage: { player1: number, player2: number }
+    }
+  } | null>(null)
+  
   // Computed values
   const metadata = gameState.metadata
   const activePlayer = metadata.activePlayer
@@ -109,7 +144,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   
   // Helper function
   const getAvailableSlots = useCallback((battlefield: Card[]) => {
-    const BATTLEFIELD_SLOT_LIMIT = 5
+    const BATTLEFIELD_SLOT_LIMIT = 4
     const uniqueCards = battlefield.filter(card => 
       card.cardType !== 'generic' || !('stackedWith' in card && card.stackedWith)
     )
@@ -136,8 +171,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setGameState({
       ...newGameState,
       cardLibrary: newGameState.cardLibrary,
-      player1Battlefields: newGameState.player1Battlefields,
-      player2Battlefields: newGameState.player2Battlefields,
     })
     
     // Update card libraries with the remaining cards
@@ -146,16 +179,29 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [setGameState, setPlayer1SidebarCards, setPlayer2SidebarCards])
 
   const initializeRandomGame = useCallback(() => {
-    // Assign RW to one player and UB to the other (randomly)
+    // Assign RW to one player and UBG to the other (randomly)
     const archetypes: [Archetype, Archetype] = Math.random() > 0.5 
-      ? ['rw-legion', 'ub-control']
-      : ['ub-control', 'rw-legion']
+      ? ['rw-legion', 'ubg-control']
+      : ['ubg-control', 'rw-legion']
     const player1Archetype = archetypes[0]
     const player2Archetype = archetypes[1]
     
     // Get heroes matching each player's archetype
-    const player1HeroPool = allHeroes.filter(h => heroMatchesArchetype(h, [player1Archetype]))
-    const player2HeroPool = allHeroes.filter(h => heroMatchesArchetype(h, [player2Archetype]))
+    // For UBG, use only ubHeroes to ensure correct lineup (UG, G, B, U)
+    let player1HeroPool: Omit<Hero, 'location' | 'owner'>[]
+    let player2HeroPool: Omit<Hero, 'location' | 'owner'>[]
+    
+    if (player1Archetype === 'ubg-control') {
+      player1HeroPool = ubHeroes
+    } else {
+      player1HeroPool = allHeroes.filter(h => heroMatchesArchetype(h, [player1Archetype]))
+    }
+    
+    if (player2Archetype === 'ubg-control') {
+      player2HeroPool = ubHeroes
+    } else {
+      player2HeroPool = allHeroes.filter(h => heroMatchesArchetype(h, [player2Archetype]))
+    }
     
     // Get cards matching each player's archetype (including spells)
     const allCardsAndSpells: BaseCard[] = [...allCards, ...allSpells]
@@ -166,8 +212,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const player1BattlefieldPool = allBattlefields
     const player2BattlefieldPool = allBattlefields
     
-    // Shuffle and select
-    const shuffle = <T extends unknown>(arr: T[]): T[] => {
+    // Random shuffle for variety in each game
+    const randomShuffle = <T extends unknown>(arr: T[]): T[] => {
       const copy = [...arr]
       for (let i = copy.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -176,30 +222,43 @@ export function GameProvider({ children }: { children: ReactNode }) {
       return copy
     }
     
-    // Select 4 heroes for each player (allow duplicates if not enough unique heroes)
+    // Shuffle hero pools and select 4 heroes for each player
+    const shuffledPlayer1HeroPool = randomShuffle(player1HeroPool)
+    const shuffledPlayer2HeroPool = randomShuffle(player2HeroPool)
+    
     const player1Heroes: Hero[] = []
     const player2Heroes: Hero[] = []
     
-    // Fill up to HEROES_REQUIRED, allowing duplicates if needed
+    // Fill up to HEROES_REQUIRED, using shuffled order
     for (let i = 0; i < HEROES_REQUIRED; i++) {
-      const p1Hero = player1HeroPool[i % player1HeroPool.length]
-      const p2Hero = player2HeroPool[i % player2HeroPool.length]
+      const p1Hero = shuffledPlayer1HeroPool[i % shuffledPlayer1HeroPool.length]
+      const p2Hero = shuffledPlayer2HeroPool[i % shuffledPlayer2HeroPool.length]
       
       player1Heroes.push({
         ...p1Hero,
-        id: `${p1Hero.id}-player1-random-${Date.now()}-${i}-${Math.random()}`,
+        id: `${p1Hero.id}-player1-${Date.now()}-${i}`,
       } as Hero)
       
       player2Heroes.push({
         ...p2Hero,
-        id: `${p2Hero.id}-player2-random-${Date.now()}-${i}-${Math.random()}`,
+        id: `${p2Hero.id}-player2-${Date.now()}-${i}`,
       } as Hero)
     }
     
     // Select 12 cards for each player (signature cards will be auto-added)
     const DRAFTED_CARDS_REQUIRED = 12
-    const player1DraftedCards = shuffle(player1CardPool).slice(0, DRAFTED_CARDS_REQUIRED)
-    const player2DraftedCards = shuffle(player2CardPool).slice(0, DRAFTED_CARDS_REQUIRED)
+    
+    // For UBG player, ensure Exorcism is included
+    let player2DraftedCards = randomShuffle(player2CardPool)
+    const exorcismCard = player2CardPool.find(c => c.id === 'ubg-spell-exorcism')
+    if (exorcismCard && player2Archetype === 'ubg-control') {
+      // Remove Exorcism from shuffled list and add it at the start
+      player2DraftedCards = player2DraftedCards.filter(c => c.id !== 'ubg-spell-exorcism')
+      player2DraftedCards = [exorcismCard, ...player2DraftedCards]
+    }
+    
+    const player1DraftedCards = randomShuffle(player1CardPool).slice(0, DRAFTED_CARDS_REQUIRED)
+    player2DraftedCards = player2DraftedCards.slice(0, DRAFTED_CARDS_REQUIRED)
     
     // Add 2 copies of each hero's signature card (4 heroes × 2 copies = 8 signature cards)
     const player1SignatureCards: BaseCard[] = []
@@ -235,7 +294,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     
     // Don't pass battlefields - createGameStateFromDraft will assign hardcoded ones based on archetype
     // RW always gets Training Grounds + War Camp
-    // UB always gets Arcane Nexus + Shadow Library
+    // UBG always gets Arcane Nexus + Shadow Library
     
     // Create final selections (battlefield will be ignored, but required by type)
     const player1Selection: FinalDraftSelection = {
@@ -275,6 +334,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setCombatTargetsA,
     combatTargetsB,
     setCombatTargetsB,
+    showCombatSummary,
+    setShowCombatSummary,
+    combatSummaryData,
+    setCombatSummaryData,
     selectedCard,
     metadata,
     activePlayer,

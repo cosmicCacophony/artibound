@@ -7,18 +7,18 @@ export const tier1Items: Item[] = [
   {
     id: 'item-armor',
     name: 'Armor',
-    description: '+2 HP',
+    description: '+3 HP',
     cost: 5,
     tier: 1,
-    hpBonus: 2,
+    hpBonus: 3,
   },
   {
     id: 'item-weapon',
     name: 'Weapon',
-    description: '+2 Attack',
+    description: '+3 Attack',
     cost: 5,
     tier: 1,
-    attackBonus: 2,
+    attackBonus: 3,
   },
   {
     id: 'item-goldmine',
@@ -162,6 +162,68 @@ export const tier1Items: Item[] = [
     tier: 2,
     hasActivatedAbility: true,
     activatedAbilityDescription: 'Get a random item at your shop level. It costs 0 Mana.',
+  },
+  // Counterplay Items - Anti-Creep
+  {
+    id: 'item-cleave-axe',
+    name: 'Cleave Axe',
+    description: '+3 Attack, +2 HP. Cleave (damages adjacent units).',
+    cost: 10,
+    tier: 1,
+    attackBonus: 3,
+    hpBonus: 2,
+    specialEffects: ['cleave'],
+  },
+  {
+    id: 'item-chainmail',
+    name: 'Chainmail',
+    description: '+1 Attack, +4 HP. Retaliate (deals damage back when attacked).',
+    cost: 8,
+    tier: 1,
+    attackBonus: 1,
+    hpBonus: 4,
+    specialEffects: ['retaliate'],
+  },
+  {
+    id: 'item-siege-engine',
+    name: 'Siege Engine',
+    description: '+2 Attack, +3 HP. Siege (can attack towers directly).',
+    cost: 12,
+    tier: 1,
+    attackBonus: 2,
+    hpBonus: 3,
+    specialEffects: ['siege'],
+  },
+  // Counterplay Items - Anti-Hero
+  {
+    id: 'item-mortreds-dagger',
+    name: "Mortred's Dagger",
+    description: '+4 Attack. When this hero attacks, deal 4 damage to target enemy hero. (Cooldown: 3 turns)',
+    cost: 30,
+    tier: 2,
+    attackBonus: 4,
+    hasActivatedAbility: true,
+    activatedAbilityDescription: 'When this hero attacks, deal 4 damage to target enemy hero. (Cooldown: 3 turns)',
+  },
+  {
+    id: 'item-executioners-blade',
+    name: "Executioner's Blade",
+    description: '+5 Attack. Bonus +3 damage when attacking heroes.',
+    cost: 15,
+    tier: 2,
+    attackBonus: 5,
+    specialEffects: ['bonus_vs_heroes'], // +3 damage vs heroes
+  },
+  // Late game power item
+  {
+    id: 'item-strike-weapon',
+    name: 'Strike Weapon',
+    description: '+5 Attack. When this hero attacks, it strikes the enemy (deals damage equal to attack).',
+    cost: 30,
+    tier: 2,
+    attackBonus: 5,
+    hasActivatedAbility: true,
+    activatedAbilityDescription: 'When this hero attacks, it strikes the enemy (deals damage equal to attack).',
   },
 ]
 
@@ -1548,8 +1610,6 @@ export function createInitialGameState(): {
   battlefieldA: { player1: Card[], player2: Card[] }
   battlefieldB: { player1: Card[], player2: Card[] }
   metadata: GameMetadata
-  player1Battlefields?: BattlefieldDefinition[]
-  player2Battlefields?: BattlefieldDefinition[]
 } {
   // Player 1: First 2 heroes ready to deploy on turn 1 (can move freely)
   const player1AllHeroes = warriorTestDeckHeroes.map(hero => 
@@ -1614,56 +1674,21 @@ export function createInitialGameState(): {
     towerB_player2_HP: TOWER_HP,
     player1Tier: 1,
     player2Tier: 1,
-    deathCooldowns: {}, // Track cards that died (1 round cooldown) - Record<cardId, turnDied>
+    deathCooldowns: {}, // Track hero death cooldowns - Record<cardId, counter> (starts at 2, decreases by 1 each turn, prevents deployment for 1 full round)
     player1MovedToBase: false, // Track if player 1 moved a hero to base this turn
     player2MovedToBase: false, // Track if player 2 moved a hero to base this turn
-    playedSpells: {}, // Track spells that have been played (for toggle X overlay) - Record<spellId, true>
+    playedSpells: {}, // Track cards that have been played (for toggle X overlay) - Record<cardId, true> (works for any card type)
     player1BattlefieldBuffs: [], // Permanent battlefield upgrades for player 1
     player2BattlefieldBuffs: [], // Permanent battlefield upgrades for player 2
     battlefieldDeathCounters: {}, // Track death counters for RW-bf2 (death counter -> draw card) - Record<"player-battlefield", count>
+    actionPlayer: 'player1', // Player 1 starts with action
     initiativePlayer: 'player1', // Player 1 starts with initiative
+    heroAbilityCooldowns: {}, // Track hero ability cooldowns - Record<heroId, turnLastUsed>
+    player1Passed: false, // Track if player 1 has passed this turn
+    player2Passed: false, // Track if player 2 has passed this turn
+    stunnedHeroes: {}, // Track stunned heroes (don't deal combat damage, only receive it)
+    turn1DeploymentPhase: 'p1_lane1', // Turn 1 deployment phase: p1_lane1 -> p2_lane1 -> p2_lane2 -> p1_lane2 -> complete
   }
-
-  // Hardcoded battlefields for RW vs UB testing
-  // RW (Player 1): Training Grounds + War Camp
-  const player1Battlefields: BattlefieldDefinition[] = [
-    {
-      id: 'battlefield-rw-wide',
-      name: 'Training Grounds',
-      description: 'RW battlefield - supports go wide',
-      colors: ['red', 'white'],
-      staticAbility: 'You can deploy 6 units instead of 5',
-      staticAbilityId: 'sixth-slot',
-    },
-    {
-      id: 'battlefield-rw-war-camp',
-      name: 'War Camp',
-      description: 'RW battlefield - aggressive combat',
-      colors: ['red', 'white'],
-      staticAbility: 'All your units have +1/+0',
-      staticAbilityId: 'unit-power-buff',
-    },
-  ]
-
-  // UB (Player 2): Arcane Nexus + Shadow Library
-  const player2Battlefields: BattlefieldDefinition[] = [
-    {
-      id: 'battlefield-ru-spells',
-      name: 'Arcane Nexus',
-      description: 'RU battlefield - spell focus',
-      colors: ['red', 'blue'],
-      staticAbility: 'Your spells deal +1 damage',
-      staticAbilityId: 'spell-damage-buff',
-    },
-    {
-      id: 'battlefield-ub-shadow-library',
-      name: 'Shadow Library',
-      description: 'UB battlefield - spell card advantage',
-      colors: ['blue', 'black'],
-      staticAbility: 'When you cast a spell, draw a card',
-      staticAbilityId: 'spell-draw',
-    },
-  ]
 
   return {
     player1Hand: player1Hand,
@@ -1673,8 +1698,6 @@ export function createInitialGameState(): {
     battlefieldA: { player1: [], player2: [] },
     battlefieldB: { player1: [], player2: [] },
     metadata,
-    player1Battlefields,
-    player2Battlefields,
   }
 }
 
@@ -1718,20 +1741,76 @@ export function createGameStateFromDraft(
   player1Library: BaseCard[]
   player2Library: BaseCard[]
   metadata: GameMetadata
-  player1Battlefields?: BattlefieldDefinition[]
-  player2Battlefields?: BattlefieldDefinition[]
 } {
-  // Create heroes in base for each player (all 4 heroes)
-  const player1Heroes = player1Selection.heroes.map(hero => {
-    return createCardFromTemplate(hero, 'player1', 'base') as Hero
-  })
-  const player2Heroes = player2Selection.heroes.map(hero => {
-    return createCardFromTemplate(hero, 'player2', 'base') as Hero
-  })
+  // Helper to detect archetype from heroes
+  const detectArchetype = (heroes: Hero[]): 'rw-legion' | 'ub-control' | 'ubg-control' => {
+    if (heroes.length === 0) return 'rw-legion' // Default
+    
+    // Count colors across all heroes
+    const allColors = new Set<string>()
+    heroes.forEach(h => {
+      (h.colors || []).forEach(c => allColors.add(c))
+    })
+    
+    const hasRed = allColors.has('red')
+    const hasWhite = allColors.has('white')
+    const hasBlue = allColors.has('blue')
+    const hasBlack = allColors.has('black')
+    const hasGreen = allColors.has('green')
+    
+    // RW: has red or white, but NOT green, blue, or black
+    const isRW = (hasRed || hasWhite) && !hasGreen && !hasBlue && !hasBlack
+    
+    // UB: has blue or black, but NOT green, red, or white
+    const isUB = (hasBlue || hasBlack) && !hasGreen && !hasRed && !hasWhite
+    
+    // UBG: has blue, black, or green, but NOT red or white
+    const isUBG = (hasBlue || hasBlack || hasGreen) && !hasRed && !hasWhite
+    
+    if (isRW) return 'rw-legion'
+    if (isUBG) return 'ubg-control'
+    if (isUB) return 'ub-control'
+    
+    // Fallback: check first hero
+    const firstHeroColors = heroes[0]?.colors || []
+    if (firstHeroColors.includes('red') || firstHeroColors.includes('white')) {
+      return 'rw-legion'
+    }
+    if (firstHeroColors.includes('green')) {
+      return 'ubg-control'
+    }
+    return 'ub-control'
+  }
+  
+  // Create hero instances from templates
+  const player1Heroes = player1Selection.heroes.map(hero => 
+    createCardFromTemplate(hero, 'player1', 'base') as Hero
+  )
+  const player2Heroes = player2Selection.heroes.map(hero => 
+    createCardFromTemplate(hero, 'player2', 'base') as Hero
+  )
+  
+  // Detect archetypes
+  const player1Archetype = detectArchetype(player1Heroes)
+  const player2Archetype = detectArchetype(player2Heroes)
+  
+  // All heroes start in base (they will be deployed during the counter-deployment phase)
+  // Battlefields start empty
+  const player1Base = player1Heroes
+  const player2Base = player2Heroes
 
-  // Shuffle cards and select 4 random cards for each hand
-  const player1ShuffledCards = shuffleArray([...player1Selection.cards])
-  const player2ShuffledCards = shuffleArray([...player2Selection.cards])
+  // Shuffle cards randomly for variety in each game
+  const randomShuffle = <T extends unknown>(arr: T[]): T[] => {
+    const copy = [...arr]
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]]
+    }
+    return copy
+  }
+  
+  const player1ShuffledCards = randomShuffle([...player1Selection.cards])
+  const player2ShuffledCards = randomShuffle([...player2Selection.cards])
   
   const player1HandCards = player1ShuffledCards.slice(0, 4)
   const player1LibraryCards = player1ShuffledCards.slice(4)
@@ -1773,104 +1852,32 @@ export function createGameStateFromDraft(
     player1BattlefieldBuffs: [],
     player2BattlefieldBuffs: [],
     battlefieldDeathCounters: {}, // Track death counters for RW-bf2 (death counter -> draw card) - Record<"player-battlefield", count>
+    actionPlayer: 'player1', // Player 1 starts with action
     initiativePlayer: 'player1', // Player 1 starts with initiative
+    heroAbilityCooldowns: {}, // Track hero ability cooldowns - Record<heroId, turnLastUsed>
+    player1Passed: false, // Track if player 1 has passed this turn
+    player2Passed: false, // Track if player 2 has passed this turn
+    turn1DeploymentPhase: 'p1_lane1', // Turn 1 deployment: Player 1 deploys to lane 1 first
   }
 
-  // Helper to detect archetype from heroes
-  const detectArchetype = (heroes: Hero[]): 'rw-legion' | 'ub-control' => {
-    if (heroes.length === 0) return 'rw-legion' // Default
-    
-    // Count colors across all heroes
-    const allColors = new Set<string>()
-    heroes.forEach(h => {
-      (h.colors || []).forEach(c => allColors.add(c))
-    })
-    
-    const hasRed = allColors.has('red')
-    const hasWhite = allColors.has('white')
-    const hasBlue = allColors.has('blue')
-    const hasBlack = allColors.has('black')
-    const hasGreen = allColors.has('green')
-    
-    // RW: has red or white, but NOT green, blue, or black
-    const isRW = (hasRed || hasWhite) && !hasGreen && !hasBlue && !hasBlack
-    
-    // UB: has blue or black, but NOT green, red, or white
-    const isUB = (hasBlue || hasBlack) && !hasGreen && !hasRed && !hasWhite
-    
-    if (isRW) return 'rw-legion'
-    if (isUB) return 'ub-control'
-    
-    // Fallback: check first hero
-    const firstHeroColors = heroes[0]?.colors || []
-    if (firstHeroColors.includes('red') || firstHeroColors.includes('white')) {
-      return 'rw-legion'
-    }
-    return 'ub-control'
-  }
-
-  // Detect archetypes
-  const player1Archetype = detectArchetype(player1Selection.heroes)
-  const player2Archetype = detectArchetype(player2Selection.heroes)
-
-  // RW Battlefields
-  const rwBattlefields: BattlefieldDefinition[] = [
-    {
-      id: 'battlefield-rw-wide',
-      name: 'Training Grounds',
-      description: 'RW battlefield - supports go wide',
-      colors: ['red', 'white'],
-      staticAbility: 'You can deploy 6 units instead of 5',
-      staticAbilityId: 'sixth-slot',
-    },
-    {
-      id: 'battlefield-rw-war-camp',
-      name: 'War Camp',
-      description: 'RW battlefield - aggressive combat',
-      colors: ['red', 'white'],
-      staticAbility: 'All your units have +1/+0',
-      staticAbilityId: 'unit-power-buff',
-    },
-  ]
-
-  // UB Battlefields
-  const ubBattlefields: BattlefieldDefinition[] = [
-    {
-      id: 'battlefield-ru-spells',
-      name: 'Arcane Nexus',
-      description: 'RU battlefield - spell focus',
-      colors: ['red', 'blue'],
-      staticAbility: 'Your spells deal +1 damage',
-      staticAbilityId: 'spell-damage-buff',
-    },
-    {
-      id: 'battlefield-ub-shadow-library',
-      name: 'Shadow Library',
-      description: 'UB battlefield - spell card advantage',
-      colors: ['blue', 'black'],
-      staticAbility: 'When you cast a spell, draw a card',
-      staticAbilityId: 'spell-draw',
-    },
-  ]
-
-  // Always assign hardcoded battlefields based on detected archetype
-  // RW always gets Training Grounds + War Camp (2 battlefields)
-  // UB always gets Arcane Nexus + Shadow Library (2 battlefields)
-  const player1Battlefields = player1Archetype === 'rw-legion' ? rwBattlefields : ubBattlefields
-  const player2Battlefields = player2Archetype === 'rw-legion' ? rwBattlefields : ubBattlefields
+  // Battlefields removed - simplifying game to focus on color system and combat
 
   return {
     player1Hand,
     player2Hand,
-    player1Base: player1Heroes,
-    player2Base: player2Heroes,
-    battlefieldA: { player1: [], player2: [] },
-    battlefieldB: { player1: [], player2: [] },
+    player1Base,
+    player2Base,
+    battlefieldA: { 
+      player1: [], // Empty - heroes will be deployed during counter-deployment phase
+      player2: [] 
+    },
+    battlefieldB: { 
+      player1: [], // Empty - heroes will be deployed during counter-deployment phase
+      player2: [] 
+    },
     cardLibrary: [], // Card library is managed separately via player1SidebarCards/player2SidebarCards
     player1Library: player1LibraryCards,
     player2Library: player2LibraryCards,
     metadata,
-    player1Battlefields,
-    player2Battlefields,
   }
 }

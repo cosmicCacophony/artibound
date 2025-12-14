@@ -5,9 +5,18 @@ import { BattlefieldView } from './BattlefieldView'
 import { ItemShopModal } from './ItemShopModal'
 import { CardLibrarySidebar } from './CardLibrarySidebar'
 import { CardLibraryView } from './CardLibraryView'
+import { CombatSummaryModal } from './CombatSummaryModal'
 
 export function Board() {
-  const { player1SidebarCards, setPlayer1SidebarCards, player2SidebarCards, setPlayer2SidebarCards } = useGameContext()
+  const { 
+    player1SidebarCards, 
+    setPlayer1SidebarCards, 
+    player2SidebarCards, 
+    setPlayer2SidebarCards,
+    showCombatSummary,
+    setShowCombatSummary,
+    combatSummaryData,
+  } = useGameContext()
   
   return (
     <div style={{ display: 'flex', fontFamily: 'Arial, sans-serif', height: '100vh' }}>
@@ -24,6 +33,14 @@ export function Board() {
 
         <ItemShopModal />
         <CardLibraryView />
+        {combatSummaryData && (
+          <CombatSummaryModal
+            isOpen={showCombatSummary}
+            onClose={() => setShowCombatSummary(false)}
+            battlefieldA={combatSummaryData.battlefieldA}
+            battlefieldB={combatSummaryData.battlefieldB}
+          />
+        )}
 
         {/* Player 2 Area (Top) */}
         <PlayerArea player="player2" />

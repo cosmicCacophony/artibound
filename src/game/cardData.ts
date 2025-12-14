@@ -22,16 +22,11 @@ import {
   resetBattlefield,
   clearAllOverrides,
 } from './cardStorage'
-import { defaultGenericHeroes } from './comprehensiveCardData'
-
 // Export storage-aware versions that automatically apply localStorage overrides
 export const allCards = getCardsWithOverrides()
 export const allHeroes = getHeroesWithOverrides()
 export const allSpells = getSpellsWithOverrides()
 export const allBattlefields = getBattlefieldsWithOverrides()
-
-// Re-export other needed items
-export { defaultGenericHeroes } from './comprehensiveCardData'
 
 // Export storage functions for editing cards
 export {

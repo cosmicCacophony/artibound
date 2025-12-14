@@ -83,3 +83,10 @@ extractCardDescriptions().then(cards => {
 });
 
 
+
+
+
+
+
+
+

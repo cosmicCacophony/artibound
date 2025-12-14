@@ -9,10 +9,16 @@ interface HeroCardProps {
   onRemove?: () => void // For removing from battlefields
   onDecreaseHealth?: () => void // For combat simulation
   onIncreaseHealth?: () => void // For correcting mistakes
+  onDecreaseAttack?: () => void // For manual stat adjustment
+  onIncreaseAttack?: () => void // For manual stat adjustment
   showCombatControls?: boolean // Show decrease/increase health buttons
   isDead?: boolean // Show death cooldown overlay (black X)
-  isPlayed?: boolean // Show played overlay (black X) for spells in base
-  onTogglePlayed?: () => void // Toggle played state for spells
+  cooldownCounter?: number // Cooldown counter value (2, 1, or undefined if ready)
+  isPlayed?: boolean // Show played overlay (black X) for any card in base
+  onTogglePlayed?: () => void // Toggle played state for any card
+  isStunned?: boolean // Show stun overlay (hero doesn't deal combat damage)
+  onToggleStun?: () => void // Toggle stun state for heroes
+  onAbilityClick?: (heroId: string, ability: import('../game/types').HeroAbility) => void // Handler for ability clicks
 }
 
 // Color palette mapping
@@ -32,7 +38,7 @@ const COLOR_LIGHT_MAP: Record<Color, string> = {
   green: '#e8f5e9',
 }
 
-export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove, onDecreaseHealth, onIncreaseHealth, showCombatControls = false, isDead = false, isPlayed = false, onTogglePlayed }: HeroCardProps) {
+export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove, onDecreaseHealth, onIncreaseHealth, onDecreaseAttack, onIncreaseAttack, showCombatControls = false, isDead = false, cooldownCounter, isPlayed = false, onTogglePlayed, isStunned = false, onToggleStun, onAbilityClick }: HeroCardProps) {
   // Get card colors
   const cardColors: Color[] = 'colors' in card && card.colors ? card.colors : []
   
@@ -99,7 +105,19 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
     if (card.cardType === 'generic' && 'stackPower' in card && card.stackPower !== undefined) {
       return card.stackPower
     }
-    return 'attack' in card ? card.attack : 0
+    const baseAttack = 'attack' in card ? card.attack : 0
+    // Add temporary attack bonus (if present)
+    const tempAttack = (card.cardType === 'hero' || card.cardType === 'generic') && 'temporaryAttack' in card
+      ? (card.temporaryAttack || 0)
+      : 0
+    return baseAttack + tempAttack
+  }
+  
+  const getTemporaryAttack = () => {
+    if (card.cardType === 'hero' || card.cardType === 'generic') {
+      return 'temporaryAttack' in card ? (card.temporaryAttack || 0) : 0
+    }
+    return 0
   }
 
   const getHealth = () => {
@@ -107,20 +125,32 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
       return card.stackHealth
     }
     // Use currentHealth if available (for combat simulation), otherwise use health
+    let baseHealth = 0
     if ('currentHealth' in card && card.currentHealth !== undefined) {
-      return card.currentHealth
+      baseHealth = card.currentHealth
+    } else {
+      baseHealth = 'health' in card ? card.health : 0
     }
-    return 'health' in card ? card.health : 0
+    // Add temporary HP (can exceed maxHealth)
+    const tempHP = (card.cardType === 'hero' || card.cardType === 'generic') && 'temporaryHP' in card 
+      ? (card.temporaryHP || 0) 
+      : 0
+    return baseHealth + tempHP
   }
-
+  
   const getMaxHealth = () => {
     if (card.cardType === 'generic' && 'stackHealth' in card && card.stackHealth !== undefined) {
       return card.stackHealth
     }
-    if ('maxHealth' in card && card.maxHealth !== undefined) {
-      return card.maxHealth
+    // Max health is always the base maxHealth (temporary HP is shown separately)
+    return 'maxHealth' in card ? card.maxHealth : ('health' in card ? card.health : 0)
+  }
+  
+  const getTemporaryHP = () => {
+    if (card.cardType === 'hero' || card.cardType === 'generic') {
+      return 'temporaryHP' in card ? (card.temporaryHP || 0) : 0
     }
-    return 'health' in card ? card.health : 0
+    return 0
   }
 
   const isStacked = card.cardType === 'generic' && 'stackedWith' in card && card.stackedWith !== undefined
@@ -251,60 +281,123 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
       <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 'bold' }}>{card.name}</h3>
       <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#666' }}>{card.description}</p>
       
-      {showStats && (card.cardType === 'hero' || card.cardType === 'signature' || card.cardType === 'hybrid' || card.cardType === 'generic') && (
+      {/* Always show stats for heroes, units, and generic cards - full clarity */}
+      {(card.cardType === 'hero' || card.cardType === 'signature' || card.cardType === 'hybrid' || card.cardType === 'generic') && (
         <div style={{ marginTop: '8px', fontSize: '12px' }}>
           {'manaCost' in card && card.manaCost !== undefined && (
             <div style={{ fontSize: '11px', color: '#1976d2', marginBottom: '4px', fontWeight: 'bold' }}>
               💎 {card.manaCost}
             </div>
           )}
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <span>⚔️ {getAttack()}</span>
-            <span>❤️ {getHealth()}{getMaxHealth() !== getHealth() ? `/${getMaxHealth()}` : ''}</span>
-            {showCombatControls && (
-              <div style={{ display: 'flex', gap: '4px', marginLeft: '4px' }}>
-                {onDecreaseHealth && getHealth() > 0 && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onDecreaseHealth()
-                    }}
-                    style={{
-                      background: '#f44336',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      padding: '2px 6px',
-                      fontSize: '10px',
-                      cursor: 'pointer',
-                    }}
-                    title="Decrease health (simulate damage)"
-                  >
-                    -1
-                  </button>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              <span>
+                ⚔️ {getAttack()}
+                {getTemporaryAttack() > 0 && (
+                  <span style={{ color: '#4caf50', marginLeft: '4px' }} title="Temporary attack bonus">
+                    (+{getTemporaryAttack()})
+                  </span>
                 )}
-                {onIncreaseHealth && getHealth() < getMaxHealth() && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onIncreaseHealth()
-                    }}
-                    style={{
-                      background: '#4caf50',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      padding: '2px 6px',
-                      fontSize: '10px',
-                      cursor: 'pointer',
-                    }}
-                    title="Increase health (correct mistake)"
-                  >
-                    +1
-                  </button>
+              </span>
+              {showCombatControls && (card.cardType === 'hero' || card.cardType === 'generic') && 'attack' in card && (
+                <>
+                  {onDecreaseAttack && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onDecreaseAttack()
+                      }}
+                      style={{
+                        background: '#f44336',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontSize: '10px',
+                        cursor: 'pointer',
+                      }}
+                      title="Decrease attack (manual adjustment)"
+                    >
+                      -1
+                    </button>
+                  )}
+                  {onIncreaseAttack && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onIncreaseAttack()
+                      }}
+                      style={{
+                        background: '#4caf50',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontSize: '10px',
+                        cursor: 'pointer',
+                      }}
+                      title="Increase attack (manual adjustment)"
+                    >
+                      +1
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              <span>
+                ❤️ {getHealth()}{getMaxHealth() !== getHealth() ? `/${getMaxHealth()}` : ''}
+                {getTemporaryHP() > 0 && (
+                  <span style={{ color: '#4caf50', marginLeft: '4px' }} title="Temporary HP (exceeds max)">
+                    (+{getTemporaryHP()})
+                  </span>
                 )}
-              </div>
-            )}
+              </span>
+              {showCombatControls && (
+                <>
+                  {onDecreaseHealth && getHealth() > 0 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onDecreaseHealth()
+                      }}
+                      style={{
+                        background: '#f44336',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontSize: '10px',
+                        cursor: 'pointer',
+                      }}
+                      title="Decrease health (simulate damage)"
+                    >
+                      -1
+                    </button>
+                  )}
+                  {onIncreaseHealth && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onIncreaseHealth()
+                      }}
+                      style={{
+                        background: '#4caf50',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontSize: '10px',
+                        cursor: 'pointer',
+                      }}
+                      title="Increase health (correct mistake)"
+                    >
+                      +1
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
           {isStacked && (
             <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>
@@ -353,9 +446,103 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
         </div>
       )}
       
+      {/* Hero stun toggle - available in all locations */}
+      {card.cardType === 'hero' && onToggleStun && (
+        <div 
+          style={{ marginTop: '8px' }}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+          }}
+        >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              if (onToggleStun) {
+                onToggleStun()
+              }
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+            style={{
+              padding: '4px 8px',
+              background: isStunned ? '#ff9800' : '#9e9e9e',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              fontSize: '11px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              width: '100%',
+            }}
+            title={isStunned 
+              ? 'Click to unstun - Hero will deal normal combat damage' 
+              : 'Click to stun - Hero will deal 0 combat damage (still receives damage)'}
+          >
+            {isStunned ? '⚡ Stunned (0 damage)' : 'Stun (Toggle)'}
+          </button>
+        </div>
+      )}
+      
       {card.cardType === 'hero' && 'supportEffect' in card && (card as import('../game/types').Hero).supportEffect && (
         <div style={{ marginTop: '4px', fontSize: '11px', color: '#2196f3' }}>
           🛡️ {(card as import('../game/types').Hero).supportEffect}
+        </div>
+      )}
+      
+      {card.cardType === 'hero' && 'ability' in card && (card as import('../game/types').Hero).ability && (
+        <div 
+          onClick={(e) => {
+            e.stopPropagation() // Prevent card click when clicking ability
+            if (onAbilityClick) {
+              onAbilityClick(card.id, (card as import('../game/types').Hero).ability!)
+            }
+          }}
+          style={{ 
+            marginTop: '8px', 
+            padding: '6px',
+            backgroundColor: onAbilityClick ? '#e3f2fd' : '#f0f0f0',
+            borderRadius: '4px',
+            border: onAbilityClick ? '2px solid #1976d2' : '1px solid #ddd',
+            cursor: onAbilityClick ? 'pointer' : 'default',
+            transition: 'all 0.2s',
+            opacity: onAbilityClick ? 1 : 0.9,
+          }}
+          onMouseEnter={(e) => {
+            if (onAbilityClick) {
+              e.currentTarget.style.backgroundColor = '#bbdefb'
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (onAbilityClick) {
+              e.currentTarget.style.backgroundColor = '#e3f2fd'
+            }
+          }}
+        >
+          <div style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '4px', color: '#1976d2' }}>
+            ⚡ {(card as import('../game/types').Hero).ability.name}
+            {onAbilityClick && <span style={{ fontSize: '10px', marginLeft: '4px', color: '#666' }}>(Click to use)</span>}
+          </div>
+          <div style={{ fontSize: '10px', color: '#666', marginBottom: '4px' }}>
+            {(card as import('../game/types').Hero).ability.description}
+          </div>
+          <div style={{ display: 'flex', gap: '8px', fontSize: '10px', alignItems: 'center' }}>
+            <span style={{ color: '#1976d2', fontWeight: 'bold' }}>
+              💎 {(card as import('../game/types').Hero).ability.manaCost}
+            </span>
+            <span style={{ color: '#f57c00', fontWeight: 'bold' }}>
+              ⏱️ Cooldown: {(card as import('../game/types').Hero).ability.cooldown} 
+              {(card as import('../game/types').Hero).ability.cooldown === 1 
+                ? ' (every turn)' 
+                : (card as import('../game/types').Hero).ability.cooldown === 2
+                ? ' (every other turn)'
+                : ` (wait ${(card as import('../game/types').Hero).ability.cooldown - 1} turns)`}
+            </span>
+          </div>
         </div>
       )}
       
@@ -404,6 +591,33 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
         </div>
       )}
       
+      {/* Cooldown counter display (for heroes in base) */}
+      {cooldownCounter !== undefined && cooldownCounter > 0 && card.cardType === 'hero' && card.location === 'base' && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '4px',
+            right: '4px',
+            backgroundColor: 'rgba(255, 0, 0, 0.9)',
+            color: 'white',
+            borderRadius: '50%',
+            width: '28px',
+            height: '28px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            zIndex: 11,
+            border: '2px solid white',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+          }}
+          title={`Cooldown: ${cooldownCounter} turn${cooldownCounter !== 1 ? 's' : ''} remaining`}
+        >
+          {cooldownCounter}
+        </div>
+      )}
+      
       {/* Death cooldown overlay - black X */}
       {isDead && (
         <div
@@ -434,8 +648,8 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
         </div>
       )}
       
-      {/* Played spell overlay - black X (for spells in base) */}
-      {isPlayed && card.cardType === 'spell' && card.location === 'base' && (
+      {/* Played card overlay - black X (for any card in base) */}
+      {isPlayed && card.location === 'base' && (
         <div
           style={{
             position: 'absolute',
@@ -460,6 +674,38 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
             }}
           >
             ✕
+          </div>
+        </div>
+      )}
+      
+      {/* Stunned hero overlay - orange/yellow tint (heroes don't deal combat damage) */}
+      {isStunned && card.cardType === 'hero' && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(255, 152, 0, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9,
+            borderRadius: '4px',
+            pointerEvents: 'none', // Allow clicks to pass through to buttons and abilities
+          }}
+        >
+          <div
+            style={{
+              fontSize: '36px',
+              color: '#fff',
+              fontWeight: 'bold',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+              pointerEvents: 'none', // Also disable pointer events on the icon
+            }}
+          >
+            ⚡
           </div>
         </div>
       )}
