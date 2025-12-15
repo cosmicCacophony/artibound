@@ -302,8 +302,8 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                     } else if (originalCard.cardType === 'generic') {
                       const stillAlive = updatedBattlefield.player1.some(c => c.id === originalCard.id)
                       if (!stillAlive) {
-                        // Opponent (player2) gets 2 gold for killing unit
-                        goldRewards.player2 += 2
+                        // Opponent (player2) gets 1 gold for killing a creep (generic unit)
+                        goldRewards.player2 += 1
                       }
                     }
                   })
@@ -327,8 +327,8 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                     } else if (originalCard.cardType === 'generic') {
                       const stillAlive = updatedBattlefield.player2.some(c => c.id === originalCard.id)
                       if (!stillAlive) {
-                        // Opponent (player1) gets 2 gold for killing unit
-                        goldRewards.player1 += 2
+                        // Opponent (player1) gets 1 gold for killing a creep (generic unit)
+                        goldRewards.player1 += 1
                       }
                     }
                   })
@@ -439,16 +439,16 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       {/* Player 2 side */}
       <div style={{ marginBottom: '12px' }}>
         <h4 style={{ fontSize: '12px', marginBottom: '6px' }}>Player 2</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', marginBottom: '4px' }}>
-          {[1, 2, 3, 4].map(slotNum => renderSlot(slotNum, 'player2'))}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', marginBottom: '4px' }}>
+          {[1, 2, 3, 4, 5].map(slotNum => renderSlot(slotNum, 'player2'))}
         </div>
       </div>
 
       {/* Player 1 side */}
       <div>
         <h4 style={{ fontSize: '14px', marginBottom: '10px' }}>Player 1</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
-          {[1, 2, 3, 4].map(slotNum => renderSlot(slotNum, 'player1'))}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px' }}>
+          {[1, 2, 3, 4, 5].map(slotNum => renderSlot(slotNum, 'player1'))}
         </div>
       </div>
 

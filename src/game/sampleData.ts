@@ -1742,13 +1742,36 @@ export function createInitialGameState(): {
     turn1DeploymentPhase: 'p1_lane1', // Turn 1 deployment phase: p1_lane1 -> p2_lane1 -> p2_lane2 -> p1_lane2 -> complete
   }
 
+  // Spawn initial 1/1 creeps in slot 1 for both players on both battlefields
+  const createInitialCreep = (player: 'player1' | 'player2', battlefieldId: 'battlefieldA' | 'battlefieldB'): GenericUnit => ({
+    id: `creep-${player}-${battlefieldId}-initial-${Date.now()}`,
+    name: 'Creep',
+    description: 'Basic unit spawned each turn',
+    cardType: 'generic',
+    colors: [],
+    manaCost: 0,
+    attack: 1,
+    health: 1,
+    maxHealth: 1,
+    currentHealth: 1,
+    location: battlefieldId,
+    owner: player,
+    slot: 1,
+  })
+
   return {
     player1Hand: player1Hand,
     player2Hand: player2Hand,
     player1Base: [...player1ReadyToDeploy, ...player1RemainingHeroes], // All 4 heroes in base (first 2 ready to deploy on turn 1)
     player2Base: [...player2ReadyToDeploy, ...player2RemainingHeroes], // All 4 heroes in base (first 2 ready to deploy on turn 1)
-    battlefieldA: { player1: [], player2: [] },
-    battlefieldB: { player1: [], player2: [] },
+    battlefieldA: { 
+      player1: [createInitialCreep('player1', 'battlefieldA')], 
+      player2: [createInitialCreep('player2', 'battlefieldA')] 
+    },
+    battlefieldB: { 
+      player1: [createInitialCreep('player1', 'battlefieldB')], 
+      player2: [createInitialCreep('player2', 'battlefieldB')] 
+    },
     metadata,
   }
 }
@@ -1928,6 +1951,23 @@ export function createGameStateFromDraft(
   }
 
   // Battlefields removed - simplifying game to focus on color system and combat
+  
+  // Spawn initial 1/1 creeps in slot 1 for both players on both battlefields
+  const createInitialCreep = (player: 'player1' | 'player2', battlefieldId: 'battlefieldA' | 'battlefieldB'): GenericUnit => ({
+    id: `creep-${player}-${battlefieldId}-initial-${Date.now()}`,
+    name: 'Creep',
+    description: 'Basic unit spawned each turn',
+    cardType: 'generic',
+    colors: [],
+    manaCost: 0,
+    attack: 1,
+    health: 1,
+    maxHealth: 1,
+    currentHealth: 1,
+    location: battlefieldId,
+    owner: player,
+    slot: 1,
+  })
 
   return {
     player1Hand,
@@ -1935,12 +1975,12 @@ export function createGameStateFromDraft(
     player1Base,
     player2Base,
     battlefieldA: { 
-      player1: [], // Empty - heroes will be deployed during counter-deployment phase
-      player2: [] 
+      player1: [createInitialCreep('player1', 'battlefieldA')], // Start with 1/1 creep in slot 1
+      player2: [createInitialCreep('player2', 'battlefieldA')] 
     },
     battlefieldB: { 
-      player1: [], // Empty - heroes will be deployed during counter-deployment phase
-      player2: [] 
+      player1: [createInitialCreep('player1', 'battlefieldB')], // Start with 1/1 creep in slot 1
+      player2: [createInitialCreep('player2', 'battlefieldB')] 
     },
     cardLibrary: [], // Card library is managed separately via player1SidebarCards/player2SidebarCards
     player1Library: player1LibraryCards,

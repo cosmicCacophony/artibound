@@ -127,7 +127,7 @@ export function useDeployment() {
       const availableSlots = getAvailableSlots(battlefield)
       
       if (selectedCard.cardType !== 'generic' && availableSlots <= 0 && !targetSlot) {
-        alert('Battlefield is full! Maximum 4 slots.')
+        alert('Battlefield is full! Maximum 5 slots.')
         return
       }
 
@@ -404,6 +404,9 @@ export function useDeployment() {
   }, [setGameState])
 
   const handleRemoveFromBattlefield = useCallback((card: Card, location: 'battlefieldA' | 'battlefieldB') => {
+    // Award gold to opponent when removing a generic unit (creep)
+    const opponent = card.owner === 'player1' ? 'player2' : 'player1'
+    
     // If stacked, unstack it
     if (card.cardType === 'generic') {
       const genericCard = card as GenericUnit
@@ -436,13 +439,18 @@ export function useDeployment() {
               [card.owner]: updatedBattlefield,
             },
             [`${card.owner}Base`]: [...prev[`${card.owner}Base` as keyof typeof prev] as Card[], { ...cleanCard, location: 'base' }],
+            metadata: {
+              ...prev.metadata,
+              // Opponent gets 1 gold for killing a creep (generic unit) when manually removed
+              [`${opponent}Gold`]: (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 1,
+            },
           }
         })
         return
       }
     }
     
-    // Regular removal
+    // Regular removal - award gold to opponent if removing a generic unit
     setGameState(prev => ({
       ...prev,
       [location]: {
@@ -450,6 +458,13 @@ export function useDeployment() {
         [card.owner]: prev[location][card.owner as 'player1' | 'player2'].filter(c => c.id !== card.id),
       },
       [`${card.owner}Base`]: [...prev[`${card.owner}Base` as keyof typeof prev] as Card[], { ...card, location: 'base' }],
+      metadata: {
+        ...prev.metadata,
+        // Opponent gets 1 gold for killing a creep (generic unit) when manually removed
+        [`${opponent}Gold`]: card.cardType === 'generic' 
+          ? (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 1
+          : (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number),
+      },
     }))
   }, [setGameState])
 

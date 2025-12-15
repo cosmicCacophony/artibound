@@ -144,7 +144,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   
   // Helper function
   const getAvailableSlots = useCallback((battlefield: Card[]) => {
-    const BATTLEFIELD_SLOT_LIMIT = 4
+    const BATTLEFIELD_SLOT_LIMIT = 5
     const uniqueCards = battlefield.filter(card => 
       card.cardType !== 'generic' || !('stackedWith' in card && card.stackedWith)
     )

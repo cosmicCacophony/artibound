@@ -94,8 +94,8 @@ export function useTurnManagement() {
           } else if (originalCard.cardType === 'generic') {
             const stillAlive = updatedBattlefield.player1.some(c => c.id === originalCard.id)
             if (!stillAlive) {
-              // Opponent (player2) gets 2 gold for killing unit
-              goldRewards.player2 += 2
+              // Opponent (player2) gets 1 gold for killing a creep (generic unit)
+              goldRewards.player2 += 1
             }
           }
         })
@@ -119,8 +119,8 @@ export function useTurnManagement() {
           } else if (originalCard.cardType === 'generic') {
             const stillAlive = updatedBattlefield.player2.some(c => c.id === originalCard.id)
             if (!stillAlive) {
-              // Opponent (player1) gets 2 gold for killing unit
-              goldRewards.player1 += 2
+              // Opponent (player1) gets 1 gold for killing a creep (generic unit)
+              goldRewards.player1 += 1
             }
           }
         })
@@ -374,8 +374,8 @@ export function useTurnManagement() {
           
           if (darkArchmage && darkArchmage.slot !== undefined) {
             const archmageSlot = darkArchmage.slot
-            // Find adjacent slots (slot - 1 and slot + 1, within 1-4 range)
-            const adjacentSlots = [archmageSlot - 1, archmageSlot + 1].filter(s => s >= 1 && s <= 4)
+            // Find adjacent slots (slot - 1 and slot + 1, within 1-5 range)
+            const adjacentSlots = [archmageSlot - 1, archmageSlot + 1].filter(s => s >= 1 && s <= 5)
             
             // Find an available adjacent slot
             for (const slot of adjacentSlots) {
@@ -410,6 +410,41 @@ export function useTurnManagement() {
       const updatedBattlefieldA = spawnVoidApprentices(prev.battlefieldA, 'battlefieldA')
       const updatedBattlefieldB = spawnVoidApprentices(prev.battlefieldB, 'battlefieldB')
       
+      // Spawn 1/1 creeps in leftmost slot (slot 1) for both players on both battlefields
+      const spawnCreeps = (battlefield: typeof prev.battlefieldA, battlefieldId: 'battlefieldA' | 'battlefieldB') => {
+        const updated = { ...battlefield }
+        
+        // Spawn for both players
+        for (const player of ['player1', 'player2'] as const) {
+          // Check if slot 1 is already occupied
+          const slot1Occupied = updated[player].some(c => c.slot === 1)
+          
+          if (!slot1Occupied) {
+            const creep: import('../game/types').GenericUnit = {
+              id: `creep-${player}-${battlefieldId}-${newTurn}-${Date.now()}`,
+              name: 'Creep',
+              description: 'Basic unit spawned each turn',
+              cardType: 'generic',
+              colors: [],
+              manaCost: 0,
+              attack: 1,
+              health: 1,
+              maxHealth: 1,
+              currentHealth: 1,
+              location: battlefieldId,
+              owner: player,
+              slot: 1,
+            }
+            updated[player] = [...updated[player], creep]
+          }
+        }
+        
+        return updated
+      }
+      
+      const battlefieldAWithCreeps = spawnCreeps(updatedBattlefieldA, 'battlefieldA')
+      const battlefieldBWithCreeps = spawnCreeps(updatedBattlefieldB, 'battlefieldB')
+      
       // Reset temporary HP and attack at start of new turn
       const resetTemporaryStats = (c: Card): Card => {
         if (c.cardType === 'hero' || c.cardType === 'generic') {
@@ -443,12 +478,12 @@ export function useTurnManagement() {
       return {
         ...prev,
         battlefieldA: {
-          player1: updatedBattlefieldA.player1.map(resetTemporaryStats),
-          player2: updatedBattlefieldA.player2.map(resetTemporaryStats),
+          player1: battlefieldAWithCreeps.player1.map(resetTemporaryStats),
+          player2: battlefieldAWithCreeps.player2.map(resetTemporaryStats),
         },
         battlefieldB: {
-          player1: updatedBattlefieldB.player1.map(resetTemporaryStats),
-          player2: updatedBattlefieldB.player2.map(resetTemporaryStats),
+          player1: battlefieldBWithCreeps.player1.map(resetTemporaryStats),
+          player2: battlefieldBWithCreeps.player2.map(resetTemporaryStats),
         },
         player1Hand: prev.player1Hand.map(resetTemporaryStats),
         player2Hand: prev.player2Hand.map(resetTemporaryStats),
