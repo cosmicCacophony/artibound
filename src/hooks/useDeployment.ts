@@ -509,6 +509,18 @@ export function useDeployment() {
       const updatedHand = (prev[`${itemCard.owner}Hand` as keyof typeof prev] as Card[])
         .filter(c => c.id !== itemCard.id)
       
+      // Apply tower armor if item has tower_armor special effect
+      let updatedMetadata = { ...prev.metadata }
+      if (item.specialEffects?.includes('tower_armor') && item.armor) {
+        const towerArmorKey = battlefieldId === 'battlefieldA'
+          ? (player === 'player1' ? 'towerA_player1_Armor' : 'towerA_player2_Armor')
+          : (player === 'player1' ? 'towerB_player1_Armor' : 'towerB_player2_Armor')
+        updatedMetadata = {
+          ...updatedMetadata,
+          [towerArmorKey]: (updatedMetadata[towerArmorKey as keyof typeof updatedMetadata] as number) + item.armor,
+        }
+      }
+      
       // Equipping an item is an action - pass both action AND initiative to opponent
       const otherPlayer = itemCard.owner === 'player1' ? 'player2' : 'player1'
       

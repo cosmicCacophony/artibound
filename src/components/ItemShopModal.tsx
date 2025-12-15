@@ -1,6 +1,6 @@
 import { useGameContext } from '../context/GameContext'
 import { useItemShop } from '../hooks/useItemShop'
-import { ShopItem, BattlefieldId, Item } from '../game/types'
+import { ShopItem, Item } from '../game/types'
 
 export function ItemShopModal() {
   const { itemShopPlayer, setItemShopPlayer, itemShopItems, metadata } = useGameContext()
@@ -19,19 +19,18 @@ export function ItemShopModal() {
     setItemShopPlayer(null)
   }
 
-  const handlePurchase = (shopItem: ShopItem, battlefieldId?: BattlefieldId) => {
-    handleBuyItem(shopItem, itemShopPlayer, battlefieldId)
+  const handlePurchase = (shopItem: ShopItem) => {
+    handleBuyItem(shopItem, itemShopPlayer)
   }
 
-  // Render item/buff as a card with yellow background
+  // Render item as a card with yellow background
   const renderShopItem = (shopItem: ShopItem, index: number) => {
-    const isBuff = 'type' in shopItem && shopItem.type === 'battlefieldBuff'
     const canAfford = shopItem.cost <= playerGold
-    const isItem = !isBuff
+    const item = shopItem as Item
 
     return (
       <div
-        key={isBuff ? `buff-${index}` : (shopItem as Item).id}
+        key={item.id}
         style={{
           backgroundColor: '#fff9c4', // Yellow background
           border: '2px solid #f9a825',
@@ -47,7 +46,7 @@ export function ItemShopModal() {
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase' }}>
-            {isBuff ? 'Battlefield Upgrade' : 'Item'}
+            Item
           </div>
           <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#f57c00' }}>
             💰 {shopItem.cost}
@@ -65,83 +64,46 @@ export function ItemShopModal() {
         </div>
 
         {/* Special effects for items */}
-        {isItem && (shopItem as Item).specialEffects && (shopItem as Item).specialEffects!.length > 0 && (
+        {item.specialEffects && item.specialEffects.length > 0 && (
           <div style={{ fontSize: '11px', color: '#9c27b0', marginBottom: '8px', fontStyle: 'italic' }}>
-            Effects: {(shopItem as Item).specialEffects!.join(', ')}
+            Effects: {item.specialEffects.join(', ')}
           </div>
         )}
 
         {/* Activated ability */}
-        {isItem && (shopItem as Item).hasActivatedAbility && (shopItem as Item).activatedAbilityDescription && (
+        {item.hasActivatedAbility && item.activatedAbilityDescription && (
           <div style={{ fontSize: '11px', color: '#1976d2', marginBottom: '8px', fontStyle: 'italic' }}>
-            ⚡ {(shopItem as Item).activatedAbilityDescription}
+            ⚡ {item.activatedAbilityDescription}
           </div>
         )}
 
         {/* Stat bonuses for items */}
-        {isItem && ((shopItem as Item).attackBonus || (shopItem as Item).hpBonus) && (
+        {(item.attackBonus || item.hpBonus) && (
           <div style={{ fontSize: '12px', marginBottom: '8px', fontWeight: 'bold' }}>
-            {(shopItem as Item).attackBonus && <span>⚔️ +{(shopItem as Item).attackBonus} </span>}
-            {(shopItem as Item).hpBonus && <span>❤️ +{(shopItem as Item).hpBonus}</span>}
+            {item.attackBonus && <span>⚔️ +{item.attackBonus} </span>}
+            {item.hpBonus && <span>❤️ +{item.hpBonus}</span>}
           </div>
         )}
 
         {/* Purchase buttons */}
         {canAfford ? (
-          isBuff ? (
-            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-              <button
-                onClick={() => handlePurchase(shopItem, 'battlefieldA')}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  backgroundColor: '#4caf50',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                }}
-              >
-                Buy for A
-              </button>
-              <button
-                onClick={() => handlePurchase(shopItem, 'battlefieldB')}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  backgroundColor: '#4caf50',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                }}
-              >
-                Buy for B
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => handlePurchase(shopItem)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                backgroundColor: '#4caf50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: 'bold',
-                marginTop: '8px',
-              }}
-            >
-              Buy Item
-            </button>
-          )
+          <button
+            onClick={() => handlePurchase(shopItem)}
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              backgroundColor: '#4caf50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              marginTop: '8px',
+            }}
+          >
+            Buy Item
+          </button>
         ) : (
           <div style={{
             padding: '8px 12px',

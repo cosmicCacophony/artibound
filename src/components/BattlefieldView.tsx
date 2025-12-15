@@ -246,19 +246,28 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                   towerB_player2: metadata.towerB_player2_HP,
                 }
                 
+                const initialTowerArmor = {
+                  towerA_player1: metadata.towerA_player1_Armor,
+                  towerA_player2: metadata.towerA_player2_Armor,
+                  towerB_player1: metadata.towerB_player1_Armor,
+                  towerB_player2: metadata.towerB_player2_Armor,
+                }
+                
                 // Resolve combat for both battlefields simultaneously
                 const resultA = resolveSimultaneousCombat(
                   gameState.battlefieldA,
                   'battlefieldA',
                   initialTowerHP,
-                  metadata.stunnedHeroes || {}
+                  metadata.stunnedHeroes || {},
+                  initialTowerArmor
                 )
                 
                 const resultB = resolveSimultaneousCombat(
                   gameState.battlefieldB,
                   'battlefieldB',
                   resultA.updatedTowerHP,
-                  metadata.stunnedHeroes || {}
+                  metadata.stunnedHeroes || {},
+                  initialTowerArmor
                 )
                 
                 // Process killed heroes for both battlefields - separate by player

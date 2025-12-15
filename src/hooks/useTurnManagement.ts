@@ -38,11 +38,19 @@ export function useTurnManagement() {
         towerB_player2: metadata.towerB_player2_HP,
       }
       
+      const initialTowerArmor = {
+        towerA_player1: metadata.towerA_player1_Armor,
+        towerA_player2: metadata.towerA_player2_Armor,
+        towerB_player1: metadata.towerB_player1_Armor,
+        towerB_player2: metadata.towerB_player2_Armor,
+      }
+      
       const resultA = resolveSimultaneousCombat(
         gameState.battlefieldA,
         'battlefieldA',
         initialTowerHP,
-        metadata.stunnedHeroes || {}
+        metadata.stunnedHeroes || {},
+        initialTowerArmor
       )
       
       // Use updated tower HP from A for B's combat
@@ -50,7 +58,8 @@ export function useTurnManagement() {
         gameState.battlefieldB,
         'battlefieldB',
         resultA.updatedTowerHP,
-        metadata.stunnedHeroes || {}
+        metadata.stunnedHeroes || {},
+        initialTowerArmor
       )
       
       // Process killed heroes (same logic as in BattlefieldView) - separate by player

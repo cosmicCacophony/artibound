@@ -31,10 +31,11 @@ export interface Item {
   hpBonus?: number
   attackBonus?: number
   goldPerTurn?: number
+  armor?: number // Tower armor bonus (for Tower Shield)
   // Special abilities (for future implementation)
   hasActivatedAbility?: boolean
   activatedAbilityDescription?: string
-  specialEffects?: string[] // e.g., ['cleave', 'siege', 'regeneration', 'taunt', 'retaliate']
+  specialEffects?: string[] // e.g., ['cleave', 'siege', 'regeneration', 'taunt', 'retaliate', 'tower_armor', 'create_unit', 'refresh_cooldowns']
 }
 
 export type BattlefieldId = 'battlefieldA' | 'battlefieldB'
@@ -87,6 +88,11 @@ export interface GameMetadata {
   towerA_player2_HP: number
   towerB_player1_HP: number
   towerB_player2_HP: number
+  // Tower armor: Damage reduction for each tower (reduces incoming damage before applying to HP)
+  towerA_player1_Armor: number
+  towerA_player2_Armor: number
+  towerB_player1_Armor: number
+  towerB_player2_Armor: number
   player1Tier: 1 | 2
   player2Tier: 1 | 2
   // Death cooldown: Record of card ID -> cooldown counter (starts at 2, decreases by 1 each turn, 0 = ready)
@@ -134,6 +140,9 @@ export type HeroAbilityEffectType =
   | 'draw_card' // Draw card(s)
   | 'heal_target' // Heal target
   | 'move_hero' // Move hero
+  | 'create_unit' // Create/spawn a unit
+  | 'steal_unit' // Take control of enemy unit
+  | 'move_cross_battlefield' // Move hero across battlefields
   | 'custom' // Custom effect
 
 export interface HeroAbility {
@@ -143,6 +152,7 @@ export interface HeroAbility {
   cooldown: number // Turns until can use again (typically 2-3)
   effectType: HeroAbilityEffectType
   effectValue?: number // Value for the effect (damage, heal amount, etc.)
+  startsOnCooldown?: boolean // If true, ability starts on cooldown at game start
   // For tracking cooldown: Record<heroId, turnLastUsed>
   // Stored in GameMetadata.heroAbilityCooldowns
 }

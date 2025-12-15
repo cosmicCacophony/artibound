@@ -93,7 +93,8 @@ export function resolveAttack(
   battlefield: Battlefield,
   towerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
   battlefieldId: 'battlefieldA' | 'battlefieldB',
-  stunnedHeroes?: Record<string, boolean>
+  stunnedHeroes?: Record<string, boolean>,
+  towerArmor?: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
 ): {
   updatedBattlefield: Battlefield
   updatedTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
@@ -168,12 +169,16 @@ export function resolveAttack(
     const currentHP = towerHP[towerKey]
     
     // If tower is already dead, all damage goes to nexus (handled in combat resolution)
-    // Otherwise, damage hits tower first
+    // Otherwise, damage hits tower first (reduced by armor)
     if (currentHP > 0) {
       // If stunned, deal 0 damage; otherwise calculate normally
       attackPower = isStunned ? 0 : getAttackPower(attacker, false) // No hero bonus vs towers
-      const newHP = Math.max(0, currentHP - attackPower)
-      damageDealt = Math.min(attackPower, currentHP)
+      
+      // Apply tower armor (reduce damage by armor amount)
+      const armor = towerArmor?.[towerKey] || 0
+      const damageAfterArmor = Math.max(0, attackPower - armor)
+      const newHP = Math.max(0, currentHP - damageAfterArmor)
+      damageDealt = Math.min(damageAfterArmor, currentHP)
       
       updatedTowerHP = {
         ...updatedTowerHP,
@@ -230,7 +235,8 @@ export function resolveCombat(
   combatActions: Map<string, AttackTarget>, // Map of unit ID -> target (only active player's units)
   activePlayer: PlayerId,
   initialTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
-  stunnedHeroes?: Record<string, boolean>
+  stunnedHeroes?: Record<string, boolean>,
+  towerArmor?: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
 ): {
   updatedBattlefield: Battlefield
   updatedTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
@@ -255,7 +261,8 @@ export function resolveCombat(
         currentBattlefield,
         currentTowerHP,
         battlefieldId,
-        stunnedHeroes
+        stunnedHeroes,
+        towerArmor
       )
       
       currentBattlefield = result.updatedBattlefield
@@ -339,7 +346,8 @@ export function resolveSimultaneousCombat(
   battlefield: Battlefield,
   battlefieldId: 'battlefieldA' | 'battlefieldB',
   initialTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
-  stunnedHeroes?: Record<string, boolean>
+  stunnedHeroes?: Record<string, boolean>,
+  towerArmor?: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
 ): {
   updatedBattlefield: Battlefield
   updatedTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
@@ -398,7 +406,8 @@ export function resolveSimultaneousCombat(
         currentBattlefield,
         currentTowerHP,
         battlefieldId,
-        stunnedHeroes
+        stunnedHeroes,
+        towerArmor
       )
       
       currentBattlefield = result.updatedBattlefield
@@ -480,7 +489,8 @@ export function resolveSimultaneousCombat(
         currentBattlefield,
         currentTowerHP,
         battlefieldId,
-        stunnedHeroes
+        stunnedHeroes,
+        towerArmor
       )
       
       currentBattlefield = result.updatedBattlefield

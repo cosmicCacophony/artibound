@@ -15,7 +15,6 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 8,
     maxHealth: 8,
     currentHealth: 8,
-    supportEffect: 'Allies gain +1/+1',
     signatureCardId: 'rw-sig-commander-1',
     equippedItems: [],
     ability: {
@@ -37,16 +36,15 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 10,
     maxHealth: 10,
     currentHealth: 10,
-    supportEffect: 'Allies gain +2 attack',
     signatureCardId: 'rw-sig-captain-1',
     equippedItems: [],
     ability: {
-      name: 'Charge',
-      description: 'Target unit gains +3 attack this turn and can attack immediately',
+      name: 'Tactical Movement',
+      description: 'Move this hero up to 3 slots. Can move between battlefields.',
       manaCost: 1,
-      cooldown: 3,
-      effectType: 'custom', // Custom effect: buff + immediate attack
-      effectValue: 3, // +3 attack
+      cooldown: 2,
+      effectType: 'move_cross_battlefield',
+      effectValue: 3, // Up to 3 slots
     },
   },
   {
@@ -59,7 +57,6 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 9,
     maxHealth: 9,
     currentHealth: 9,
-    supportEffect: 'Allies gain +1 attack',
     signatureCardId: 'rw-sig-vanguard-1',
     equippedItems: [],
     ability: {
@@ -67,7 +64,7 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       description: 'Swap this hero to an adjacent location. If you also control a white hero, you can swap to any location.',
       manaCost: 1,
       cooldown: 2,
-      effectType: 'swap_heroes',
+      effectType: 'move_hero',
       effectValue: 1,
     },
   },
@@ -1297,14 +1294,6 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     supportEffect: 'Draw extra card each turn',
     signatureCardId: 'ub-sig-archmage-1',
     equippedItems: [],
-    ability: {
-      name: 'Arcane Bolt',
-      description: 'Deal 2 damage to target unit',
-      manaCost: 1,
-      cooldown: 2,
-      effectType: 'damage_target',
-      effectValue: 2,
-    },
   },
   {
     id: 'ub-hero-necromancer',
@@ -1343,12 +1332,13 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     signatureCardId: 'ub-sig-guardian-1',
     equippedItems: [],
     ability: {
-      name: 'Nature\'s Revenge',
-      description: 'Deal 2 damage to target unit. If it dies, gain +1 max mana.',
+      name: 'Steal Creep',
+      description: 'Take control of target enemy unit (generic only, not heroes)',
       manaCost: 1,
-      cooldown: 2,
-      effectType: 'custom',
-      effectValue: 2,
+      cooldown: 4,
+      effectType: 'steal_unit',
+      effectValue: 0,
+      startsOnCooldown: true, // Starts on cooldown at game start
     },
   },
   {
@@ -1365,12 +1355,12 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     signatureCardId: 'ub-sig-druid-1',
     equippedItems: [],
     ability: {
-      name: 'Nature\'s Wrath',
-      description: 'Deal 2 damage to target unit. Gain +1 max mana.',
+      name: 'Nature\'s Summon',
+      description: 'Create a 3/3 Nature Sprite in an empty slot on this battlefield',
       manaCost: 1,
       cooldown: 2,
-      effectType: 'custom',
-      effectValue: 2,
+      effectType: 'create_unit',
+      effectValue: 3, // 3/3 stats
     },
   },
 ]

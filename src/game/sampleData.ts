@@ -40,11 +40,10 @@ export const tier1Items: Item[] = [
   {
     id: 'item-ring-tarrasque',
     name: 'Ring of Tarrasque',
-    description: '+3 Attack, +3 HP, Regeneration',
+    description: '+6 HP, Regeneration',
     cost: 12,
     tier: 2,
-    attackBonus: 3,
-    hpBonus: 3,
+    hpBonus: 6,
     specialEffects: ['regeneration'],
   },
   {
@@ -58,11 +57,10 @@ export const tier1Items: Item[] = [
   {
     id: 'item-red-mist-maul',
     name: 'Red Mist Maul',
-    description: '+2 Attack, +3 HP, Siege',
+    description: '+5 Attack, Siege',
     cost: 10,
     tier: 1,
-    attackBonus: 2,
-    hpBonus: 3,
+    attackBonus: 5,
     specialEffects: ['siege'],
   },
   {
@@ -77,12 +75,11 @@ export const tier1Items: Item[] = [
   {
     id: 'item-barbed-mail',
     name: 'Barbed Mail',
-    description: '+1 Attack, +2 HP, Retaliate, Taunt',
+    description: '+4 HP, Retaliate',
     cost: 7,
     tier: 1,
-    attackBonus: 1,
-    hpBonus: 2,
-    specialEffects: ['retaliate', 'taunt'],
+    hpBonus: 4,
+    specialEffects: ['retaliate'],
   },
   {
     id: 'item-demagicking-maul',
@@ -146,11 +143,10 @@ export const tier1Items: Item[] = [
   {
     id: 'item-bracers-sacrifice',
     name: 'Bracers of Sacrifice',
-    description: '+1 Attack, +2 HP. Activated: Slay this hero and deal 4 damage to adjacent enemies.',
+    description: '+3 HP. Activated: Slay this hero and deal 4 damage to adjacent enemies.',
     cost: 8,
     tier: 1,
-    attackBonus: 1,
-    hpBonus: 2,
+    hpBonus: 3,
     hasActivatedAbility: true,
     activatedAbilityDescription: 'Slay this hero and deal 4 damage to adjacent enemies.',
   },
@@ -167,31 +163,28 @@ export const tier1Items: Item[] = [
   {
     id: 'item-cleave-axe',
     name: 'Cleave Axe',
-    description: '+3 Attack, +2 HP. Cleave (damages adjacent units).',
+    description: '+5 Attack, Cleave (damages adjacent units).',
     cost: 10,
     tier: 1,
-    attackBonus: 3,
-    hpBonus: 2,
+    attackBonus: 5,
     specialEffects: ['cleave'],
   },
   {
     id: 'item-chainmail',
     name: 'Chainmail',
-    description: '+1 Attack, +4 HP. Retaliate (deals damage back when attacked).',
+    description: '+5 HP, Retaliate (deals damage back when attacked).',
     cost: 8,
     tier: 1,
-    attackBonus: 1,
-    hpBonus: 4,
+    hpBonus: 5,
     specialEffects: ['retaliate'],
   },
   {
     id: 'item-siege-engine',
     name: 'Siege Engine',
-    description: '+2 Attack, +3 HP. Siege (can attack towers directly).',
+    description: '+5 Attack, Siege (can attack towers directly).',
     cost: 12,
     tier: 1,
-    attackBonus: 2,
-    hpBonus: 3,
+    attackBonus: 5,
     specialEffects: ['siege'],
   },
   // Counterplay Items - Anti-Hero
@@ -225,10 +218,46 @@ export const tier1Items: Item[] = [
     hasActivatedAbility: true,
     activatedAbilityDescription: 'When this hero attacks, it strikes the enemy (deals damage equal to attack).',
   },
+  {
+    id: 'item-tower-shield',
+    name: 'Tower Shield',
+    description: '+3 HP. Your tower in this hero\'s battlefield gains +3 armor.',
+    cost: 30,
+    tier: 2,
+    hpBonus: 3,
+    armor: 3, // Tower armor bonus
+    hasActivatedAbility: true,
+    activatedAbilityDescription: 'Your tower in this hero\'s battlefield gains +3 armor.',
+    specialEffects: ['tower_armor'], // Special effect: grants +3 armor to tower
+  },
+  {
+    id: 'item-horn-alpha',
+    name: 'Horn of the Alpha',
+    description: '+4 HP. Activated (Cost: 1 gold, Cooldown: 2 turns): Create an 8/8 unit with Trample in an empty slot.',
+    cost: 40,
+    tier: 2,
+    hpBonus: 4,
+    hasActivatedAbility: true,
+    activatedAbilityDescription: 'Create an 8/8 unit with Trample in an empty slot. (Cost: 1 gold, Cooldown: 2 turns)',
+    specialEffects: ['create_unit'], // Special effect: creates unit
+  },
+  {
+    id: 'item-refresher-orb',
+    name: 'Refresher Orb',
+    description: '+6 HP. Activated: Refresh all cooldowns on equipped hero (hero ability + item abilities), draw a card, restore 3 mana.',
+    cost: 50,
+    tier: 2,
+    hpBonus: 6,
+    hasActivatedAbility: true,
+    activatedAbilityDescription: 'Refresh all cooldowns on equipped hero (hero ability + item abilities), draw a card, restore 3 mana.',
+    specialEffects: ['refresh_cooldowns'], // Special effect: refreshes cooldowns, draws card, restores mana
+  },
 ]
 
 // Battlefield Buff definitions (templates - will be instantiated with playerId and battlefieldId)
-export const battlefieldBuffTemplates: Omit<BattlefieldBuff, 'id' | 'battlefieldId' | 'playerId'>[] = [
+// REMOVED: Battlefield buffs are no longer available in the shop
+// Keeping the type definitions for potential future use, but not exporting templates
+const battlefieldBuffTemplates: Omit<BattlefieldBuff, 'id' | 'battlefieldId' | 'playerId'>[] = [
   // Generic battlefield buffs
   {
     name: 'Combat Training',
@@ -1656,6 +1685,17 @@ export function createInitialGameState(): {
     colors: card.colors,
   }, 'player2', 'hand'))
 
+  // Initialize hero ability cooldowns for heroes that start on cooldown
+  const initialCooldowns: Record<string, number> = {}
+  const allStartingHeroes = [...player1AllHeroes, ...player2AllHeroes]
+  allStartingHeroes.forEach(hero => {
+    if (hero.ability?.startsOnCooldown) {
+      // Set turnLastUsed so ability becomes available after cooldown turns
+      // If cooldown is 4, set to 1 so it's ready on turn 5 (1 + 4 = 5)
+      initialCooldowns[hero.id] = 1
+    }
+  })
+
   const metadata: GameMetadata = {
     currentTurn: 1,
     activePlayer: 'player1',
@@ -1672,6 +1712,10 @@ export function createInitialGameState(): {
     towerA_player2_HP: TOWER_HP,
     towerB_player1_HP: TOWER_HP,
     towerB_player2_HP: TOWER_HP,
+    towerA_player1_Armor: 0,
+    towerA_player2_Armor: 0,
+    towerB_player1_Armor: 0,
+    towerB_player2_Armor: 0,
     player1Tier: 1,
     player2Tier: 1,
     deathCooldowns: {}, // Track hero death cooldowns - Record<cardId, counter> (starts at 2, decreases by 1 each turn, prevents deployment for 1 full round)
@@ -1683,7 +1727,7 @@ export function createInitialGameState(): {
     battlefieldDeathCounters: {}, // Track death counters for RW-bf2 (death counter -> draw card) - Record<"player-battlefield", count>
     actionPlayer: 'player1', // Player 1 starts with action
     initiativePlayer: 'player1', // Player 1 starts with initiative
-    heroAbilityCooldowns: {}, // Track hero ability cooldowns - Record<heroId, turnLastUsed>
+    heroAbilityCooldowns: initialCooldowns, // Track hero ability cooldowns - Record<heroId, turnLastUsed>
     player1Passed: false, // Track if player 1 has passed this turn
     player2Passed: false, // Track if player 2 has passed this turn
     stunnedHeroes: {}, // Track stunned heroes (don't deal combat damage, only receive it)
@@ -1826,6 +1870,17 @@ export function createGameStateFromDraft(
     createCardFromTemplate(card, 'player2', 'hand')
   )
 
+  // Initialize hero ability cooldowns for heroes that start on cooldown
+  const initialCooldowns: Record<string, number> = {}
+  const allDraftHeroes = [...player1Selection.heroes, ...player2Selection.heroes]
+  allDraftHeroes.forEach(hero => {
+    if (hero.ability?.startsOnCooldown) {
+      // Set turnLastUsed so ability becomes available after cooldown turns
+      // If cooldown is 4, set to 1 so it's ready on turn 5 (1 + 4 = 5)
+      initialCooldowns[hero.id] = 1
+    }
+  })
+
   // Initialize metadata
   const metadata: GameMetadata = {
     currentTurn: 1,
@@ -1843,6 +1898,10 @@ export function createGameStateFromDraft(
     towerA_player2_HP: TOWER_HP,
     towerB_player1_HP: TOWER_HP,
     towerB_player2_HP: TOWER_HP,
+    towerA_player1_Armor: 0,
+    towerA_player2_Armor: 0,
+    towerB_player1_Armor: 0,
+    towerB_player2_Armor: 0,
     player1Tier: 1,
     player2Tier: 1,
     deathCooldowns: {},
@@ -1854,7 +1913,7 @@ export function createGameStateFromDraft(
     battlefieldDeathCounters: {}, // Track death counters for RW-bf2 (death counter -> draw card) - Record<"player-battlefield", count>
     actionPlayer: 'player1', // Player 1 starts with action
     initiativePlayer: 'player1', // Player 1 starts with initiative
-    heroAbilityCooldowns: {}, // Track hero ability cooldowns - Record<heroId, turnLastUsed>
+    heroAbilityCooldowns: initialCooldowns, // Track hero ability cooldowns - Record<heroId, turnLastUsed>
     player1Passed: false, // Track if player 1 has passed this turn
     player2Passed: false, // Track if player 2 has passed this turn
     turn1DeploymentPhase: 'p1_lane1', // Turn 1 deployment: Player 1 deploys to lane 1 first
