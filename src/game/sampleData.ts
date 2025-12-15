@@ -23,10 +23,10 @@ export const tier1Items: Item[] = [
   {
     id: 'item-goldmine',
     name: 'Gold Mine',
-    description: '+1 gold per turn',
-    cost: 8,
+    description: '+5 gold per turn',
+    cost: 10,
     tier: 1,
-    goldPerTurn: 1,
+    goldPerTurn: 5,
   },
   // Artifact Foundry items - Simple stat boosts
   {
@@ -191,12 +191,11 @@ export const tier1Items: Item[] = [
   {
     id: 'item-mortreds-dagger',
     name: "Mortred's Dagger",
-    description: '+4 Attack. When this hero attacks, deal 4 damage to target enemy hero. (Cooldown: 3 turns)',
+    description: '+5 Attack. Strike (hero strikes first in combat).',
     cost: 30,
     tier: 2,
-    attackBonus: 4,
-    hasActivatedAbility: true,
-    activatedAbilityDescription: 'When this hero attacks, deal 4 damage to target enemy hero. (Cooldown: 3 turns)',
+    attackBonus: 5,
+    specialEffects: ['strike'], // Hero strikes first in combat
   },
   {
     id: 'item-executioners-blade',
@@ -251,6 +250,15 @@ export const tier1Items: Item[] = [
     hasActivatedAbility: true,
     activatedAbilityDescription: 'Refresh all cooldowns on equipped hero (hero ability + item abilities), draw a card, restore 3 mana.',
     specialEffects: ['refresh_cooldowns'], // Special effect: refreshes cooldowns, draws card, restores mana
+  },
+  {
+    id: 'item-arcane-amplifier',
+    name: 'Arcane Amplifier',
+    description: '+3 HP. Spell Echo (copy a cast spell).',
+    cost: 50,
+    tier: 2,
+    hpBonus: 3,
+    specialEffects: ['spell_echo'], // Special effect: copy a cast spell
   },
 ]
 

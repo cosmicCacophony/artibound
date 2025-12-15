@@ -8,16 +8,13 @@ export function useItemShop() {
   const metadata = gameState.metadata
 
   const generateItemShop = useCallback((player: PlayerId) => {
-    const playerTier = player === 'player1' ? metadata.player1Tier : metadata.player2Tier
-    // Show ALL available items, not just random ones
-    const availableItems = tier1Items.filter(item => item.tier <= playerTier) // Show tier 1 and tier 2 if player has tier 2
-    
+    // Show ALL available items for testing purposes (no tier filtering)
     const shopItems: ShopItem[] = [
-      ...availableItems,
+      ...tier1Items,
     ]
     
     setItemShopItems(shopItems)
-  }, [metadata.player1Tier, metadata.player2Tier, setItemShopItems])
+  }, [setItemShopItems])
 
   const handleBuyItem = useCallback((shopItem: ShopItem, player: PlayerId) => {
     const currentGold = player === 'player1' ? metadata.player1Gold : metadata.player2Gold

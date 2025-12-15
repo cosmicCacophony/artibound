@@ -180,6 +180,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red', 'white'],
     manaCost: 3,
+    initiative: true, // Quickcast - gives initiative
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for buff
       damage: 0,
@@ -192,6 +193,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red'],
     manaCost: 3,
+    initiative: true, // Quickcast - gives initiative
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for buff
       damage: 0,
@@ -2025,18 +2027,6 @@ export const uwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 0,
       affectsUnits: true,
       affectsHeroes: true,
-    },
-  },
-  {
-    id: 'uw-control-1',
-    name: 'Counterspell',
-    description: 'Control spell. Cancel target spell.',
-    cardType: 'spell',
-    colors: ['blue'],
-    manaCost: 3,
-    effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect for spell cancellation
-      damage: 0,
     },
   },
   {
