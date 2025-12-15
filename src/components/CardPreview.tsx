@@ -1,10 +1,16 @@
 import { BaseCard, Color } from '../game/types'
+import { canAffordCard } from '../game/runeSystem'
+import { useGameContext } from '../context/GameContext'
 
 interface CardPreviewProps {
   card: BaseCard
 }
 
 export function CardPreview({ card }: CardPreviewProps) {
+  const { metadata } = useGameContext()
+  // Determine which player's rune pool to use (default to player1 for preview)
+  const runePool = metadata.player1RunePool // Could be improved to detect owner
+  const playerMana = metadata.player1Mana // Default to player1 for preview
   const COLOR_MAP: Record<Color, string> = {
     red: '#d32f2f',
     blue: '#1976d2',
@@ -122,9 +128,30 @@ export function CardPreview({ card }: CardPreviewProps) {
         <div style={{ fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase', color: '#666' }}>
           {card.cardType}
         </div>
+        {/* Cost Display: Mana + Rune Requirements */}
         {card.manaCost !== undefined && (
           <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#1976d2' }}>
-            💎 {card.manaCost}
+            <span style={{ marginRight: '8px' }}>
+              💎 {card.manaCost}
+            </span>
+            {card.colors && card.colors.length > 0 && (
+              <span>
+                {card.colors.map((color, idx) => (
+                  <span key={idx} style={{ 
+                    marginLeft: '4px',
+                    color: COLOR_MAP[color],
+                    fontWeight: 'bold',
+                  }}>
+                    ● {color.substring(0, 1).toUpperCase()}
+                  </span>
+                ))}
+              </span>
+            )}
+            {canAffordCard(card, playerMana, runePool) ? (
+              <span style={{ color: '#4caf50', marginLeft: '8px' }}>✓</span>
+            ) : (
+              <span style={{ color: '#f44336', marginLeft: '8px' }}>✗</span>
+            )}
           </div>
         )}
       </div>

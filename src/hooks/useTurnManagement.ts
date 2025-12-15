@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react'
-import { TurnPhase, Card, GameMetadata, ShopItem } from '../game/types'
+import { TurnPhase, Card, GameMetadata, ShopItem, Hero } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { getDefaultTargets, resolveCombat, resolveSimultaneousCombat } from '../game/combatSystem'
 import { tier1Items } from '../game/sampleData'
@@ -445,6 +445,9 @@ export function useTurnManagement() {
       const battlefieldAWithCreeps = spawnCreeps(updatedBattlefieldA, 'battlefieldA')
       const battlefieldBWithCreeps = spawnCreeps(updatedBattlefieldB, 'battlefieldB')
       
+      // Rune system: Runes are NOT generated per turn - they're only added when heroes deploy
+      // Rune pools persist across turns (no untapping needed - runes are consumed when used)
+      
       // Temporary stats are now persistent - they don't reset automatically
       // Players can manually remove them if needed
       
@@ -482,6 +485,7 @@ export function useTurnManagement() {
           // Reset movement flags
           player1MovedToBase: false,
           player2MovedToBase: false,
+          // Rune pools persist (no changes needed - runes only added/removed on deployment)
         },
       }
     })

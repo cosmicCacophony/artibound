@@ -6,6 +6,14 @@ export type PlayerId = 'player1' | 'player2'
 export type Color = 'red' | 'blue' | 'white' | 'black' | 'green'
 export type ColorCombo = Color | `${Color}${Color}` | `${Color}${Color}${Color}` // Single, dual, or triple color
 
+// Rune System Types - Simplified: Runes are just color requirements
+export type RuneColor = Color // R, W, U, B, G
+
+export interface RunePool {
+  runes: RuneColor[] // Array of runes (e.g., ['red', 'red', 'white', 'white', 'blue', 'green', 'black'])
+  // Simplified: No tapping/recycling - runes are consumed when used for color requirements
+}
+
 // Maximum colors allowed per deck
 // Increased to 4 to enable 3-4 color strategies (design advantage of 2-battlefield structure)
 export const MAX_COLORS_PER_DECK = 4
@@ -18,8 +26,8 @@ export interface BaseCard {
   name: string
   description: string
   cardType: CardType
-  manaCost?: number // Cost to play this card
-  colors?: Color[] // Colors required to play this card (empty = colorless)
+  manaCost?: number // Cost to play this card (uses mana)
+  colors?: Color[] // Colors required to play this card (uses runes from rune pool)
 }
 
 export interface Item {
@@ -78,10 +86,14 @@ export interface GameMetadata {
   currentPhase: TurnPhase
   player1Gold: number
   player2Gold: number
+  // Legacy mana system (kept for backward compatibility during migration)
   player1Mana: number // Current mana
   player2Mana: number
   player1MaxMana: number // Maximum mana (increases by 1 per turn)
   player2MaxMana: number
+  // Rune system
+  player1RunePool: RunePool
+  player2RunePool: RunePool
   player1NexusHP: number
   player2NexusHP: number
   towerA_player1_HP: number

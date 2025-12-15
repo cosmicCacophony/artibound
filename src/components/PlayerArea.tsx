@@ -1,5 +1,6 @@
 import { PlayerId } from '../game/types'
 import { useGameContext } from '../context/GameContext'
+import { RunePoolDisplay } from './RunePoolDisplay'
 import { useDeployment } from '../hooks/useDeployment'
 import { useTurnManagement } from '../hooks/useTurnManagement'
 import { useItemShop } from '../hooks/useItemShop'
@@ -65,7 +66,14 @@ export function PlayerArea({ player }: PlayerAreaProps) {
             <span style={{ fontSize: '20px', opacity: metadata.actionPlayer === player ? 0.6 : 1 }} title="Has Initiative (will act first next turn)">⚡</span>
           )}
         </h2>
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Rune Pool Display */}
+          <RunePoolDisplay 
+            runePool={player === 'player1' ? metadata.player1RunePool : metadata.player2RunePool}
+            playerName={player === 'player1' ? 'Player 1' : 'Player 2'}
+          />
+          
+          {/* Legacy Mana Display (for backward compatibility) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ fontSize: '16px', fontWeight: 'bold', color: playerManaColor }}>
               Mana: {playerMana}/{playerMaxMana}

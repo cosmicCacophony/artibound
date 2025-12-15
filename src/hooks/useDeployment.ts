@@ -1,7 +1,8 @@
 import { useCallback } from 'react'
-import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT, Hero, ItemCard } from '../game/types'
+import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT, Hero, ItemCard, BaseCard } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { tier1Items } from '../game/sampleData'
+import { canAffordCard, consumeRunesForCard, addRunesFromHero, removeRunesFromHero } from '../game/runeSystem'
 
 export function useDeployment() {
   const { gameState, setGameState, selectedCard, selectedCardId, setSelectedCardId, getAvailableSlots } = useGameContext()
@@ -105,15 +106,33 @@ export function useDeployment() {
       }
     }
     
-    // Check mana cost (spells don't cost mana to move to base, only when played)
+    // Check costs (heroes don't cost runes - they GIVE runes when deployed)
     const isSpell = selectedCard.cardType === 'spell'
-    const manaCost = selectedCard.manaCost || 0
+    const isHero = selectedCard.cardType === 'hero'
+    const cardTemplate = selectedCard as BaseCard
     const playerMana = selectedCard.owner === 'player1' ? metadata.player1Mana : metadata.player2Mana
+    const playerRunePool = selectedCard.owner === 'player1' ? metadata.player1RunePool : metadata.player2RunePool
     
-    // Only check mana for non-spells, or spells being deployed to battlefields (not base)
-    if (!isSpell || location !== 'base') {
-      if (manaCost > playerMana) {
-        alert(`Not enough mana! Need ${manaCost}, have ${playerMana}`)
+    // Only check costs for non-heroes, or spells being deployed to battlefields (not base)
+    // Heroes don't cost runes - they generate runes when deployed
+    if (!isHero && (!isSpell || location !== 'base')) {
+      // Check mana cost
+      if (cardTemplate.manaCost && cardTemplate.manaCost > playerMana) {
+        alert(`Not enough mana! Need ${cardTemplate.manaCost}, have ${playerMana}`)
+        return
+      }
+      
+      // Check rune requirements (color requirements) - only for non-heroes
+      if (!canAffordCard(cardTemplate, playerMana, playerRunePool)) {
+        const missingRunes = cardTemplate.colors?.filter(color => {
+          const available = playerRunePool.runes.filter(r => r === color).length
+          return available === 0
+        }) || []
+        if (missingRunes.length > 0) {
+          alert(`Missing required runes: ${missingRunes.join(', ')}`)
+        } else {
+          alert(`Cannot afford ${cardTemplate.name}`)
+        }
         return
       }
     }
@@ -200,9 +219,26 @@ export function useDeployment() {
           ? { ...selectedCard, location, currentHealth: (selectedCard as any).maxHealth, slot: undefined }
           : { ...selectedCard, location, slot: undefined }
         
-        // Deduct mana (spells don't cost mana to move to base, only when played)
+        // Handle runes and mana costs
+        const runePoolKey = `${selectedCard.owner}RunePool` as keyof GameMetadata
         const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
-        const shouldDeductMana = !isSpell // Only deduct mana for non-spells
+        const isHeroCard = selectedCard.cardType === 'hero'
+        
+        let updatedRunePool = prev.metadata[runePoolKey] as any
+        let updatedMana = prev.metadata[manaKey] as number
+        
+        // Heroes don't cost runes - they GIVE runes when deployed
+        // Bouncing heroes does NOT remove runes - bouncing should be strategic, not punishing
+        // Non-hero, non-spell cards: pay mana and consume runes
+        if (!isSpell && !isHeroCard) {
+          // Non-hero, non-spell cards: pay mana and consume runes
+          // Pay mana cost
+          if (cardTemplate.manaCost) {
+            updatedMana = updatedMana - cardTemplate.manaCost
+          }
+          // Consume runes for color requirements
+          updatedRunePool = consumeRunesForCard(cardTemplate, updatedRunePool)
+        }
         
         return {
           ...prev,
@@ -218,8 +254,11 @@ export function useDeployment() {
           },
           metadata: {
             ...prev.metadata,
-            ...(isHero ? { [movedToBaseKey]: true } : {}),
-            ...(shouldDeductMana ? { [manaKey]: (prev.metadata[manaKey] as number) - manaCost } : {}),
+            ...(isHeroCard ? { [movedToBaseKey]: true } : {}),
+            ...((!isSpell && !isHeroCard) || isHeroCard ? { 
+              [runePoolKey]: updatedRunePool,
+              ...((!isSpell && !isHeroCard) ? { [manaKey]: updatedMana } : {}),
+            } : {}),
           },
         }
       } else if (location === 'battlefieldA' || location === 'battlefieldB') {
@@ -257,7 +296,38 @@ export function useDeployment() {
             if (otherCard) {
               // Swap positions
               const otherBattlefieldKey = location === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
+              const runePoolKey = `${selectedCard.owner}RunePool` as keyof GameMetadata
               const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
+              
+              // Handle runes and mana
+              let updatedRunePool = prev.metadata[runePoolKey] as any
+              let updatedMana = prev.metadata[manaKey] as number
+              const isHeroCard = selectedCard.cardType === 'hero'
+              
+        // If hero is deploying, add runes from that hero
+        if (isHeroCard && (location === 'battlefieldA' || location === 'battlefieldB')) {
+          // Hero is deploying - add runes from that hero
+          // Find the card in previous state to check its actual location
+          const prevCard = [...prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[],
+                            ...prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[],
+                            ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
+                            ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']]
+                            .find(c => c.id === selectedCardId)
+          // Check if hero was previously on a battlefield (if so, don't add runes again)
+          const wasOnBattlefield = prevCard && (prevCard.location === 'battlefieldA' || prevCard.location === 'battlefieldB')
+          if (!wasOnBattlefield) {
+            // Hero is deploying for the first time (from base/hand) - add runes
+            updatedRunePool = addRunesFromHero(selectedCard as Hero, updatedRunePool)
+          }
+        } else if (!isSpell && !isHeroCard) {
+                // Non-hero, non-spell cards: pay mana and consume runes
+                // Pay mana cost
+                if (cardTemplate.manaCost) {
+                  updatedMana = updatedMana - cardTemplate.manaCost
+                }
+                // Consume runes for color requirements
+                updatedRunePool = consumeRunesForCard(cardTemplate, updatedRunePool)
+              }
               
               return {
                 ...prev,
@@ -279,7 +349,8 @@ export function useDeployment() {
                 },
                 metadata: {
                   ...prev.metadata,
-                  [manaKey]: (prev.metadata[manaKey] as number) - manaCost,
+                  [runePoolKey]: updatedRunePool,
+                  ...((!isSpell && !isHeroCard) ? { [manaKey]: updatedMana } : {}),
                 },
               }
             }
@@ -287,7 +358,43 @@ export function useDeployment() {
         }
 
         const otherBattlefieldKey = location === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
+        const runePoolKey = `${selectedCard.owner}RunePool` as keyof GameMetadata
         const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
+        
+        // Pay mana and consume runes if needed
+        let updatedRunePool = prev.metadata[runePoolKey] as any
+        let updatedMana = prev.metadata[manaKey] as number
+        
+        // Check if this is a hero card
+        const isHeroCard = selectedCard.cardType === 'hero'
+        
+        // Heroes don't cost mana or runes - they GIVE runes when deployed
+        // Non-hero, non-spell cards: pay mana and consume runes
+        if (!isSpell && !isHeroCard) {
+          // Pay mana cost
+          if (cardTemplate.manaCost) {
+            updatedMana = updatedMana - cardTemplate.manaCost
+          }
+          // Consume runes for color requirements
+          updatedRunePool = consumeRunesForCard(cardTemplate, updatedRunePool)
+        }
+        
+        // If hero is deploying to a battlefield, add runes from that hero
+        if (isHeroCard && (location === 'battlefieldA' || location === 'battlefieldB')) {
+          // Hero is deploying - add runes from that hero (one-time)
+          // Find the card in previous state to check its actual location
+          const prevCard = [...prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[],
+                            ...prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[],
+                            ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
+                            ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']]
+                            .find(c => c.id === selectedCardId)
+          // Check if hero was previously on a battlefield (if so, don't add runes again)
+          const wasOnBattlefield = prevCard && (prevCard.location === 'battlefieldA' || prevCard.location === 'battlefieldB')
+          if (!wasOnBattlefield) {
+            // Hero is deploying for the first time (from base/hand) - add runes
+            updatedRunePool = addRunesFromHero(selectedCard as Hero, updatedRunePool)
+          }
+        }
         
         return {
           ...prev,
@@ -309,7 +416,8 @@ export function useDeployment() {
           },
           metadata: {
             ...prev.metadata,
-            [manaKey]: (prev.metadata[manaKey] as number) - manaCost,
+            [runePoolKey]: updatedRunePool,
+            ...((!isSpell && !isHeroCard) ? { [manaKey]: updatedMana } : {}),
           },
         }
       }

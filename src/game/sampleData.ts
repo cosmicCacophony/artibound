@@ -1,4 +1,4 @@
-import { Hero, SignatureCard, HybridCard, GenericUnit, Card, BaseCard, Item, GameMetadata, TOWER_HP, NEXUS_HP, STARTING_GOLD, BattlefieldDefinition, SpellCard, SpellEffect, BattlefieldBuff, BattlefieldId, BattlefieldBuffEffectType } from './types'
+import { Hero, SignatureCard, HybridCard, GenericUnit, Card, BaseCard, Item, GameMetadata, TOWER_HP, NEXUS_HP, STARTING_GOLD, BattlefieldDefinition, SpellCard, SpellEffect, BattlefieldBuff, BattlefieldId, BattlefieldBuffEffectType, RunePool } from './types'
 import { allCards, allSpells } from './cardData'
 
 // Item definitions
@@ -1279,7 +1279,7 @@ export const redWhiteSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     name: 'Fireball',
     description: 'Damage spell - deals 4 damage',
     cardType: 'spell',
-    colors: ['red'],
+    colors: ['red'], // Hero combat spell - keeps rune requirement (uncommon)
     manaCost: 4,
     effect: {
       type: 'targeted_damage',
@@ -1294,7 +1294,7 @@ export const redWhiteSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     name: 'Smite',
     description: 'Divine damage spell - deals 3 damage',
     cardType: 'spell',
-    colors: ['white'],
+    colors: undefined, // Common spell - no rune requirement
     manaCost: 3,
     effect: {
       type: 'targeted_damage',
@@ -1704,6 +1704,10 @@ export function createInitialGameState(): {
     }
   })
 
+  // Initialize empty rune pools - runes are added when heroes deploy
+  const player1InitialRunePool: RunePool = { runes: [] }
+  const player2InitialRunePool: RunePool = { runes: [] }
+
   const metadata: GameMetadata = {
     currentTurn: 1,
     activePlayer: 'player1',
@@ -1740,6 +1744,9 @@ export function createInitialGameState(): {
     player2Passed: false, // Track if player 2 has passed this turn
     stunnedHeroes: {}, // Track stunned heroes (don't deal combat damage, only receive it)
     turn1DeploymentPhase: 'p1_lane1', // Turn 1 deployment phase: p1_lane1 -> p2_lane1 -> p2_lane2 -> p1_lane2 -> complete
+    // Rune system
+    player1RunePool: player1InitialRunePool,
+    player2RunePool: player2InitialRunePool,
   }
 
   // Spawn initial 1/1 creeps in slot 1 for both players on both battlefields
@@ -1912,6 +1919,10 @@ export function createGameStateFromDraft(
     }
   })
 
+  // Initialize empty rune pools - runes are added when heroes deploy
+  const player1InitialRunePool: RunePool = { runes: [] }
+  const player2InitialRunePool: RunePool = { runes: [] }
+
   // Initialize metadata
   const metadata: GameMetadata = {
     currentTurn: 1,
@@ -1948,6 +1959,10 @@ export function createGameStateFromDraft(
     player1Passed: false, // Track if player 1 has passed this turn
     player2Passed: false, // Track if player 2 has passed this turn
     turn1DeploymentPhase: 'p1_lane1', // Turn 1 deployment: Player 1 deploys to lane 1 first
+    stunnedHeroes: {}, // Track stunned heroes (don't deal combat damage, only receive it)
+    // Rune system - start with empty pools, runes added when heroes deploy
+    player1RunePool: player1InitialRunePool,
+    player2RunePool: player2InitialRunePool,
   }
 
   // Battlefields removed - simplifying game to focus on color system and combat
