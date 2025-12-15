@@ -445,50 +445,23 @@ export function useTurnManagement() {
       const battlefieldAWithCreeps = spawnCreeps(updatedBattlefieldA, 'battlefieldA')
       const battlefieldBWithCreeps = spawnCreeps(updatedBattlefieldB, 'battlefieldB')
       
-      // Reset temporary HP and attack at start of new turn
-      const resetTemporaryStats = (c: Card): Card => {
-        if (c.cardType === 'hero' || c.cardType === 'generic') {
-          const cardWithTempStats = c as import('../game/types').Hero | import('../game/types').GenericUnit
-          let updatedCard = { ...cardWithTempStats }
-          
-          // Reset temporary HP
-          if ('temporaryHP' in cardWithTempStats && cardWithTempStats.temporaryHP && cardWithTempStats.temporaryHP > 0) {
-            // Remove temporary HP, but don't let currentHealth go below 0
-            const newCurrentHealth = Math.max(0, cardWithTempStats.currentHealth - cardWithTempStats.temporaryHP)
-            updatedCard = {
-              ...updatedCard,
-              temporaryHP: 0,
-              currentHealth: newCurrentHealth,
-            }
-          }
-          
-          // Reset temporary attack
-          if ('temporaryAttack' in cardWithTempStats && cardWithTempStats.temporaryAttack && cardWithTempStats.temporaryAttack > 0) {
-            updatedCard = {
-              ...updatedCard,
-              temporaryAttack: 0,
-            }
-          }
-          
-          return updatedCard
-        }
-        return c
-      }
+      // Temporary stats are now persistent - they don't reset automatically
+      // Players can manually remove them if needed
       
       return {
         ...prev,
         battlefieldA: {
-          player1: battlefieldAWithCreeps.player1.map(resetTemporaryStats),
-          player2: battlefieldAWithCreeps.player2.map(resetTemporaryStats),
+          player1: battlefieldAWithCreeps.player1,
+          player2: battlefieldAWithCreeps.player2,
         },
         battlefieldB: {
-          player1: battlefieldBWithCreeps.player1.map(resetTemporaryStats),
-          player2: battlefieldBWithCreeps.player2.map(resetTemporaryStats),
+          player1: battlefieldBWithCreeps.player1,
+          player2: battlefieldBWithCreeps.player2,
         },
-        player1Hand: prev.player1Hand.map(resetTemporaryStats),
-        player2Hand: prev.player2Hand.map(resetTemporaryStats),
-        player1Base: prev.player1Base.map(c => resetTemporaryStats(healHeroInBase(c))),
-        player2Base: prev.player2Base.map(c => resetTemporaryStats(healHeroInBase(c))),
+        player1Hand: prev.player1Hand,
+        player2Hand: prev.player2Hand,
+        player1Base: prev.player1Base.map(c => healHeroInBase(c)),
+        player2Base: prev.player2Base.map(c => healHeroInBase(c)),
         metadata: {
           ...prev.metadata,
           currentTurn: newTurn,
