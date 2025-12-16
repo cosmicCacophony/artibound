@@ -574,6 +574,7 @@ export const ruSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Sorcerer signature - AOE. Deal 3 damage to target unit and adjacent units.',
     cardType: 'spell',
     colors: ['blue'],
+    consumesRunes: true, // AOE damage
     manaCost: 4,
     effect: {
       type: 'adjacent_damage',
@@ -632,6 +633,7 @@ export const ruSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Deal 6 damage to all units',
     cardType: 'spell',
     colors: ['red', 'blue'],
+    consumesRunes: true, // Powerful AOE damage
     manaCost: 6,
     effect: {
       type: 'all_units_damage',
@@ -764,6 +766,7 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Kill target unit',
     cardType: 'spell',
     colors: ['black'],
+    consumesRunes: true, // Hard removal
     manaCost: 4,
     effect: {
       type: 'targeted_damage',
@@ -778,6 +781,7 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Destroy target unit',
     cardType: 'spell',
     colors: ['black'],
+    consumesRunes: true, // Hard removal
     manaCost: 4,
     effect: {
       type: 'targeted_damage',
@@ -792,6 +796,7 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Draw 3 cards, lose 5 HP',
     cardType: 'spell',
     colors: ['black'],
+    consumesRunes: true, // Powerful card draw
     manaCost: 3,
     effect: {
       type: 'targeted_damage',
@@ -1066,6 +1071,7 @@ export const gbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Kill target unit',
     cardType: 'spell',
     colors: ['black'],
+    consumesRunes: true, // Hard removal
     manaCost: 4,
     effect: {
       type: 'targeted_damage',
@@ -1080,6 +1086,7 @@ export const gbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Destroy target unit',
     cardType: 'spell',
     colors: ['black'],
+    consumesRunes: true, // Hard removal
     manaCost: 4,
     effect: {
       type: 'targeted_damage',
@@ -1272,6 +1279,7 @@ export const guSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Deal 10 damage',
     cardType: 'spell',
     colors: ['green', 'blue'],
+    consumesRunes: true, // Powerful high damage
     manaCost: 7,
     effect: {
       type: 'targeted_damage',
@@ -1464,6 +1472,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Archmage signature - board wipe. Deal 4 damage to all enemy units.',
     cardType: 'spell',
     colors: ['blue', 'black'], // Changed from U to UB - 6 mana powerful effect should be dual color, requires U and B runes
+    consumesRunes: true, // Powerful board wipe
     manaCost: 6,
     effect: {
       type: 'aoe_damage',
@@ -1798,6 +1807,7 @@ export const rwgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'All your units gain +2/+2 until end of turn. If you control heroes of 4 different colors, they gain +3/+3 instead.',
     cardType: 'spell',
     colors: ['red', 'white', 'green'],
+    consumesRunes: true, // Powerful 3-color buff
     manaCost: 6, // 3RWG = 6 total mana
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for team buff that scales with color count
@@ -1906,6 +1916,7 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Deal 12 total damage distributed to enemy units in front and tower. 0 units: 12 to tower. 1 unit: 6 to unit, 6 to tower. 2 units: 4 to each unit, 4 to tower. 3 units: 3 to each unit, 3 to tower.',
     cardType: 'spell',
     colors: ['blue', 'black', 'green'], // Requires all 3 colors (UBG) - consumes U, G, B runes
+    consumesRunes: true, // This spell requires and consumes UBG runes
     manaCost: 7,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for Exorcism damage distribution

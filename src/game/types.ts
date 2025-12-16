@@ -27,7 +27,8 @@ export interface BaseCard {
   description: string
   cardType: CardType
   manaCost?: number // Cost to play this card (uses mana)
-  colors?: Color[] // Colors required to play this card (uses runes from rune pool)
+  colors?: Color[] // Colors required to cast in lane with matching hero color
+  consumesRunes?: boolean // If true, casting this card consumes runes from the pool
 }
 
 export interface Item {

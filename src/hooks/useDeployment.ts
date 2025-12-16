@@ -3,6 +3,7 @@ import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT, Hero
 import { useGameContext } from '../context/GameContext'
 import { tier1Items } from '../game/sampleData'
 import { canAffordCard, consumeRunesForCard, addRunesFromHero, removeRunesFromHero } from '../game/runeSystem'
+import { canPlayCardInLane } from '../game/colorSystem'
 
 export function useDeployment() {
   const { gameState, setGameState, selectedCard, selectedCardId, setSelectedCardId, getAvailableSlots } = useGameContext()
@@ -143,6 +144,16 @@ export function useDeployment() {
         ? gameState.battlefieldA[selectedCard.owner as 'player1' | 'player2']
         : gameState.battlefieldB[selectedCard.owner as 'player1' | 'player2']
       
+      // Check lane color requirements for non-hero cards
+      if (!isHero && cardTemplate.colors && cardTemplate.colors.length > 0) {
+        const laneHeroes = battlefield.filter(c => c.cardType === 'hero') as Hero[]
+        if (!canPlayCardInLane(cardTemplate, laneHeroes)) {
+          const heroColors = laneHeroes.flatMap(h => h.colors || [])
+          alert(`Cannot play ${cardTemplate.name} here! Requires ${cardTemplate.colors.join('+')} hero(es), but lane has: ${heroColors.length > 0 ? heroColors.join(', ') : 'no heroes'}`)
+          return
+        }
+      }
+      
       const availableSlots = getAvailableSlots(battlefield)
       
       if (selectedCard.cardType !== 'generic' && availableSlots <= 0 && !targetSlot) {
@@ -229,14 +240,13 @@ export function useDeployment() {
         
         // Heroes don't cost runes - they GIVE runes when deployed
         // Bouncing heroes does NOT remove runes - bouncing should be strategic, not punishing
-        // Non-hero, non-spell cards: pay mana and consume runes
-        if (!isSpell && !isHeroCard) {
-          // Non-hero, non-spell cards: pay mana and consume runes
+        // Non-hero cards (including spells): pay mana and consume runes
+        if (!isHeroCard) {
           // Pay mana cost
           if (cardTemplate.manaCost) {
             updatedMana = updatedMana - cardTemplate.manaCost
           }
-          // Consume runes for color requirements
+          // Consume runes for color requirements (only if consumesRunes: true)
           updatedRunePool = consumeRunesForCard(cardTemplate, updatedRunePool)
         }
         
@@ -255,10 +265,8 @@ export function useDeployment() {
           metadata: {
             ...prev.metadata,
             ...(isHeroCard ? { [movedToBaseKey]: true } : {}),
-            ...((!isSpell && !isHeroCard) || isHeroCard ? { 
-              [runePoolKey]: updatedRunePool,
-              ...((!isSpell && !isHeroCard) ? { [manaKey]: updatedMana } : {}),
-            } : {}),
+            [runePoolKey]: updatedRunePool,
+            ...(!isHeroCard ? { [manaKey]: updatedMana } : {}),
           },
         }
       } else if (location === 'battlefieldA' || location === 'battlefieldB') {
@@ -319,13 +327,13 @@ export function useDeployment() {
             // Hero is deploying for the first time (from base/hand) - add runes
             updatedRunePool = addRunesFromHero(selectedCard as Hero, updatedRunePool)
           }
-        } else if (!isSpell && !isHeroCard) {
-                // Non-hero, non-spell cards: pay mana and consume runes
+        } else if (!isHeroCard) {
+                // Non-hero cards (including spells): pay mana and consume runes
                 // Pay mana cost
                 if (cardTemplate.manaCost) {
                   updatedMana = updatedMana - cardTemplate.manaCost
                 }
-                // Consume runes for color requirements
+                // Consume runes for color requirements (only if consumesRunes: true)
                 updatedRunePool = consumeRunesForCard(cardTemplate, updatedRunePool)
               }
               
@@ -350,7 +358,7 @@ export function useDeployment() {
                 metadata: {
                   ...prev.metadata,
                   [runePoolKey]: updatedRunePool,
-                  ...((!isSpell && !isHeroCard) ? { [manaKey]: updatedMana } : {}),
+                  ...(!isHeroCard ? { [manaKey]: updatedMana } : {}),
                 },
               }
             }
@@ -369,13 +377,13 @@ export function useDeployment() {
         const isHeroCard = selectedCard.cardType === 'hero'
         
         // Heroes don't cost mana or runes - they GIVE runes when deployed
-        // Non-hero, non-spell cards: pay mana and consume runes
-        if (!isSpell && !isHeroCard) {
+        // Non-hero cards (including spells): pay mana and consume runes
+        if (!isHeroCard) {
           // Pay mana cost
           if (cardTemplate.manaCost) {
             updatedMana = updatedMana - cardTemplate.manaCost
           }
-          // Consume runes for color requirements
+          // Consume runes for color requirements (only if consumesRunes: true)
           updatedRunePool = consumeRunesForCard(cardTemplate, updatedRunePool)
         }
         
@@ -417,7 +425,7 @@ export function useDeployment() {
           metadata: {
             ...prev.metadata,
             [runePoolKey]: updatedRunePool,
-            ...((!isSpell && !isHeroCard) ? { [manaKey]: updatedMana } : {}),
+            ...(!isHeroCard ? { [manaKey]: updatedMana } : {}),
           },
         }
       }

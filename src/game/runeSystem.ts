@@ -77,6 +77,9 @@ export function removeRunesFromHero(hero: Hero, pool: RunePool): RunePool {
 
 /**
  * Check if a card can be afforded (has enough mana AND required color runes)
+ * 
+ * Cards with consumesRunes: true require runes to be available.
+ * Generic cards (consumesRunes: false/undefined) just need hero color in lane.
  */
 export function canAffordCard(card: BaseCard, mana: number, runePool: RunePool): boolean {
   // Check mana cost
@@ -84,7 +87,12 @@ export function canAffordCard(card: BaseCard, mana: number, runePool: RunePool):
     return false
   }
   
-  // Check color requirements (runes)
+  // Only check runes if card consumes them
+  if (!card.consumesRunes) {
+    return true
+  }
+  
+  // Check color requirements (runes) for non-generic cards
   if (!card.colors || card.colors.length === 0) {
     return true // No color requirements
   }
@@ -131,8 +139,16 @@ export function getMissingRunes(card: BaseCard, runePool: RunePool): Color[] {
 /**
  * Consume runes for a card (pay color requirements)
  * Returns the updated rune pool with required runes removed
+ * 
+ * Only cards with consumesRunes: true consume runes.
+ * Generic cards (consumesRunes: false/undefined) just need hero color in lane.
  */
 export function consumeRunesForCard(card: BaseCard, runePool: RunePool): RunePool {
+  // Only consume if card has consumesRunes: true
+  if (!card.consumesRunes) {
+    return runePool
+  }
+  
   if (!card.colors || card.colors.length === 0) {
     return runePool // No color requirements, no runes consumed
   }
