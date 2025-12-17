@@ -245,20 +245,48 @@ export function GameProvider({ children }: { children: ReactNode }) {
       } as Hero)
     }
     
-    // Select 12 cards for each player (signature cards will be auto-added)
-    const DRAFTED_CARDS_REQUIRED = 12
+    // Select 22 cards for each player (signature cards will be auto-added) = 30 total deck
+    const DRAFTED_CARDS_REQUIRED = 22
     
-    // For UBG player, ensure Exorcism is included
-    let player2DraftedCards = randomShuffle(player2CardPool)
-    const exorcismCard = player2CardPool.find(c => c.id === 'ubg-spell-exorcism')
-    if (exorcismCard && player2Archetype === 'ubg-control') {
-      // Remove Exorcism from shuffled list and add it at the start
-      player2DraftedCards = player2DraftedCards.filter(c => c.id !== 'ubg-spell-exorcism')
-      player2DraftedCards = [exorcismCard, ...player2DraftedCards]
-    }
+    // Key spells by archetype - only include spells that match player's colors
+    const rwKeySpellIds = [
+      'rune-spell-seal-of-fire', // Seal R
+      'rune-spell-pyretic-ritual', // RR ramp
+      'vrune-spell-lightning-bolt', // 1R damage
+      'vrune-spell-flame-javelin', // 3RR damage
+      'vrune-spell-wrath-of-legion', // 5RRW buff
+    ]
     
-    const player1DraftedCards = randomShuffle(player1CardPool).slice(0, DRAFTED_CARDS_REQUIRED)
-    player2DraftedCards = player2DraftedCards.slice(0, DRAFTED_CARDS_REQUIRED)
+    const ubgKeySpellIds = [
+      'ubg-spell-exorcism', // Board wipe UBG
+      'ubg-spell-annihilate', // AOE damage UBG
+      'rune-spell-dark-ritual', // Rune ramp BBB
+      'rune-spell-seal-of-knowledge', // Seal U
+      'rune-spell-seal-of-darkness', // Seal B
+      'rune-spell-high-tide', // Blue ramp UU
+      'vrune-spell-damnation', // Board wipe BBB
+      'vrune-spell-necromantic-rite', // 7UUU bomb
+    ]
+    
+    // Get key spells for each player from their archetype
+    const keySpellsForP1 = rwKeySpellIds
+      .map(id => allSpells.find(s => s.id === id))
+      .filter(Boolean) as BaseCard[]
+    const keySpellsForP2 = ubgKeySpellIds
+      .map(id => allSpells.find(s => s.id === id))
+      .filter(Boolean) as BaseCard[]
+    
+    // For player1 (RW), include RW key spells then fill rest from RW pool
+    let player1DraftedCards = [
+      ...keySpellsForP1,
+      ...randomShuffle(player1CardPool.filter(c => !rwKeySpellIds.includes(c.id)))
+    ].slice(0, DRAFTED_CARDS_REQUIRED)
+    
+    // For player2 (UBG), include UBG key spells then fill rest from UBG pool
+    let player2DraftedCards = [
+      ...keySpellsForP2,
+      ...randomShuffle(player2CardPool.filter(c => !ubgKeySpellIds.includes(c.id)))
+    ].slice(0, DRAFTED_CARDS_REQUIRED)
     
     // Add 2 copies of each hero's signature card (4 heroes × 2 copies = 8 signature cards)
     const player1SignatureCards: BaseCard[] = []
@@ -288,7 +316,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       }
     }
     
-    // Combine drafted cards + signature cards (12 + 8 = 20 total)
+    // Combine drafted cards + signature cards (22 + 8 = 30 total)
     const player1Cards = [...player1DraftedCards, ...player1SignatureCards]
     const player2Cards = [...player2DraftedCards, ...player2SignatureCards]
     

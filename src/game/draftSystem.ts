@@ -137,58 +137,41 @@ export function cardMatchesArchetype(card: BaseCard, activeArchetypes: Archetype
   if (activeArchetypes.includes('all')) return true
   
   const cardColors = card.colors || []
+  
+  // If card has no colors, reject it (colorless cards don't belong to archetypes)
+  if (cardColors.length === 0) return false
+  
   const hasRed = cardColors.includes('red')
   const hasWhite = cardColors.includes('white')
   const hasBlue = cardColors.includes('blue')
   const hasBlack = cardColors.includes('black')
   const hasGreen = cardColors.includes('green')
   
-  // Check if card is generic (weaker cards that work in any deck)
-  // Only allow generic cards that match the archetype colors
-  const isGeneric = card.id.includes('generic')
-  
-  // RW Legion: Only red, white, or red+white cards (NO green, blue, or black)
+  // RW Legion: ONLY cards with red and/or white, NO other colors
   if (activeArchetypes.includes('rw-legion')) {
-    // Exclude any card with green, blue, or black
+    // Must have at least one RW color
+    if (!hasRed && !hasWhite) return false
+    // Must NOT have any non-RW colors
     if (hasGreen || hasBlue || hasBlack) return false
-    
-    // Allow generic cards that are red/white only
-    if (isGeneric && (hasRed || hasWhite)) return true
-    
-    // Allow red+white cards
-    if (hasRed && hasWhite) return true
-    // Allow pure red cards
-    if (hasRed && !hasWhite) return true
-    // Allow pure white cards
-    if (hasWhite && !hasRed) return true
+    return true
   }
   
-  // UB Control: Only blue, black, or blue+black cards (NO green, red, or white)
+  // UB Control: ONLY cards with blue and/or black, NO other colors
   if (activeArchetypes.includes('ub-control')) {
-    // Exclude any card with green, red, or white
+    // Must have at least one UB color
+    if (!hasBlue && !hasBlack) return false
+    // Must NOT have any non-UB colors
     if (hasGreen || hasRed || hasWhite) return false
-    
-    // Allow generic cards that are blue/black only
-    if (isGeneric && (hasBlue || hasBlack)) return true
-    
-    // Allow blue+black cards
-    if (hasBlue && hasBlack) return true
-    // Allow pure blue cards
-    if (hasBlue && !hasBlack) return true
-    // Allow pure black cards
-    if (hasBlack && !hasBlue) return true
+    return true
   }
   
-  // UBG Control: Only blue, black, green, or combinations (NO red or white)
+  // UBG Control: ONLY cards with blue, black, and/or green, NO red or white
   if (activeArchetypes.includes('ubg-control')) {
-    // Exclude any card with red or white
+    // Must have at least one UBG color
+    if (!hasBlue && !hasBlack && !hasGreen) return false
+    // Must NOT have red or white
     if (hasRed || hasWhite) return false
-    
-    // Allow generic cards that are blue/black/green
-    if (isGeneric && (hasBlue || hasBlack || hasGreen)) return true
-    
-    // Allow any combination of blue, black, green
-    if (hasBlue || hasBlack || hasGreen) return true
+    return true
   }
   
   return false

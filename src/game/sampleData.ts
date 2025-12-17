@@ -1663,13 +1663,31 @@ export function createInitialGameState(): {
   const player2ReadyToDeploy = player2AllHeroes.slice(0, 2) // First 2 heroes in base, ready to deploy
   const player2RemainingHeroes = player2AllHeroes.slice(2) // Last 2 heroes also in base, but not deployed yet
 
-  // Create some starting cards for hands (mix of signature cards and generics)
-  // Player 1: Start with 2 RW signature cards and 1 aggro generic
+  // Create starting cards for hands - include key test cards (sweepers, rune spells, combos)
+  // Find key cards by ID from allSpells and allCards
+  const findSpell = (id: string) => allSpells.find(s => s.id === id)
+  const findCard = (id: string) => allCards.find(c => c.id === id)
+  
+  // Key spells to always include for testing
+  const exorcism = findSpell('ubg-spell-exorcism') // Board wipe
+  const annihilate = findSpell('ubg-spell-annihilate') // AOE damage
+  const darkRitual = findSpell('rune-spell-dark-ritual') // Rune ramp
+  const sealOfFire = findSpell('rune-spell-seal-of-fire') // Seal
+  const sealOfKnowledge = findSpell('rune-spell-seal-of-knowledge') // Seal
+  const lightningBolt = findSpell('vrune-spell-lightning-bolt') // 1R damage
+  const damnation = findSpell('vrune-spell-damnation') // Board wipe
+  const highTide = findSpell('rune-spell-high-tide') // Blue ramp
+  
+  // Player 1: RW aggro cards + key test spells
   const player1HandCards: BaseCard[] = [
     rwWarriorSignatureCards[0],
     rwBerserkerSignatureCards[0],
     rwAggroGenericCards[0],
-  ]
+    // Add rune spells for testing
+    ...(sealOfFire ? [sealOfFire] : []),
+    ...(lightningBolt ? [lightningBolt] : []),
+  ].filter(Boolean) as BaseCard[]
+  
   const player1Hand = player1HandCards.map(card => createCardFromTemplate({
     id: card.id,
     name: card.name,
@@ -1677,14 +1695,23 @@ export function createInitialGameState(): {
     cardType: card.cardType,
     manaCost: card.manaCost,
     colors: card.colors,
+    consumesRunes: card.consumesRunes,
   }, 'player1', 'hand'))
 
-  // Player 2: Start with 2 UB signature cards and 1 control generic
+  // Player 2: UB control cards + key test spells (sweepers, rune ramp)
   const player2HandCards: BaseCard[] = [
     ubMageSignatureCards[0],
     ubSorcererSignatureCards[0],
     ubControlGenericCards[0],
-  ]
+    // Add key test spells
+    ...(exorcism ? [exorcism] : []),
+    ...(annihilate ? [annihilate] : []),
+    ...(darkRitual ? [darkRitual] : []),
+    ...(sealOfKnowledge ? [sealOfKnowledge] : []),
+    ...(highTide ? [highTide] : []),
+    ...(damnation ? [damnation] : []),
+  ].filter(Boolean) as BaseCard[]
+  
   const player2Hand = player2HandCards.map(card => createCardFromTemplate({
     id: card.id,
     name: card.name,
@@ -1692,6 +1719,7 @@ export function createInitialGameState(): {
     cardType: card.cardType,
     manaCost: card.manaCost,
     colors: card.colors,
+    consumesRunes: card.consumesRunes,
   }, 'player2', 'hand'))
 
   // Initialize hero ability cooldowns for heroes that start on cooldown
@@ -1706,8 +1734,8 @@ export function createInitialGameState(): {
   })
 
   // Initialize empty rune pools - runes are added when heroes deploy
-  const player1InitialRunePool: RunePool = { runes: [] }
-  const player2InitialRunePool: RunePool = { runes: [] }
+  const player1InitialRunePool: RunePool = { runes: [], temporaryRunes: [] }
+  const player2InitialRunePool: RunePool = { runes: [], temporaryRunes: [] }
 
   const metadata: GameMetadata = {
     currentTurn: 1,
@@ -1750,6 +1778,9 @@ export function createInitialGameState(): {
     // Rune system
     player1RunePool: player1InitialRunePool,
     player2RunePool: player2InitialRunePool,
+    // Seals (mana rocks)
+    player1Seals: [],
+    player2Seals: [],
   }
 
   // Spawn initial 1/1 creeps in slot 1 for both players on both battlefields
@@ -1923,8 +1954,8 @@ export function createGameStateFromDraft(
   })
 
   // Initialize empty rune pools - runes are added when heroes deploy
-  const player1InitialRunePool: RunePool = { runes: [] }
-  const player2InitialRunePool: RunePool = { runes: [] }
+  const player1InitialRunePool: RunePool = { runes: [], temporaryRunes: [] }
+  const player2InitialRunePool: RunePool = { runes: [], temporaryRunes: [] }
 
   // Initialize metadata
   const metadata: GameMetadata = {
@@ -1968,6 +1999,9 @@ export function createGameStateFromDraft(
     // Rune system - start with empty pools, runes added when heroes deploy
     player1RunePool: player1InitialRunePool,
     player2RunePool: player2InitialRunePool,
+    // Seals (mana rocks)
+    player1Seals: [],
+    player2Seals: [],
   }
 
   // Battlefields removed - simplifying game to focus on color system and combat

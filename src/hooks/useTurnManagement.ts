@@ -445,8 +445,26 @@ export function useTurnManagement() {
       const battlefieldAWithCreeps = spawnCreeps(updatedBattlefieldA, 'battlefieldA')
       const battlefieldBWithCreeps = spawnCreeps(updatedBattlefieldB, 'battlefieldB')
       
-      // Rune system: Runes are NOT generated per turn - they're only added when heroes deploy
-      // Rune pools persist across turns (no untapping needed - runes are consumed when used)
+      // Rune system updates:
+      // 1. Clear temporary runes from previous turn
+      // 2. Generate new temporary runes from seals
+      const clearAndGenerateRunes = (pool: import('../game/types').RunePool, seals: import('../game/types').Seal[]) => {
+        // Generate runes from seals
+        const sealRunes = seals.map(seal => seal.color)
+        return {
+          runes: pool.runes, // Permanent runes persist
+          temporaryRunes: sealRunes, // Seal runes replace previous temporary runes
+        }
+      }
+      
+      const updatedP1RunePool = clearAndGenerateRunes(
+        prev.metadata.player1RunePool,
+        prev.metadata.player1Seals || []
+      )
+      const updatedP2RunePool = clearAndGenerateRunes(
+        prev.metadata.player2RunePool,
+        prev.metadata.player2Seals || []
+      )
       
       // Temporary stats are now persistent - they don't reset automatically
       // Players can manually remove them if needed
@@ -490,7 +508,9 @@ export function useTurnManagement() {
           // Reset deploy phase hero counters
           player1HeroesDeployedThisTurn: 0,
           player2HeroesDeployedThisTurn: 0,
-          // Rune pools persist (no changes needed - runes only added/removed on deployment)
+          // Update rune pools (clear temp, generate from seals)
+          player1RunePool: updatedP1RunePool,
+          player2RunePool: updatedP2RunePool
         },
       }
     })

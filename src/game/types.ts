@@ -10,8 +10,16 @@ export type ColorCombo = Color | `${Color}${Color}` | `${Color}${Color}${Color}`
 export type RuneColor = Color // R, W, U, B, G
 
 export interface RunePool {
-  runes: RuneColor[] // Array of runes (e.g., ['red', 'red', 'white', 'white', 'blue', 'green', 'black'])
-  // Simplified: No tapping/recycling - runes are consumed when used for color requirements
+  runes: RuneColor[] // Array of permanent runes (e.g., ['red', 'red', 'white', 'white', 'blue', 'green', 'black'])
+  temporaryRunes: RuneColor[] // Temporary runes that clear at end of turn (like Dark Ritual)
+}
+
+// Seal - Permanent rune generator (like mana rocks in MTG)
+export interface Seal {
+  id: string
+  name: string
+  color: RuneColor // Color of rune it generates each turn
+  owner: PlayerId
 }
 
 // Maximum colors allowed per deck
@@ -95,6 +103,9 @@ export interface GameMetadata {
   // Rune system
   player1RunePool: RunePool
   player2RunePool: RunePool
+  // Seals - Permanent rune generators (like mana rocks)
+  player1Seals: Seal[]
+  player2Seals: Seal[]
   player1NexusHP: number
   player2NexusHP: number
   towerA_player1_HP: number
@@ -159,6 +170,8 @@ export type HeroAbilityEffectType =
   | 'create_unit' // Create/spawn a unit
   | 'steal_unit' // Take control of enemy unit
   | 'move_cross_battlefield' // Move hero across battlefields
+  | 'rune_to_damage' // Spend runes to deal tower damage (combo payoff)
+  | 'sacrifice_unit' // Sacrifice a unit for effect
   | 'custom' // Custom effect
 
 export interface HeroAbility {
@@ -169,6 +182,7 @@ export interface HeroAbility {
   effectType: HeroAbilityEffectType
   effectValue?: number // Value for the effect (damage, heal amount, etc.)
   startsOnCooldown?: boolean // If true, ability starts on cooldown at game start
+  runeCost?: RuneColor[] // Rune cost for ability (e.g., ['black', 'black', 'black'] for 3 any-color runes)
   // For tracking cooldown: Record<heroId, turnLastUsed>
   // Stored in GameMetadata.heroAbilityCooldowns
 }
@@ -245,6 +259,9 @@ export type SpellEffectType =
   | 'damage_and_stun' // Deal damage and stun
   | 'front_damage' // Damage to enemy in front of caster's hero
   | 'swap_heroes' // Swap hero positions
+  | 'add_temporary_runes' // Add temporary runes (like Dark Ritual)
+  | 'create_seal' // Create a permanent seal/mana rock
+  | 'add_permanent_rune' // Add permanent rune to pool
 
 export interface SpellEffect {
   type: SpellEffectType
@@ -256,6 +273,9 @@ export interface SpellEffect {
   affectsEnemyUnits?: boolean // For board wipes: affects enemy units?
   adjacentCount?: number // For adjacent damage: how many adjacent units
   stunDuration?: number // Turns stunned (default 1)
+  // Rune generation effects
+  runeColors?: RuneColor[] // Colors of runes to add (e.g., ['black', 'black', 'black'] for Dark Ritual)
+  sealColor?: RuneColor // Color of seal to create
 }
 
 export interface SpellCard extends BaseCard {
@@ -381,9 +401,9 @@ export const NEXUS_HP = 30
 export const STARTING_GOLD = 5
 
 // Draft System Constants
-export const DECK_SIZE = 20
+export const DECK_SIZE = 30
 export const HEROES_REQUIRED = 4
-export const CARDS_REQUIRED = 20 // 12 drafted + 8 signature cards (2 copies × 4 heroes = 8 signature cards, auto-added when heroes are drafted)
+export const CARDS_REQUIRED = 30 // 22 drafted + 8 signature cards (2 copies × 4 heroes = 8 signature cards, auto-added when heroes are drafted)
 export const BATTLEFIELDS_REQUIRED = 1
 export const SIGNATURE_CARDS_PER_HERO = 2 // 2 copies of each hero's signature card are added to the deck
 

@@ -1300,7 +1300,7 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   {
     id: 'ub-hero-necromancer',
     name: 'Void Necromancer',
-    description: 'Control and card advantage',
+    description: 'Combo payoff. Converts black runes into tower damage.',
     cardType: 'hero',
     colors: ['black'],
     attack: 3,
@@ -1312,12 +1312,13 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     equippedItems: [],
     bonusVsHeroes: 4, // Assassin: deals double damage to heroes (4 base attack = 8 vs heroes)
     ability: {
-      name: 'Void Strike',
-      description: 'Deal 4 damage to target unit in any lane.',
-      manaCost: 1,
-      cooldown: 2,
-      effectType: 'damage_target',
-      effectValue: 4, // 4 damage
+      name: 'Soul Burn',
+      description: 'Spend B runes: Deal 1 damage to enemy tower per rune spent. No cooldown.',
+      manaCost: 0,
+      cooldown: 0, // No cooldown - can be used repeatedly
+      effectType: 'rune_to_damage',
+      effectValue: 1, // 1 damage per rune
+      runeCost: ['black'], // Spends 1+ black runes
     },
   },
   {
@@ -2021,6 +2022,186 @@ export const uwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
 ]
 
 // ============================================================================
+// COMBO HEROES - Storm, Aristocrats, Bounce
+// ============================================================================
+
+export const comboHeroes: Omit<Hero, 'location' | 'owner'>[] = [
+  // Storm Combo: Rune Channeler - converts runes to tower damage
+  {
+    id: 'combo-hero-rune-channeler',
+    name: 'Rune Channeler',
+    description: 'Storm. Can convert runes into direct tower damage. Combo payoff for rune generation.',
+    cardType: 'hero',
+    colors: ['blue', 'black'],
+    attack: 3,
+    health: 7,
+    maxHealth: 7,
+    currentHealth: 7,
+    signatureCardId: 'combo-sig-channeler-1',
+    equippedItems: [],
+    ability: {
+      name: 'Rune Blast',
+      description: 'Spend 3 runes of any color: Deal 2 damage to enemy tower. No cooldown.',
+      manaCost: 0,
+      cooldown: 0,
+      effectType: 'rune_to_damage',
+      effectValue: 2,
+      runeCost: ['black', 'black', 'black'],
+    },
+  },
+  // Aristocrats Combo: Blood Artist - triggers on death
+  {
+    id: 'combo-hero-blood-artist',
+    name: 'Blood Artist',
+    description: 'Aristocrats. Whenever any unit dies, deals 1 damage to enemy tower.',
+    cardType: 'hero',
+    colors: ['black'],
+    attack: 2,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+    signatureCardId: 'combo-sig-blood-artist-1',
+    equippedItems: [],
+    ability: {
+      name: 'Blood Tithe',
+      description: 'Sacrifice a unit you control: Deal 2 damage to enemy tower and gain 1 gold.',
+      manaCost: 0,
+      cooldown: 0,
+      effectType: 'sacrifice_unit',
+      effectValue: 2,
+    },
+  },
+  // Bounce Combo: Echo Mage - benefits from redeployment
+  {
+    id: 'combo-hero-echo-mage',
+    name: 'Echo Mage',
+    description: 'Bounce. When this hero is deployed, deal 1 damage to enemy tower. Synergizes with bounce effects.',
+    cardType: 'hero',
+    colors: ['blue'],
+    attack: 3,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
+    signatureCardId: 'combo-sig-echo-mage-1',
+    equippedItems: [],
+    ability: {
+      name: 'Echo Strike',
+      description: 'Return this hero to your hand. Next time you deploy it, it deals double damage.',
+      manaCost: 1,
+      cooldown: 1,
+      effectType: 'move_hero',
+      effectValue: 0,
+    },
+  },
+]
+
+// ============================================================================
+// COMBO UNITS - Enablers for the combo archetypes
+// ============================================================================
+
+export const comboCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+  // Storm Combo pieces
+  {
+    id: 'combo-sig-channeler-1',
+    name: 'Storm Conduit',
+    description: 'Channeler signature. When you add temporary runes, add 1 additional rune of that color.',
+    cardType: 'generic',
+    colors: ['blue', 'black'],
+    manaCost: 3,
+    attack: 2,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+  },
+  {
+    id: 'combo-unit-ritual-keeper',
+    name: 'Ritual Keeper',
+    description: 'Storm. When you cast a spell that adds runes, deal 1 damage to enemy tower.',
+    cardType: 'generic',
+    colors: ['black'],
+    manaCost: 2,
+    attack: 1,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+  },
+  // Aristocrats Combo pieces
+  {
+    id: 'combo-sig-blood-artist-1',
+    name: 'Sacrificial Altar',
+    description: 'Blood Artist signature. You may sacrifice this unit to add BBB temporarily.',
+    cardType: 'generic',
+    colors: ['black'],
+    manaCost: 2,
+    attack: 0,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+  },
+  {
+    id: 'combo-unit-gravecrawler',
+    name: 'Gravecrawler',
+    description: 'Aristocrats. When this dies, return it to your hand at the start of next turn.',
+    cardType: 'generic',
+    colors: ['black'],
+    manaCost: 1,
+    attack: 2,
+    health: 1,
+    maxHealth: 1,
+    currentHealth: 1,
+  },
+  {
+    id: 'combo-unit-doomed-dissenter',
+    name: 'Doomed Dissenter',
+    description: 'Aristocrats. When this dies, create a 2/2 Zombie token.',
+    cardType: 'generic',
+    colors: ['black'],
+    manaCost: 2,
+    attack: 1,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+  },
+  // Bounce Combo pieces
+  {
+    id: 'combo-sig-echo-mage-1',
+    name: 'Mana Battery',
+    description: 'Echo Mage signature. At the start of your turn, add UU temporarily.',
+    cardType: 'generic',
+    colors: ['blue'],
+    manaCost: 3,
+    attack: 0,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+  },
+  {
+    id: 'combo-unit-cloud-sprite',
+    name: 'Cloud Sprite',
+    description: 'Bounce. When a hero is deployed to this lane, this gains +1/+1.',
+    cardType: 'generic',
+    colors: ['blue'],
+    manaCost: 1,
+    attack: 1,
+    health: 1,
+    maxHealth: 1,
+    currentHealth: 1,
+  },
+  {
+    id: 'combo-unit-ghostly-flicker',
+    name: 'Ghostly Flicker',
+    description: 'Bounce enabler. When this enters, you may return another unit to hand.',
+    cardType: 'generic',
+    colors: ['blue'],
+    manaCost: 3,
+    attack: 2,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+  },
+]
+
+// ============================================================================
 // ALL CARDS COMBINED
 // ============================================================================
 
@@ -2036,6 +2217,7 @@ export const allHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   ...uwHeroes,
   ...rwgHeroes,
   ...ubgHeroes,
+  ...comboHeroes,
 ]
 
 export const allCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
@@ -2050,6 +2232,339 @@ export const allCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
   ...uwCards,
   ...rwgCards,
   ...ubgCards,
+  ...comboCards,
+]
+
+// ============================================================================
+// RUNE MANIPULATION SPELLS - Ramp, Seals, Mana Rocks
+// ============================================================================
+
+export const runeSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  // Dark Ritual - Classic MTG ramp (BBB temporary)
+  {
+    id: 'rune-spell-dark-ritual',
+    name: 'Dark Ritual',
+    description: 'Add BBB (3 black runes) until end of turn. The power of darkness fuels your magic.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 1,
+    consumesRunes: false, // Doesn't consume, just pays mana
+    effect: {
+      type: 'add_temporary_runes',
+      runeColors: ['black', 'black', 'black'],
+    },
+    initiative: false,
+  },
+  // Pyretic Ritual - Red ramp (RR temporary)
+  {
+    id: 'rune-spell-pyretic-ritual',
+    name: 'Pyretic Ritual',
+    description: 'Add RR (2 red runes) until end of turn. Fire begets fire.',
+    cardType: 'spell',
+    colors: ['red'],
+    manaCost: 1,
+    consumesRunes: false,
+    effect: {
+      type: 'add_temporary_runes',
+      runeColors: ['red', 'red'],
+    },
+    initiative: false,
+  },
+  // High Tide - Blue ramp (UU temporary)
+  {
+    id: 'rune-spell-high-tide',
+    name: 'High Tide',
+    description: 'Add UU (2 blue runes) until end of turn. The tides of magic rise.',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 1,
+    consumesRunes: false,
+    effect: {
+      type: 'add_temporary_runes',
+      runeColors: ['blue', 'blue'],
+    },
+    initiative: true, // Gives initiative like cantrips
+  },
+  // Rite of Flame - Red burst (RRR temporary)
+  {
+    id: 'rune-spell-rite-of-flame',
+    name: 'Rite of Flame',
+    description: 'Add RRR (3 red runes) until end of turn. A burst of primal energy.',
+    cardType: 'spell',
+    colors: ['red'],
+    manaCost: 2,
+    consumesRunes: true,
+    effect: {
+      type: 'add_temporary_runes',
+      runeColors: ['red', 'red', 'red'],
+    },
+    initiative: false,
+  },
+  // Cabal Ritual - Black burst with condition
+  {
+    id: 'rune-spell-cabal-ritual',
+    name: 'Cabal Ritual',
+    description: 'Add BBBBB (5 black runes) until end of turn. Dark power flows through you.',
+    cardType: 'spell',
+    colors: ['black', 'black'],
+    manaCost: 3,
+    consumesRunes: true,
+    effect: {
+      type: 'add_temporary_runes',
+      runeColors: ['black', 'black', 'black', 'black', 'black'],
+    },
+    initiative: false,
+  },
+  // Seal of Fire - Permanent red rune generator
+  {
+    id: 'rune-spell-seal-of-fire',
+    name: 'Seal of Fire',
+    description: 'Create a Seal that generates R (1 red rune) at the start of each turn.',
+    cardType: 'spell',
+    colors: ['red'],
+    manaCost: 2,
+    consumesRunes: false,
+    effect: {
+      type: 'create_seal',
+      sealColor: 'red',
+    },
+    initiative: false,
+  },
+  // Seal of Knowledge - Permanent blue rune generator
+  {
+    id: 'rune-spell-seal-of-knowledge',
+    name: 'Seal of Knowledge',
+    description: 'Create a Seal that generates U (1 blue rune) at the start of each turn.',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 3,
+    consumesRunes: false,
+    effect: {
+      type: 'create_seal',
+      sealColor: 'blue',
+    },
+    initiative: false,
+  },
+  // Seal of Darkness - Permanent black rune generator
+  {
+    id: 'rune-spell-seal-of-darkness',
+    name: 'Seal of Darkness',
+    description: 'Create a Seal that generates B (1 black rune) at the start of each turn.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 3,
+    consumesRunes: false,
+    effect: {
+      type: 'create_seal',
+      sealColor: 'black',
+    },
+    initiative: false,
+  },
+  // Ritual Recursion - Returns a ritual spell to hand (combo enabler)
+  {
+    id: 'rune-spell-ritual-recursion',
+    name: 'Ritual Recursion',
+    description: 'Add BB until end of turn. Draw a card. (Represents returning a ritual)',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 2,
+    consumesRunes: false,
+    effect: {
+      type: 'add_temporary_runes',
+      runeColors: ['black', 'black'],
+    },
+    initiative: true,
+  },
+  // Green Ramp - Adds permanent rune
+  {
+    id: 'rune-spell-wild-growth',
+    name: 'Wild Growth',
+    description: 'Add G permanently to your rune pool. Nature provides.',
+    cardType: 'spell',
+    colors: ['green'],
+    manaCost: 2,
+    consumesRunes: false,
+    effect: {
+      type: 'add_permanent_rune',
+      runeColors: ['green'],
+    },
+    initiative: false,
+  },
+  // Chromatic Star - Any color temporary
+  {
+    id: 'rune-spell-chromatic-star',
+    name: 'Chromatic Star',
+    description: 'Add any 2 runes of your choice until end of turn.',
+    cardType: 'spell',
+    colors: [], // Colorless
+    manaCost: 2,
+    consumesRunes: false,
+    effect: {
+      type: 'add_temporary_runes',
+      runeColors: ['red', 'blue'], // Default, would need targeting
+    },
+    initiative: false,
+  },
+]
+
+// ============================================================================
+// VARIABLE RUNE COST SPELLS - Riftbound-style (1R, 2UU, 7UUU, etc.)
+// Early game spells with rune costs set you back from big plays
+// ============================================================================
+
+export const variableRuneCostSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  // 1R - Lightning Bolt (early red play)
+  {
+    id: 'vrune-spell-lightning-bolt',
+    name: 'Lightning Bolt',
+    description: 'Deal 3 damage to any target. Costs 1R - quick but uses a red rune.',
+    cardType: 'spell',
+    colors: ['red'],
+    manaCost: 1,
+    consumesRunes: true,
+    effect: {
+      type: 'targeted_damage',
+      damage: 3,
+      affectsHeroes: true,
+      affectsUnits: true,
+    },
+    initiative: true,
+  },
+  // 1UU - Counterspell (double blue early)
+  {
+    id: 'vrune-spell-counterspell',
+    name: 'Arcane Denial',
+    description: 'Stun target unit for 1 turn. Costs 1UU - heavy blue commitment early.',
+    cardType: 'spell',
+    colors: ['blue', 'blue'],
+    manaCost: 1,
+    consumesRunes: true,
+    effect: {
+      type: 'stun',
+      stunDuration: 1,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+    initiative: false,
+  },
+  // 2BB - Doom Blade (mid-game removal)
+  {
+    id: 'vrune-spell-doom-blade',
+    name: 'Doom Blade',
+    description: 'Deal 5 damage to target non-hero unit. Costs 2BB.',
+    cardType: 'spell',
+    colors: ['black', 'black'],
+    manaCost: 2,
+    consumesRunes: true,
+    effect: {
+      type: 'targeted_damage',
+      damage: 5,
+      affectsUnits: true,
+      affectsHeroes: false,
+    },
+    initiative: false,
+  },
+  // 3RR - Flame Javelin (aggressive mid-game)
+  {
+    id: 'vrune-spell-flame-javelin',
+    name: 'Flame Javelin',
+    description: 'Deal 4 damage to any target. Costs 3RR - strong but double red.',
+    cardType: 'spell',
+    colors: ['red', 'red'],
+    manaCost: 3,
+    consumesRunes: true,
+    effect: {
+      type: 'targeted_damage',
+      damage: 4,
+      affectsHeroes: true,
+      affectsUnits: true,
+    },
+    initiative: false,
+  },
+  // 4UUU - Mind Control (late triple blue)
+  {
+    id: 'vrune-spell-mind-control',
+    name: 'Mind Control',
+    description: 'Stun all enemy units in one lane. Costs 4UUU - massive blue investment.',
+    cardType: 'spell',
+    colors: ['blue', 'blue', 'blue'],
+    manaCost: 4,
+    consumesRunes: true,
+    effect: {
+      type: 'stun',
+      stunDuration: 1,
+      affectsUnits: true,
+      affectsHeroes: false,
+    },
+    initiative: false,
+  },
+  // 5RRW - Wrath of the Legion (RW finisher)
+  {
+    id: 'vrune-spell-wrath-of-legion',
+    name: 'Wrath of the Legion',
+    description: 'All your units gain +3/+3 this turn. Costs 5RRW.',
+    cardType: 'spell',
+    colors: ['red', 'red', 'white'],
+    manaCost: 5,
+    consumesRunes: true,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would be a buff
+      damage: 0,
+    },
+    initiative: false,
+  },
+  // 7UUU - Necromantic Rite (late game bomb)
+  {
+    id: 'vrune-spell-necromantic-rite',
+    name: 'Necromantic Rite',
+    description: 'Deal 3 damage to all enemy units and heroes. Costs 7UUU.',
+    cardType: 'spell',
+    colors: ['blue', 'blue', 'blue'],
+    manaCost: 7,
+    consumesRunes: true,
+    effect: {
+      type: 'all_units_damage',
+      damage: 3,
+      affectsUnits: true,
+      affectsHeroes: true,
+      affectsEnemyUnits: true,
+      affectsOwnUnits: false,
+    },
+    initiative: false,
+  },
+  // 6BBB - Damnation (board wipe)
+  {
+    id: 'vrune-spell-damnation',
+    name: 'Damnation',
+    description: 'Destroy all units (not heroes). Costs 6BBB.',
+    cardType: 'spell',
+    colors: ['black', 'black', 'black'],
+    manaCost: 6,
+    consumesRunes: true,
+    effect: {
+      type: 'board_wipe',
+      affectsUnits: true,
+      affectsHeroes: false,
+      affectsOwnUnits: true,
+      affectsEnemyUnits: true,
+    },
+    initiative: false,
+  },
+  // 2GG - Giant Growth (green buff)
+  {
+    id: 'vrune-spell-giant-growth',
+    name: 'Giant Growth',
+    description: 'Target unit gets +4/+4 until end of turn. Costs 2GG.',
+    cardType: 'spell',
+    colors: ['green', 'green'],
+    manaCost: 2,
+    consumesRunes: true,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would be a buff
+      damage: 0,
+    },
+    initiative: true,
+  },
 ]
 
 export const allSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
@@ -2062,6 +2577,8 @@ export const allSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   ...uwSpells,
   ...rwgSpells,
   ...ubgSpells,
+  ...runeSpells,
+  ...variableRuneCostSpells,
 ]
 
 // ============================================================================

@@ -105,7 +105,7 @@ describe('Rune System', () => {
 
   describe('addRunesFromHero', () => {
     it('adds runes from hero to existing pool', () => {
-      const initialPool: RunePool = { runes: ['blue'] }
+      const initialPool: RunePool = { runes: ['blue'], temporaryRunes: [] }
       const hero = createMockHero(['black', 'green'])
       const newPool = addRunesFromHero(hero, initialPool)
       
@@ -118,7 +118,7 @@ describe('Rune System', () => {
 
   describe('removeRunesFromHero', () => {
     it('removes runes from pool when hero is removed', () => {
-      const pool: RunePool = { runes: ['blue', 'black', 'green'] }
+      const pool: RunePool = { runes: ['blue', 'black', 'green'], temporaryRunes: [] }
       const hero = createMockHero(['black'])
       const newPool = removeRunesFromHero(hero, pool)
       
@@ -129,7 +129,7 @@ describe('Rune System', () => {
     })
 
     it('only removes one instance of each color', () => {
-      const pool: RunePool = { runes: ['blue', 'blue', 'black'] }
+      const pool: RunePool = { runes: ['blue', 'blue', 'black'], temporaryRunes: [] }
       const hero = createMockHero(['blue'])
       const newPool = removeRunesFromHero(hero, pool)
       
@@ -141,14 +141,14 @@ describe('Rune System', () => {
   describe('canAffordCard', () => {
     describe('mana checks', () => {
       it('returns false if not enough mana', () => {
-        const pool: RunePool = { runes: ['blue', 'black', 'green'] }
+        const pool: RunePool = { runes: ['blue', 'black', 'green'], temporaryRunes: [] }
         const spell = createMockSpell(['blue'], 5, true)
         
         expect(canAffordCard(spell, 4, pool)).toBe(false)
       })
 
       it('returns true if enough mana', () => {
-        const pool: RunePool = { runes: ['blue'] }
+        const pool: RunePool = { runes: ['blue'], temporaryRunes: [] }
         const spell = createMockSpell(['blue'], 5, true)
         
         expect(canAffordCard(spell, 5, pool)).toBe(true)
@@ -157,14 +157,14 @@ describe('Rune System', () => {
 
     describe('rune checks for consumesRunes cards', () => {
       it('returns false if missing required runes', () => {
-        const pool: RunePool = { runes: ['blue', 'black'] }
+        const pool: RunePool = { runes: ['blue', 'black'], temporaryRunes: [] }
         const spell = createMockSpell(['blue', 'black', 'green'], 7, true)
         
         expect(canAffordCard(spell, 10, pool)).toBe(false)
       })
 
       it('returns true if all required runes present', () => {
-        const pool: RunePool = { runes: ['blue', 'black', 'green'] }
+        const pool: RunePool = { runes: ['blue', 'black', 'green'], temporaryRunes: [] }
         const spell = createMockSpell(['blue', 'black', 'green'], 7, true)
         
         expect(canAffordCard(spell, 10, pool)).toBe(true)
@@ -172,14 +172,14 @@ describe('Rune System', () => {
 
       it('handles duplicate rune requirements', () => {
         // If a spell requires 2 blue runes
-        const pool: RunePool = { runes: ['blue'] }
+        const pool: RunePool = { runes: ['blue'], temporaryRunes: [] }
         const spell = createMockSpell(['blue', 'blue'], 4, true)
         
         expect(canAffordCard(spell, 10, pool)).toBe(false)
       })
 
       it('allows card if pool has multiple of same color', () => {
-        const pool: RunePool = { runes: ['blue', 'blue'] }
+        const pool: RunePool = { runes: ['blue', 'blue'], temporaryRunes: [] }
         const spell = createMockSpell(['blue', 'blue'], 4, true)
         
         expect(canAffordCard(spell, 10, pool)).toBe(true)
@@ -188,7 +188,7 @@ describe('Rune System', () => {
 
     describe('generic cards (consumesRunes: false)', () => {
       it('does not check runes for generic units', () => {
-        const pool: RunePool = { runes: [] } // Empty pool
+        const pool: RunePool = { runes: [], temporaryRunes: [] } // Empty pool
         const unit = createMockGenericUnit(['blue', 'black'], 4)
         
         // Should pass because generic units don't consume runes
@@ -196,7 +196,7 @@ describe('Rune System', () => {
       })
 
       it('still checks mana for generic units', () => {
-        const pool: RunePool = { runes: [] }
+        const pool: RunePool = { runes: [], temporaryRunes: [] }
         const unit = createMockGenericUnit(['blue'], 5)
         
         expect(canAffordCard(unit, 4, pool)).toBe(false)
@@ -207,7 +207,7 @@ describe('Rune System', () => {
 
   describe('consumeRunesForCard', () => {
     it('consumes runes for cards with consumesRunes: true', () => {
-      const pool: RunePool = { runes: ['blue', 'black', 'green'] }
+      const pool: RunePool = { runes: ['blue', 'black', 'green'], temporaryRunes: [] }
       const spell = createMockSpell(['blue', 'green'], 5, true)
       
       const newPool = consumeRunesForCard(spell, pool)
@@ -216,7 +216,7 @@ describe('Rune System', () => {
     })
 
     it('does not consume runes for cards with consumesRunes: false', () => {
-      const pool: RunePool = { runes: ['blue', 'black', 'green'] }
+      const pool: RunePool = { runes: ['blue', 'black', 'green'], temporaryRunes: [] }
       const unit = createMockGenericUnit(['blue', 'black'], 4)
       
       const newPool = consumeRunesForCard(unit, pool)
@@ -225,7 +225,7 @@ describe('Rune System', () => {
     })
 
     it('does not consume runes for spells without consumesRunes flag', () => {
-      const pool: RunePool = { runes: ['blue', 'black'] }
+      const pool: RunePool = { runes: ['blue', 'black'], temporaryRunes: [] }
       const spell = createMockSpell(['blue'], 3, false) // Generic spell
       
       const newPool = consumeRunesForCard(spell, pool)
@@ -234,7 +234,7 @@ describe('Rune System', () => {
     })
 
     it('handles consuming multiple runes of same color', () => {
-      const pool: RunePool = { runes: ['blue', 'blue', 'black'] }
+      const pool: RunePool = { runes: ['blue', 'blue', 'black'], temporaryRunes: [] }
       const spell = createMockSpell(['blue', 'blue'], 4, true)
       
       const newPool = consumeRunesForCard(spell, pool)
@@ -245,14 +245,14 @@ describe('Rune System', () => {
 
   describe('getMissingRunes', () => {
     it('returns empty array if all runes present', () => {
-      const pool: RunePool = { runes: ['blue', 'black', 'green'] }
+      const pool: RunePool = { runes: ['blue', 'black', 'green'], temporaryRunes: [] }
       const spell = createMockSpell(['blue', 'black'], 5, true)
       
       expect(getMissingRunes(spell, pool)).toEqual([])
     })
 
     it('returns missing colors', () => {
-      const pool: RunePool = { runes: ['blue'] }
+      const pool: RunePool = { runes: ['blue'], temporaryRunes: [] }
       const spell = createMockSpell(['blue', 'black', 'green'], 7, true)
       
       const missing = getMissingRunes(spell, pool)
@@ -264,7 +264,7 @@ describe('Rune System', () => {
 
   describe('getAvailableRunesByColor', () => {
     it('counts runes by color correctly', () => {
-      const pool: RunePool = { runes: ['blue', 'blue', 'black', 'green', 'green', 'green'] }
+      const pool: RunePool = { runes: ['blue', 'blue', 'black', 'green', 'green', 'green'], temporaryRunes: [] }
       
       const counts = getAvailableRunesByColor(pool)
       
@@ -278,19 +278,19 @@ describe('Rune System', () => {
 
   describe('getAvailableRuneCount', () => {
     it('returns total rune count', () => {
-      const pool: RunePool = { runes: ['blue', 'black', 'green'] }
+      const pool: RunePool = { runes: ['blue', 'black', 'green'], temporaryRunes: [] }
       expect(getAvailableRuneCount(pool)).toBe(3)
     })
 
     it('returns 0 for empty pool', () => {
-      const pool: RunePool = { runes: [] }
+      const pool: RunePool = { runes: [], temporaryRunes: [] }
       expect(getAvailableRuneCount(pool)).toBe(0)
     })
   })
 
   describe('Exorcism scenario (UBG spell)', () => {
     it('can cast Exorcism with UBG runes available', () => {
-      const pool: RunePool = { runes: ['blue', 'black', 'green'] }
+      const pool: RunePool = { runes: ['blue', 'black', 'green'], temporaryRunes: [] }
       const exorcism: BaseCard = {
         id: 'ubg-spell-exorcism',
         name: 'Exorcism',
@@ -305,7 +305,7 @@ describe('Rune System', () => {
     })
 
     it('cannot cast Exorcism with only UB runes', () => {
-      const pool: RunePool = { runes: ['blue', 'black'] }
+      const pool: RunePool = { runes: ['blue', 'black'], temporaryRunes: [] }
       const exorcism: BaseCard = {
         id: 'ubg-spell-exorcism',
         name: 'Exorcism',
@@ -320,7 +320,7 @@ describe('Rune System', () => {
     })
 
     it('consuming Exorcism removes UBG from pool', () => {
-      const pool: RunePool = { runes: ['blue', 'black', 'green', 'green'] }
+      const pool: RunePool = { runes: ['blue', 'black', 'green', 'green'], temporaryRunes: [] }
       const exorcism: BaseCard = {
         id: 'ubg-spell-exorcism',
         name: 'Exorcism',
