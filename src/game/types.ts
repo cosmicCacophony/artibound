@@ -64,7 +64,7 @@ export interface BattlefieldBuff {
 // Shop item type - can be either a hero item or a battlefield buff template
 export type ShopItem = Item | (Omit<BattlefieldBuff, 'id' | 'battlefieldId' | 'playerId'> & { type: 'battlefieldBuff' })
 
-export type TurnPhase = 'play' | 'combatA' | 'adjust' | 'combatB'
+export type TurnPhase = 'deploy' | 'play' | 'combatA' | 'adjust' | 'combatB'
 
 // Combat System Types
 export type AttackTargetType = 'unit' | 'tower'
@@ -114,6 +114,9 @@ export interface GameMetadata {
   // Movement tracking: Track if each player has moved a hero to base this turn
   player1MovedToBase: boolean
   player2MovedToBase: boolean
+  // Deploy phase tracking: How many heroes each player has deployed this turn
+  player1HeroesDeployedThisTurn: number
+  player2HeroesDeployedThisTurn: number
   // Played cards: Record of card ID -> boolean (for toggle X overlay in base - works for any card type)
   // Using Record instead of Set for JSON serialization
   playedSpells: Record<string, boolean>

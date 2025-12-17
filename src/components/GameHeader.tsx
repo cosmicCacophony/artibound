@@ -5,7 +5,7 @@ import { useTurnManagement } from '../hooks/useTurnManagement'
 export function GameHeader() {
   const { metadata, activePlayer, setShowCardLibrary, setGameState } = useGameContext()
   const { savedStates, exportGameState, importGameState } = useGamePersistence()
-  const { handleNextPhase, handleNextTurn, handlePass } = useTurnManagement()
+  const { handleNextPhase, handleNextTurn, handlePass, handleEndDeployPhase } = useTurnManagement()
 
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -66,6 +66,25 @@ export function GameHeader() {
           P2 Mana: {metadata.player2Mana}/{metadata.player2MaxMana}
           {metadata.player2Mana > metadata.player2MaxMana && ` (+${metadata.player2Mana - metadata.player2MaxMana})`}
         </div>
+        {/* End Deploy Phase Button - Show during deploy phase */}
+        {metadata.currentPhase === 'deploy' && (
+          <button
+            onClick={handleEndDeployPhase}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#4caf50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold',
+            }}
+            title="End deployment phase and begin play phase"
+          >
+            End Deploy Phase
+          </button>
+        )}
         <button
           onClick={handleNextTurn}
           style={{

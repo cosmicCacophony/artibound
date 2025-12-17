@@ -468,6 +468,8 @@ export function useTurnManagement() {
         metadata: {
           ...prev.metadata,
           currentTurn: newTurn,
+          // Start new turn in deploy phase
+          currentPhase: 'deploy',
           // Restore mana to max for both players
           player1Mana: newPlayer1MaxMana,
           player2Mana: newPlayer2MaxMana,
@@ -485,6 +487,9 @@ export function useTurnManagement() {
           // Reset movement flags
           player1MovedToBase: false,
           player2MovedToBase: false,
+          // Reset deploy phase hero counters
+          player1HeroesDeployedThisTurn: 0,
+          player2HeroesDeployedThisTurn: 0,
           // Rune pools persist (no changes needed - runes only added/removed on deployment)
         },
       }
@@ -553,12 +558,29 @@ export function useTurnManagement() {
     })
   }, [setGameState])
 
+  const handleEndDeployPhase = useCallback(() => {
+    setGameState(prev => {
+      if (prev.metadata.currentPhase !== 'deploy') {
+        return prev
+      }
+      
+      return {
+        ...prev,
+        metadata: {
+          ...prev.metadata,
+          currentPhase: 'play',
+        },
+      }
+    })
+  }, [setGameState])
+
   return {
     handleNextPhase,
     handleNextTurn,
     handleToggleSpellPlayed,
     handleToggleStun,
     handlePass,
+    handleEndDeployPhase,
   }
 }
 

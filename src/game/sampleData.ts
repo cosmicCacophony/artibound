@@ -1734,6 +1734,8 @@ export function createInitialGameState(): {
     deathCooldowns: {}, // Track hero death cooldowns - Record<cardId, counter> (starts at 2, decreases by 1 each turn, prevents deployment for 1 full round)
     player1MovedToBase: false, // Track if player 1 moved a hero to base this turn
     player2MovedToBase: false, // Track if player 2 moved a hero to base this turn
+    player1HeroesDeployedThisTurn: 0, // Track heroes deployed during deploy phase
+    player2HeroesDeployedThisTurn: 0, // Track heroes deployed during deploy phase
     playedSpells: {}, // Track cards that have been played (for toggle X overlay) - Record<cardId, true> (works for any card type)
     player1BattlefieldBuffs: [], // Permanent battlefield upgrades for player 1
     player2BattlefieldBuffs: [], // Permanent battlefield upgrades for player 2
@@ -1950,6 +1952,8 @@ export function createGameStateFromDraft(
     deathCooldowns: {},
     player1MovedToBase: false,
     player2MovedToBase: false,
+    player1HeroesDeployedThisTurn: 0,
+    player2HeroesDeployedThisTurn: 0,
     playedSpells: {},
     player1BattlefieldBuffs: [],
     player2BattlefieldBuffs: [],

@@ -13,6 +13,127 @@ export function useDeployment() {
     if (!selectedCardId || !selectedCard) return
     
     const isPlayPhase = metadata.currentPhase === 'play'
+    const isDeployPhase = metadata.currentPhase === 'deploy'
+    
+    // Deploy phase: only heroes can be deployed, and bouncing is allowed
+    if (isDeployPhase) {
+      if (selectedCard.cardType !== 'hero') {
+        alert('Only heroes can be deployed during the deploy phase!')
+        return
+      }
+      if (location !== 'battlefieldA' && location !== 'battlefieldB') {
+        alert('Heroes must be deployed to a battlefield during deploy phase!')
+        return
+      }
+      // Check if hero is on cooldown
+      const cooldownCounter = metadata.deathCooldowns[selectedCard.id]
+      if (cooldownCounter !== undefined && cooldownCounter > 0) {
+        alert(`Hero is on cooldown! ${cooldownCounter} turn${cooldownCounter !== 1 ? 's' : ''} remaining.`)
+        return
+      }
+      
+      // Turn 2 restriction: only 1 hero can be deployed per player
+      if (metadata.currentTurn === 2) {
+        const heroesDeployedKey = `${selectedCard.owner}HeroesDeployedThisTurn` as keyof typeof metadata
+        const heroesDeployed = (metadata[heroesDeployedKey] as number) || 0
+        if (heroesDeployed >= 1) {
+          alert('On turn 2, each player can only deploy 1 hero!')
+          return
+        }
+      }
+      
+      // Handle deploy phase deployment with bounce mechanic
+      setGameState(prev => {
+        const battlefieldKey = location as 'battlefieldA' | 'battlefieldB'
+        const playerKey = selectedCard.owner as 'player1' | 'player2'
+        const battlefield = prev[battlefieldKey][playerKey]
+        
+        // Find slot - use target slot or first available
+        let finalSlot = targetSlot
+        if (!finalSlot) {
+          for (let i = 1; i <= 5; i++) {
+            if (!battlefield.some(c => c.slot === i)) {
+              finalSlot = i
+              break
+            }
+          }
+        }
+        if (!finalSlot) finalSlot = 1 // Default to slot 1 if all full (will bounce)
+        
+        // Check if there's an existing hero in this slot
+        const existingHeroInSlot = battlefield.find(c => c.slot === finalSlot && c.cardType === 'hero') as Hero | undefined
+        
+        // Remove deploying hero from base
+        const newBase = (prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[])
+          .filter(c => c.id !== selectedCard.id)
+        
+        // If there's an existing hero, bounce it to base with 1 cooldown
+        let updatedBase = newBase
+        let updatedCooldowns = { ...prev.metadata.deathCooldowns }
+        let updatedRunePool = prev.metadata[`${selectedCard.owner}RunePool` as keyof typeof prev.metadata] as any
+        
+        if (existingHeroInSlot) {
+          // Bounce the existing hero to base
+          const bouncedHero = {
+            ...existingHeroInSlot,
+            location: 'base' as const,
+            slot: undefined,
+          }
+          updatedBase = [...updatedBase, bouncedHero]
+          // Add 1 turn cooldown to bounced hero
+          updatedCooldowns[existingHeroInSlot.id] = 1
+        }
+        
+        // Add runes from the deploying hero (if coming from base, not already on battlefield)
+        const wasOnBattlefield = selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB'
+        if (!wasOnBattlefield && (selectedCard as Hero).colors) {
+          const heroColors = (selectedCard as Hero).colors || []
+          updatedRunePool = {
+            runes: [...updatedRunePool.runes, ...heroColors],
+          }
+        }
+        
+        // Remove existing hero from battlefield if bounced, and remove the deploying hero from battlefield (if moving)
+        const updatedBattlefield = battlefield
+          .filter(c => c.id !== selectedCard.id && (existingHeroInSlot ? c.id !== existingHeroInSlot.id : true))
+        
+        // Add the deploying hero to the battlefield
+        const deployedHero = {
+          ...selectedCard,
+          location: battlefieldKey,
+          slot: finalSlot,
+        }
+        
+        return {
+          ...prev,
+          [`${selectedCard.owner}Base`]: updatedBase,
+          [battlefieldKey]: {
+            ...prev[battlefieldKey],
+            [playerKey]: [...updatedBattlefield, deployedHero].sort((a, b) => (a.slot || 0) - (b.slot || 0)),
+          },
+          // Also remove from other battlefield if hero was there
+          ...(selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB' ? {
+            [selectedCard.location]: {
+              ...prev[selectedCard.location as 'battlefieldA' | 'battlefieldB'],
+              [playerKey]: prev[selectedCard.location as 'battlefieldA' | 'battlefieldB'][playerKey]
+                .filter(c => c.id !== selectedCard.id),
+            },
+          } : {}),
+          metadata: {
+            ...prev.metadata,
+            deathCooldowns: updatedCooldowns,
+            [`${selectedCard.owner}RunePool`]: updatedRunePool,
+            // Increment heroes deployed counter (only counts if deploying from base, not moving between battlefields)
+            ...(selectedCard.location === 'base' ? {
+              [`${selectedCard.owner}HeroesDeployedThisTurn`]: ((prev.metadata[`${selectedCard.owner}HeroesDeployedThisTurn` as keyof typeof prev.metadata] as number) || 0) + 1,
+            } : {}),
+          },
+        }
+      })
+      
+      setSelectedCardId(null)
+      return
+    }
     
     if (!isPlayPhase) {
       alert(`Cannot deploy during ${metadata.currentPhase} phase!`)

@@ -176,9 +176,9 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-sig-commander-2',
     name: 'Charge Order',
-    description: 'Commander signature - aggressive. All allies gain +2 attack this turn.',
+    description: 'Generic. Commander signature - aggressive. All allies gain +2 attack this turn.',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['red', 'white'],
     manaCost: 3,
     initiative: true, // Quickcast - gives initiative
     effect: {
@@ -189,9 +189,9 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-sig-captain-1',
     name: 'War Cry',
-    description: 'Captain signature - pump team. All allies gain +2 attack this turn.',
+    description: 'Generic. Captain signature - pump team. All allies gain +2 attack this turn.',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['red'],
     manaCost: 3,
     initiative: true, // Quickcast - gives initiative
     effect: {
@@ -203,9 +203,9 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-spell-path-valor',
     name: 'Path of Valor',
-    description: 'Blocked units get +1 attack. When you cast a spell or unit in this lane, put a +1/+1 counter on all blocked units.',
+    description: 'Generic. Blocked units get +1 attack. When you cast a spell or unit in this lane, put a +1/+1 counter on all blocked units.',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['white'],
     manaCost: 2,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for counters
@@ -215,9 +215,9 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-spell-rally-legion',
     name: 'Rally the Legion',
-    description: 'All Legion units get +2/+2 this round.',
+    description: 'Generic. All Legion units get +2/+2 this round.',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['red', 'white'],
     manaCost: 4,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect
@@ -252,9 +252,9 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-spell-whirling-death',
     name: 'Whirling Death',
-    description: 'Deal 2 damage to caster\'s adjacent enemies and give them -2 attack.',
+    description: 'Generic. Deal 2 damage to caster\'s adjacent enemies and give them -2 attack.',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['red'],
     manaCost: 2,
     effect: {
       type: 'adjacent_damage',
@@ -267,9 +267,9 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-spell-unbreakable-column',
     name: 'Unbreakable Column',
-    description: 'Caster and neighbors ignore incoming damage of 2 or less this turn.',
+    description: 'Generic. Caster and neighbors ignore incoming damage of 2 or less this turn.',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['white'],
     manaCost: 2,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for damage reduction
@@ -279,9 +279,9 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-spell-fighting-words',
     name: 'Fighting Words',
-    description: 'Target unit gains +3 attack this turn.',
+    description: 'Generic. Target unit gains +3 attack this turn.',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['red'],
     manaCost: 1,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for buff
@@ -291,9 +291,9 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-spell-into-the-fray',
     name: 'Into the Fray',
-    description: 'Target unit gains +3/+3 this turn.',
+    description: 'Generic. Target unit gains +3/+3 this turn.',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['red', 'white'],
     manaCost: 2,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect
@@ -303,9 +303,9 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-spell-rally-banner',
     name: 'Rally Banner',
-    description: 'All allies gain +1/+1 until end of turn. Draw a card.',
+    description: 'Generic. All allies gain +1/+1 until end of turn. Draw a card.',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['red', 'white'],
     manaCost: 4,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect
@@ -315,9 +315,9 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-spell-battle-cry',
     name: 'Battle Cry',
-    description: 'All allies gain +1 attack this turn.',
+    description: 'Generic. All allies gain +1 attack this turn.',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['red'],
     manaCost: 2,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for buff
@@ -328,9 +328,9 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-spell-soul-of-spring',
     name: 'Soul of Spring',
-    description: 'Target hero gains Regeneration (heals 3 damage at end of each combat phase). Regeneration only affects combat damage - other damage sources bypass it.',
+    description: 'Generic. Target hero gains Regeneration (heals 3 damage at end of each combat phase). Regeneration only affects combat damage - other damage sources bypass it.',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['white'],
     manaCost: 3,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for regeneration
@@ -340,9 +340,9 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-spell-living-armor',
     name: 'Living Armor',
-    description: 'Target hero gains +0/+5 until end of turn. If it would die this turn, it survives with 1 health instead.',
+    description: 'Generic. Target hero gains +0/+5 until end of turn. If it would die this turn, it survives with 1 health instead.',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['white'],
     manaCost: 3,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for temporary health and death prevention
@@ -601,9 +601,9 @@ export const ruSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ru-spell-2',
     name: 'Fireball',
-    description: 'Deal 5 damage',
+    description: 'Generic. Deal 5 damage',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['red'],
     manaCost: 3,
     effect: {
       type: 'targeted_damage',
@@ -1002,18 +1002,6 @@ export const gbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     currentHealth: 4,
   },
   {
-    id: 'gb-sig-reaper-2',
-    name: 'Nature\'s Wrath',
-    description: 'Reaper signature - removal',
-    cardType: 'generic',
-    colors: ['green', 'black'],
-    manaCost: 4,
-    attack: 4,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-  },
-  {
     id: 'gb-sig-assassin-1',
     name: 'Poison Strike',
     description: 'Assassin signature - kill',
@@ -1366,7 +1354,7 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 8,
     currentHealth: 8,
     supportEffect: 'Gain +1 max mana each turn',
-    signatureCardId: 'ub-sig-druid-1',
+    signatureCardId: 'ub-sig-archmage-2', // Uses Arcane Sweep as signature
     equippedItems: [],
     ability: {
       name: 'Nature\'s Summon',
@@ -1436,20 +1424,6 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
 
 export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   // Signature spells (converted from units)
-  {
-    id: 'ub-sig-archmage-1',
-    name: 'Void Bolt',
-    description: 'Archmage signature - removal. Deal 4 damage to target unit.',
-    cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
-    manaCost: 2,
-    effect: {
-      type: 'targeted_damage',
-      damage: 4,
-      affectsUnits: true,
-      affectsHeroes: true,
-    },
-  },
   // UB AOE spell - replaces one direct damage spell
   {
     id: 'ub-spell-void-cascade',
@@ -1485,9 +1459,9 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-sig-necromancer-1',
     name: 'Death Ritual',
-    description: 'Necromancer signature - card draw. Draw 2 cards.',
+    description: 'Generic. Necromancer signature - card draw. Draw 2 cards.',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['black'],
     manaCost: 4,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for card draw
@@ -1497,9 +1471,9 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-sig-necromancer-2',
     name: 'Soul Drain',
-    description: 'Necromancer signature - advantage. Deal 2 damage to target unit, draw a card.',
+    description: 'Generic. Necromancer signature - advantage. Deal 2 damage to target unit, draw a card.',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['black'],
     manaCost: 4,
     effect: {
       type: 'targeted_damage',
@@ -1511,26 +1485,12 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-sig-guardian-1',
     name: 'Nature\'s Revenge',
-    description: 'Nature Guardian signature - removal and ramp. Deal 3 damage to target unit. If it dies, gain +1 max mana.',
+    description: 'Generic. Nature Guardian signature - removal and ramp. Deal 3 damage to target unit. If it dies, gain +1 max mana.',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['green'],
     manaCost: 3,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for conditional mana ramp
-      damage: 3,
-      affectsUnits: true,
-      affectsHeroes: true,
-    },
-  },
-  {
-    id: 'ub-sig-druid-1',
-    name: 'Nature\'s Wrath',
-    description: 'Verdant Archmage signature - ramp and removal. Deal 3 damage to target unit. Gain +1 max mana.',
-    cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
-    manaCost: 2,
-    effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect for damage + mana ramp
       damage: 3,
       affectsUnits: true,
       affectsHeroes: true,
@@ -1555,9 +1515,9 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-spell-removal',
     name: 'Arcane Removal',
-    description: 'Deal 6 damage to target unit or hero.',
+    description: 'Generic. Deal 6 damage to target unit or hero.',
     cardType: 'spell',
-    colors: undefined, // Common removal - no rune requirement
+    colors: ['blue'],
     manaCost: 2,
     effect: {
       type: 'targeted_damage',
@@ -1570,9 +1530,9 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-spell-frost-bolt',
     name: 'Frost Bolt',
-    description: 'Deal 2 damage to enemy unit in front of your hero.',
+    description: 'Generic. Deal 2 damage to enemy unit in front of your hero.',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['blue'],
     manaCost: 2,
     effect: {
       type: 'front_damage',
@@ -1584,9 +1544,9 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-spell-light-strike-array',
     name: 'Light Strike Array',
-    description: 'Deal 2 damage to enemy unit in front of your hero and stun it.',
+    description: 'Generic. Deal 2 damage to enemy unit in front of your hero and stun it.',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['blue'],
     manaCost: 2,
     effect: {
       type: 'damage_and_stun',
@@ -1600,9 +1560,9 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ubg-spell-deal-3-initiative',
     name: 'Tactical Strike',
-    description: 'Deal 3 damage to target unit. You get initiative (play next card first).',
+    description: 'Generic. Deal 3 damage to target unit. You get initiative (play next card first).',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['blue'],
     manaCost: 2,
     effect: {
       type: 'targeted_damage',
@@ -1628,9 +1588,9 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ubg-spell-invulnerable-reflect',
     name: 'Reflective Shield',
-    description: 'Target hero gains invulnerable this turn. Any damage that hero would take is reflected back to the source.',
+    description: 'Generic. Target hero gains invulnerable this turn. Any damage that hero would take is reflected back to the source.',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['blue'],
     manaCost: 2,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for invulnerable + reflect
@@ -1640,9 +1600,9 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ubg-spell-move-hero',
     name: 'Tactical Repositioning',
-    description: 'Move target hero to be directly in front of target unit in different battlefield.',
+    description: 'Generic. Move target hero to be directly in front of target unit in different battlefield.',
     cardType: 'spell',
-    colors: undefined, // Common spell - no rune requirement
+    colors: ['blue'],
     manaCost: 1,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for hero movement
@@ -1652,9 +1612,9 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ubg-spell-aoe-2-all',
     name: 'Frost Wave',
-    description: 'Deal 2 damage to all enemy units in target battlefield.',
+    description: 'Generic. Deal 2 damage to all enemy units in target battlefield.',
     cardType: 'spell',
-    colors: undefined, // Common AOE - no rune requirement
+    colors: ['blue'],
     manaCost: 3,
     effect: {
       type: 'aoe_damage',
@@ -1667,9 +1627,9 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ubg-spell-aoe-6-distributed',
     name: 'Arcane Barrage',
-    description: 'Deal 6 damage evenly divided to target unit and adjacent units. 0 units: 6 to tower. 1 unit: 3+3. 2 units: 2+2+2. 3 units: 2+2+2.',
+    description: 'Generic. Deal 6 damage evenly divided to target unit and adjacent units. 0 units: 6 to tower. 1 unit: 3+3. 2 units: 2+2+2. 3 units: 2+2+2.',
     cardType: 'spell',
-    colors: undefined, // Common AOE - no rune requirement
+    colors: ['blue', 'black'],
     manaCost: 4,
     effect: {
       type: 'adjacent_damage',
