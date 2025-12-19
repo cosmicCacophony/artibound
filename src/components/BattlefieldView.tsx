@@ -68,7 +68,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     const cardInSlot = battlefield[player].find(c => c.slot === slotNum)
     const isSelected = selectedCard && selectedCard.id === cardInSlot?.id
     const canMoveHere = selectedCard && selectedCard.owner === player && 
-      (selectedCard.location === battlefieldId || selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB' || selectedCard.location === 'hand' || selectedCard.location === 'base')
+      (selectedCard.location === battlefieldId || selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB' || selectedCard.location === 'hand' || selectedCard.location === 'base' || selectedCard.location === 'deployZone')
     
     // Check if we can equip an item to a hero
     const canEquipItem = selectedCard && 

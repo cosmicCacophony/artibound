@@ -32,15 +32,7 @@ export function useDeployment() {
         return
       }
       
-      // Turn 2 restriction: only 1 hero can be deployed per player
-      if (metadata.currentTurn === 2) {
-        const heroesDeployedKey = `${selectedCard.owner}HeroesDeployedThisTurn` as keyof typeof metadata
-        const heroesDeployed = (metadata[heroesDeployedKey] as number) || 0
-        if (heroesDeployed >= 1) {
-          alert('On turn 2, each player can only deploy 1 hero!')
-          return
-        }
-      }
+      // No turn 2 restriction - players can deploy any number of heroes
       
       // Handle deploy phase deployment with bounce mechanic
       setGameState(prev => {
@@ -86,9 +78,10 @@ export function useDeployment() {
           updatedCooldowns[existingHeroInSlot.id] = 1
         }
         
-        // Add runes from the deploying hero (if coming from base, not already on battlefield)
+        // Add runes from the deploying hero (if coming from base/deployZone, not already on battlefield)
         const wasOnBattlefield = selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB'
-        if (!wasOnBattlefield && (selectedCard as Hero).colors) {
+        const isFromBaseOrDeployZone = selectedCard.location === 'base' || selectedCard.location === 'deployZone'
+        if (!wasOnBattlefield && isFromBaseOrDeployZone && (selectedCard as Hero).colors) {
           const heroColors = (selectedCard as Hero).colors || []
           updatedRunePool = {
             runes: [...updatedRunePool.runes, ...heroColors],
@@ -386,6 +379,7 @@ export function useDeployment() {
           ...prev,
           [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
           [`${selectedCard.owner}Base`]: [...prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[], healedCard],
+          [`${selectedCard.owner}DeployZone`]: removeFromLocation(prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[]),
           battlefieldA: {
             ...prev.battlefieldA,
             [selectedCard.owner]: removeFromLocation(prev.battlefieldA[selectedCard.owner as 'player1' | 'player2']),
@@ -481,6 +475,7 @@ export function useDeployment() {
                 ...prev,
                 [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
                 [`${selectedCard.owner}Base`]: removeFromLocation(prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[]),
+                [`${selectedCard.owner}DeployZone`]: removeFromLocation(prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[]),
                 [otherBattlefieldKey]: {
                   ...prev[otherBattlefieldKey],
                   [selectedCard.owner]: removeFromLocation(prev[otherBattlefieldKey][selectedCard.owner as 'player1' | 'player2']),
@@ -541,13 +536,14 @@ export function useDeployment() {
           // Find the card in previous state to check its actual location
           const prevCard = [...prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[],
                             ...prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[],
+                            ...prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[],
                             ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
                             ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']]
                             .find(c => c.id === selectedCardId)
           // Check if hero was previously on a battlefield (if so, don't add runes again)
           const wasOnBattlefield = prevCard && (prevCard.location === 'battlefieldA' || prevCard.location === 'battlefieldB')
           if (!wasOnBattlefield) {
-            // Hero is deploying for the first time (from base/hand) - add runes
+            // Hero is deploying for the first time (from base/deployZone/hand) - add runes
             updatedRunePool = addRunesFromHero(selectedCard as Hero, updatedRunePool)
           }
         }
@@ -556,6 +552,7 @@ export function useDeployment() {
           ...prev,
           [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
           [`${selectedCard.owner}Base`]: removeFromLocation(prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[]),
+          [`${selectedCard.owner}DeployZone`]: removeFromLocation(prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[]),
           // Remove from the other battlefield if the card is moving from there
           [otherBattlefieldKey]: {
             ...prev[otherBattlefieldKey],

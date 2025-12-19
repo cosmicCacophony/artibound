@@ -19,7 +19,7 @@ import {
 } from '../game/types'
 import { generateAllDraftPacks, removeItemFromPack, isPackComplete, generateRandomPack, heroMatchesArchetype, cardMatchesArchetype } from '../game/draftSystem'
 import { defaultHeroes, defaultBattlefield, draftableHeroes } from '../game/draftData'
-import { allCards, allSpells, allBattlefields, allHeroes } from '../game/cardData'
+import { allCards, allSpells, allArtifacts, allBattlefields, allHeroes } from '../game/cardData'
 
 // Check if a player has enough items to complete their deck
 function hasEnoughItems(drafted: DraftedItems): boolean {
@@ -291,9 +291,9 @@ export function useDraft() {
       const player1HeroPool = allHeroes.filter(h => heroMatchesArchetype(h, [player1Archetype]))
       const player2HeroPool = allHeroes.filter(h => heroMatchesArchetype(h, [player2Archetype]))
       
-      // Get cards matching each player's archetype (including spells)
+      // Get cards matching each player's archetype (including spells and artifacts)
       // IMPORTANT: Filter strictly by archetype to prevent cross-contamination
-      const allCardsAndSpells: BaseCard[] = [...allCards, ...allSpells]
+      const allCardsAndSpells: BaseCard[] = [...allCards, ...allSpells, ...allArtifacts]
       const player1CardPool = allCardsAndSpells.filter(c => cardMatchesArchetype(c, [player1Archetype]))
       const player2CardPool = allCardsAndSpells.filter(c => cardMatchesArchetype(c, [player2Archetype]))
       

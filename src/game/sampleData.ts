@@ -1652,19 +1652,15 @@ export function createInitialGameState(): {
   battlefieldB: { player1: Card[], player2: Card[] }
   metadata: GameMetadata
 } {
-  // Player 1: First 2 heroes ready to deploy on turn 1 (can move freely)
+  // Player 1: All heroes start in deployZone (ready to deploy)
   const player1AllHeroes = warriorTestDeckHeroes.map(hero => 
-    createHeroFromTestDeck(hero, 'player1', 'base')
+    createHeroFromTestDeck(hero, 'player1', 'deployZone')
   )
-  const player1ReadyToDeploy = player1AllHeroes.slice(0, 2) // First 2 heroes in base, ready to deploy
-  const player1RemainingHeroes = player1AllHeroes.slice(2) // Last 2 heroes also in base, but not deployed yet
   
-  // Player 2: First 2 heroes ready to deploy on turn 1 (can move freely)
+  // Player 2: All heroes start in deployZone (ready to deploy)
   const player2AllHeroes = mageTestDeckHeroes.map(hero => 
-    createHeroFromTestDeck(hero, 'player2', 'base')
+    createHeroFromTestDeck(hero, 'player2', 'deployZone')
   )
-  const player2ReadyToDeploy = player2AllHeroes.slice(0, 2) // First 2 heroes in base, ready to deploy
-  const player2RemainingHeroes = player2AllHeroes.slice(2) // Last 2 heroes also in base, but not deployed yet
 
   // Create starting cards for hands - include key test cards (sweepers, rune spells, combos)
   // Find key cards by ID from allSpells and allCards
@@ -1806,10 +1802,10 @@ export function createInitialGameState(): {
   return {
     player1Hand: player1Hand,
     player2Hand: player2Hand,
-    player1Base: [...player1RemainingHeroes], // Heroes on cooldown stay in base
-    player2Base: [...player2RemainingHeroes], // Heroes on cooldown stay in base
-    player1DeployZone: [...player1ReadyToDeploy], // Heroes ready to deploy go to deploy zone
-    player2DeployZone: [...player2ReadyToDeploy], // Heroes ready to deploy go to deploy zone
+    player1Base: [], // All heroes start in deployZone
+    player2Base: [], // All heroes start in deployZone
+    player1DeployZone: [...player1AllHeroes], // All heroes ready to deploy
+    player2DeployZone: [...player2AllHeroes], // All heroes ready to deploy
     battlefieldA: { 
       player1: [createInitialCreep('player1', 'battlefieldA')], 
       player2: [createInitialCreep('player2', 'battlefieldA')] 
@@ -1917,18 +1913,12 @@ export function createGameStateFromDraft(
   const player1Archetype = detectArchetype(player1Heroes)
   const player2Archetype = detectArchetype(player2Heroes)
   
-  // All heroes start in base (they will be deployed during the counter-deployment phase)
+  // All heroes start in deployZone (ready to deploy)
   // Battlefields start empty
-  // Split heroes: first 2 ready to deploy, rest in base
-  const player1ReadyToDeploy = player1Heroes.slice(0, 2)
-  const player1RemainingHeroes = player1Heroes.slice(2)
-  const player2ReadyToDeploy = player2Heroes.slice(0, 2)
-  const player2RemainingHeroes = player2Heroes.slice(2)
-  
-  const player1Base = player1RemainingHeroes
-  const player2Base = player2RemainingHeroes
-  const player1DeployZone = player1ReadyToDeploy
-  const player2DeployZone = player2ReadyToDeploy
+  const player1Base: Card[] = []
+  const player2Base: Card[] = []
+  const player1DeployZone = player1Heroes.map(hero => ({ ...hero, location: 'deployZone' as const }))
+  const player2DeployZone = player2Heroes.map(hero => ({ ...hero, location: 'deployZone' as const }))
 
   // Shuffle cards randomly for variety in each game
   const randomShuffle = <T extends unknown>(arr: T[]): T[] => {

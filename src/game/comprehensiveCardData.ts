@@ -72,18 +72,7 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
 
 export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
   // Signature units (physical objects that can be units)
-  {
-    id: 'rw-sig-commander-1',
-    name: 'Rally Banner',
-    description: 'Commander signature - buffs team. All allies gain +1/+1.',
-    cardType: 'generic',
-    colors: ['red', 'white'],
-    manaCost: 3,
-    attack: 2,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
+  // Rally Banner removed - replaced with artifact
   {
     id: 'rw-sig-captain-2',
     name: 'Battle Standard',
@@ -96,18 +85,7 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 5,
     currentHealth: 5,
   },
-  {
-    id: 'rw-sig-vanguard-1',
-    name: 'Vanguard Banner',
-    description: 'Vanguard signature - mobile support. All allies gain +1 attack. When this enters, you may move a hero to an adjacent slot.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 3,
-    attack: 3,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-  },
+  // Vanguard Banner removed - replaced with red artifact
   // Legion Tribal Units (RW archetype) - Removed boring +1/+1 counter cards
   {
     id: 'rw-legion-champion',
@@ -202,7 +180,7 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   },
 ]
 
-// RW Artifacts - Persistent effects in base
+// RW Artifacts - Persistent effects in base (R, W, or RW colors only)
 export const rwArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-artifact-war-banner',
@@ -217,12 +195,62 @@ export const rwArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-artifact-legion-standard',
     name: 'Legion Standard Artifact',
-    description: 'Artifact. All your Legion units gain +1/+1.',
+    description: 'Artifact. All your Legion units gain +3/+1.',
     cardType: 'artifact',
     colors: ['red', 'white'],
     manaCost: 5,
     effectType: 'damage_amplifier',
+    effectValue: 3, // +3 attack, +1 health handled separately if needed
+  },
+  {
+    id: 'rw-artifact-rally-banner',
+    name: 'Rally Banner Artifact',
+    description: 'Artifact. All your units gain +1/+1.',
+    cardType: 'artifact',
+    colors: ['red', 'white'],
+    manaCost: 4,
+    effectType: 'damage_amplifier',
     effectValue: 1, // +1 attack, defensive buff handled separately if needed
+  },
+  {
+    id: 'rw-artifact-divine-aura',
+    name: 'Divine Aura Artifact',
+    description: 'Artifact. All your units gain +0/+1.',
+    cardType: 'artifact',
+    colors: ['white'],
+    manaCost: 3,
+    effectType: 'defensive_buff',
+    effectValue: 1, // +1 health
+  },
+  {
+    id: 'rw-artifact-glorious-banner',
+    name: 'Glorious Banner Artifact',
+    description: 'Artifact. All your units gain +1/+1.',
+    cardType: 'artifact',
+    colors: ['white'],
+    manaCost: 4,
+    effectType: 'damage_amplifier',
+    effectValue: 1, // +1 attack, defensive buff handled separately if needed
+  },
+  {
+    id: 'rw-artifact-vanguard-generator',
+    name: 'Vanguard Generator Artifact',
+    description: 'Artifact. At the start of your turn, add 1 temporary red rune to your rune pool.',
+    cardType: 'artifact',
+    colors: ['red'],
+    manaCost: 3,
+    effectType: 'rune_generation',
+    effectValue: 1, // Generates 1 temporary red rune per turn
+  },
+  {
+    id: 'rw-artifact-unbreakable-column',
+    name: 'Unbreakable Column Artifact',
+    description: 'Artifact. All your units gain +0/+1.',
+    cardType: 'artifact',
+    colors: ['white'],
+    manaCost: 3,
+    effectType: 'defensive_buff',
+    effectValue: 1, // +1 health to all units
   },
 ]
 
@@ -296,18 +324,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       affectsHeroes: true,
     },
   },
-  {
-    id: 'rw-spell-unbreakable-column',
-    name: 'Unbreakable Column',
-    description: 'Generic. Caster and neighbors ignore incoming damage of 2 or less this turn.',
-    cardType: 'spell',
-    colors: ['white'],
-    manaCost: 2,
-    effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect for damage reduction
-      damage: 0,
-    },
-  },
+  // Unbreakable Column removed - replaced with white artifact
   {
     id: 'rw-spell-fighting-words',
     name: 'Fighting Words',
@@ -372,23 +389,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     },
     initiative: false,
   },
-  {
-    id: 'rw-spell-divine-wrath',
-    name: 'Divine Wrath',
-    description: 'Destroy all non-Legion units. Your Legion units gain +1/+1. Costs 5WWWW.',
-    cardType: 'spell',
-    colors: ['white', 'white', 'white', 'white'],
-    manaCost: 5,
-    consumesRunes: true,
-    effect: {
-      type: 'board_wipe', // Would need custom logic to exclude Legion units
-      affectsUnits: true,
-      affectsHeroes: false,
-      affectsOwnUnits: true,
-      affectsEnemyUnits: true,
-    },
-    initiative: false,
-  },
+  // Divine Wrath removed - replaced with artifact
   {
     id: 'rw-spell-war-banner',
     name: 'War Banner',
@@ -931,19 +932,7 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 5,
     currentHealth: 5,
   },
-  {
-    id: 'gw-sig-protector-1',
-    name: 'Divine Aura',
-    description: 'Protector signature - buff. Adjacent units gain +1/+1.',
-    cardType: 'generic',
-    colors: ['white'],
-    manaCost: 2,
-    attack: 2,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-    specialEffects: ['adjacent_buff'], // Adjacent units gain +1/+1
-  },
+  // Divine Aura removed - replaced with artifact
   {
     id: 'gw-sig-protector-2',
     name: 'Guardian Aegis',
@@ -958,18 +947,7 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     specialEffects: ['adjacent_buff', 'retaliate_1'], // Adjacent units +1/+1, retaliate 1 damage
   },
   // Generic GW cards
-  {
-    id: 'gw-token-1',
-    name: 'Saproling',
-    description: 'Small token',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 3,
-    attack: 2,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
+  // Saproling removed
   {
     id: 'gw-token-2',
     name: 'Elf Scout',
@@ -982,18 +960,7 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 2,
     currentHealth: 2,
   },
-  {
-    id: 'gw-aura-1',
-    name: 'Glorious Banner',
-    description: 'Aura - +1/+1 to all',
-    cardType: 'generic',
-    colors: ['white'],
-    manaCost: 2,
-    attack: 2,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
+  // Glorious Banner removed - replaced with artifact
   {
     id: 'gw-aura-2',
     name: 'Nature\'s Embrace',
@@ -1306,19 +1273,7 @@ export const guCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
 ]
 
 export const guSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
-  {
-    id: 'gu-spell-1',
-    name: 'Mana Surge',
-    description: 'Gain +2 max mana',
-    cardType: 'spell',
-    colors: ['green'],
-    manaCost: 3,
-    consumesRunes: true, // Not generic - consumes runes
-    effect: {
-      type: 'targeted_damage',
-      damage: 0,
-    },
-  },
+  // Mana Surge removed - replaced with green artifact
   {
     id: 'gu-spell-2',
     name: 'Titan\'s Wrath',
@@ -1478,20 +1433,7 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     currentHealth: 5,
     specialEffects: ['adjacent_buff'],
   },
-  // UGB Units with ETB Effects (Enter the Battlefield)
-  {
-    id: 'ubg-etb-ethereal-scholar',
-    name: 'Ethereal Scholar',
-    description: '2/3. When this enters, draw a card. You may return target unit you control to your hand.',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 3,
-    attack: 2,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-    // Note: ETB effect would need implementation in deployment system
-  },
+  // Ethereal Scholar removed
   {
     id: 'ubg-etb-void-walker',
     name: 'Void Walker',
@@ -1572,7 +1514,7 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   },
 ]
 
-// UB Artifacts - Persistent effects in base
+// UBG Artifacts - Persistent effects in base (U, G, B, or combinations only)
 export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-artifact-arcane-focus',
@@ -1594,7 +1536,61 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     effectType: 'rune_generation',
     effectValue: 1, // Generates 1 blue rune per turn
   },
+  {
+    id: 'ub-artifact-shadow-growth',
+    name: 'Shadow Growth Artifact',
+    description: 'Artifact. When a unit dies, gain +1 max mana.',
+    cardType: 'artifact',
+    colors: ['black', 'green'],
+    manaCost: 4,
+    effectType: 'mana_generation',
+    effectValue: 1, // +1 max mana per unit death
+  },
+  {
+    id: 'ub-artifact-natures-revenge',
+    name: 'Nature\'s Revenge Artifact',
+    description: 'Artifact. When you deal damage to an enemy unit, if it dies, gain +1 max mana.',
+    cardType: 'artifact',
+    colors: ['green'],
+    manaCost: 3,
+    effectType: 'mana_generation',
+    effectValue: 1, // +1 max mana per kill
+  },
+  {
+    id: 'ub-artifact-sacrificial-altar',
+    name: 'Sacrificial Altar Artifact',
+    description: 'Artifact. At the start of your turn, add 1 black rune to your rune pool.',
+    cardType: 'artifact',
+    colors: ['black'],
+    manaCost: 3,
+    effectType: 'rune_generation',
+    effectValue: 1, // Generates 1 black rune per turn
+  },
+  {
+    id: 'ub-artifact-divine-wrath',
+    name: 'Divine Wrath Artifact',
+    description: 'Artifact. Your spells deal +2 additional damage.',
+    cardType: 'artifact',
+    colors: ['blue'],
+    manaCost: 5,
+    effectType: 'spell_amplifier',
+    effectValue: 2,
+  },
+  {
+    id: 'ub-artifact-mana-surge',
+    name: 'Mana Surge Artifact',
+    description: 'Artifact. Gain +2 max mana.',
+    cardType: 'artifact',
+    colors: ['green'],
+    manaCost: 5,
+    consumesRunes: true, // Requires G rune
+    effectType: 'mana_generation',
+    effectValue: 2, // +2 max mana
+  },
 ]
+
+// Note: GW and UW artifacts removed - they don't work with RW vs UBG testing framework
+// All artifacts must be RW (R, W, RW) or UBG (U, G, B, or combinations)
 
 export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   // Signature spells (converted from units)
@@ -1657,20 +1653,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       affectsHeroes: true,
     },
   },
-  {
-    id: 'ub-sig-guardian-1',
-    name: 'Nature\'s Revenge',
-    description: 'Generic. Nature Guardian signature - removal and ramp. Deal 3 damage to target unit. If it dies, gain +1 max mana.',
-    cardType: 'spell',
-    colors: ['green'],
-    manaCost: 3,
-    effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect for conditional mana ramp
-      damage: 3,
-      affectsUnits: true,
-      affectsHeroes: true,
-    },
-  },
+  // Nature's Revenge removed - replaced with artifact
   // UB Control Archetype Spells
   {
     id: 'ub-spell-thunderstorm',
@@ -2033,18 +2016,7 @@ export const ubgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
     maxHealth: 4,
     currentHealth: 4,
   },
-  {
-    id: 'ubg-sig-sage-1',
-    name: 'Shadow Growth',
-    description: 'Shadow Sage signature - removal. Deal 6 damage to target unit or hero. If it had 4+ health, draw a card.',
-    cardType: 'generic',
-    colors: ['black', 'green'],
-    manaCost: 4,
-    attack: 2,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
+  // Shadow Growth removed - replaced with artifact
 ]
 
 export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
@@ -2184,21 +2156,7 @@ export const uwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       affectsHeroes: true,
     },
   },
-  {
-    id: 'uw-spell-1',
-    name: 'Divine Wrath',
-    description: 'Deal 4 damage',
-    cardType: 'spell',
-    colors: ['blue', 'white'],
-    manaCost: 4,
-    consumesRunes: true, // Not generic - consumes U and W runes
-    effect: {
-      type: 'targeted_damage',
-      damage: 4,
-      affectsUnits: true,
-      affectsHeroes: true,
-    },
-  },
+  // Divine Wrath removed - replaced with artifact
 ]
 
 // ============================================================================
@@ -2305,19 +2263,7 @@ export const comboCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' 
     maxHealth: 3,
     currentHealth: 3,
   },
-  // Aristocrats Combo pieces
-  {
-    id: 'combo-sig-blood-artist-1',
-    name: 'Sacrificial Altar',
-    description: 'Blood Artist signature. You may sacrifice this unit to add BBB temporarily.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 2,
-    attack: 0,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
+  // Sacrificial Altar removed - replaced with artifact
   {
     id: 'combo-unit-gravecrawler',
     name: 'Gravecrawler',
@@ -2750,6 +2696,7 @@ export const variableRuneCostSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
 export const allArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   ...rwArtifacts,
   ...ubArtifacts,
+  // Note: Only RW and UBG artifacts are included for RW vs UBG testing framework
 ]
 
 export const allSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
