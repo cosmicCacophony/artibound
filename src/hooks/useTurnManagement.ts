@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react'
 import { TurnPhase, Card, GameMetadata, ShopItem, Hero } from '../game/types'
 import { useGameContext } from '../context/GameContext'
-import { getDefaultTargets, resolveCombat, resolveSimultaneousCombat } from '../game/combatSystem'
+import { getDefaultTargets, resolveCombat, resolveSimultaneousCombat, resolveRangedAttacks } from '../game/combatSystem'
 import { tier1Items } from '../game/sampleData'
 
 export function useTurnManagement() {
@@ -59,6 +59,13 @@ export function useTurnManagement() {
         'battlefieldB',
         resultA.updatedTowerHP,
         metadata.stunnedHeroes || {},
+        initialTowerArmor
+      )
+      
+      // Resolve ranged attacks from base/deploy zone (after battlefield combat)
+      const rangedResult = resolveRangedAttacks(
+        gameState,
+        resultB.updatedTowerHP,
         initialTowerArmor
       )
       
@@ -166,13 +173,13 @@ export function useTurnManagement() {
           player2Base: newP2BaseB,
           metadata: {
             ...prev.metadata,
-            towerA_player1_HP: resultA.updatedTowerHP.towerA_player1,
-            towerA_player2_HP: resultA.updatedTowerHP.towerA_player2,
-            towerB_player1_HP: resultB.updatedTowerHP.towerB_player1,
-            towerB_player2_HP: resultB.updatedTowerHP.towerB_player2,
-            // Apply overflow damage to nexus (sum from both battlefields)
-            player1NexusHP: newP1NexusHP,
-            player2NexusHP: newP2NexusHP,
+            towerA_player1_HP: rangedResult.updatedTowerHP.towerA_player1,
+            towerA_player2_HP: rangedResult.updatedTowerHP.towerA_player2,
+            towerB_player1_HP: rangedResult.updatedTowerHP.towerB_player1,
+            towerB_player2_HP: rangedResult.updatedTowerHP.towerB_player2,
+            // Apply overflow damage to nexus (sum from both battlefields + ranged attacks)
+            player1NexusHP: Math.max(0, newP1NexusHP - (rangedResult.overflowDamage.player2)),
+            player2NexusHP: Math.max(0, newP2NexusHP - (rangedResult.overflowDamage.player1)),
             player1Gold: (prev.metadata.player1Gold as number) + goldRewards.player1,
             player2Gold: (prev.metadata.player2Gold as number) + goldRewards.player2,
             deathCooldowns: newCooldownsB,
@@ -180,25 +187,31 @@ export function useTurnManagement() {
         }
       })
       
-      // Show combat summary modal
+      // Show combat summary modal (include ranged attacks in combat log)
       setCombatSummaryData({
         battlefieldA: {
           name: 'Battlefield A',
-          combatLog: resultA.combatLog,
+          combatLog: [...resultA.combatLog, ...rangedResult.combatLog],
           towerHP: {
-            player1: resultA.updatedTowerHP.towerA_player1,
-            player2: resultA.updatedTowerHP.towerA_player2,
+            player1: rangedResult.updatedTowerHP.towerA_player1,
+            player2: rangedResult.updatedTowerHP.towerA_player2,
           },
-          overflowDamage: resultA.overflowDamage,
+          overflowDamage: {
+            player1: resultA.overflowDamage.player1 + rangedResult.overflowDamage.player1,
+            player2: resultA.overflowDamage.player2 + rangedResult.overflowDamage.player2,
+          },
         },
         battlefieldB: {
           name: 'Battlefield B',
           combatLog: resultB.combatLog,
           towerHP: {
-            player1: resultB.updatedTowerHP.towerB_player1,
-            player2: resultB.updatedTowerHP.towerB_player2,
+            player1: rangedResult.updatedTowerHP.towerB_player1,
+            player2: rangedResult.updatedTowerHP.towerB_player2,
           },
-          overflowDamage: resultB.overflowDamage,
+          overflowDamage: {
+            player1: resultB.overflowDamage.player1,
+            player2: resultB.overflowDamage.player2,
+          },
         },
       })
       setShowCombatSummary(true)
@@ -210,6 +223,69 @@ export function useTurnManagement() {
       
       // Reset pass flags at start of new turn
       const resetPassFlags = true
+      
+      // Decrement cooldowns and move heroes from base to deployZone when cooldown expires
+      setGameState(prev => {
+        const processCooldowns = (player: 'player1' | 'player2') => {
+          const base = prev[`${player}Base` as keyof typeof prev] as Card[]
+          const deployZone = prev[`${player}DeployZone` as keyof typeof prev] as Card[]
+          const cooldowns = { ...prev.metadata.deathCooldowns }
+          
+          const heroesToMove: Card[] = []
+          const heroesToKeep: Card[] = []
+          
+          // Decrement all cooldowns and process heroes
+          base.forEach(card => {
+            if (card.cardType === 'hero') {
+              const currentCooldown = cooldowns[card.id] || 0
+              if (currentCooldown > 0) {
+                // Decrement cooldown
+                cooldowns[card.id] = currentCooldown - 1
+              }
+              
+              const newCooldown = cooldowns[card.id] || 0
+              if (newCooldown === 0) {
+                // Cooldown expired - move to deployZone and heal to full
+                const hero = card as import('../game/types').Hero
+                heroesToMove.push({ 
+                  ...hero, 
+                  location: 'deployZone' as const,
+                  currentHealth: hero.maxHealth, // Heal to full when ready to deploy
+                })
+                // Remove from cooldowns when moved to deployZone
+                delete cooldowns[card.id]
+              } else {
+                // Still on cooldown - keep in base
+                heroesToKeep.push(card)
+              }
+            } else {
+              // Non-hero cards (artifacts) stay in base
+              heroesToKeep.push(card)
+            }
+          })
+          
+          return {
+            newBase: heroesToKeep,
+            newDeployZone: [...deployZone, ...heroesToMove],
+            newCooldowns: cooldowns,
+          }
+        }
+        
+        const p1Result = processCooldowns('player1')
+        const p2Result = processCooldowns('player2')
+        
+        return {
+          ...prev,
+          player1Base: p1Result.newBase,
+          player1DeployZone: p1Result.newDeployZone,
+          player2Base: p2Result.newBase,
+          player2DeployZone: p2Result.newDeployZone,
+          metadata: {
+            ...prev.metadata,
+            deathCooldowns: { ...p1Result.newCooldowns, ...p2Result.newCooldowns },
+          },
+        }
+      })
       
       // Regenerate mana for next player (+1 max mana, restore to max)
       const nextPlayerMaxMana = Math.min(

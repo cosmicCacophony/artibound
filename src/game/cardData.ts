@@ -12,20 +12,24 @@ import {
   getHeroesWithOverrides, 
   getSpellsWithOverrides, 
   getBattlefieldsWithOverrides,
+  getArtifactsWithOverrides,
   updateCard,
   updateHero,
   updateSpell,
   updateBattlefield,
+  updateArtifact,
   resetCard,
   resetHero,
   resetSpell,
   resetBattlefield,
+  resetArtifact,
   clearAllOverrides,
 } from './cardStorage'
 // Export storage-aware versions that automatically apply localStorage overrides
 export const allCards = getCardsWithOverrides()
 export const allHeroes = getHeroesWithOverrides()
 export const allSpells = getSpellsWithOverrides()
+export const allArtifacts = getArtifactsWithOverrides()
 export const allBattlefields = getBattlefieldsWithOverrides()
 
 // Export storage functions for editing cards
@@ -34,10 +38,12 @@ export {
   updateHero,
   updateSpell,
   updateBattlefield,
+  updateArtifact,
   resetCard,
   resetHero,
   resetSpell,
   resetBattlefield,
+  resetArtifact,
   clearAllOverrides,
 }
 

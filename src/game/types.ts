@@ -1,5 +1,5 @@
-export type Location = 'base' | 'battlefieldA' | 'battlefieldB' | 'hand'
-export type CardType = 'hero' | 'signature' | 'hybrid' | 'generic' | 'spell' | 'item'
+export type Location = 'base' | 'deployZone' | 'battlefieldA' | 'battlefieldB' | 'hand'
+export type CardType = 'hero' | 'signature' | 'hybrid' | 'generic' | 'spell' | 'item' | 'artifact'
 export type PlayerId = 'player1' | 'player2'
 
 // Color System Types
@@ -245,6 +245,7 @@ export interface GenericUnit extends BaseCard {
   stackedWith?: string // ID of generic unit this is stacked with (if any)
   stackPower?: number // Combined power if stacked
   stackHealth?: number // Combined health if stacked
+  rangedAttack?: number // If set, this unit can attack from base/deployZone, dealing damage evenly to both towers
 }
 
 // Spell Effect Types
@@ -294,7 +295,25 @@ export interface ItemCard extends BaseCard {
   owner: PlayerId
 }
 
-export type Card = Hero | SignatureCard | HybridCard | GenericUnit | SpellCard | ItemCard
+// Artifact Effect Types
+export type ArtifactEffectType = 
+  | 'mana_generation' // Generate mana each turn
+  | 'damage_amplifier' // Increase unit attack damage
+  | 'spell_amplifier' // Increase spell damage
+  | 'defensive_buff' // Increase unit health/defense
+  | 'rune_generation' // Generate runes each turn
+  | 'tower_armor' // Increase tower armor
+  | 'card_draw' // Draw cards each turn
+
+export interface ArtifactCard extends BaseCard {
+  cardType: 'artifact'
+  location: 'base' // Artifacts always live in base
+  owner: PlayerId
+  effectType: ArtifactEffectType
+  effectValue: number // Value for the effect (e.g., +1 attack, +1 mana, etc.)
+}
+
+export type Card = Hero | SignatureCard | HybridCard | GenericUnit | SpellCard | ItemCard | ArtifactCard
 
 export interface Battlefield {
   player1: Card[]
@@ -383,6 +402,8 @@ export interface GameState {
   player2Hand: Card[]
   player1Base: Card[]
   player2Base: Card[]
+  player1DeployZone: Card[]
+  player2DeployZone: Card[]
   battlefieldA: Battlefield
   battlefieldB: Battlefield
   cardLibrary: BaseCard[] // All available cards in the library (for sidebar)

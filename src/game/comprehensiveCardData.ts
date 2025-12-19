@@ -1,4 +1,4 @@
-import { Hero, BaseCard, GenericUnit, SpellCard, SpellEffect, BattlefieldDefinition, Color, HeroAbility } from './types'
+import { Hero, BaseCard, GenericUnit, SpellCard, SpellEffect, BattlefieldDefinition, Color, HeroAbility, ArtifactCard } from './types'
 
 // ============================================================================
 // RW (Red/White) - Go Wide Beatdown
@@ -110,18 +110,6 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   },
   // Legion Tribal Units (RW archetype) - Removed boring +1/+1 counter cards
   {
-    id: 'rw-legion-veteran',
-    name: 'Legion Veteran',
-    description: 'Legion. When this enters, all Legion units gain +1 attack this turn.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 3,
-    attack: 3,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-  },
-  {
     id: 'rw-legion-champion',
     name: 'Legion Champion',
     description: 'Legion. When this attacks, all Legion units gain +1/+1 until end of turn.',
@@ -133,11 +121,11 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 4,
     currentHealth: 4,
   },
-  // Bounce Units - Units that can bounce heroes (tactical repositioning)
+  // Ranged Units - Can attack from base/deploy zone
   {
-    id: 'rw-bounce-tactical-retreat',
-    name: 'Tactical Retreat',
-    description: 'Bounce. 2/2. When a hero is deployed to this lane, you may return target hero to base. All your units gain +1 attack this turn.',
+    id: 'rw-unit-legion-archers',
+    name: 'Legion Archers',
+    description: 'Ranged. 2/2. Can attack from base/deploy zone, dealing 2 damage evenly to both towers.',
     cardType: 'generic',
     colors: ['red', 'white'],
     manaCost: 3,
@@ -145,6 +133,7 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 2,
     maxHealth: 2,
     currentHealth: 2,
+    rangedAttack: 2,
   },
   {
     id: 'rw-bounce-war-banner-carrier',
@@ -171,30 +160,6 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 5,
     maxHealth: 5,
     currentHealth: 5,
-  },
-  {
-    id: 'rw-unit-commander-adjutant',
-    name: 'Commander Adjutant',
-    description: '2/2. Whenever a creature enters the battlefield on your side, this gains +1/+1 permanently.',
-    cardType: 'generic',
-    colors: ['white'],
-    manaCost: 3,
-    attack: 2,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
-  {
-    id: 'rw-unit-legion-recruiter',
-    name: 'Legion Recruiter',
-    description: 'Create three 2/2 Legion tokens. If you don\'t have enough slots, instead buff an existing unit +2/+2 permanently.',
-    cardType: 'generic',
-    colors: [],
-    manaCost: 5,
-    attack: 0,
-    health: 0,
-    maxHealth: 0,
-    currentHealth: 0,
   },
   {
     id: 'rw-unit-tactical-commander',
@@ -234,6 +199,30 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 5,
     maxHealth: 5,
     currentHealth: 5,
+  },
+]
+
+// RW Artifacts - Persistent effects in base
+export const rwArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
+  {
+    id: 'rw-artifact-war-banner',
+    name: 'War Banner Artifact',
+    description: 'Artifact. All your units gain +1 attack.',
+    cardType: 'artifact',
+    colors: ['red', 'white'],
+    manaCost: 4,
+    effectType: 'damage_amplifier',
+    effectValue: 1,
+  },
+  {
+    id: 'rw-artifact-legion-standard',
+    name: 'Legion Standard Artifact',
+    description: 'Artifact. All your Legion units gain +1/+1.',
+    cardType: 'artifact',
+    colors: ['red', 'white'],
+    manaCost: 5,
+    effectType: 'damage_amplifier',
+    effectValue: 1, // +1 attack, defensive buff handled separately if needed
   },
 ]
 
@@ -1567,6 +1556,44 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     currentHealth: 4,
   },
   // Verdant Colossus removed - replaced with Void Cascade AOE spell
+  // Ranged Units - Can attack from base/deploy zone
+  {
+    id: 'ub-unit-arcane-sniper',
+    name: 'Arcane Sniper',
+    description: 'Ranged. 1/3. Can attack from base/deploy zone, dealing 3 damage evenly to both towers.',
+    cardType: 'generic',
+    colors: ['blue', 'black'],
+    manaCost: 3,
+    attack: 1,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    rangedAttack: 3,
+  },
+]
+
+// UB Artifacts - Persistent effects in base
+export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
+  {
+    id: 'ub-artifact-arcane-focus',
+    name: 'Arcane Focus Artifact',
+    description: 'Artifact. Your spells deal +1 additional damage.',
+    cardType: 'artifact',
+    colors: ['blue', 'black'],
+    manaCost: 5,
+    effectType: 'spell_amplifier',
+    effectValue: 1,
+  },
+  {
+    id: 'ub-artifact-void-generator',
+    name: 'Void Generator Artifact',
+    description: 'Artifact. At the start of your turn, add 1 blue rune to your rune pool.',
+    cardType: 'artifact',
+    colors: ['blue'],
+    manaCost: 4,
+    effectType: 'rune_generation',
+    effectValue: 1, // Generates 1 blue rune per turn
+  },
 ]
 
 export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
@@ -2718,6 +2745,11 @@ export const variableRuneCostSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     },
     initiative: false,
   },
+]
+
+export const allArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
+  ...rwArtifacts,
+  ...ubArtifacts,
 ]
 
 export const allSpells: Omit<SpellCard, 'location' | 'owner'>[] = [

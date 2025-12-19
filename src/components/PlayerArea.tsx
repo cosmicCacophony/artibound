@@ -29,6 +29,7 @@ export function PlayerArea({ player }: PlayerAreaProps) {
 
   const playerHand = player === 'player1' ? gameState.player1Hand : gameState.player2Hand
   const playerBase = player === 'player1' ? gameState.player1Base : gameState.player2Base
+  const playerDeployZone = player === 'player1' ? gameState.player1DeployZone : gameState.player2DeployZone
   const playerMana = player === 'player1' ? metadata.player1Mana : metadata.player2Mana
   const playerMaxMana = player === 'player1' ? metadata.player1MaxMana : metadata.player2MaxMana
   const playerGold = player === 'player1' ? metadata.player1Gold : metadata.player2Gold
@@ -163,9 +164,38 @@ export function PlayerArea({ player }: PlayerAreaProps) {
         </div>
       </div>
       
-      {/* Base */}
-      <div style={{ marginBottom: '20px' }}>
-        <h3>Base ({playerBase.length})</h3>
+      {/* Deploy Zone - Heroes ready to deploy */}
+      <div style={{ marginBottom: '20px', border: `2px solid ${playerColor}`, borderRadius: '8px', padding: '15px', backgroundColor: '#f5f5f5' }}>
+        <h3 style={{ marginTop: 0, color: playerTitleColor }}>Deploy Zone ({playerDeployZone.length})</h3>
+        <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px' }}>Heroes ready to deploy to battlefields</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '60px' }}>
+          {playerDeployZone.length > 0 ? (
+            playerDeployZone.map(card => (
+              <HeroCard
+                key={card.id}
+                card={card}
+                onClick={(e) => handleCardClick(card.id, e)}
+                isSelected={selectedCardId === card.id}
+                showStats={true}
+                isDead={!!metadata.deathCooldowns[card.id]}
+                cooldownCounter={metadata.deathCooldowns[card.id]}
+                isPlayed={!!metadata.playedSpells[card.id]}
+                onTogglePlayed={() => handleToggleSpellPlayed(card)}
+                isStunned={card.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[card.id])}
+                onToggleStun={card.cardType === 'hero' ? () => handleToggleStun(card) : undefined}
+                onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, card.owner)}
+              />
+            ))
+          ) : (
+            <p style={{ color: '#999' }}>Empty</p>
+          )}
+        </div>
+      </div>
+
+      {/* Base - Heroes on cooldown and artifacts */}
+      <div style={{ marginBottom: '20px', border: '2px solid #999', borderRadius: '8px', padding: '15px', backgroundColor: '#e8e8e8' }}>
+        <h3 style={{ marginTop: 0, color: '#666' }}>Base ({playerBase.length})</h3>
+        <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px' }}>Heroes on cooldown and artifacts</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '60px' }}>
           {playerBase.length > 0 ? (
             playerBase.map(card => (

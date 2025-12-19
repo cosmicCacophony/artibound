@@ -63,8 +63,10 @@ export function useDeployment() {
         // Check if there's an existing hero in this slot
         const existingHeroInSlot = battlefield.find(c => c.slot === finalSlot && c.cardType === 'hero') as Hero | undefined
         
-        // Remove deploying hero from base
+        // Remove deploying hero from base or deploy zone
         const newBase = (prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[])
+          .filter(c => c.id !== selectedCard.id)
+        const newDeployZone = (prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[])
           .filter(c => c.id !== selectedCard.id)
         
         // If there's an existing hero, bounce it to base with 1 cooldown
@@ -107,6 +109,7 @@ export function useDeployment() {
         return {
           ...prev,
           [`${selectedCard.owner}Base`]: updatedBase,
+          [`${selectedCard.owner}DeployZone`]: newDeployZone,
           [battlefieldKey]: {
             ...prev[battlefieldKey],
             [playerKey]: [...updatedBattlefield, deployedHero].sort((a, b) => (a.slot || 0) - (b.slot || 0)),
@@ -123,8 +126,8 @@ export function useDeployment() {
             ...prev.metadata,
             deathCooldowns: updatedCooldowns,
             [`${selectedCard.owner}RunePool`]: updatedRunePool,
-            // Increment heroes deployed counter (only counts if deploying from base, not moving between battlefields)
-            ...(selectedCard.location === 'base' ? {
+            // Increment heroes deployed counter (only counts if deploying from base/deployZone, not moving between battlefields)
+            ...(selectedCard.location === 'base' || selectedCard.location === 'deployZone' ? {
               [`${selectedCard.owner}HeroesDeployedThisTurn`]: ((prev.metadata[`${selectedCard.owner}HeroesDeployedThisTurn` as keyof typeof prev.metadata] as number) || 0) + 1,
             } : {}),
           },

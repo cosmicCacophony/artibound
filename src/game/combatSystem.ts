@@ -1,4 +1,4 @@
-import { Card, AttackTarget, AttackTargetType, Battlefield, PlayerId, GameMetadata } from './types'
+import { Card, AttackTarget, AttackTargetType, Battlefield, PlayerId, GameMetadata, GameState, GenericUnit } from './types'
 
 /**
  * Combat System - Handles all combat-related logic
@@ -549,3 +549,99 @@ export function resolveSimultaneousCombat(
   }
 }
 
+
+/**
+ * Resolve ranged attacks from base/deploy zone
+ * Ranged units deal damage evenly to both towers
+ */
+export function resolveRangedAttacks(
+  gameState: GameState,
+  initialTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
+  towerArmor?: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
+): {
+  updatedTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
+  overflowDamage: { player1: number, player2: number }
+  combatLog: CombatLogEntry[]
+} {
+  let currentTowerHP = { ...initialTowerHP }
+  let overflowDamage = { player1: 0, player2: 0 }
+  const combatLog: CombatLogEntry[] = []
+  
+  // Get ranged units from base and deploy zone for both players
+  const getRangedUnits = (player: PlayerId): GenericUnit[] => {
+    const base = player === 'player1' ? gameState.player1Base : gameState.player2Base
+    const deployZone = player === 'player1' ? gameState.player1DeployZone : gameState.player2DeployZone
+    const allCards = [...base, ...deployZone]
+    return allCards.filter(card => 
+      card.cardType === 'generic' && 
+      'rangedAttack' in card && 
+      card.rangedAttack !== undefined &&
+      card.rangedAttack > 0
+    ) as GenericUnit[]
+  }
+  
+  // Process ranged attacks for both players
+  for (const player of ['player1', 'player2'] as PlayerId[]) {
+    const rangedUnits = getRangedUnits(player)
+    const opponent = player === 'player1' ? 'player2' : 'player1'
+    
+    for (const unit of rangedUnits) {
+      if (!unit.rangedAttack) continue
+      
+      const damage = unit.rangedAttack
+      // Split damage evenly: floor(damage/2) to each tower, remainder to first tower
+      const damageToEach = Math.floor(damage / 2)
+      const remainder = damage % 2
+      
+      // Damage to tower A
+      const towerAKey = opponent === 'player1' ? 'towerA_player1' : 'towerA_player2'
+      const towerAHPBefore = currentTowerHP[towerAKey]
+      const armorA = towerArmor?.[towerAKey] || 0
+      const damageAfterArmorA = Math.max(0, damageToEach + remainder - armorA)
+      const newTowerAHP = Math.max(0, towerAHPBefore - damageAfterArmorA)
+      
+      if (towerAHPBefore > 0 && newTowerAHP === 0) {
+        // Tower destroyed - calculate overflow
+        const overflow = Math.max(0, damageToEach + remainder - towerAHPBefore)
+        overflowDamage[player] += overflow
+      } else if (towerAHPBefore === 0) {
+        // Tower already dead - all damage goes to nexus
+        overflowDamage[player] += damageToEach + remainder
+      }
+      
+      currentTowerHP[towerAKey] = newTowerAHP
+      
+      // Damage to tower B
+      const towerBKey = opponent === 'player1' ? 'towerB_player1' : 'towerB_player2'
+      const towerBHPBefore = currentTowerHP[towerBKey]
+      const armorB = towerArmor?.[towerBKey] || 0
+      const damageAfterArmorB = Math.max(0, damageToEach - armorB)
+      const newTowerBHP = Math.max(0, towerBHPBefore - damageAfterArmorB)
+      
+      if (towerBHPBefore > 0 && newTowerBHP === 0) {
+        // Tower destroyed - calculate overflow
+        const overflow = Math.max(0, damageToEach - towerBHPBefore)
+        overflowDamage[player] += overflow
+      } else if (towerBHPBefore === 0) {
+        // Tower already dead - all damage goes to nexus
+        overflowDamage[player] += damageToEach
+      }
+      
+      currentTowerHP[towerBKey] = newTowerBHP
+      
+      // Log the ranged attack
+      combatLog.push({
+        attackerId: unit.id,
+        attackerName: unit.name,
+        targetType: 'tower',
+        damage: damage,
+      })
+    }
+  }
+  
+  return {
+    updatedTowerHP: currentTowerHP,
+    overflowDamage,
+    combatLog,
+  }
+}

@@ -1,5 +1,5 @@
 import { Hero, SignatureCard, HybridCard, GenericUnit, Card, BaseCard, Item, GameMetadata, TOWER_HP, NEXUS_HP, STARTING_GOLD, BattlefieldDefinition, SpellCard, SpellEffect, BattlefieldBuff, BattlefieldId, BattlefieldBuffEffectType, RunePool } from './types'
-import { allCards, allSpells } from './cardData'
+import { allCards, allSpells, allArtifacts } from './cardData'
 
 // Item definitions
 export const tier1Items: Item[] = [
@@ -804,6 +804,7 @@ export function createCardLibrary(player: 'player1' | 'player2'): (BaseCard & Pa
   const allCardsBase: BaseCard[] = [
     ...allCards,
     ...allSpells,
+    ...allArtifacts,
   ]
   
   return allCardsBase.map(card => {
@@ -1645,6 +1646,8 @@ export function createInitialGameState(): {
   player2Hand: Card[]
   player1Base: Card[]
   player2Base: Card[]
+  player1DeployZone: Card[]
+  player2DeployZone: Card[]
   battlefieldA: { player1: Card[], player2: Card[] }
   battlefieldB: { player1: Card[], player2: Card[] }
   metadata: GameMetadata
@@ -1803,8 +1806,10 @@ export function createInitialGameState(): {
   return {
     player1Hand: player1Hand,
     player2Hand: player2Hand,
-    player1Base: [...player1ReadyToDeploy, ...player1RemainingHeroes], // All 4 heroes in base (first 2 ready to deploy on turn 1)
-    player2Base: [...player2ReadyToDeploy, ...player2RemainingHeroes], // All 4 heroes in base (first 2 ready to deploy on turn 1)
+    player1Base: [...player1RemainingHeroes], // Heroes on cooldown stay in base
+    player2Base: [...player2RemainingHeroes], // Heroes on cooldown stay in base
+    player1DeployZone: [...player1ReadyToDeploy], // Heroes ready to deploy go to deploy zone
+    player2DeployZone: [...player2ReadyToDeploy], // Heroes ready to deploy go to deploy zone
     battlefieldA: { 
       player1: [createInitialCreep('player1', 'battlefieldA')], 
       player2: [createInitialCreep('player2', 'battlefieldA')] 
@@ -1851,6 +1856,8 @@ export function createGameStateFromDraft(
   player2Hand: Card[]
   player1Base: Card[]
   player2Base: Card[]
+  player1DeployZone: Card[]
+  player2DeployZone: Card[]
   battlefieldA: { player1: Card[], player2: Card[] }
   battlefieldB: { player1: Card[], player2: Card[] }
   cardLibrary: BaseCard[]
@@ -1912,8 +1919,16 @@ export function createGameStateFromDraft(
   
   // All heroes start in base (they will be deployed during the counter-deployment phase)
   // Battlefields start empty
-  const player1Base = player1Heroes
-  const player2Base = player2Heroes
+  // Split heroes: first 2 ready to deploy, rest in base
+  const player1ReadyToDeploy = player1Heroes.slice(0, 2)
+  const player1RemainingHeroes = player1Heroes.slice(2)
+  const player2ReadyToDeploy = player2Heroes.slice(0, 2)
+  const player2RemainingHeroes = player2Heroes.slice(2)
+  
+  const player1Base = player1RemainingHeroes
+  const player2Base = player2RemainingHeroes
+  const player1DeployZone = player1ReadyToDeploy
+  const player2DeployZone = player2ReadyToDeploy
 
   // Shuffle cards randomly for variety in each game
   const randomShuffle = <T extends unknown>(arr: T[]): T[] => {
@@ -2028,6 +2043,8 @@ export function createGameStateFromDraft(
     player2Hand,
     player1Base,
     player2Base,
+    player1DeployZone,
+    player2DeployZone,
     battlefieldA: { 
       player1: [createInitialCreep('player1', 'battlefieldA')], // Start with 1/1 creep in slot 1
       player2: [createInitialCreep('player2', 'battlefieldA')] 
