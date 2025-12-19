@@ -702,8 +702,8 @@ export function useDeployment() {
             [`${card.owner}Base`]: [...prev[`${card.owner}Base` as keyof typeof prev] as Card[], { ...cleanCard, location: 'base' }],
             metadata: {
               ...prev.metadata,
-              // Opponent gets 1 gold for killing a creep (generic unit) when manually removed
-              [`${opponent}Gold`]: (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 1,
+              // Opponent gets 2 gold for killing a creep (generic unit) when manually removed
+              [`${opponent}Gold`]: (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 2,
             },
           }
         })
@@ -711,22 +711,47 @@ export function useDeployment() {
       }
     }
     
-    // Regular removal - award gold to opponent if removing a generic unit
-    setGameState(prev => ({
-      ...prev,
-      [location]: {
-        ...prev[location],
-        [card.owner]: prev[location][card.owner as 'player1' | 'player2'].filter(c => c.id !== card.id),
-      },
-      [`${card.owner}Base`]: [...prev[`${card.owner}Base` as keyof typeof prev] as Card[], { ...card, location: 'base' }],
-      metadata: {
-        ...prev.metadata,
-        // Opponent gets 1 gold for killing a creep (generic unit) when manually removed
-        [`${opponent}Gold`]: card.cardType === 'generic' 
-          ? (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 1
-          : (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number),
-      },
-    }))
+    // Regular removal - award gold to opponent if removing a generic unit or hero
+    setGameState(prev => {
+      const isHero = card.cardType === 'hero'
+      const hero = isHero ? card as import('../game/types').Hero : null
+      
+      // When hero is removed, it counts as dying: set health to 0 and add 2-turn cooldown
+      const cardToBase = isHero && hero
+        ? {
+            ...hero,
+            location: 'base' as const,
+            currentHealth: 0, // Dead - will heal to full in base after cooldown
+            slot: undefined,
+          }
+        : { ...card, location: 'base' as const }
+      
+      const updatedDeathCooldowns = isHero && hero
+        ? {
+            ...prev.metadata.deathCooldowns,
+            [card.id]: 2, // Set cooldown counter to 2 (decreases by 1 each turn, prevents deployment for 1 full round)
+          }
+        : prev.metadata.deathCooldowns
+      
+      return {
+        ...prev,
+        [location]: {
+          ...prev[location],
+          [card.owner]: prev[location][card.owner as 'player1' | 'player2'].filter(c => c.id !== card.id),
+        },
+        [`${card.owner}Base`]: [...prev[`${card.owner}Base` as keyof typeof prev] as Card[], cardToBase],
+        metadata: {
+          ...prev.metadata,
+          // Opponent gets gold for killing units/heroes when manually removed: 2g for units, 5g for heroes
+          [`${opponent}Gold`]: card.cardType === 'generic' 
+            ? (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 2
+            : card.cardType === 'hero'
+            ? (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 5
+            : (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number),
+          deathCooldowns: updatedDeathCooldowns,
+        },
+      }
+    })
   }, [setGameState])
 
   const handleEquipItem = useCallback((hero: Hero, itemCard: ItemCard, battlefieldId: 'battlefieldA' | 'battlefieldB') => {

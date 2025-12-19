@@ -273,6 +273,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red'], // Hero combat spell - keeps rune requirement (uncommon)
     manaCost: 3,
+    consumesRunes: true, // Not generic - consumes runes
     effect: {
       type: 'targeted_damage', // Placeholder - manual resolution, no game tracking
       damage: 0,
@@ -366,19 +367,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 0,
     },
   },
-  // RW Combat Tricks - Removed Soul of Spring
-  {
-    id: 'rw-spell-living-armor',
-    name: 'Living Armor',
-    description: 'Generic. Target hero gains +0/+5 until end of turn. If it would die this turn, it survives with 1 health instead.',
-    cardType: 'spell',
-    colors: ['white'],
-    manaCost: 3,
-    effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect for temporary health and death prevention
-      damage: 0,
-    },
-  },
+  // RW Combat Tricks - Removed Soul of Spring and Living Armor
   // RW Color Identity Cards - Heavy RRRR/WWWW costs to discourage splashing
   {
     id: 'rw-spell-legions-charge',
@@ -667,6 +656,7 @@ export const ruSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red', 'blue'],
     manaCost: 2,
+    consumesRunes: true, // Not generic - consumes runes
     effect: {
       type: 'targeted_damage',
       damage: 4,
@@ -695,6 +685,7 @@ export const ruSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 4,
+    consumesRunes: true, // Not generic - consumes runes
     effect: {
       type: 'adjacent_damage',
       damage: 3,
@@ -829,6 +820,7 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['black'],
     manaCost: 2,
+    consumesRunes: true, // Not generic - consumes B rune
     effect: {
       type: 'targeted_damage',
       damage: 4,
@@ -1332,6 +1324,7 @@ export const guSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['green'],
     manaCost: 3,
+    consumesRunes: true, // Not generic - consumes runes
     effect: {
       type: 'targeted_damage',
       damage: 0,
@@ -1586,6 +1579,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'black'], // Requires U and B runes
     manaCost: 5,
+    consumesRunes: true, // Not generic - consumes U and B runes
     effect: {
       type: 'aoe_damage',
       damage: 5,
@@ -1658,6 +1652,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'black'], // Requires U and B runes
     manaCost: 4,
+    consumesRunes: true, // Not generic - consumes U and B runes
     effect: {
       type: 'aoe_damage',
       damage: 3,
@@ -1732,6 +1727,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'black'], // Premium removal - keeps rune requirement (uncommon)
     manaCost: 4,
+    consumesRunes: true, // Not generic - consumes U and B runes
     effect: {
       type: 'targeted_damage',
       damage: 7,
@@ -1909,6 +1905,7 @@ export const rwgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red', 'white', 'green'],
     manaCost: 4,
+    consumesRunes: true, // Not generic - consumes R, W, and G runes
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for team buff + immediate attack
       damage: 0,
@@ -1935,6 +1932,7 @@ export const rwgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red', 'white', 'green'],
     manaCost: 4, // 1RWG = 4 total mana
+    consumesRunes: true, // Not generic - consumes R, W, and G runes
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for team buff + permanent counters
       damage: 0,
@@ -2151,6 +2149,7 @@ export const uwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 4,
+    consumesRunes: true, // Not generic - consumes runes
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for damage reduction
       damage: 0,
@@ -2165,6 +2164,7 @@ export const uwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'white'],
     manaCost: 4,
+    consumesRunes: true, // Not generic - consumes U and W runes
     effect: {
       type: 'targeted_damage',
       damage: 4,

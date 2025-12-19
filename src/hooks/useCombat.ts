@@ -63,8 +63,8 @@ export function useCombat() {
             },
             metadata: {
               ...prev.metadata,
-              // Opponent gets 1 gold for killing a creep (generic unit)
-              [`${opponent}Gold`]: (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 1,
+              // Opponent gets 2 gold for killing a creep (generic unit)
+              [`${opponent}Gold`]: (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 2,
               deathCooldowns: {
                 ...prev.metadata.deathCooldowns,
                 [card.id]: 2, // Set cooldown counter to 2 (decreases by 1 each turn, prevents deployment for 1 full round)

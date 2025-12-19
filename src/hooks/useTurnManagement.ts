@@ -87,15 +87,15 @@ export function useTurnManagement() {
                 currentHealth: 0,
                 slot: undefined,
               })
-              newCooldowns[hero.id] = 1
+              newCooldowns[hero.id] = 2
               // Opponent (player2) gets 5 gold for killing hero
               goldRewards.player2 += 5
             }
           } else if (originalCard.cardType === 'generic') {
             const stillAlive = updatedBattlefield.player1.some(c => c.id === originalCard.id)
             if (!stillAlive) {
-              // Opponent (player2) gets 1 gold for killing a creep (generic unit)
-              goldRewards.player2 += 1
+              // Opponent (player2) gets 2 gold for killing a creep (generic unit)
+              goldRewards.player2 += 2
             }
           }
         })
@@ -112,15 +112,15 @@ export function useTurnManagement() {
                 currentHealth: 0,
                 slot: undefined,
               })
-              newCooldowns[hero.id] = 1
+              newCooldowns[hero.id] = 2
               // Opponent (player1) gets 5 gold for killing hero
               goldRewards.player1 += 5
             }
           } else if (originalCard.cardType === 'generic') {
             const stillAlive = updatedBattlefield.player2.some(c => c.id === originalCard.id)
             if (!stillAlive) {
-              // Opponent (player1) gets 1 gold for killing a creep (generic unit)
-              goldRewards.player1 += 1
+              // Opponent (player1) gets 2 gold for killing a creep (generic unit)
+              goldRewards.player1 += 2
             }
           }
         })
@@ -501,9 +501,9 @@ export function useTurnManagement() {
           player2Mana: newPlayer2MaxMana,
           player1MaxMana: newPlayer1MaxMana,
           player2MaxMana: newPlayer2MaxMana,
-          // Both players get 2 gold at the start of each turn
-          player1Gold: (prev.metadata.player1Gold as number) + 2,
-          player2Gold: (prev.metadata.player2Gold as number) + 2,
+          // Both players get 5 gold at the start of each turn
+          player1Gold: (prev.metadata.player1Gold as number) + 5,
+          player2Gold: (prev.metadata.player2Gold as number) + 5,
           // Action goes to whoever has initiative
           actionPlayer: nextAction,
           // Initiative carries over (unless it was null, then default to player1)

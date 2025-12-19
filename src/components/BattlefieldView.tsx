@@ -295,15 +295,15 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                           currentHealth: 0,
                           slot: undefined,
                         })
-                        newCooldowns[hero.id] = 1
+                        newCooldowns[hero.id] = 2
                         // Opponent (player2) gets 5 gold for killing hero
                         goldRewards.player2 += 5
                       }
                     } else if (originalCard.cardType === 'generic') {
                       const stillAlive = updatedBattlefield.player1.some(c => c.id === originalCard.id)
                       if (!stillAlive) {
-                        // Opponent (player2) gets 1 gold for killing a creep (generic unit)
-                        goldRewards.player2 += 1
+                        // Opponent (player2) gets 2 gold for killing a creep (generic unit)
+                        goldRewards.player2 += 2
                       }
                     }
                   })
@@ -320,15 +320,15 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                           currentHealth: 0,
                           slot: undefined,
                         })
-                        newCooldowns[hero.id] = 1
+                        newCooldowns[hero.id] = 2
                         // Opponent (player1) gets 5 gold for killing hero
                         goldRewards.player1 += 5
                       }
                     } else if (originalCard.cardType === 'generic') {
                       const stillAlive = updatedBattlefield.player2.some(c => c.id === originalCard.id)
                       if (!stillAlive) {
-                        // Opponent (player1) gets 1 gold for killing a creep (generic unit)
-                        goldRewards.player1 += 1
+                        // Opponent (player1) gets 2 gold for killing a creep (generic unit)
+                        goldRewards.player1 += 2
                       }
                     }
                   })
