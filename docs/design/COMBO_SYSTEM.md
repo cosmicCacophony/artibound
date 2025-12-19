@@ -4,7 +4,14 @@ This document describes the combo archetypes added to Artibound, inspired by cla
 
 ## Overview
 
-Combos in Artibound require assembling 2-5 cards (heroes, units, items, spells) to create powerful synergies. Unlike MTG where you draw through a 60-card deck, Artibound's draft structure means you see more of your deck, so combos can require more pieces.
+Combos in Artibound require assembling **3-5 cards** (heroes, units, items, spells) to create powerful synergies. Unlike MTG where you draw through a 60-card deck, Artibound's draft structure means you see more of your deck, so combos can require more pieces.
+
+**Design Philosophy:**
+- **3-5 pieces required**: Combos should require meaningful setup, not just 2-card combos
+- **Counterplay exists**: Opponent can disrupt by killing key pieces, making combos brittle
+- **Non-infinite preferred**: Instead of pure infinite loops, consider incremental value (e.g., add +1 attack per loop)
+- **Setup time**: Combos may require waiting a turn to deploy all pieces, creating vulnerability
+- **Rapid deploy mechanics**: Consider allowing bounce + redeploy in same turn for combo enablers
 
 ---
 
@@ -168,11 +175,60 @@ case 'create_seal':
 
 ## Balance Considerations
 
-1. **Combo requires setup time:** 2-3 turns to assemble pieces
-2. **Opponent can disrupt:** Kill key pieces, bounce, stun
+1. **Combo requires setup time:** 2-3 turns to assemble 3-5 pieces
+2. **Opponent can disrupt:** Kill key pieces, bounce, stun - combos are brittle if opponent removes one piece
 3. **Resource intensive:** Rune costs, mana costs
 4. **Tower HP is 20:** Most combos deal 4-10 damage per activation
 5. **Roguelike context:** AI opponents will have overpowered cards to compensate for weaker play
+6. **Non-infinite design:** Prefer incremental value over infinite loops (e.g., add +1 attack per loop instead of infinite damage)
+7. **Counterplay window:** Setup time creates vulnerability - opponent has turns to respond
+
+## New Combo Concepts (From Playtesting)
+
+### Rapid Deploy Loop
+**Concept:** Bounce using runes, but bounced card creates runes (through items/abilities) that net you a rune, enabling infinite runes → payoff
+
+**Example:**
+- Hero with ability: "Spend 3 runes → Return this hero to hand, then deploy it for free"
+- Item: "When this hero is deployed, add RRR temporarily"
+- **Loop:** Spend 3 runes → bounce → redeploy → get 3 runes back → repeat
+- **Payoff:** Each loop triggers ETB effects, deals damage, or generates value
+
+**Design Note:** Net rune cost should be 0 or positive, creating the loop
+
+### Copy Hero Combo
+**Concept:** Copy hero temporarily, copy items on that hero, strong item lets you copy again, fill lane with 4-5 copies
+
+**Example:**
+- **Mirror Image** (Spell, 4 mana UU): "Create a token copy of target hero. Copy all items on that hero."
+- **Mirror Shard** (Item, 8 gold): "When this hero enters, you may create a token copy of it."
+- **Loop:** Deploy hero with Mirror Shard → create copy → copy has Mirror Shard → create more copies
+- **Payoff:** Fill lane with 4-5 copies, each with strong ETB effects (e.g., draw 4-5 cards, deal 4-5 damage)
+
+**Design Note:** Requires 3-4 pieces: hero, Mirror Image spell, Mirror Shard item, payoff ETB
+
+### Lich Combo (Sacrifice Engine)
+**Concept:** Sac unit to add runes, whenever you sac create a unit, whenever you create runes add additional rune
+
+**Example:**
+- **Lich Lord** (Hero, B): "Ability: Sacrifice a unit → Add BBB temporarily. No cooldown."
+- **Soul Forge** (Unit, 3 mana B): "When you sacrifice a unit, create a 1/1 Zombie token."
+- **Rune Amplifier** (Unit, 2 mana B): "When you add temporary runes, add 1 additional rune of that color."
+- **Loop:** Sac Zombie → get BBB + 1 (from Amplifier) = BBBB → create new Zombie → repeat
+- **Payoff:** Infinite runes → convert to damage via Rune Channeler or similar
+
+**Design Note:** Non-infinite variant: Instead of infinite, each loop adds +1 attack to a unit (counterplay, not auto-win)
+
+### Non-Infinite Variants
+**Philosophy:** Instead of pure infinite loops, create incremental value that scales but has counterplay
+
+**Examples:**
+- **Incremental Attack:** Each loop adds +1 attack to a unit (opponent can kill the unit)
+- **Limited Loops:** Combo can only be activated 3-5 times per turn (resource cap)
+- **Scaling Cost:** Each activation costs more (1 rune → 2 runes → 3 runes, eventually stops)
+- **Temporary Value:** Generated value lasts only this turn (can't stockpile)
+
+**Design Note:** Creates interesting decisions - when to go off, how many times, risk vs reward
 
 ---
 
@@ -186,4 +242,19 @@ case 'create_seal':
 - [ ] Blood Artist sacrifice works (needs implementation)
 - [ ] Gravecrawler returns to hand on death (needs implementation)
 - [ ] Echo Mage deals damage on deploy (needs implementation)
+- [ ] Rapid deploy mechanics work (bounce + redeploy same turn)
+- [ ] Non-infinite combos provide incremental value without auto-winning
+- [ ] 3-5 piece combos feel balanced (not too easy, not too hard)
+- [ ] Counterplay exists (opponent can disrupt by killing key pieces)
+
+## Future Combo Ideas to Explore
+
+- **Sensei's Top variant:** Instead of library manipulation, goes to base, reduces cost for infinite effect
+- **Omniscience/Storm effects:** Free spells, storm count mechanics
+- **Venomancer:** Spawns units, once you get enough it enables combo
+- **Tyrndamere combo from Riftbound:** Reference for design inspiration
+- **Artifact/Gear loops:** Add runes for artifacts/gear, untapper loops
+- **Mage Armor Lux build:** OP builds under certain conditions, maybe reroll mechanic for items
+
+
 

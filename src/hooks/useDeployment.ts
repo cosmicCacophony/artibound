@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT, Hero, ItemCard, BaseCard } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { tier1Items } from '../game/sampleData'
-import { canAffordCard, consumeRunesForCard, addRunesFromHero, removeRunesFromHero } from '../game/runeSystem'
+import { canAffordCard, consumeRunesForCard, addRunesFromHero, removeRunesFromHero, addTemporaryRunes } from '../game/runeSystem'
 import { canPlayCardInLane } from '../game/colorSystem'
 
 export function useDeployment() {
@@ -369,6 +369,14 @@ export function useDeployment() {
           }
           // Consume runes for color requirements (only if consumesRunes: true)
           updatedRunePool = consumeRunesForCard(cardTemplate, updatedRunePool)
+          
+          // Handle spell effects that add temporary runes (like Dark Ritual)
+          if (cardTemplate.cardType === 'spell' && cardTemplate.effect) {
+            const spellEffect = cardTemplate.effect
+            if (spellEffect.type === 'add_temporary_runes' && spellEffect.runeColors) {
+              updatedRunePool = addTemporaryRunes(updatedRunePool, spellEffect.runeColors as any)
+            }
+          }
         }
         
         return {
@@ -456,6 +464,14 @@ export function useDeployment() {
                 }
                 // Consume runes for color requirements (only if consumesRunes: true)
                 updatedRunePool = consumeRunesForCard(cardTemplate, updatedRunePool)
+                
+                // Handle spell effects that add temporary runes (like Dark Ritual)
+                if (cardTemplate.cardType === 'spell' && cardTemplate.effect) {
+                  const spellEffect = cardTemplate.effect
+                  if (spellEffect.type === 'add_temporary_runes' && spellEffect.runeColors) {
+                    updatedRunePool = addTemporaryRunes(updatedRunePool, spellEffect.runeColors as any)
+                  }
+                }
               }
               
               return {
@@ -506,6 +522,14 @@ export function useDeployment() {
           }
           // Consume runes for color requirements (only if consumesRunes: true)
           updatedRunePool = consumeRunesForCard(cardTemplate, updatedRunePool)
+          
+          // Handle spell effects that add temporary runes (like Dark Ritual)
+          if (cardTemplate.cardType === 'spell' && cardTemplate.effect) {
+            const spellEffect = cardTemplate.effect
+            if (spellEffect.type === 'add_temporary_runes' && spellEffect.runeColors) {
+              updatedRunePool = addTemporaryRunes(updatedRunePool, spellEffect.runeColors as any)
+            }
+          }
         }
         
         // If hero is deploying to a battlefield, add runes from that hero

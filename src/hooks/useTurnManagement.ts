@@ -410,16 +410,24 @@ export function useTurnManagement() {
       const updatedBattlefieldA = spawnVoidApprentices(prev.battlefieldA, 'battlefieldA')
       const updatedBattlefieldB = spawnVoidApprentices(prev.battlefieldB, 'battlefieldB')
       
-      // Spawn 1/1 creeps in leftmost slot (slot 1) for both players on both battlefields
+      // Spawn 1/1 creeps in first empty slot closest to left (slot 1, then 2, then 3, etc.) for both players on both battlefields
       const spawnCreeps = (battlefield: typeof prev.battlefieldA, battlefieldId: 'battlefieldA' | 'battlefieldB') => {
         const updated = { ...battlefield }
         
         // Spawn for both players
         for (const player of ['player1', 'player2'] as const) {
-          // Check if slot 1 is already occupied
-          const slot1Occupied = updated[player].some(c => c.slot === 1)
+          // Find first empty slot starting from slot 1 (leftmost)
+          let emptySlot: number | null = null
+          for (let slot = 1; slot <= 5; slot++) {
+            const slotOccupied = updated[player].some(c => c.slot === slot)
+            if (!slotOccupied) {
+              emptySlot = slot
+              break
+            }
+          }
           
-          if (!slot1Occupied) {
+          // Spawn creep in first empty slot if one exists
+          if (emptySlot !== null) {
             const creep: import('../game/types').GenericUnit = {
               id: `creep-${player}-${battlefieldId}-${newTurn}-${Date.now()}`,
               name: 'Creep',
@@ -433,7 +441,7 @@ export function useTurnManagement() {
               currentHealth: 1,
               location: battlefieldId,
               owner: player,
-              slot: 1,
+              slot: emptySlot,
             }
             updated[player] = [...updated[player], creep]
           }

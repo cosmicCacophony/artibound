@@ -108,43 +108,7 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 4,
     currentHealth: 4,
   },
-  // Legion Tribal Units (RW archetype)
-  {
-    id: 'rw-legion-bronze',
-    name: 'Bronze Legionnaire',
-    description: 'Legion. When you use a hero ability, this gains +1/+1.',
-    cardType: 'generic',
-    colors: ['red'], // Changed from RW to R - 2 mana should be single color
-    manaCost: 2,
-    attack: 2,
-    health: 3, // Changed from 2 to 3 for better defensive statline
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  {
-    id: 'rw-legion-herald',
-    name: 'Imperial Herald',
-    description: 'Legion. When you use a hero ability, all Legion units gain +1/+1 this turn.',
-    cardType: 'generic',
-    colors: ['red', 'white'],
-    manaCost: 3,
-    attack: 3, // Changed from 2 to 3 for better base stats
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  {
-    id: 'rw-legion-standard',
-    name: 'Legion Standard Bearer',
-    description: 'Legion. When you cast a spell in this lane, put a +1/+1 counter on all Legion units.',
-    cardType: 'generic',
-    colors: ['red', 'white'],
-    manaCost: 3,
-    attack: 1,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
+  // Legion Tribal Units (RW archetype) - Removed boring +1/+1 counter cards
   {
     id: 'rw-legion-veteran',
     name: 'Legion Veteran',
@@ -169,6 +133,108 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 4,
     currentHealth: 4,
   },
+  // Bounce Units - Units that can bounce heroes (tactical repositioning)
+  {
+    id: 'rw-bounce-tactical-retreat',
+    name: 'Tactical Retreat',
+    description: 'Bounce. 2/2. When a hero is deployed to this lane, you may return target hero to base. All your units gain +1 attack this turn.',
+    cardType: 'generic',
+    colors: ['red', 'white'],
+    manaCost: 3,
+    attack: 2,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+  },
+  {
+    id: 'rw-bounce-war-banner-carrier',
+    name: 'War Banner Carrier',
+    description: 'Bounce. 1/3. When a hero is deployed to this lane, you may return target hero to base. Draw a card.',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 2,
+    attack: 1,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+  },
+  // New Magic-inspired RW cards
+  {
+    id: 'rw-unit-strategic-scout',
+    name: 'Strategic Scout',
+    description: '5/5. When this enters, reveal the top 5 cards of your library. You may play a unit with 5 or less mana cost for free. Costs 5RW.',
+    cardType: 'generic',
+    colors: ['red', 'white'],
+    manaCost: 5,
+    consumesRunes: true,
+    attack: 5,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+  },
+  {
+    id: 'rw-unit-commander-adjutant',
+    name: 'Commander Adjutant',
+    description: '2/2. Whenever a creature enters the battlefield on your side, this gains +1/+1 permanently.',
+    cardType: 'generic',
+    colors: ['white'],
+    manaCost: 3,
+    attack: 2,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+  },
+  {
+    id: 'rw-unit-legion-recruiter',
+    name: 'Legion Recruiter',
+    description: 'Create three 2/2 Legion tokens. If you don\'t have enough slots, instead buff an existing unit +2/+2 permanently.',
+    cardType: 'generic',
+    colors: [],
+    manaCost: 5,
+    attack: 0,
+    health: 0,
+    maxHealth: 0,
+    currentHealth: 0,
+  },
+  {
+    id: 'rw-unit-tactical-commander',
+    name: 'Tactical Commander',
+    description: '4/2. Bounce. When a hero is deployed to this lane, you may return target hero to base. That hero has rapid deploy and can be redeployed this turn. Costs 4RR.',
+    cardType: 'generic',
+    colors: ['red', 'red'],
+    manaCost: 4,
+    consumesRunes: true,
+    attack: 4,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+  },
+  {
+    id: 'rw-unit-mana-warrior',
+    name: 'Mana Warrior',
+    description: '3/3. You may stun this unit to add 1 generic mana to your mana pool this turn. Costs 3R.',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 3,
+    consumesRunes: true,
+    attack: 3,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+  },
+  {
+    id: 'rw-unit-legion-general',
+    name: 'Legion General',
+    description: '5/5. Legion. All Legion units gain +2/+2 attack. Costs 5RW.',
+    cardType: 'generic',
+    colors: ['red', 'white'],
+    manaCost: 5,
+    consumesRunes: true,
+    attack: 5,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+  },
 ]
 
 export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
@@ -186,32 +252,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 0,
     },
   },
-  {
-    id: 'rw-sig-captain-1',
-    name: 'War Cry',
-    description: 'Generic. Captain signature - pump team. All allies gain +2 attack this turn.',
-    cardType: 'spell',
-    colors: ['red'],
-    manaCost: 3,
-    initiative: true, // Quickcast - gives initiative
-    effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect for buff
-      damage: 0,
-    },
-  },
-  // RW Combat Spells
-  {
-    id: 'rw-spell-path-valor',
-    name: 'Path of Valor',
-    description: 'Generic. Blocked units get +1 attack. When you cast a spell or unit in this lane, put a +1/+1 counter on all blocked units.',
-    cardType: 'spell',
-    colors: ['white'],
-    manaCost: 2,
-    effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect for counters
-      damage: 0,
-    },
-  },
+  // RW Combat Spells - Removed War Cry and Path of Valor
   {
     id: 'rw-spell-rally-legion',
     name: 'Rally the Legion',
@@ -240,10 +281,11 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-spell-champion-challenge',
     name: 'Champion Challenge',
-    description: 'Your hero initiates combat with target enemy hero. Players resolve combat manually.',
+    description: 'Your hero initiates combat with target enemy hero. Players resolve combat manually. Costs 3RR.',
     cardType: 'spell',
-    colors: ['red', 'white'], // Hero combat spell - keeps rune requirement (uncommon)
+    colors: ['red', 'red'], // Changed: requires 2 red runes instead of RW
     manaCost: 3,
+    consumesRunes: true, // Added: now consumes runes
     effect: {
       type: 'targeted_damage', // Placeholder - manual resolution, no game tracking
       damage: 0,
@@ -324,19 +366,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 0,
     },
   },
-  // RW Combat Tricks - Risky but powerful
-  {
-    id: 'rw-spell-soul-of-spring',
-    name: 'Soul of Spring',
-    description: 'Generic. Target hero gains Regeneration (heals 3 damage at end of each combat phase). Regeneration only affects combat damage - other damage sources bypass it.',
-    cardType: 'spell',
-    colors: ['white'],
-    manaCost: 3,
-    effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect for regeneration
-      damage: 0,
-    },
-  },
+  // RW Combat Tricks - Removed Soul of Spring
   {
     id: 'rw-spell-living-armor',
     name: 'Living Armor',
@@ -348,6 +378,52 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       type: 'targeted_damage', // Placeholder - would need custom effect for temporary health and death prevention
       damage: 0,
     },
+  },
+  // RW Color Identity Cards - Heavy RRRR/WWWW costs to discourage splashing
+  {
+    id: 'rw-spell-legions-charge',
+    name: 'Legion\'s Charge',
+    description: 'All your Legion units gain +2/+2 and haste this turn. Draw a card. Costs 4RRRR.',
+    cardType: 'spell',
+    colors: ['red', 'red', 'red', 'red'],
+    manaCost: 4,
+    consumesRunes: true,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would be a buff + card draw
+      damage: 0,
+    },
+    initiative: false,
+  },
+  {
+    id: 'rw-spell-divine-wrath',
+    name: 'Divine Wrath',
+    description: 'Destroy all non-Legion units. Your Legion units gain +1/+1. Costs 5WWWW.',
+    cardType: 'spell',
+    colors: ['white', 'white', 'white', 'white'],
+    manaCost: 5,
+    consumesRunes: true,
+    effect: {
+      type: 'board_wipe', // Would need custom logic to exclude Legion units
+      affectsUnits: true,
+      affectsHeroes: false,
+      affectsOwnUnits: true,
+      affectsEnemyUnits: true,
+    },
+    initiative: false,
+  },
+  {
+    id: 'rw-spell-war-banner',
+    name: 'War Banner',
+    description: 'All your units gain +1 attack. If you control 3+ Legion units, they gain +2 attack instead. Costs 2RR.',
+    cardType: 'spell',
+    colors: ['red', 'red'],
+    manaCost: 2,
+    consumesRunes: true,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would be a conditional buff
+      damage: 0,
+    },
+    initiative: false,
   },
 ]
 
@@ -1326,11 +1402,11 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     name: 'Nature Guardian',
     description: 'Resilient control hero',
     cardType: 'hero',
-    colors: ['green'],
-    attack: 4,
-    health: 10,
-    maxHealth: 10,
-    currentHealth: 10,
+    colors: ['green', 'black'], // Changed from green to green/black to enable black spells
+    attack: 3, // Reduced from 4
+    health: 8, // Reduced from 10
+    maxHealth: 8, // Reduced from 10
+    currentHealth: 8, // Reduced from 10
     supportEffect: 'When an enemy unit dies, gain +1 max mana this turn',
     signatureCardId: 'ub-sig-guardian-1',
     equippedItems: [],
@@ -1419,6 +1495,83 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 5,
     currentHealth: 5,
     specialEffects: ['adjacent_buff'],
+  },
+  // UGB Units with ETB Effects (Enter the Battlefield)
+  {
+    id: 'ubg-etb-ethereal-scholar',
+    name: 'Ethereal Scholar',
+    description: '2/3. When this enters, draw a card. You may return target unit you control to your hand.',
+    cardType: 'generic',
+    colors: ['blue'],
+    manaCost: 3,
+    attack: 2,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    // Note: ETB effect would need implementation in deployment system
+  },
+  {
+    id: 'ubg-etb-void-walker',
+    name: 'Void Walker',
+    description: '3/4. When this enters, stun target enemy unit for 1 turn.',
+    cardType: 'generic',
+    colors: ['blue', 'black'],
+    manaCost: 4,
+    attack: 3,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    // Note: ETB effect would need implementation in deployment system
+  },
+  {
+    id: 'ubg-etb-natures-guardian',
+    name: 'Nature\'s Guardian',
+    description: '4/5. When this enters, all your units gain +1/+1 until end of turn.',
+    cardType: 'generic',
+    colors: ['green', 'blue'],
+    manaCost: 5,
+    attack: 4,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+    // Note: ETB effect would need implementation in deployment system
+  },
+  // Bounce Units - Units that can bounce heroes (like Cloud Sprite)
+  {
+    id: 'ubg-bounce-void-shifter',
+    name: 'Void Shifter',
+    description: 'Bounce. 2/2. When a hero is deployed to this lane, you may return target hero to base.',
+    cardType: 'generic',
+    colors: ['blue', 'black'],
+    manaCost: 2,
+    attack: 2,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+  },
+  {
+    id: 'ubg-bounce-ethereal-guardian',
+    name: 'Ethereal Guardian',
+    description: 'Bounce. 1/3. When a hero is deployed to this lane, this gains +0/+2. You may return target hero to base.',
+    cardType: 'generic',
+    colors: ['blue'],
+    manaCost: 2,
+    attack: 1,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+  },
+  {
+    id: 'ubg-bounce-nature-ward',
+    name: 'Nature Ward',
+    description: 'Bounce. 2/4. When a hero is deployed to this lane, gain 2 gold. You may return target hero to base.',
+    cardType: 'generic',
+    colors: ['green', 'black'],
+    manaCost: 3,
+    attack: 2,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
   },
   // Verdant Colossus removed - replaced with Void Cascade AOE spell
 ]
@@ -2413,23 +2566,7 @@ export const runeSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
 // ============================================================================
 
 export const variableRuneCostSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
-  // 1R - Lightning Bolt (early red play)
-  {
-    id: 'vrune-spell-lightning-bolt',
-    name: 'Lightning Bolt',
-    description: 'Deal 3 damage to any target. Costs 1R - quick but uses a red rune.',
-    cardType: 'spell',
-    colors: ['red'],
-    manaCost: 1,
-    consumesRunes: true,
-    effect: {
-      type: 'targeted_damage',
-      damage: 3,
-      affectsHeroes: true,
-      affectsUnits: true,
-    },
-    initiative: true,
-  },
+  // Removed Lightning Bolt - not interesting for RW
   // 1UU - Counterspell (double blue early)
   {
     id: 'vrune-spell-counterspell',
@@ -2513,22 +2650,23 @@ export const variableRuneCostSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     },
     initiative: false,
   },
-  // 7UUU - Necromantic Rite (late game bomb)
+  // 7UUU - Necromantic Rite (late game bomb - conditional one-sided wrath)
   {
     id: 'vrune-spell-necromantic-rite',
     name: 'Necromantic Rite',
-    description: 'Deal 3 damage to all enemy units and heroes. Costs 7UUU.',
+    description: 'Deal 5 damage to all enemy units. If opponent has 4+ units, destroy all enemy units instead. Costs 7UUU.',
     cardType: 'spell',
     colors: ['blue', 'blue', 'blue'],
     manaCost: 7,
     consumesRunes: true,
     effect: {
       type: 'all_units_damage',
-      damage: 3,
+      damage: 5,
       affectsUnits: true,
-      affectsHeroes: true,
+      affectsHeroes: false, // Changed: doesn't affect heroes, only units
       affectsEnemyUnits: true,
       affectsOwnUnits: false,
+      // Note: Conditional destroy effect (4+ units) would need custom logic in spell resolution
     },
     initiative: false,
   },
@@ -2564,6 +2702,21 @@ export const variableRuneCostSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 0,
     },
     initiative: true,
+  },
+  // 9RRRR - Time of Triumph (semi-bait finisher - powerful but tempo should be better)
+  {
+    id: 'vrune-spell-time-of-triumph',
+    name: 'Time of Triumph',
+    description: 'All your units gain +3/+3 and trample this turn. Draw a card for each unit you control. Costs 9RRRR.',
+    cardType: 'spell',
+    colors: ['red', 'red', 'red', 'red'],
+    manaCost: 9,
+    consumesRunes: true,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would be a buff + card draw
+      damage: 0,
+    },
+    initiative: false,
   },
 ]
 

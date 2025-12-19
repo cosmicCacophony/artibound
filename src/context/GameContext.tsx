@@ -252,14 +252,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const rwKeySpellIds = [
       'rune-spell-seal-of-fire', // Seal R
       'rune-spell-pyretic-ritual', // RR ramp
-      'vrune-spell-lightning-bolt', // 1R damage
       'vrune-spell-flame-javelin', // 3RR damage
       'vrune-spell-wrath-of-legion', // 5RRW buff
     ]
     
     const ubgKeySpellIds = [
       'ubg-spell-exorcism', // Board wipe UBG
-      'ubg-spell-annihilate', // AOE damage UBG
       'rune-spell-dark-ritual', // Rune ramp BBB
       'rune-spell-seal-of-knowledge', // Seal U
       'rune-spell-seal-of-darkness', // Seal B
@@ -268,27 +266,33 @@ export function GameProvider({ children }: { children: ReactNode }) {
       'vrune-spell-necromantic-rite', // 7UUU bomb
     ]
     
-    // Get key spells for each player from their archetype
-    const keySpellsForP1 = rwKeySpellIds
-      .map(id => allSpells.find(s => s.id === id))
-      .filter(Boolean) as BaseCard[]
-    const keySpellsForP2 = ubgKeySpellIds
-      .map(id => allSpells.find(s => s.id === id))
-      .filter(Boolean) as BaseCard[]
+    // Get key spells for each player based on their ACTUAL archetype (not hardcoded)
+    const keySpellIdsForP1 = player1Archetype === 'rw-legion' ? rwKeySpellIds : ubgKeySpellIds
+    const keySpellIdsForP2 = player2Archetype === 'rw-legion' ? rwKeySpellIds : ubgKeySpellIds
     
-    // For player1 (RW), include RW key spells then fill rest from RW pool
+    const keySpellsForP1 = keySpellIdsForP1
+      .map(id => allSpells.find(s => s.id === id))
+      .filter(Boolean)
+      .filter(c => cardMatchesArchetype(c, [player1Archetype])) as BaseCard[] // Double-check archetype match
+    const keySpellsForP2 = keySpellIdsForP2
+      .map(id => allSpells.find(s => s.id === id))
+      .filter(Boolean)
+      .filter(c => cardMatchesArchetype(c, [player2Archetype])) as BaseCard[] // Double-check archetype match
+    
+    // For player1, include key spells matching their archetype then fill rest from their pool
     let player1DraftedCards = [
       ...keySpellsForP1,
-      ...randomShuffle(player1CardPool.filter(c => !rwKeySpellIds.includes(c.id)))
+      ...randomShuffle(player1CardPool.filter(c => !keySpellIdsForP1.includes(c.id)))
     ].slice(0, DRAFTED_CARDS_REQUIRED)
     
-    // For player2 (UBG), include UBG key spells then fill rest from UBG pool
+    // For player2, include key spells matching their archetype then fill rest from their pool
     let player2DraftedCards = [
       ...keySpellsForP2,
-      ...randomShuffle(player2CardPool.filter(c => !ubgKeySpellIds.includes(c.id)))
+      ...randomShuffle(player2CardPool.filter(c => !keySpellIdsForP2.includes(c.id)))
     ].slice(0, DRAFTED_CARDS_REQUIRED)
     
     // Add 2 copies of each hero's signature card (4 heroes × 2 copies = 8 signature cards)
+    // IMPORTANT: Filter signature cards by archetype to prevent cross-contamination
     const player1SignatureCards: BaseCard[] = []
     const player2SignatureCards: BaseCard[] = []
     
@@ -296,8 +300,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (hero.signatureCardId) {
         const sigCard = allCards.find(card => card.id === hero.signatureCardId)
           || allSpells.find(spell => spell.id === hero.signatureCardId)
-        if (sigCard) {
-          // Add 2 copies
+        if (sigCard && cardMatchesArchetype(sigCard, [player1Archetype])) {
+          // Only add if signature card matches player's archetype
           player1SignatureCards.push(sigCard)
           player1SignatureCards.push(sigCard)
         }
@@ -308,8 +312,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (hero.signatureCardId) {
         const sigCard = allCards.find(card => card.id === hero.signatureCardId)
           || allSpells.find(spell => spell.id === hero.signatureCardId)
-        if (sigCard) {
-          // Add 2 copies
+        if (sigCard && cardMatchesArchetype(sigCard, [player2Archetype])) {
+          // Only add if signature card matches player's archetype
           player2SignatureCards.push(sigCard)
           player2SignatureCards.push(sigCard)
         }

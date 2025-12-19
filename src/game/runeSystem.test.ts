@@ -8,6 +8,7 @@ import {
   getMissingRunes,
   getAvailableRunesByColor,
   getAvailableRuneCount,
+  addTemporaryRunes,
 } from './runeSystem'
 import { Hero, RunePool, BaseCard } from './types'
 
@@ -334,6 +335,95 @@ describe('Rune System', () => {
       const newPool = consumeRunesForCard(exorcism, pool)
       
       expect(newPool.runes).toEqual(['green']) // Only one green remains
+    })
+  })
+
+  describe('Temporary Runes - Dark Ritual to Damnation scenario', () => {
+    it('uses temporary runes before permanent runes when consuming', () => {
+      // Start with 2 permanent black runes
+      const initialPool: RunePool = { runes: ['black', 'black'], temporaryRunes: [] }
+      
+      // Cast Dark Ritual - adds 3 temporary black runes
+      const darkRitualPool = addTemporaryRunes(initialPool, ['black', 'black', 'black'])
+      
+      expect(darkRitualPool.runes).toEqual(['black', 'black']) // Permanent runes unchanged
+      expect(darkRitualPool.temporaryRunes).toEqual(['black', 'black', 'black']) // 3 temporary runes added
+      
+      // Cast Damnation - costs 6BBB (3 black runes)
+      const damnation: BaseCard = {
+        id: 'vrune-spell-damnation',
+        name: 'Damnation',
+        description: 'Destroy all units (not heroes). Costs 6BBB.',
+        cardType: 'spell',
+        colors: ['black', 'black', 'black'],
+        consumesRunes: true,
+        manaCost: 6,
+      }
+      
+      // Should be able to afford (has 2 permanent + 3 temporary = 5 black runes)
+      expect(canAffordCard(damnation, 6, darkRitualPool)).toBe(true)
+      
+      // Consume runes - should use temporary runes first
+      const afterDamnation = consumeRunesForCard(damnation, darkRitualPool)
+      
+      // All 3 temporary runes should be consumed
+      expect(afterDamnation.temporaryRunes).toEqual([])
+      // Permanent runes should remain (2 black runes still there)
+      expect(afterDamnation.runes).toEqual(['black', 'black'])
+    })
+
+    it('uses temporary runes first, then permanent runes if needed', () => {
+      // Start with 1 permanent black rune
+      const initialPool: RunePool = { runes: ['black'], temporaryRunes: [] }
+      
+      // Cast Dark Ritual - adds 3 temporary black runes
+      const darkRitualPool = addTemporaryRunes(initialPool, ['black', 'black', 'black'])
+      
+      // Cast Damnation - costs 6BBB (3 black runes)
+      const damnation: BaseCard = {
+        id: 'vrune-spell-damnation',
+        name: 'Damnation',
+        description: 'Destroy all units (not heroes). Costs 6BBB.',
+        cardType: 'spell',
+        colors: ['black', 'black', 'black'],
+        consumesRunes: true,
+        manaCost: 6,
+      }
+      
+      // Consume runes - should use all 3 temporary runes
+      const afterDamnation = consumeRunesForCard(damnation, darkRitualPool)
+      
+      // All 3 temporary runes consumed
+      expect(afterDamnation.temporaryRunes).toEqual([])
+      // 1 permanent black rune remains (wasn't needed)
+      expect(afterDamnation.runes).toEqual(['black'])
+    })
+
+    it('uses temporary and permanent runes when temporary alone is not enough', () => {
+      // Start with 2 permanent black runes
+      const initialPool: RunePool = { runes: ['black', 'black'], temporaryRunes: [] }
+      
+      // Cast Dark Ritual - adds 2 temporary black runes (not enough for Damnation alone)
+      const darkRitualPool = addTemporaryRunes(initialPool, ['black', 'black'])
+      
+      // Cast Damnation - costs 6BBB (3 black runes)
+      const damnation: BaseCard = {
+        id: 'vrune-spell-damnation',
+        name: 'Damnation',
+        description: 'Destroy all units (not heroes). Costs 6BBB.',
+        cardType: 'spell',
+        colors: ['black', 'black', 'black'],
+        consumesRunes: true,
+        manaCost: 6,
+      }
+      
+      // Consume runes - should use 2 temporary + 1 permanent
+      const afterDamnation = consumeRunesForCard(damnation, darkRitualPool)
+      
+      // All temporary runes consumed
+      expect(afterDamnation.temporaryRunes).toEqual([])
+      // 1 permanent black rune consumed (2 - 1 = 1 remaining)
+      expect(afterDamnation.runes).toEqual(['black'])
     })
   })
 })

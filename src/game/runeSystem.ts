@@ -93,9 +93,11 @@ export function removeRunesFromHero(hero: Hero, pool: RunePool): RunePool {
  * Add temporary runes (like Dark Ritual - cleared at end of turn)
  */
 export function addTemporaryRunes(pool: RunePool, colors: RuneColor[]): RunePool {
+  // Safety check: ensure temporaryRunes is always an array
+  const safeTemporaryRunes = Array.isArray(pool.temporaryRunes) ? pool.temporaryRunes : []
   return {
     ...pool,
-    temporaryRunes: [...pool.temporaryRunes, ...colors],
+    temporaryRunes: [...safeTemporaryRunes, ...colors],
   }
 }
 
@@ -226,8 +228,12 @@ export function consumeRunesForCard(card: BaseCard, runePool: RunePool): RunePoo
     return runePool // No color requirements, no runes consumed
   }
   
-  const newTemporaryRunes = [...runePool.temporaryRunes]
-  const newPermanentRunes = [...runePool.runes]
+  // Safety check: ensure temporaryRunes is always an array
+  const safeTemporaryRunes = Array.isArray(runePool.temporaryRunes) ? runePool.temporaryRunes : []
+  const safePermanentRunes = Array.isArray(runePool.runes) ? runePool.runes : []
+  
+  const newTemporaryRunes = [...safeTemporaryRunes]
+  const newPermanentRunes = [...safePermanentRunes]
   
   // Remove one rune of each required color (prefer temporary first)
   for (const requiredColor of card.colors) {
@@ -255,8 +261,12 @@ export function consumeRunesForCard(card: BaseCard, runePool: RunePool): RunePoo
  * Consumes temporary runes first, then permanent runes
  */
 export function consumeRunes(pool: RunePool, colors: RuneColor[]): RunePool {
-  const newTemporaryRunes = [...pool.temporaryRunes]
-  const newPermanentRunes = [...pool.runes]
+  // Safety check: ensure arrays are always arrays
+  const safeTemporaryRunes = Array.isArray(pool.temporaryRunes) ? pool.temporaryRunes : []
+  const safePermanentRunes = Array.isArray(pool.runes) ? pool.runes : []
+  
+  const newTemporaryRunes = [...safeTemporaryRunes]
+  const newPermanentRunes = [...safePermanentRunes]
   
   for (const color of colors) {
     // Try temporary first

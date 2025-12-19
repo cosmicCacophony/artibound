@@ -292,6 +292,7 @@ export function useDraft() {
       const player2HeroPool = allHeroes.filter(h => heroMatchesArchetype(h, [player2Archetype]))
       
       // Get cards matching each player's archetype (including spells)
+      // IMPORTANT: Filter strictly by archetype to prevent cross-contamination
       const allCardsAndSpells: BaseCard[] = [...allCards, ...allSpells]
       const player1CardPool = allCardsAndSpells.filter(c => cardMatchesArchetype(c, [player1Archetype]))
       const player2CardPool = allCardsAndSpells.filter(c => cardMatchesArchetype(c, [player2Archetype]))
@@ -525,8 +526,47 @@ export function useDraft() {
 
       // If draft completed, automatically build decks
       if (currentState.isDraftComplete && !currentState.isSelectionComplete) {
-        // Use the drafted items directly - they're already filtered by archetype from the draft
-        // Just select the required amounts from what was drafted
+        // Detect each player's archetype from their drafted heroes
+        const detectArchetype = (heroes: Hero[]): Archetype => {
+          if (heroes.length === 0) return 'rw-legion' // Default
+          
+          let hasRed = false
+          let hasWhite = false
+          let hasBlue = false
+          let hasBlack = false
+          let hasGreen = false
+          
+          heroes.forEach(hero => {
+            const colors = hero.colors || []
+            if (colors.includes('red')) hasRed = true
+            if (colors.includes('white')) hasWhite = true
+            if (colors.includes('blue')) hasBlue = true
+            if (colors.includes('black')) hasBlack = true
+            if (colors.includes('green')) hasGreen = true
+          })
+          
+          // RW: has red or white, but NOT green, blue, or black
+          const isRW = (hasRed || hasWhite) && !hasGreen && !hasBlue && !hasBlack
+          // UBG: has blue, black, or green, but NOT red or white
+          const isUBG = (hasBlue || hasBlack || hasGreen) && !hasRed && !hasWhite
+          
+          if (isRW) return 'rw-legion'
+          if (isUBG) return 'ubg-control'
+          // Fallback: if mixed, use majority or default
+          if (hasRed || hasWhite) return 'rw-legion'
+          return 'ubg-control'
+        }
+        
+        const player1Archetype = detectArchetype(currentState.player1Drafted.heroes)
+        const player2Archetype = detectArchetype(currentState.player2Drafted.heroes)
+        
+        // Filter drafted cards by each player's archetype to prevent cross-archetype contamination
+        const player1FilteredCards = currentState.player1Drafted.cards.filter(c => 
+          cardMatchesArchetype(c, [player1Archetype])
+        )
+        const player2FilteredCards = currentState.player2Drafted.cards.filter(c => 
+          cardMatchesArchetype(c, [player2Archetype])
+        )
         
         // Shuffle and select from drafted items
         const shuffle = <T>(arr: T[]): T[] => {
@@ -542,9 +582,9 @@ export function useDraft() {
         const player1Heroes = shuffle(currentState.player1Drafted.heroes).slice(0, HEROES_REQUIRED)
         const player2Heroes = shuffle(currentState.player2Drafted.heroes).slice(0, HEROES_REQUIRED)
         
-        // Select from drafted cards (already filtered by archetype, includes signature cards)
-        const player1Cards = shuffle(currentState.player1Drafted.cards).slice(0, CARDS_REQUIRED)
-        const player2Cards = shuffle(currentState.player2Drafted.cards).slice(0, CARDS_REQUIRED)
+        // Select from filtered cards (now properly filtered by archetype, includes signature cards)
+        const player1Cards = shuffle(player1FilteredCards).slice(0, CARDS_REQUIRED)
+        const player2Cards = shuffle(player2FilteredCards).slice(0, CARDS_REQUIRED)
         
         // Select from drafted battlefields
         const player1Battlefield = currentState.player1Drafted.battlefields[0] || allBattlefields[0]
