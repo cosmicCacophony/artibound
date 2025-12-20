@@ -650,6 +650,29 @@ export const rgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     signatureCardId: 'rg-sig-ramp-1',
     equippedItems: [],
   },
+  // RG Dopamine Hit: Activated Fight Hero
+  {
+    id: 'rg-hero-axe-warrior',
+    name: 'Axe Warrior',
+    description: '3/10. Activated (1 mana): Fight all enemy units in front of this hero and adjacent to it. (Normally buff first since only 3 attack)',
+    cardType: 'hero',
+    colors: ['red', 'green'],
+    attack: 3,
+    health: 10,
+    maxHealth: 10,
+    currentHealth: 10,
+    supportEffect: 'Can fight enemy units',
+    signatureCardId: 'rg-sig-axe-1',
+    equippedItems: [],
+    ability: {
+      name: 'Battle Rage',
+      description: 'Fight all enemy units in front of this hero and adjacent to it.',
+      manaCost: 1,
+      cooldown: 0, // Can use multiple times
+      effectType: 'multi_fight', // Custom effect: fights front + adjacent
+      effectValue: 3, // Can hit up to 3 units
+    },
+  },
 ]
 
 export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
@@ -718,10 +741,11 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'rg-beefy-2',
     name: 'Raging Bear',
-    description: 'Big aggressive threat',
+    description: 'Big aggressive threat. Costs 5RG.',
     cardType: 'generic',
     colors: ['red', 'green'],
     manaCost: 5,
+    consumesRunes: true, // Multicolor 5+ mana should require runes
     attack: 6,
     health: 6,
     maxHealth: 6,
@@ -750,6 +774,21 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 8,
     maxHealth: 8,
     currentHealth: 8,
+  },
+  // RG Dopamine Hit: Multi-Fight Unit
+  {
+    id: 'rg-unit-battle-tyrant',
+    name: 'Battle Tyrant',
+    description: '6/7. When this enters, it fights all enemy units in front of it and adjacent to it. (Can wipe 3 units if lucky) Costs 6RG.',
+    cardType: 'generic',
+    colors: ['red', 'green'],
+    manaCost: 6,
+    consumesRunes: true, // Requires RG runes - high dopamine hit card
+    attack: 6,
+    health: 7,
+    maxHealth: 7,
+    currentHealth: 7,
+    specialEffects: ['multi_fight'], // Custom effect: fights front + adjacent on enter
   },
 ]
 
@@ -946,6 +985,30 @@ export const rbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     equippedItems: [],
     bonusVsHeroes: 4, // Assassin: deals double damage to heroes (4 base attack = 8 vs heroes)
   },
+  // Black Dopamine Hit: Cross-Lane Assassin Hero
+  {
+    id: 'black-hero-cross-assassin',
+    name: 'Cross-Lane Assassin',
+    description: '4/8. Activated (1 mana): Move this hero to any battlefield. If it moves, it may fight an enemy unit there.',
+    cardType: 'hero',
+    colors: ['black'],
+    attack: 4,
+    health: 8,
+    maxHealth: 8,
+    currentHealth: 8,
+    supportEffect: 'Can move across battlefields',
+    signatureCardId: 'black-sig-cross-assassin-1',
+    equippedItems: [],
+    bonusVsHeroes: 4,
+    ability: {
+      name: 'Shadow Step',
+      description: 'Move this hero to any battlefield. If it moves, it may fight an enemy unit there.',
+      manaCost: 1,
+      cooldown: 2,
+      effectType: 'move_and_fight', // Custom effect: move across battlefields and fight
+      effectValue: 1,
+    },
+  },
 ]
 
 export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
@@ -1113,6 +1176,29 @@ export const gwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       cooldown: 1,
       effectType: 'buff_units',
       effectValue: 3, // +3 attack to neighbors
+    },
+  },
+  // White Dopamine Hit: Reflector Hero
+  {
+    id: 'white-hero-reflector',
+    name: 'Divine Reflector',
+    description: '3/11. When an enemy unit attacks this hero, that unit fights itself with +2 damage instead. (With taunt, can make 3 units fight themselves)',
+    cardType: 'hero',
+    colors: ['white'],
+    attack: 3,
+    health: 11,
+    maxHealth: 11,
+    currentHealth: 11,
+    supportEffect: 'Reflects attacks',
+    signatureCardId: 'white-sig-reflector-1',
+    equippedItems: [],
+    ability: {
+      name: 'Divine Reflection',
+      description: 'When an enemy unit attacks this hero, that unit fights itself with +2 damage instead.',
+      manaCost: 0,
+      cooldown: 0,
+      effectType: 'reflect_attack', // Custom effect: makes attacker fight itself
+      effectValue: 2, // +2 damage when fighting itself
     },
   },
 ]
@@ -1606,6 +1692,37 @@ export const blackMidrangeSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 0,
     },
   },
+  // Black Dopamine Hit: Cross-Lane Mechanics
+  {
+    id: 'black-spell-assassinate',
+    name: 'Assassinate',
+    description: 'Destroy target unit or hero. You may move one of your heroes to the target\'s battlefield.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 4,
+    effect: {
+      type: 'targeted_damage',
+      damage: 999,
+      affectsUnits: true,
+      affectsHeroes: true,
+      crossLane: true, // Can target across battlefields
+    },
+  },
+  {
+    id: 'black-spell-cross-murder',
+    name: 'Cross-Lane Murder',
+    description: 'Destroy target unit in the other battlefield.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 5,
+    effect: {
+      type: 'targeted_damage',
+      damage: 999,
+      affectsUnits: true,
+      affectsHeroes: true,
+      crossLane: true, // Can only target other battlefield
+    },
+  },
 ]
 
 export const gbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
@@ -1801,11 +1918,37 @@ export const guCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 9,
     maxHealth: 9,
     currentHealth: 9,
+    // Single color, so no rune requirement needed
   },
 ]
 
 export const guSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   // Mana Surge removed - replaced with green artifact
+  // Green Dopamine Hit: Combat Protection
+  {
+    id: 'green-spell-nature-shield',
+    name: 'Nature\'s Shield',
+    description: 'All your units gain +0/+4 until end of turn. They cannot be destroyed this turn.',
+    cardType: 'spell',
+    colors: ['green'],
+    manaCost: 4,
+    effect: {
+      type: 'aoe_damage', // Placeholder - would be team buff + indestructible
+      damage: 0,
+    },
+  },
+  {
+    id: 'green-spell-combat-protection',
+    name: 'Combat Protection',
+    description: 'All your units cannot be destroyed this turn.',
+    cardType: 'spell',
+    colors: ['green'],
+    manaCost: 3,
+    effect: {
+      type: 'aoe_damage', // Placeholder - would be indestructible
+      damage: 0,
+    },
+  },
   {
     id: 'gu-spell-2',
     name: 'Titan\'s Wrath',
@@ -2263,6 +2406,37 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       affectsHeroes: true,
     },
   },
+  // Blue Dopamine Hit: AOE Board Clearing
+  {
+    id: 'blue-spell-thunderstorm',
+    name: 'Thunderstorm',
+    description: 'Deal 4 damage to all enemy units.',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 5,
+    effect: {
+      type: 'aoe_damage',
+      damage: 4,
+      affectsUnits: true,
+      affectsHeroes: true,
+      affectsEnemyUnits: true,
+    },
+  },
+  {
+    id: 'blue-spell-chain-lightning',
+    name: 'Chain Lightning',
+    description: 'Deal 3 damage to all enemy units.',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 4,
+    effect: {
+      type: 'aoe_damage',
+      damage: 3,
+      affectsUnits: true,
+      affectsHeroes: true,
+      affectsEnemyUnits: true,
+    },
+  },
   {
     id: 'ub-spell-conditional-removal',
     name: 'Dark Bolt',
@@ -2534,6 +2708,73 @@ export const rwgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       effectValue: 2,
     },
   },
+  // Rare Heroes - Double Color Requirements (Draft Dopamine Hits)
+  {
+    id: 'rrg-hero-wild-fury',
+    name: 'Wild Fury',
+    description: 'Rare. Aggressive growth hero with double red commitment. More powerful than normal RG heroes.',
+    cardType: 'hero',
+    colors: ['red', 'red', 'green'], // Requires 2 red + 1 green
+    attack: 6, // +1 over normal RG hero
+    health: 10, // +1 over normal RG hero
+    maxHealth: 10,
+    currentHealth: 10,
+    supportEffect: 'Allies gain +2 attack. When this attacks, all your units gain +2/+2 until end of turn.',
+    signatureCardId: 'rrg-sig-fury-1',
+    equippedItems: [],
+    ability: {
+      name: 'Primal Rage',
+      description: 'All your units gain +3/+3 this turn. Put a +2/+2 counter on each of your units.',
+      manaCost: 1,
+      cooldown: 2,
+      effectType: 'buff_units',
+      effectValue: 3, // Stronger than normal RG hero
+    },
+  },
+  {
+    id: 'bbu-hero-void-tyrant',
+    name: 'Void Tyrant',
+    description: 'Rare. Control finisher hero with double black commitment. More powerful than normal BU heroes.',
+    cardType: 'hero',
+    colors: ['black', 'black', 'blue'], // Requires 2 black + 1 blue
+    attack: 4, // +1 over normal BU hero
+    health: 12, // +1 over normal BU hero
+    maxHealth: 12,
+    currentHealth: 12,
+    supportEffect: 'When an enemy unit dies, draw a card. Spells you cast deal +1 damage.',
+    signatureCardId: 'bbu-sig-tyrant-1',
+    equippedItems: [],
+    ability: {
+      name: 'Void Annihilation',
+      description: 'Destroy target unit. If it had 5+ health, draw 2 cards instead.',
+      manaCost: 1,
+      cooldown: 2,
+      effectType: 'custom',
+      effectValue: 5,
+    },
+  },
+  {
+    id: 'ggw-hero-nature-guardian',
+    name: 'Nature Guardian',
+    description: 'Rare. Resilient support hero with double green commitment. More powerful than normal GW heroes.',
+    cardType: 'hero',
+    colors: ['green', 'green', 'white'], // Requires 2 green + 1 white
+    attack: 4, // +1 over normal GW hero
+    health: 13, // +2 over normal GW hero
+    maxHealth: 13,
+    currentHealth: 13,
+    supportEffect: 'Allies gain +0/+3. When a unit dies, put a +1/+1 counter on all your units.',
+    signatureCardId: 'ggw-sig-guardian-1',
+    equippedItems: [],
+    ability: {
+      name: 'Nature\'s Embrace',
+      description: 'All your units gain +2/+4 until end of turn. Put a +1/+1 counter on each of your units.',
+      manaCost: 1,
+      cooldown: 2,
+      effectType: 'buff_units',
+      effectValue: 2,
+    },
+  },
 ]
 
 export const rwgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
@@ -2578,10 +2819,11 @@ export const rwgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
   {
     id: 'rwg-unit-primal-banner',
     name: 'Primal Banner',
-    description: 'All your units gain +1/+1. At the start of your next turn, all your units gain +1/+1 again.',
+    description: 'All your units gain +1/+1. At the start of your next turn, all your units gain +1/+1 again. Costs 5RWG.',
     cardType: 'generic',
     colors: ['red', 'white', 'green'],
     manaCost: 5, // 2RWG = 5 total mana
+    consumesRunes: true, // 3-color card should require runes
     attack: 2,
     health: 4,
     maxHealth: 4,
@@ -2603,10 +2845,11 @@ export const rwgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
   {
     id: 'rwg-unit-wild-beast',
     name: 'Wild Beast',
-    description: 'Big aggressive creature.',
+    description: 'Big aggressive creature. Costs 6RG.',
     cardType: 'generic',
     colors: ['red', 'green'],
     manaCost: 6,
+    consumesRunes: true, // Multicolor 6+ mana should require runes
     attack: 7,
     health: 6,
     maxHealth: 6,
@@ -2615,10 +2858,11 @@ export const rwgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
   {
     id: 'rwg-unit-iron-golem',
     name: 'Iron Golem',
-    description: 'Big defensive creature.',
+    description: 'Big defensive creature. Costs 6RW.',
     cardType: 'generic',
     colors: ['red', 'white'],
     manaCost: 6,
+    consumesRunes: true, // Multicolor 6+ mana should require runes
     attack: 5,
     health: 8,
     maxHealth: 8,
@@ -2812,6 +3056,86 @@ export const rwgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     consumesRunes: true,
     effect: {
       type: 'targeted_damage', // Placeholder - would be team buff + counters
+      damage: 0,
+    },
+  },
+  // Rare Hero Signature Spells - Powerful finishers for pack synergy moments
+  {
+    id: 'rrg-spell-primal-convergence',
+    name: 'Primal Convergence',
+    description: 'All your units gain +4/+4 until end of turn. Put a +2/+2 counter on each of your units. Costs 7RRG.',
+    cardType: 'spell',
+    colors: ['red', 'red', 'green'],
+    manaCost: 7,
+    consumesRunes: true,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would be team buff + counters
+      damage: 0,
+    },
+  },
+  {
+    id: 'bbu-spell-void-annihilation',
+    name: 'Void Annihilation',
+    description: 'Destroy all enemy units. Draw a card for each unit destroyed. Costs 7BBU.',
+    cardType: 'spell',
+    colors: ['black', 'black', 'blue'],
+    manaCost: 7,
+    consumesRunes: true,
+    effect: {
+      type: 'aoe_damage',
+      damage: 999,
+      affectsUnits: true,
+      affectsHeroes: false,
+      affectsEnemyUnits: true,
+    },
+  },
+  {
+    id: 'ggw-spell-nature-triumph',
+    name: 'Nature\'s Triumph',
+    description: 'All your units gain +3/+5 until end of turn. Put a +2/+2 counter on each of your units. Costs 7GGW.',
+    cardType: 'spell',
+    colors: ['green', 'green', 'white'],
+    manaCost: 7,
+    consumesRunes: true,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would be team buff + counters
+      damage: 0,
+    },
+  },
+  // White Dopamine Hit: Tower Healing & Protection
+  {
+    id: 'white-spell-divine-healing',
+    name: 'Divine Healing',
+    description: 'Heal your tower for 5 HP. Draw a card.',
+    cardType: 'spell',
+    colors: ['white'],
+    manaCost: 3,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would be tower heal + draw
+      damage: 0,
+    },
+  },
+  {
+    id: 'white-spell-divine-protection',
+    name: 'Divine Protection',
+    description: 'Target unit gains indestructible until end of turn. (Cannot be destroyed)',
+    cardType: 'spell',
+    colors: ['white'],
+    manaCost: 2,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would be indestructible buff
+      damage: 0,
+    },
+  },
+  {
+    id: 'white-spell-disarm',
+    name: 'Disarm',
+    description: 'Target enemy unit cannot attack this turn. Draw a card.',
+    cardType: 'spell',
+    colors: ['white'],
+    manaCost: 2,
+    effect: {
+      type: 'stun', // Stun prevents attacking
       damage: 0,
     },
   },

@@ -137,6 +137,36 @@ All documentation files should include a metadata header with:
 - **Card types**: Big creatures, team-wide buff spells, 1-2 rune generators
 - **Draft strategy**: Prioritize big creatures and buff spells, less dependent on specific synergies
 
+### **design/FIVE_COLOR_ARCHETYPE.md** ⭐
+**Purpose**: 5-color "good stuff" archetype design - high-ceiling, high-risk archetype enabled by artifacts
+**When to reference**: Designing 5-color archetype, understanding high-roll archetypes, creating draft tension
+**Key concepts**:
+- **High-roll archetype**: Requires 2-3 any-color artifacts early to enable 5-color
+- **Artifact-based, not color-based**: Better to require artifacts than make one color generate any-color runes
+- **Draft tension**: Early commitment decisions (do you commit to 5-color if you see artifacts?)
+- **High ceiling, low floor**: Powerful when it works, weak without artifacts
+- **Rune requirements**: 4 base runes (heroes) + 2-4 any-color runes (artifacts) = 6-8 runes per turn
+
+### **design/RARE_HERO_SYSTEM.md** ⭐
+**Purpose**: Rare hero system with double color requirements that create "feel good" draft moments
+**When to reference**: Creating draft excitement, designing rare heroes, implementing pack synergy moments
+**Key concepts**:
+- **Rare heroes**: Double color requirements (RRG, BBU, GGW) - 15-20% more powerful than normal heroes
+- **Pack synergy**: Getting rare hero + powerful spell in same pack creates "amazing" moments
+- **Draft dopamine hits**: Creates memorable moments that players talk about
+- **Color commitment**: Rewards players who commit to specific color combinations
+- **High-roll moments**: Creates variance and excitement in draft (10-15% chance in hero picks, 5-10% in mixed packs)
+
+### **design/DOPAMINE_HIT_MECHANICS.md** ⭐
+**Purpose**: Powerful, exciting cards that create memorable gameplay moments inspired by Artifact Foundry
+**When to reference**: Creating memorable gameplay moments, designing color-specific mechanics, implementing powerful effects
+**Key concepts**:
+- **RG fighting mechanics**: Multi-fight units (6-drop that fights front/adjacent), activated fight heroes (Axe Warrior)
+- **Blue AOE**: Board clearing spells (Thunderstorm, Chain Lightning)
+- **Black cross-lane**: Spells/heroes that work across battlefields (Assassinate, Cross-Lane Assassin)
+- **Green protection**: Combat protection spells, high-stat units
+- **White support**: Tower healing, indestructible shields, disarm effects, reflector hero (makes attackers fight themselves)
+
 ---
 
 ## Strategic Analysis
