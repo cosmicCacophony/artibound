@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
 import { useRoguelikeDraft } from '../hooks/useRoguelikeDraft'
 import { RoguelikeDraftItem } from '../game/roguelikeTypes'
-import { Hero, ArtifactCard, SpellCard, GenericUnit } from '../game/types'
+import { Hero, ArtifactCard, SpellCard, GenericUnit, BaseCard } from '../game/types'
+import { CardPreview } from './CardPreview'
+import { downloadDraftAsJSON } from '../game/draftExport'
 
 export function RoguelikeDraftView() {
   const {
@@ -108,30 +110,6 @@ export function RoguelikeDraftView() {
 
   // Deck review component
   const DeckReview = () => {
-    const allDrafted = [
-      ...draftState.draftedHeroes,
-      ...draftState.draftedArtifacts,
-      ...draftState.draftedSpells,
-      ...draftState.draftedUnits,
-    ]
-
-    const getItemInfo = (item: any) => {
-      if (item.cardType === 'hero') {
-        return { name: item.name, colors: item.colors || [], stats: `${item.attack}/${item.health}`, type: 'Hero' }
-      } else if (item.cardType === 'artifact') {
-        return { name: item.name, colors: item.colors || [], stats: item.manaCost ? `${item.manaCost} mana` : '', type: 'Artifact' }
-      } else if (item.cardType === 'spell') {
-        return { name: item.name, colors: item.colors || [], stats: item.manaCost ? `${item.manaCost} mana` : '', type: 'Spell' }
-      } else {
-        return { name: item.name, colors: item.colors || [], stats: `${item.attack}/${item.health}`, type: 'Unit' }
-      }
-    }
-
-    const getColorDisplay = (colors: string[]) => {
-      if (colors.length === 0) return 'Colorless'
-      return colors.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join('/')
-    }
-
     // Group by type
     const heroes = draftState.draftedHeroes
     const artifacts = draftState.draftedArtifacts
@@ -167,31 +145,10 @@ export function RoguelikeDraftView() {
             <h2 style={{ marginBottom: '15px', borderBottom: '2px solid #2196F3', paddingBottom: '5px' }}>
               Heroes ({heroes.length})
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {heroes.map(hero => {
-                const info = getItemInfo(hero)
-                return (
-                  <div
-                    key={hero.id}
-                    style={{
-                      border: '1px solid #ccc',
-                      borderRadius: '6px',
-                      padding: '12px',
-                      backgroundColor: 'white',
-                    }}
-                  >
-                    <div style={{ fontWeight: 'bold' }}>{info.name}</div>
-                    <div style={{ fontSize: '12px', color: '#666' }}>
-                      {info.type} • {getColorDisplay(info.colors)} • {info.stats}
-                    </div>
-                    {hero.description && (
-                      <div style={{ fontSize: '11px', color: '#555', marginTop: '5px' }}>
-                        {hero.description}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+              {heroes.map(hero => (
+                <CardPreview key={hero.id} card={hero as BaseCard} />
+              ))}
             </div>
           </div>
 
@@ -200,31 +157,10 @@ export function RoguelikeDraftView() {
             <h2 style={{ marginBottom: '15px', borderBottom: '2px solid #4CAF50', paddingBottom: '5px' }}>
               Artifacts ({artifacts.length})
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '400px', overflowY: 'auto' }}>
-              {artifacts.map(artifact => {
-                const info = getItemInfo(artifact)
-                return (
-                  <div
-                    key={artifact.id}
-                    style={{
-                      border: '1px solid #ccc',
-                      borderRadius: '6px',
-                      padding: '12px',
-                      backgroundColor: 'white',
-                    }}
-                  >
-                    <div style={{ fontWeight: 'bold' }}>{info.name}</div>
-                    <div style={{ fontSize: '12px', color: '#666' }}>
-                      {info.type} • {getColorDisplay(info.colors)} {info.stats && `• ${info.stats}`}
-                    </div>
-                    {artifact.description && (
-                      <div style={{ fontSize: '11px', color: '#555', marginTop: '5px' }}>
-                        {artifact.description}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}>
+              {artifacts.map(artifact => (
+                <CardPreview key={artifact.id} card={artifact as BaseCard} />
+              ))}
             </div>
           </div>
 
@@ -233,31 +169,10 @@ export function RoguelikeDraftView() {
             <h2 style={{ marginBottom: '15px', borderBottom: '2px solid #FF9800', paddingBottom: '5px' }}>
               Spells ({spells.length})
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '400px', overflowY: 'auto' }}>
-              {spells.map(spell => {
-                const info = getItemInfo(spell)
-                return (
-                  <div
-                    key={spell.id}
-                    style={{
-                      border: '1px solid #ccc',
-                      borderRadius: '6px',
-                      padding: '12px',
-                      backgroundColor: 'white',
-                    }}
-                  >
-                    <div style={{ fontWeight: 'bold' }}>{info.name}</div>
-                    <div style={{ fontSize: '12px', color: '#666' }}>
-                      {info.type} • {getColorDisplay(info.colors)} {info.stats && `• ${info.stats}`}
-                    </div>
-                    {spell.description && (
-                      <div style={{ fontSize: '11px', color: '#555', marginTop: '5px' }}>
-                        {spell.description}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}>
+              {spells.map(spell => (
+                <CardPreview key={spell.id} card={spell as BaseCard} />
+              ))}
             </div>
           </div>
 
@@ -266,37 +181,43 @@ export function RoguelikeDraftView() {
             <h2 style={{ marginBottom: '15px', borderBottom: '2px solid #9C27B0', paddingBottom: '5px' }}>
               Units ({units.length})
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '400px', overflowY: 'auto' }}>
-              {units.map(unit => {
-                const info = getItemInfo(unit)
-                return (
-                  <div
-                    key={unit.id}
-                    style={{
-                      border: '1px solid #ccc',
-                      borderRadius: '6px',
-                      padding: '12px',
-                      backgroundColor: 'white',
-                    }}
-                  >
-                    <div style={{ fontWeight: 'bold' }}>{info.name}</div>
-                    <div style={{ fontSize: '12px', color: '#666' }}>
-                      {info.type} • {getColorDisplay(info.colors)} • {info.stats}
-                    </div>
-                    {unit.description && (
-                      <div style={{ fontSize: '11px', color: '#555', marginTop: '5px' }}>
-                        {unit.description}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}>
+              {units.map(unit => (
+                <CardPreview key={unit.id} card={unit as BaseCard} />
+              ))}
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div style={{ textAlign: 'center', marginTop: '30px' }}>
+          <button
+            onClick={() => {
+              // Auto-detect archetype based on colors and card distribution
+              const colorStr = summary.colors.join('-')
+              const isSpellFocused = spells.length > artifacts.length + units.length
+              const archetype = isSpellFocused 
+                ? `Spell Damage (${colorStr})`
+                : summary.colors.length >= 3
+                ? `Multicolor (${colorStr})`
+                : `${colorStr.charAt(0).toUpperCase() + colorStr.slice(1)} Focus`
+              
+              downloadDraftAsJSON(draftState, undefined, archetype)
+            }}
+            style={{
+              padding: '12px 24px',
+              fontSize: '16px',
+              backgroundColor: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              marginRight: '10px',
+            }}
+          >
+            Export Draft (JSON)
+          </button>
           <button
             onClick={() => window.location.reload()}
             style={{
@@ -324,26 +245,9 @@ export function RoguelikeDraftView() {
 
   // Drafted cards sidebar component
   const DraftedCardsSidebar = () => {
-    const getItemInfo = (item: any) => {
-      if (item.cardType === 'hero') {
-        return { name: item.name, colors: item.colors || [], stats: `${item.attack}/${item.health}`, type: 'Hero' }
-      } else if (item.cardType === 'artifact') {
-        return { name: item.name, colors: item.colors || [], stats: item.manaCost ? `${item.manaCost} mana` : '', type: 'Artifact' }
-      } else if (item.cardType === 'spell') {
-        return { name: item.name, colors: item.colors || [], stats: item.manaCost ? `${item.manaCost} mana` : '', type: 'Spell' }
-      } else {
-        return { name: item.name, colors: item.colors || [], stats: `${item.attack}/${item.health}`, type: 'Unit' }
-      }
-    }
-
-    const getColorDisplay = (colors: string[]) => {
-      if (colors.length === 0) return 'C'
-      return colors.map(c => c.charAt(0).toUpperCase()).join('')
-    }
-
     return (
       <div style={{
-        width: '280px',
+        width: '320px',
         backgroundColor: '#f9f9f9',
         borderLeft: '1px solid #ddd',
         padding: '15px',
@@ -358,27 +262,13 @@ export function RoguelikeDraftView() {
             <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#2196F3' }}>
               Heroes ({draftState.draftedHeroes.length}/4)
             </div>
-            {draftState.draftedHeroes.map(hero => {
-              const info = getItemInfo(hero)
-              return (
-                <div
-                  key={hero.id}
-                  style={{
-                    fontSize: '12px',
-                    padding: '6px',
-                    marginBottom: '4px',
-                    backgroundColor: 'white',
-                    borderRadius: '4px',
-                    border: '1px solid #ddd',
-                  }}
-                >
-                  <div style={{ fontWeight: 'bold' }}>{info.name}</div>
-                  <div style={{ fontSize: '11px', color: '#666' }}>
-                    {getColorDisplay(info.colors)} • {info.stats}
-                  </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {draftState.draftedHeroes.map(hero => (
+                <div key={hero.id} style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
+                  <CardPreview card={hero as BaseCard} />
                 </div>
-              )
-            })}
+              ))}
+            </div>
           </div>
         )}
 
@@ -388,28 +278,12 @@ export function RoguelikeDraftView() {
             <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#4CAF50' }}>
               Artifacts ({draftState.draftedArtifacts.length})
             </div>
-            <div style={{ maxHeight: '150px', overflowY: 'auto' }}>
-              {draftState.draftedArtifacts.map(artifact => {
-                const info = getItemInfo(artifact)
-                return (
-                  <div
-                    key={artifact.id}
-                    style={{
-                      fontSize: '12px',
-                      padding: '6px',
-                      marginBottom: '4px',
-                      backgroundColor: 'white',
-                      borderRadius: '4px',
-                      border: '1px solid #ddd',
-                    }}
-                  >
-                    <div>{info.name}</div>
-                    <div style={{ fontSize: '11px', color: '#666' }}>
-                      {getColorDisplay(info.colors)} {info.stats && `• ${info.stats}`}
-                    </div>
-                  </div>
-                )
-              })}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
+              {draftState.draftedArtifacts.map(artifact => (
+                <div key={artifact.id} style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
+                  <CardPreview card={artifact as BaseCard} />
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -420,28 +294,12 @@ export function RoguelikeDraftView() {
             <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#FF9800' }}>
               Spells ({draftState.draftedSpells.length})
             </div>
-            <div style={{ maxHeight: '150px', overflowY: 'auto' }}>
-              {draftState.draftedSpells.map(spell => {
-                const info = getItemInfo(spell)
-                return (
-                  <div
-                    key={spell.id}
-                    style={{
-                      fontSize: '12px',
-                      padding: '6px',
-                      marginBottom: '4px',
-                      backgroundColor: 'white',
-                      borderRadius: '4px',
-                      border: '1px solid #ddd',
-                    }}
-                  >
-                    <div>{info.name}</div>
-                    <div style={{ fontSize: '11px', color: '#666' }}>
-                      {getColorDisplay(info.colors)} {info.stats && `• ${info.stats}`}
-                    </div>
-                  </div>
-                )
-              })}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
+              {draftState.draftedSpells.map(spell => (
+                <div key={spell.id} style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
+                  <CardPreview card={spell as BaseCard} />
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -452,28 +310,12 @@ export function RoguelikeDraftView() {
             <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#9C27B0' }}>
               Units ({draftState.draftedUnits.length})
             </div>
-            <div style={{ maxHeight: '150px', overflowY: 'auto' }}>
-              {draftState.draftedUnits.map(unit => {
-                const info = getItemInfo(unit)
-                return (
-                  <div
-                    key={unit.id}
-                    style={{
-                      fontSize: '12px',
-                      padding: '6px',
-                      marginBottom: '4px',
-                      backgroundColor: 'white',
-                      borderRadius: '4px',
-                      border: '1px solid #ddd',
-                    }}
-                  >
-                    <div>{info.name}</div>
-                    <div style={{ fontSize: '11px', color: '#666' }}>
-                      {getColorDisplay(info.colors)} • {info.stats}
-                    </div>
-                  </div>
-                )
-              })}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
+              {draftState.draftedUnits.map(unit => (
+                <div key={unit.id} style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
+                  <CardPreview card={unit as BaseCard} />
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -531,9 +373,8 @@ export function RoguelikeDraftView() {
       </div>
 
       {/* Pack Items */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '15px', marginBottom: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '15px', marginBottom: '20px' }}>
         {currentPack.allItems.map(item => {
-          const info = getItemInfo(item)
           const isSelected = selectedItems.has(item.id)
           const canSelect = isHeroPick || selectedItems.size < 2
           
@@ -542,44 +383,70 @@ export function RoguelikeDraftView() {
               key={item.id}
               onClick={() => handleItemClick(item)}
               style={{
-                border: isSelected ? '3px solid #2196F3' : '1px solid #ccc',
-                borderRadius: '8px',
-                padding: '15px',
+                position: 'relative',
                 cursor: canSelect ? 'pointer' : 'not-allowed',
-                backgroundColor: isSelected ? '#e3f2fd' : 'white',
                 opacity: !canSelect && !isSelected ? 0.5 : 1,
                 transition: 'all 0.2s',
+                transform: isSelected ? 'scale(1.05)' : 'scale(1)',
               }}
               onMouseEnter={(e) => {
                 if (canSelect) {
-                  e.currentTarget.style.transform = 'scale(1.05)'
-                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)'
+                  e.currentTarget.style.transform = 'scale(1.08)'
+                  e.currentTarget.style.zIndex = '10'
                 }
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)'
-                e.currentTarget.style.boxShadow = 'none'
+                e.currentTarget.style.transform = isSelected ? 'scale(1.05)' : 'scale(1)'
+                e.currentTarget.style.zIndex = '1'
               }}
             >
-              <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
-                {info.name}
-              </div>
-              <div style={{ fontSize: '12px', color: '#666', marginBottom: '5px' }}>
-                {info.type} • {getColorDisplay(info.colors)}
-              </div>
-              {info.stats && (
-                <div style={{ fontSize: '12px', color: '#888', marginBottom: '5px' }}>
-                  {info.stats}
-                </div>
-              )}
-              <div style={{ fontSize: '11px', color: '#555', marginTop: '8px' }}>
-                {info.description}
-              </div>
+              {/* Selection border overlay */}
               {isSelected && (
-                <div style={{ marginTop: '8px', color: '#2196F3', fontWeight: 'bold' }}>
-                  ✓ Selected
-                </div>
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    left: '-4px',
+                    right: '-4px',
+                    bottom: '-4px',
+                    border: '4px solid #2196F3',
+                    borderRadius: '12px',
+                    pointerEvents: 'none',
+                    zIndex: 5,
+                    boxShadow: '0 0 0 2px rgba(33, 150, 243, 0.3)',
+                  }}
+                />
               )}
+              
+              {/* Card Preview */}
+              <div style={{ position: 'relative' }}>
+                <CardPreview card={item as BaseCard} />
+                
+                {/* Selected indicator */}
+                {isSelected && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '8px',
+                      right: '8px',
+                      backgroundColor: '#2196F3',
+                      color: 'white',
+                      borderRadius: '50%',
+                      width: '28px',
+                      height: '28px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 'bold',
+                      fontSize: '18px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                      zIndex: 6,
+                    }}
+                  >
+                    ✓
+                  </div>
+                )}
+              </div>
             </div>
           )
         })}

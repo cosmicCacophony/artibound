@@ -80,6 +80,63 @@ All documentation files should include a metadata header with:
 **When to reference**: Designing 3-color cards, understanding commitment vs value trade-offs
 **Key concepts**: 3-color cards at 4-5 mana should be reactive, generate card advantage, create multiple bodies, or have cross-lane interaction
 
+### **design/GU_SPLASH_ARCHETYPES.md** ⭐
+**Purpose**: GU (Green/Blue) base archetype with splash color options (GUB, GUR, GUW)
+**When to reference**: Understanding GU + splash strategies, drafting GU-based decks, creating splash color finishers
+**Key concepts**: 
+- GU base combines ramp (Green) with control (Blue)
+- Three viable splashes: Black (Exorcism), Red (aggressive), White (defensive)
+- Draft priorities and card creation needs for each variant
+
+### **design/RPS_ARCHETYPE_SYSTEM.md** ⭐
+**Purpose**: Rock-paper-scissors archetype system (Aggro, Control, Midrange)
+**When to reference**: Understanding core archetype balance, designing cards for RPS system, planning archetype development
+**Key concepts**:
+- **Aggro**: Mono Red with light splashes (1-2 colors), fast, tower-focused
+- **Control**: UG with splashes (2-3 colors), slow, value-focused
+- **Midrange**: Black-based with 3-4 colors, flexible, threat-dense
+- Matchup dynamics: Aggro > Control > Midrange > Aggro
+- Card creation priorities for each archetype
+
+### **design/RPS_CARD_NEEDS.md** ⭐
+**Purpose**: Specific card creation needs for RPS archetype system
+**When to reference**: Creating cards for RPS system, prioritizing card creation, tracking implementation progress
+**Key concepts**:
+- Detailed card lists for each archetype
+- Priority rankings (High/Medium/Low)
+- Implementation phases
+- Card count estimates (~53-79 cards needed)
+
+### **design/RUNE_ARTIFACT_DESIGN.md** ⭐
+**Purpose**: Design guide for rune-generating artifacts that enable deck building and splashing
+**When to reference**: Creating rune artifacts, understanding rune system in deck building, designing splashing strategies
+**Key concepts**:
+- **Rune artifacts enable splashing** - More artifacts = more flexibility
+- Four types: Single color, dual color, flexible (either/or), any color
+- Cost structure: 3-4 (single), 4-5 (dual/flexible), 5-6 (any color)
+- Archetype-specific needs: Aggro (0-1), Control (2-4), Midrange (3-5)
+- Red aggro generally avoids runes (race, not ramp), but 1-2 for big finishers
+
+### **design/RUNE_TENSION_DESIGN.md** ⭐
+**Purpose**: Design principle for creating meaningful artifact drafting decisions through rune tension
+**When to reference**: Understanding when players need artifacts, balancing rune requirements, creating meaningful draft choices
+**Key concepts**:
+- **The Tension**: 1-2 heavy rune cards = skip artifacts, but 3-6 mana rune spells + 8-9 mana finishers = need artifacts
+- Three tiers: Low (1-2 cards, no artifacts), Medium (3-5 cards, 1-2 artifacts), High (6+ cards, 3+ artifacts)
+- Rune-heavy spells (3-6 mana) create need for artifacts if you draft many
+- Rune-heavy finishers (8-9 mana) require artifacts if you want multiple
+- Non-rune cards allow flexibility to skip artifacts entirely
+
+### **design/RGW_BIG_DUMB_CREATURES.md** ⭐
+**Purpose**: RGW (Red/White/Green) "big dumb creatures" archetype - straightforward midrange with higher floor, lower ceiling
+**When to reference**: Understanding accessible midrange archetype, designing simple but effective decks, creating baseline draft experience
+**Key concepts**:
+- **Higher floor, lower ceiling**: Easier to build and more consistent, but less powerful than complex control decks
+- **Core strategy**: Deploy big creatures (5-8 mana), finish with rune-consuming buff spells
+- **Simple game plan**: Clear and straightforward, good entry point for new players
+- **Card types**: Big creatures, team-wide buff spells, 1-2 rune generators
+- **Draft strategy**: Prioritize big creatures and buff spells, less dependent on specific synergies
+
 ---
 
 ## Strategic Analysis
@@ -237,6 +294,12 @@ All documentation files should include a metadata header with:
 | **design/BATTLEFIELD_DESIGN.md** | Reference | Medium | Design | TBD | Battlefield design |
 | **design/ITEMS_AND_BATTLEFIELD_UPGRADES.md** | Reference | Medium | Design | TBD | Items and upgrades |
 | **design/THREE_COLOR_CARD_DESIGN_PRINCIPLES.md** | Active | High | Design | 2025-01-XX | 3-color card design principles |
+| **design/GU_SPLASH_ARCHETYPES.md** | Active | High | Design | 2025-01-XX | GU + splash archetypes |
+| **design/RPS_ARCHETYPE_SYSTEM.md** | Active | High | Design | 2025-01-XX | Rock-paper-scissors archetype system |
+| **design/RPS_CARD_NEEDS.md** | Active | High | Design | 2025-01-XX | RPS card creation needs |
+| **design/RUNE_ARTIFACT_DESIGN.md** | Active | High | Design | 2025-01-XX | Rune artifact design guide |
+| **design/RUNE_TENSION_DESIGN.md** | Active | High | Design | 2025-01-XX | Rune tension design principle |
+| **design/RGW_BIG_DUMB_CREATURES.md** | Active | High | Design | 2025-01-XX | RGW big dumb creatures archetype |
 | **analysis/EXORCISM_BOARD_STATES.md** | Reference | Medium | Analysis | TBD | Exorcism positioning analysis |
 | **analysis/EARLY_GAME_DECISIONS.md** | Reference | Medium | Analysis | TBD | Early game strategy |
 | **analysis/INTERESTING_GAME_STATES.md** | Active | High | Design | TBD | Game state catalog |

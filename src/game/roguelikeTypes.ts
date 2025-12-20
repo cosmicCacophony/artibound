@@ -59,3 +59,4 @@ export const ROGUELIKE_TOTAL_PACKS = 18
 export const ROGUELIKE_HERO_PICK_PACKS = [1, 6, 11, 16] // Packs where you pick a hero
 export const ROGUELIKE_PICKS_PER_MIXED_PACK = 2
 
+

@@ -255,3 +255,4 @@ export function updatePlayerColors(heroes: Omit<Hero, 'location' | 'owner'>[]): 
   return getPlayerColors(heroes)
 }
 
+

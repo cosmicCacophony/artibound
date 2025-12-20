@@ -1,0 +1,436 @@
+{
+  "metadata": {
+    "timestamp": "2025-12-20T21:26:12.047Z",
+    "version": "1.0.0",
+    "strategy": "Drafted 2 RWG Wild Commanders (rare high-roll). Tried to draft rune-consuming cards but most only required red runes, not fully utilizing multicolor heroes. Need more powerful multicolor finishers.",
+    "archetype": "Multicolor (green-red-white)"
+  },
+  "summary": {
+    "heroes": 5,
+    "artifacts": 6,
+    "spells": 6,
+    "units": 8,
+    "totalCards": 20,
+    "colors": [
+      "green",
+      "red",
+      "white"
+    ],
+    "totalPicks": 25
+  },
+  "deck": {
+    "heroes": [
+      {
+        "id": "rg-hero-ramp",
+        "name": "Nature Warrior",
+        "description": "Ramps into big threats",
+        "cardType": "hero",
+        "colors": [
+          "green"
+        ],
+        "attack": 5,
+        "health": 10,
+        "maxHealth": 10,
+        "currentHealth": 10,
+        "supportEffect": "Gain +1 max mana",
+        "signatureCardId": "rg-sig-ramp-1",
+        "equippedItems": []
+      },
+      {
+        "id": "rwg-hero-wild-commander",
+        "name": "Wild Commander",
+        "description": "Combines RW aggression with Green growth",
+        "cardType": "hero",
+        "colors": [
+          "red",
+          "white",
+          "green"
+        ],
+        "attack": 5,
+        "health": 11,
+        "maxHealth": 11,
+        "currentHealth": 11,
+        "supportEffect": "Allies gain +1/+1. If you control heroes of 4 different colors, allies gain +2/+2 instead.",
+        "signatureCardId": "rwg-sig-commander-1",
+        "equippedItems": [],
+        "ability": {
+          "name": "Primal Rally",
+          "description": "All your units gain +2/+2 this turn. If you control heroes of 3+ different colors, they gain +3/+3 instead.",
+          "manaCost": 1,
+          "cooldown": 2,
+          "effectType": "buff_units",
+          "effectValue": 2
+        }
+      },
+      {
+        "id": "rwg-hero-wild-commander",
+        "name": "Wild Commander",
+        "description": "Combines RW aggression with Green growth",
+        "cardType": "hero",
+        "colors": [
+          "red",
+          "white",
+          "green"
+        ],
+        "attack": 5,
+        "health": 11,
+        "maxHealth": 11,
+        "currentHealth": 11,
+        "supportEffect": "Allies gain +1/+1. If you control heroes of 4 different colors, allies gain +2/+2 instead.",
+        "signatureCardId": "rwg-sig-commander-1",
+        "equippedItems": [],
+        "ability": {
+          "name": "Primal Rally",
+          "description": "All your units gain +2/+2 this turn. If you control heroes of 3+ different colors, they gain +3/+3 instead.",
+          "manaCost": 1,
+          "cooldown": 2,
+          "effectType": "buff_units",
+          "effectValue": 2
+        }
+      },
+      {
+        "id": "rg-hero-brawler",
+        "name": "Wild Brawler",
+        "description": "Fights with nature",
+        "cardType": "hero",
+        "colors": [
+          "red",
+          "green"
+        ],
+        "attack": 6,
+        "health": 9,
+        "maxHealth": 9,
+        "currentHealth": 9,
+        "supportEffect": "Can fight enemy units",
+        "signatureCardId": "rg-sig-brawler-1",
+        "equippedItems": []
+      },
+      {
+        "id": "rwg-hero-primal-warlord",
+        "name": "Primal Warlord",
+        "description": "Aggressive growth hero",
+        "cardType": "hero",
+        "colors": [
+          "red",
+          "green"
+        ],
+        "attack": 6,
+        "health": 9,
+        "maxHealth": 9,
+        "currentHealth": 9,
+        "supportEffect": "Allies gain +1 attack. When this attacks, put a +1/+1 counter on all your units.",
+        "signatureCardId": "rwg-sig-warlord-1",
+        "equippedItems": [],
+        "ability": {
+          "name": "Wild Growth",
+          "description": "All your units gain +2/+2 this turn. Put a +1/+1 counter on each of your units.",
+          "manaCost": 1,
+          "cooldown": 3,
+          "effectType": "buff_units",
+          "effectValue": 2
+        }
+      }
+    ],
+    "artifacts": [
+      {
+        "id": "rw-artifact-vanguard-generator",
+        "name": "Vanguard Generator Artifact",
+        "description": "Artifact. At the start of your turn, add 1 temporary red rune to your rune pool.",
+        "cardType": "artifact",
+        "colors": [
+          "red"
+        ],
+        "manaCost": 3,
+        "effectType": "rune_generation",
+        "effectValue": 1
+      },
+      {
+        "id": "rw-artifact-dual-generator",
+        "name": "Legion Generator Artifact",
+        "description": "Artifact. At the start of your turn, add 1 red rune and 1 white rune to your rune pool.",
+        "cardType": "artifact",
+        "colors": [
+          "red",
+          "white"
+        ],
+        "manaCost": 5,
+        "effectType": "rune_generation",
+        "effectValue": 2
+      },
+      {
+        "id": "rw-artifact-dual-generator",
+        "name": "Legion Generator Artifact",
+        "description": "Artifact. At the start of your turn, add 1 red rune and 1 white rune to your rune pool.",
+        "cardType": "artifact",
+        "colors": [
+          "red",
+          "white"
+        ],
+        "manaCost": 5,
+        "effectType": "rune_generation",
+        "effectValue": 2
+      },
+      {
+        "id": "rw-artifact-vanguard-generator",
+        "name": "Vanguard Generator Artifact",
+        "description": "Artifact. At the start of your turn, add 1 temporary red rune to your rune pool.",
+        "cardType": "artifact",
+        "colors": [
+          "red"
+        ],
+        "manaCost": 3,
+        "effectType": "rune_generation",
+        "effectValue": 1
+      },
+      {
+        "id": "ub-artifact-green-generator",
+        "name": "Nature Generator Artifact",
+        "description": "Artifact. At the start of your turn, add 1 green rune to your rune pool.",
+        "cardType": "artifact",
+        "colors": [
+          "green"
+        ],
+        "manaCost": 3,
+        "effectType": "rune_generation",
+        "effectValue": 1
+      },
+      {
+        "id": "rw-artifact-flexible-generator",
+        "name": "Adaptive Generator Artifact",
+        "description": "Artifact. At the start of your turn, add 1 red rune or 1 white rune to your rune pool (your choice).",
+        "cardType": "artifact",
+        "colors": [
+          "red",
+          "white"
+        ],
+        "manaCost": 4,
+        "effectType": "rune_generation",
+        "effectValue": 1
+      }
+    ],
+    "spells": [
+      {
+        "id": "rune-spell-wild-growth",
+        "name": "Wild Growth",
+        "description": "Add G permanently to your rune pool. Nature provides.",
+        "cardType": "spell",
+        "colors": [
+          "green"
+        ],
+        "manaCost": 2,
+        "consumesRunes": false,
+        "effect": {
+          "type": "add_permanent_rune",
+          "runeColors": [
+            "green"
+          ]
+        },
+        "initiative": false
+      },
+      {
+        "id": "rw-spell-fighting-words",
+        "name": "Fighting Words",
+        "description": "Generic. Target unit gains +3 attack this turn.",
+        "cardType": "spell",
+        "colors": [
+          "red"
+        ],
+        "manaCost": 1,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 0
+        }
+      },
+      {
+        "id": "rwg-spell-convergence-rally",
+        "name": "Convergence Rally",
+        "description": "All your units gain +2/+2 until end of turn. If you control heroes of 4 different colors, they gain +3/+3 instead.",
+        "cardType": "spell",
+        "colors": [
+          "red",
+          "white",
+          "green"
+        ],
+        "consumesRunes": true,
+        "manaCost": 6,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 0
+        }
+      },
+      {
+        "id": "rw-spell-rally-banner",
+        "name": "Rally Banner",
+        "description": "Generic. All allies gain +1/+1 until end of turn. Draw a card.",
+        "cardType": "spell",
+        "colors": [
+          "red",
+          "white"
+        ],
+        "manaCost": 4,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 0
+        }
+      },
+      {
+        "id": "vrune-spell-time-of-triumph",
+        "name": "Time of Triumph",
+        "description": "All your units gain +3/+3 and trample this turn. Draw a card for each unit you control. Costs 9RRRR.",
+        "cardType": "spell",
+        "colors": [
+          "red",
+          "red",
+          "red",
+          "red"
+        ],
+        "manaCost": 9,
+        "consumesRunes": true,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 0
+        },
+        "initiative": false
+      },
+      {
+        "id": "red-aggro-bolt",
+        "name": "Fire Bolt",
+        "description": "Generic. Deal 4 damage to target unit or tower.",
+        "cardType": "spell",
+        "colors": [
+          "red"
+        ],
+        "manaCost": 2,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 4,
+          "affectsUnits": true,
+          "affectsHeroes": true
+        }
+      }
+    ],
+    "units": [
+      {
+        "id": "gu-finisher-1",
+        "name": "Colossus",
+        "description": "Big finisher",
+        "cardType": "generic",
+        "colors": [
+          "green"
+        ],
+        "manaCost": 9,
+        "attack": 9,
+        "health": 9,
+        "maxHealth": 9,
+        "currentHealth": 9
+      },
+      {
+        "id": "rw-unit-tactical-commander",
+        "name": "Tactical Commander",
+        "description": "4/2. Bounce. When a hero is deployed to this lane, you may return target hero to base. That hero has rapid deploy and can be redeployed this turn. Costs 4RR.",
+        "cardType": "generic",
+        "colors": [
+          "red",
+          "red"
+        ],
+        "manaCost": 4,
+        "consumesRunes": true,
+        "attack": 4,
+        "health": 2,
+        "maxHealth": 2,
+        "currentHealth": 2
+      },
+      {
+        "id": "rw-unit-mana-warrior",
+        "name": "Mana Warrior",
+        "description": "3/3. You may stun this unit to add 1 generic mana to your mana pool this turn. Costs 3R.",
+        "cardType": "generic",
+        "colors": [
+          "red"
+        ],
+        "manaCost": 3,
+        "consumesRunes": true,
+        "attack": 3,
+        "health": 3,
+        "maxHealth": 3,
+        "currentHealth": 3
+      },
+      {
+        "id": "rw-unit-mana-warrior",
+        "name": "Mana Warrior",
+        "description": "3/3. You may stun this unit to add 1 generic mana to your mana pool this turn. Costs 3R.",
+        "cardType": "generic",
+        "colors": [
+          "red"
+        ],
+        "manaCost": 3,
+        "consumesRunes": true,
+        "attack": 3,
+        "health": 3,
+        "maxHealth": 3,
+        "currentHealth": 3
+      },
+      {
+        "id": "rg-ramp-1",
+        "name": "Mana Druid",
+        "description": "Ramps mana",
+        "cardType": "generic",
+        "colors": [
+          "green"
+        ],
+        "manaCost": 3,
+        "attack": 2,
+        "health": 3,
+        "maxHealth": 3,
+        "currentHealth": 3
+      },
+      {
+        "id": "rw-unit-legion-general",
+        "name": "Legion General",
+        "description": "5/5. Legion. All Legion units gain +2/+2 attack. Costs 5RW.",
+        "cardType": "generic",
+        "colors": [
+          "red",
+          "white"
+        ],
+        "manaCost": 5,
+        "consumesRunes": true,
+        "attack": 5,
+        "health": 5,
+        "maxHealth": 5,
+        "currentHealth": 5
+      },
+      {
+        "id": "rw-unit-tactical-commander",
+        "name": "Tactical Commander",
+        "description": "4/2. Bounce. When a hero is deployed to this lane, you may return target hero to base. That hero has rapid deploy and can be redeployed this turn. Costs 4RR.",
+        "cardType": "generic",
+        "colors": [
+          "red",
+          "red"
+        ],
+        "manaCost": 4,
+        "consumesRunes": true,
+        "attack": 4,
+        "health": 2,
+        "maxHealth": 2,
+        "currentHealth": 2
+      },
+      {
+        "id": "rg-ramp-1",
+        "name": "Mana Druid",
+        "description": "Ramps mana",
+        "cardType": "generic",
+        "colors": [
+          "green"
+        ],
+        "manaCost": 3,
+        "attack": 2,
+        "health": 3,
+        "maxHealth": 3,
+        "currentHealth": 3
+      }
+    ]
+  }
+}
+

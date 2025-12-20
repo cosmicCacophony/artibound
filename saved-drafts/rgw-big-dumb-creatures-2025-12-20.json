@@ -1,0 +1,457 @@
+{
+  "metadata": {
+    "timestamp": "2025-12-20T21:38:38.330Z",
+    "version": "1.0.0",
+    "strategy": "RGW big dumb creatures with buff spells that consume runes as finishers. Higher floor (easier to build, more consistent) but lower ceiling than complex multicolor decks.",
+    "archetype": "Multicolor (white-red-green)"
+  },
+  "summary": {
+    "heroes": 5,
+    "artifacts": 3,
+    "spells": 7,
+    "units": 10,
+    "totalCards": 20,
+    "colors": [
+      "white",
+      "red",
+      "green"
+    ],
+    "totalPicks": 25
+  },
+  "deck": {
+    "heroes": [
+      {
+        "id": "gw-hero-protector",
+        "name": "Divine Protector",
+        "description": "Shields allies",
+        "cardType": "hero",
+        "colors": [
+          "white"
+        ],
+        "attack": 3,
+        "health": 10,
+        "maxHealth": 10,
+        "currentHealth": 10,
+        "supportEffect": "Allies gain +1/+1",
+        "signatureCardId": "gw-sig-protector-1",
+        "equippedItems": [],
+        "ability": {
+          "name": "Divine Shield",
+          "description": "Neighbors gain +3 attack this combat phase",
+          "manaCost": 1,
+          "cooldown": 1,
+          "effectType": "buff_units",
+          "effectValue": 3
+        }
+      },
+      {
+        "id": "rwg-hero-primal-warlord",
+        "name": "Primal Warlord",
+        "description": "Aggressive growth hero",
+        "cardType": "hero",
+        "colors": [
+          "red",
+          "green"
+        ],
+        "attack": 6,
+        "health": 9,
+        "maxHealth": 9,
+        "currentHealth": 9,
+        "supportEffect": "Allies gain +1 attack. When this attacks, put a +1/+1 counter on all your units.",
+        "signatureCardId": "rwg-sig-warlord-1",
+        "equippedItems": [],
+        "ability": {
+          "name": "Wild Growth",
+          "description": "All your units gain +2/+2 this turn. Put a +1/+1 counter on each of your units.",
+          "manaCost": 1,
+          "cooldown": 3,
+          "effectType": "buff_units",
+          "effectValue": 2
+        }
+      },
+      {
+        "id": "rwg-hero-primal-warlord",
+        "name": "Primal Warlord",
+        "description": "Aggressive growth hero",
+        "cardType": "hero",
+        "colors": [
+          "red",
+          "green"
+        ],
+        "attack": 6,
+        "health": 9,
+        "maxHealth": 9,
+        "currentHealth": 9,
+        "supportEffect": "Allies gain +1 attack. When this attacks, put a +1/+1 counter on all your units.",
+        "signatureCardId": "rwg-sig-warlord-1",
+        "equippedItems": [],
+        "ability": {
+          "name": "Wild Growth",
+          "description": "All your units gain +2/+2 this turn. Put a +1/+1 counter on each of your units.",
+          "manaCost": 1,
+          "cooldown": 3,
+          "effectType": "buff_units",
+          "effectValue": 2
+        }
+      },
+      {
+        "id": "rw-hero-vanguard",
+        "name": "Battle Vanguard",
+        "description": "Mobile warrior. Can reposition to support the front lines.",
+        "cardType": "hero",
+        "colors": [
+          "red"
+        ],
+        "attack": 5,
+        "health": 9,
+        "maxHealth": 9,
+        "currentHealth": 9,
+        "signatureCardId": "rw-sig-vanguard-1",
+        "equippedItems": [],
+        "ability": {
+          "name": "Tactical Reposition",
+          "description": "Swap this hero to an adjacent location. If you also control a white hero, you can swap to any location.",
+          "manaCost": 1,
+          "cooldown": 2,
+          "effectType": "move_hero",
+          "effectValue": 1
+        }
+      },
+      {
+        "id": "gw-hero-warden",
+        "name": "Nature Warden",
+        "description": "Protects and buffs team",
+        "cardType": "hero",
+        "colors": [
+          "green",
+          "white"
+        ],
+        "attack": 4,
+        "health": 11,
+        "maxHealth": 11,
+        "currentHealth": 11,
+        "supportEffect": "Allies gain +0/+2",
+        "signatureCardId": "gw-sig-warden-1",
+        "equippedItems": []
+      }
+    ],
+    "artifacts": [
+      {
+        "id": "ub-artifact-prismatic-generator",
+        "name": "Prismatic Generator Artifact",
+        "description": "Artifact. At the start of your turn, add 1 rune of any color to your rune pool.",
+        "cardType": "artifact",
+        "colors": [],
+        "manaCost": 5,
+        "effectType": "rune_generation",
+        "effectValue": 1
+      },
+      {
+        "id": "rw-artifact-war-banner",
+        "name": "War Banner Artifact",
+        "description": "Artifact. All your units gain +1 attack.",
+        "cardType": "artifact",
+        "colors": [
+          "red",
+          "white"
+        ],
+        "manaCost": 4,
+        "effectType": "damage_amplifier",
+        "effectValue": 1
+      },
+      {
+        "id": "rw-artifact-flexible-generator",
+        "name": "Adaptive Generator Artifact",
+        "description": "Artifact. At the start of your turn, add 1 red rune or 1 white rune to your rune pool (your choice).",
+        "cardType": "artifact",
+        "colors": [
+          "red",
+          "white"
+        ],
+        "manaCost": 4,
+        "effectType": "rune_generation",
+        "effectValue": 1
+      }
+    ],
+    "spells": [
+      {
+        "id": "rwg-spell-convergence-rally",
+        "name": "Convergence Rally",
+        "description": "All your units gain +2/+2 until end of turn. If you control heroes of 4 different colors, they gain +3/+3 instead.",
+        "cardType": "spell",
+        "colors": [
+          "red",
+          "white",
+          "green"
+        ],
+        "consumesRunes": true,
+        "manaCost": 6,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 0
+        }
+      },
+      {
+        "id": "rwg-spell-nature-triumph",
+        "name": "Nature's Triumph",
+        "description": "All your units gain +2/+2 until end of turn. Put a +2/+2 counter on each of your units. Costs 6RRGW.",
+        "cardType": "spell",
+        "colors": [
+          "red",
+          "red",
+          "green",
+          "white"
+        ],
+        "manaCost": 6,
+        "consumesRunes": true,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 0
+        }
+      },
+      {
+        "id": "rw-spell-into-the-fray",
+        "name": "Into the Fray",
+        "description": "Generic. Target unit gains +3/+3 this turn.",
+        "cardType": "spell",
+        "colors": [
+          "red",
+          "white"
+        ],
+        "manaCost": 2,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 0
+        }
+      },
+      {
+        "id": "vrune-spell-wrath-of-legion",
+        "name": "Wrath of the Legion",
+        "description": "All your units gain +3/+3 this turn. Costs 5RRW.",
+        "cardType": "spell",
+        "colors": [
+          "red",
+          "red",
+          "white"
+        ],
+        "manaCost": 5,
+        "consumesRunes": true,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 0
+        },
+        "initiative": false
+      },
+      {
+        "id": "rwg-spell-growth-rally",
+        "name": "Growth Rally",
+        "description": "All your units gain +1/+1. Put a +1/+1 counter on each of your units.",
+        "cardType": "spell",
+        "colors": [
+          "red",
+          "white",
+          "green"
+        ],
+        "manaCost": 4,
+        "consumesRunes": true,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 0
+        }
+      },
+      {
+        "id": "rwg-sig-commander-2",
+        "name": "Primal Charge",
+        "description": "Wild Commander signature - aggressive. All allies gain +2 attack this turn and can attack immediately.",
+        "cardType": "spell",
+        "colors": [
+          "red",
+          "white",
+          "green"
+        ],
+        "manaCost": 4,
+        "consumesRunes": true,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 0
+        }
+      },
+      {
+        "id": "rwg-sig-commander-2",
+        "name": "Primal Charge",
+        "description": "Wild Commander signature - aggressive. All allies gain +2 attack this turn and can attack immediately.",
+        "cardType": "spell",
+        "colors": [
+          "red",
+          "white",
+          "green"
+        ],
+        "manaCost": 4,
+        "consumesRunes": true,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 0
+        }
+      }
+    ],
+    "units": [
+      {
+        "id": "uw-sig-paladin-1",
+        "name": "Divine Shield",
+        "description": "Paladin signature - protection",
+        "cardType": "generic",
+        "colors": [
+          "blue",
+          "white"
+        ],
+        "manaCost": 3,
+        "attack": 2,
+        "health": 5,
+        "maxHealth": 5,
+        "currentHealth": 5
+      },
+      {
+        "id": "gw-aura-2",
+        "name": "Nature's Embrace",
+        "description": "Aura - +0/+2 to all",
+        "cardType": "generic",
+        "colors": [
+          "green",
+          "white"
+        ],
+        "manaCost": 5,
+        "attack": 3,
+        "health": 4,
+        "maxHealth": 4,
+        "currentHealth": 4
+      },
+      {
+        "id": "gw-sig-protector-2",
+        "name": "Guardian Aegis",
+        "description": "Protector signature - protection. Adjacent units gain +1/+1. Retaliate 1 (deals 1 damage to attackers).",
+        "cardType": "generic",
+        "colors": [
+          "white"
+        ],
+        "manaCost": 4,
+        "attack": 3,
+        "health": 6,
+        "maxHealth": 6,
+        "currentHealth": 6,
+        "specialEffects": [
+          "adjacent_buff",
+          "retaliate_1"
+        ]
+      },
+      {
+        "id": "rg-beefy-2",
+        "name": "Raging Bear",
+        "description": "Big aggressive threat",
+        "cardType": "generic",
+        "colors": [
+          "red",
+          "green"
+        ],
+        "manaCost": 5,
+        "attack": 6,
+        "health": 6,
+        "maxHealth": 6,
+        "currentHealth": 6
+      },
+      {
+        "id": "gw-token-2",
+        "name": "Elf Scout",
+        "description": "Token unit",
+        "cardType": "generic",
+        "colors": [
+          "green",
+          "white"
+        ],
+        "manaCost": 3,
+        "attack": 2,
+        "health": 2,
+        "maxHealth": 2,
+        "currentHealth": 2
+      },
+      {
+        "id": "rwg-unit-primal-banner",
+        "name": "Primal Banner",
+        "description": "All your units gain +1/+1. At the start of your next turn, all your units gain +1/+1 again.",
+        "cardType": "generic",
+        "colors": [
+          "red",
+          "white",
+          "green"
+        ],
+        "manaCost": 5,
+        "attack": 2,
+        "health": 4,
+        "maxHealth": 4,
+        "currentHealth": 4
+      },
+      {
+        "id": "rwg-unit-wild-colossus",
+        "name": "Wild Colossus",
+        "description": "8/8. Trample. When this attacks, all your units gain +1/+1 until end of turn. Costs 8RRWW.",
+        "cardType": "generic",
+        "colors": [
+          "red",
+          "red",
+          "white",
+          "white"
+        ],
+        "manaCost": 8,
+        "consumesRunes": true,
+        "attack": 8,
+        "health": 8,
+        "maxHealth": 8,
+        "currentHealth": 8
+      },
+      {
+        "id": "rw-legion-champion",
+        "name": "Legion Champion",
+        "description": "Legion. When this attacks, all Legion units gain +1/+1 until end of turn.",
+        "cardType": "generic",
+        "colors": [
+          "red",
+          "white"
+        ],
+        "manaCost": 4,
+        "attack": 4,
+        "health": 4,
+        "maxHealth": 4,
+        "currentHealth": 4
+      },
+      {
+        "id": "rg-finisher-1",
+        "name": "Ancient Titan",
+        "description": "Big finisher",
+        "cardType": "generic",
+        "colors": [
+          "green"
+        ],
+        "manaCost": 8,
+        "attack": 8,
+        "health": 8,
+        "maxHealth": 8,
+        "currentHealth": 8
+      },
+      {
+        "id": "rg-beefy-2",
+        "name": "Raging Bear",
+        "description": "Big aggressive threat",
+        "cardType": "generic",
+        "colors": [
+          "red",
+          "green"
+        ],
+        "manaCost": 5,
+        "attack": 6,
+        "health": 6,
+        "maxHealth": 6,
+        "currentHealth": 6
+      }
+    ]
+  }
+}
+

@@ -1,0 +1,465 @@
+{
+  "metadata": {
+    "timestamp": "2025-12-20T21:19:09.870Z",
+    "version": "1.0.0",
+    "strategy": "Prioritized rune generators (3 Adaptive Void Generators) but didn't find enough payoffs. Interesting archetype that needs more finishers that utilize runes. 3 colors (UBG).",
+    "archetype": "Multicolor (black-blue-green)"
+  },
+  "summary": {
+    "heroes": 5,
+    "artifacts": 5,
+    "spells": 8,
+    "units": 7,
+    "totalCards": 20,
+    "colors": [
+      "black",
+      "blue",
+      "green"
+    ],
+    "totalPicks": 25
+  },
+  "deck": {
+    "heroes": [
+      {
+        "id": "rb-hero-assassin",
+        "name": "Shadow Assassin",
+        "description": "Trades HP for advantage",
+        "cardType": "hero",
+        "colors": [
+          "black"
+        ],
+        "attack": 4,
+        "health": 8,
+        "maxHealth": 8,
+        "currentHealth": 8,
+        "supportEffect": "Gain gold when units die",
+        "signatureCardId": "rb-sig-assassin-1",
+        "equippedItems": [],
+        "bonusVsHeroes": 4
+      },
+      {
+        "id": "ub-hero-necromancer",
+        "name": "Void Necromancer",
+        "description": "Combo payoff. Converts black runes into tower damage.",
+        "cardType": "hero",
+        "colors": [
+          "black"
+        ],
+        "attack": 3,
+        "health": 11,
+        "maxHealth": 11,
+        "currentHealth": 11,
+        "supportEffect": "Gain gold when units die",
+        "signatureCardId": "ub-sig-necromancer-1",
+        "equippedItems": [],
+        "bonusVsHeroes": 4,
+        "ability": {
+          "name": "Soul Burn",
+          "description": "Spend B runes: Deal 1 damage to enemy tower per rune spent. No cooldown.",
+          "manaCost": 0,
+          "cooldown": 0,
+          "effectType": "rune_to_damage",
+          "effectValue": 1,
+          "runeCost": [
+            "black"
+          ]
+        }
+      },
+      {
+        "id": "combo-hero-rune-channeler",
+        "name": "Rune Channeler",
+        "description": "Storm. Can convert runes into direct tower damage. Combo payoff for rune generation.",
+        "cardType": "hero",
+        "colors": [
+          "blue",
+          "black"
+        ],
+        "attack": 3,
+        "health": 7,
+        "maxHealth": 7,
+        "currentHealth": 7,
+        "signatureCardId": "combo-sig-channeler-1",
+        "equippedItems": [],
+        "ability": {
+          "name": "Rune Blast",
+          "description": "Spend 3 runes of any color: Deal 2 damage to enemy tower. No cooldown.",
+          "manaCost": 0,
+          "cooldown": 0,
+          "effectType": "rune_to_damage",
+          "effectValue": 2,
+          "runeCost": [
+            "black",
+            "black",
+            "black"
+          ]
+        }
+      },
+      {
+        "id": "ubg-hero-shadow-sage",
+        "name": "Shadow Sage",
+        "description": "Resilient control hero",
+        "cardType": "hero",
+        "colors": [
+          "black",
+          "green"
+        ],
+        "attack": 3,
+        "health": 9,
+        "maxHealth": 9,
+        "currentHealth": 9,
+        "supportEffect": "When an enemy unit dies, draw a card. This hero has +0/+1 for each different color among your heroes.",
+        "signatureCardId": "ubg-sig-sage-1",
+        "equippedItems": [],
+        "bonusVsHeroes": 3,
+        "ability": {
+          "name": "Verdant Removal",
+          "description": "Destroy target unit with 4 or less health. If it had 4+ health, draw a card.",
+          "manaCost": 1,
+          "cooldown": 3,
+          "effectType": "custom",
+          "effectValue": 4
+        }
+      },
+      {
+        "id": "gu-hero-druid",
+        "name": "Mana Druid",
+        "description": "Ramps into big spells",
+        "cardType": "hero",
+        "colors": [
+          "green",
+          "blue"
+        ],
+        "attack": 3,
+        "health": 9,
+        "maxHealth": 9,
+        "currentHealth": 9,
+        "supportEffect": "Gain +1 max mana each turn",
+        "signatureCardId": "gu-sig-druid-1",
+        "equippedItems": []
+      }
+    ],
+    "artifacts": [
+      {
+        "id": "ub-artifact-ub-flexible-generator",
+        "name": "Adaptive Void Generator Artifact",
+        "description": "Artifact. At the start of your turn, add 1 blue rune or 1 black rune to your rune pool (your choice).",
+        "cardType": "artifact",
+        "colors": [
+          "blue",
+          "black"
+        ],
+        "manaCost": 4,
+        "effectType": "rune_generation",
+        "effectValue": 1
+      },
+      {
+        "id": "ub-artifact-arcane-focus",
+        "name": "Arcane Focus Artifact",
+        "description": "Artifact. Your spells deal +1 additional damage.",
+        "cardType": "artifact",
+        "colors": [
+          "blue",
+          "black"
+        ],
+        "manaCost": 5,
+        "effectType": "spell_amplifier",
+        "effectValue": 1
+      },
+      {
+        "id": "ub-artifact-arcane-focus",
+        "name": "Arcane Focus Artifact",
+        "description": "Artifact. Your spells deal +1 additional damage.",
+        "cardType": "artifact",
+        "colors": [
+          "blue",
+          "black"
+        ],
+        "manaCost": 5,
+        "effectType": "spell_amplifier",
+        "effectValue": 1
+      },
+      {
+        "id": "ub-artifact-ub-flexible-generator",
+        "name": "Adaptive Void Generator Artifact",
+        "description": "Artifact. At the start of your turn, add 1 blue rune or 1 black rune to your rune pool (your choice).",
+        "cardType": "artifact",
+        "colors": [
+          "blue",
+          "black"
+        ],
+        "manaCost": 4,
+        "effectType": "rune_generation",
+        "effectValue": 1
+      },
+      {
+        "id": "ub-artifact-ub-flexible-generator",
+        "name": "Adaptive Void Generator Artifact",
+        "description": "Artifact. At the start of your turn, add 1 blue rune or 1 black rune to your rune pool (your choice).",
+        "cardType": "artifact",
+        "colors": [
+          "blue",
+          "black"
+        ],
+        "manaCost": 4,
+        "effectType": "rune_generation",
+        "effectValue": 1
+      }
+    ],
+    "spells": [
+      {
+        "id": "ub-spell-void-cascade",
+        "name": "Void Cascade",
+        "description": "Deal 5 damage to all enemy units.",
+        "cardType": "spell",
+        "colors": [
+          "blue",
+          "black"
+        ],
+        "manaCost": 5,
+        "consumesRunes": true,
+        "effect": {
+          "type": "aoe_damage",
+          "damage": 5,
+          "affectsUnits": true,
+          "affectsHeroes": true,
+          "affectsEnemyUnits": true
+        }
+      },
+      {
+        "id": "vrune-spell-doom-blade",
+        "name": "Doom Blade",
+        "description": "Deal 5 damage to target non-hero unit. Costs 2BB.",
+        "cardType": "spell",
+        "colors": [
+          "black",
+          "black"
+        ],
+        "manaCost": 2,
+        "consumesRunes": true,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 5,
+          "affectsUnits": true,
+          "affectsHeroes": false
+        },
+        "initiative": false
+      },
+      {
+        "id": "rb-spell-1",
+        "name": "Terminate",
+        "description": "Destroy target unit",
+        "cardType": "spell",
+        "colors": [
+          "black"
+        ],
+        "consumesRunes": true,
+        "manaCost": 4,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 999,
+          "affectsUnits": true,
+          "affectsHeroes": true
+        }
+      },
+      {
+        "id": "ub-spell-thunderstorm",
+        "name": "Thunderstorm",
+        "description": "Deal 3 damage to all enemy units.",
+        "cardType": "spell",
+        "colors": [
+          "blue",
+          "black"
+        ],
+        "manaCost": 4,
+        "consumesRunes": true,
+        "effect": {
+          "type": "aoe_damage",
+          "damage": 3,
+          "affectsUnits": true,
+          "affectsHeroes": true,
+          "affectsEnemyUnits": true
+        }
+      },
+      {
+        "id": "ub-sig-necromancer-2",
+        "name": "Soul Drain",
+        "description": "Generic. Necromancer signature - advantage. Deal 2 damage to target unit, draw a card.",
+        "cardType": "spell",
+        "colors": [
+          "black"
+        ],
+        "manaCost": 4,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 2,
+          "affectsUnits": true,
+          "affectsHeroes": true
+        }
+      },
+      {
+        "id": "rune-spell-cabal-ritual",
+        "name": "Cabal Ritual",
+        "description": "Add BBBBB (5 black runes) until end of turn. Dark power flows through you.",
+        "cardType": "spell",
+        "colors": [
+          "black",
+          "black"
+        ],
+        "manaCost": 3,
+        "consumesRunes": true,
+        "effect": {
+          "type": "add_temporary_runes",
+          "runeColors": [
+            "black",
+            "black",
+            "black",
+            "black",
+            "black"
+          ]
+        },
+        "initiative": false
+      },
+      {
+        "id": "ubg-spell-deal-3-initiative",
+        "name": "Tactical Strike",
+        "description": "Generic. Deal 3 damage to target unit. You get initiative (play next card first).",
+        "cardType": "spell",
+        "colors": [
+          "blue"
+        ],
+        "manaCost": 2,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 3,
+          "affectsUnits": true,
+          "affectsHeroes": true
+        }
+      },
+      {
+        "id": "ub-sig-archmage-2",
+        "name": "Arcane Sweep",
+        "description": "Archmage signature - board wipe. Deal 4 damage to all enemy units.",
+        "cardType": "spell",
+        "colors": [
+          "blue",
+          "black"
+        ],
+        "consumesRunes": true,
+        "manaCost": 6,
+        "effect": {
+          "type": "aoe_damage",
+          "damage": 4,
+          "affectsUnits": true,
+          "affectsHeroes": true,
+          "affectsEnemyUnits": true
+        }
+      }
+    ],
+    "units": [
+      {
+        "id": "ubg-bounce-nature-ward",
+        "name": "Nature Ward",
+        "description": "Bounce. 2/4. When a hero is deployed to this lane, gain 2 gold. You may return target hero to base.",
+        "cardType": "generic",
+        "colors": [
+          "green",
+          "black"
+        ],
+        "manaCost": 3,
+        "attack": 2,
+        "health": 4,
+        "maxHealth": 4,
+        "currentHealth": 4
+      },
+      {
+        "id": "ub-unit-arcane-sniper",
+        "name": "Arcane Sniper",
+        "description": "Ranged. 1/3. Can attack from base/deploy zone, dealing 3 damage evenly to both towers.",
+        "cardType": "generic",
+        "colors": [
+          "blue",
+          "black"
+        ],
+        "manaCost": 3,
+        "attack": 1,
+        "health": 3,
+        "maxHealth": 3,
+        "currentHealth": 3,
+        "rangedAttack": 3
+      },
+      {
+        "id": "black-midrange-insightful-scholar",
+        "name": "Insightful Scholar",
+        "description": "When this enters, draw a card.",
+        "cardType": "generic",
+        "colors": [
+          "black"
+        ],
+        "manaCost": 3,
+        "attack": 4,
+        "health": 4,
+        "maxHealth": 4,
+        "currentHealth": 4
+      },
+      {
+        "id": "gb-beefy-2",
+        "name": "Death Knight",
+        "description": "Big midrange unit",
+        "cardType": "generic",
+        "colors": [
+          "black"
+        ],
+        "manaCost": 6,
+        "attack": 6,
+        "health": 7,
+        "maxHealth": 7,
+        "currentHealth": 7
+      },
+      {
+        "id": "rb-sig-assassin-2",
+        "name": "Dark Trade",
+        "description": "Assassin signature - resource trade",
+        "cardType": "generic",
+        "colors": [
+          "black"
+        ],
+        "manaCost": 4,
+        "attack": 4,
+        "health": 3,
+        "maxHealth": 3,
+        "currentHealth": 3
+      },
+      {
+        "id": "combo-unit-ghostly-flicker",
+        "name": "Ghostly Flicker",
+        "description": "Bounce enabler. When this enters, you may return another unit to hand.",
+        "cardType": "generic",
+        "colors": [
+          "blue"
+        ],
+        "manaCost": 3,
+        "attack": 2,
+        "health": 2,
+        "maxHealth": 2,
+        "currentHealth": 2
+      },
+      {
+        "id": "ub-unit-arcane-sniper",
+        "name": "Arcane Sniper",
+        "description": "Ranged. 1/3. Can attack from base/deploy zone, dealing 3 damage evenly to both towers.",
+        "cardType": "generic",
+        "colors": [
+          "blue",
+          "black"
+        ],
+        "manaCost": 3,
+        "attack": 1,
+        "health": 3,
+        "maxHealth": 3,
+        "currentHealth": 3,
+        "rangedAttack": 3
+      }
+    ]
+  }
+}
+

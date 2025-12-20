@@ -40,3 +40,4 @@ echo "   - Clear Vite cache if issues persist: rm -rf node_modules/.vite"
 echo "   - Verify changes with: git diff"
 echo "   - Test after each change: npm run dev"
 
+
