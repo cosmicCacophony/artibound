@@ -584,6 +584,55 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 0,
     },
   },
+  // RW Token Generators - Require runes, create Legion tokens for go-wide synergy
+  {
+    id: 'rw-spell-legion-call',
+    name: 'Legion Call',
+    description: 'Create two 2/2 Legion tokens. Costs 3RW.',
+    cardType: 'spell',
+    colors: ['red', 'white'],
+    manaCost: 3,
+    consumesRunes: true, // Requires RW runes - encourages aggro commitment
+    effect: {
+      type: 'create_tokens', // Custom effect: creates 2x 2/2 Legion tokens
+      tokenCount: 2,
+      tokenStats: { attack: 2, health: 2 },
+      tokenType: 'legion',
+      damage: 0,
+    },
+  },
+  {
+    id: 'rw-spell-rally-troops',
+    name: 'Rally the Troops',
+    description: 'Create one 2/2 Legion token. Costs 2RW.',
+    cardType: 'spell',
+    colors: ['red', 'white'],
+    manaCost: 2,
+    consumesRunes: true, // Requires RW runes - cheaper option for early game
+    effect: {
+      type: 'create_tokens', // Custom effect: creates 1x 2/2 Legion token
+      tokenCount: 1,
+      tokenStats: { attack: 2, health: 2 },
+      tokenType: 'legion',
+      damage: 0,
+    },
+  },
+  {
+    id: 'rw-spell-rapid-deployment',
+    name: 'Rapid Deployment',
+    description: 'Create two 1/1 Legion tokens. Costs 2RW.',
+    cardType: 'spell',
+    colors: ['red', 'white'],
+    manaCost: 2,
+    consumesRunes: true, // Requires RW runes - early game token generation
+    effect: {
+      type: 'create_tokens', // Custom effect: creates 2x 1/1 Legion tokens
+      tokenCount: 2,
+      tokenStats: { attack: 1, health: 1 },
+      tokenType: 'legion',
+      damage: 0,
+    },
+  },
   // RW Combat Tricks - Removed Soul of Spring and Living Armor
   // RW Color Identity Cards - Heavy RRRR/WWWW costs to discourage splashing
   {

@@ -167,6 +167,11 @@ All documentation files should include a metadata header with:
 - **Green protection**: Combat protection spells, high-stat units
 - **White support**: Tower healing, indestructible shields, disarm effects, reflector hero (makes attackers fight themselves)
 
+### **design/BOSS_1_VALIANT_LEGION.md** ⭐
+**Purpose**: First boss design - optimal RW go-wide deck
+**When to reference**: Implementing boss system, understanding boss AI requirements, designing future bosses
+**Key concepts**: Optimal deck composition, simple AI rules, no buffs needed, go-wide strategy
+
 ---
 
 ## Strategic Analysis
