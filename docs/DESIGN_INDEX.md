@@ -254,8 +254,9 @@ All documentation files should include a metadata header with:
 - **Counterplay**: Every strategy should have counterplay options
 
 ### Archetype Design
-- **RW (2 colors)**: Aggro, go-wide, board presence
-- **UB/UBG (2-3 colors)**: Control, removal, card advantage, late game
+- **RW Legion (2 colors)**: Tier 1 - Aggro, go-wide, board presence, consistent baseline deck
+- **UB AOE Damage (2 colors)**: Tier 2-3 - Control, removal, AOE damage, but lacks big finishers. Needs 3-4 colors to reach Tier 1 (access to Exorcism or other finishers)
+- **UB/UBG (3-4 colors)**: Tier 1-2 - Control with finishers, removal, card advantage, late game
 
 ---
 

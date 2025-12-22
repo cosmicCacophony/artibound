@@ -1,6 +1,7 @@
 # Rock-Paper-Scissors Archetype System
 
 > **Created:** 2024-12-15  
+> **Last Updated:** 2025-12-22
 > **Status:** Active  
 > **Relevance:** High  
 > **Category:** Design  
@@ -111,6 +112,14 @@ This system ensures that no single archetype dominates and creates interesting d
 - **High curve**: Many 4-7 mana cards
 - **Spell-focused**: Removal, card draw, board wipes
 - **Splash Purpose**: Access to powerful finishers (Exorcism, etc.)
+
+#### UB AOE Damage (2 colors) - Tier 2-3 Archetype
+**Note**: Pure UB (Blue/Black) AOE damage decks are **Tier 2-3** archetypes:
+- **Strengths**: Can clear one lane effectively with AOE spells, good removal suite
+- **Weaknesses**: Lacks big finishers, struggles to close games, loses to stat-based decks like RW Legion
+- **To reach Tier 1**: Must expand to 3-4 colors to access powerful finishers (Exorcism, etc.)
+- **Draft Decision**: Players must decide whether to commit to 3-4 colors for finishers or accept Tier 2-3 power level
+- **Matchup**: Can control one lane but loses to RW Legion's stat advantage across both lanes
 
 #### Key Characteristics
 - **Mana Curve**: Heavy on 4-7 mana cards, ramp early
