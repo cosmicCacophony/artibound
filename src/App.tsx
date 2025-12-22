@@ -75,7 +75,7 @@ function AppContent() {
         </div>
       </div>
       {view === 'roguelike' ? (
-        <RoguelikeDraftView />
+        <RoguelikeDraftView onStartGame={() => setView('game')} />
       ) : view === 'draft' ? (
         <DraftView onStartGame={() => setView('game')} />
       ) : (

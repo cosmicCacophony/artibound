@@ -1,11 +1,17 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useRoguelikeDraft } from '../hooks/useRoguelikeDraft'
 import { RoguelikeDraftItem } from '../game/roguelikeTypes'
-import { Hero, ArtifactCard, SpellCard, GenericUnit, BaseCard } from '../game/types'
+import { Hero, ArtifactCard, SpellCard, GenericUnit, BaseCard, FinalDraftSelection } from '../game/types'
 import { CardPreview } from './CardPreview'
 import { downloadDraftAsJSON } from '../game/draftExport'
+import { useGameContext } from '../context/GameContext'
+import { allBattlefields } from '../game/cardData'
 
-export function RoguelikeDraftView() {
+interface RoguelikeDraftViewProps {
+  onStartGame?: () => void
+}
+
+export function RoguelikeDraftView({ onStartGame }: RoguelikeDraftViewProps = {}) {
   const {
     draftState,
     currentPack,
@@ -14,6 +20,7 @@ export function RoguelikeDraftView() {
     makePick,
     getDraftSummary,
   } = useRoguelikeDraft()
+  const { initializeDraftGame } = useGameContext()
 
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
   const summary = getDraftSummary()
@@ -191,6 +198,50 @@ export function RoguelikeDraftView() {
 
         {/* Action Buttons */}
         <div style={{ textAlign: 'center', marginTop: '30px' }}>
+          <button
+            onClick={() => {
+              // Convert roguelike draft to FinalDraftSelection format
+              // Combine artifacts, spells, and units into cards array
+              const allCards: BaseCard[] = [
+                ...artifacts,
+                ...spells,
+                ...units,
+              ]
+              
+              // Convert heroes to full Hero type (add location and owner)
+              const fullHeroes: Hero[] = heroes.map((hero, index) => ({
+                ...hero,
+                location: 'base' as const,
+                owner: 'player1' as const,
+                id: `${hero.id}-player1-${Date.now()}-${index}`,
+              }))
+              
+              const player1Selection: FinalDraftSelection = {
+                heroes: fullHeroes,
+                cards: allCards,
+                battlefield: allBattlefields[0], // Placeholder, will be replaced by hardcoded ones
+              }
+              
+              initializeDraftGame(player1Selection)
+              if (onStartGame) {
+                onStartGame()
+              }
+            }}
+            style={{
+              padding: '12px 24px',
+              fontSize: '16px',
+              backgroundColor: '#FF9800',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              marginRight: '10px',
+            }}
+            title="Start a game with your drafted deck vs the RW deck from 'Start Random Game'"
+          >
+            🎲 Start Draft Game
+          </button>
           <button
             onClick={() => {
               // Auto-detect archetype based on colors and card distribution

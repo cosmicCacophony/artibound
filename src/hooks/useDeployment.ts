@@ -702,8 +702,7 @@ export function useDeployment() {
             [`${card.owner}Base`]: [...prev[`${card.owner}Base` as keyof typeof prev] as Card[], { ...cleanCard, location: 'base' }],
             metadata: {
               ...prev.metadata,
-              // Opponent gets 2 gold for killing a creep (generic unit) when manually removed
-              [`${opponent}Gold`]: (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 2,
+              // No card draw for manually removing units (only combat kills give card draw)
             },
           }
         })
@@ -742,12 +741,7 @@ export function useDeployment() {
         [`${card.owner}Base`]: [...prev[`${card.owner}Base` as keyof typeof prev] as Card[], cardToBase],
         metadata: {
           ...prev.metadata,
-          // Opponent gets gold for killing units/heroes when manually removed: 2g for units, 5g for heroes
-          [`${opponent}Gold`]: card.cardType === 'generic' 
-            ? (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 2
-            : card.cardType === 'hero'
-            ? (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 5
-            : (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number),
+          // No card draw for manually removing units/heroes (only combat kills give card draw)
           deathCooldowns: updatedDeathCooldowns,
         },
       }

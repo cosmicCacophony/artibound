@@ -12,7 +12,7 @@ interface DraftViewProps {
 
 export default function DraftView({ onStartGame }: DraftViewProps = {}) {
   const { draftState, getCurrentPack, makePick, makeFinalSelection, autoFillDefaults, autoDraft, autoBuildDecks, resetDraft } = useDraft()
-  const { initializeGameFromDraft } = useGameContext()
+  const { initializeGameFromDraft, initializeDraftGame } = useGameContext()
   const [selectedItem, setSelectedItem] = useState<DraftPoolItem | null>(null)
   const [showSelection, setShowSelection] = useState(false)
   const [isAutoDrafting, setIsAutoDrafting] = useState(false)
@@ -81,11 +81,22 @@ export default function DraftView({ onStartGame }: DraftViewProps = {}) {
       }
     }
 
+    const handleStartDraftGame = () => {
+      // Use player1's draft selection (the human player)
+      // Player2 will get the RW deck from "start random game"
+      if (draftState.player1Final) {
+        initializeDraftGame(draftState.player1Final)
+        if (onStartGame) {
+          onStartGame()
+        }
+      }
+    }
+
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>
         <h1>Draft Complete!</h1>
         <p>Both players have made their final selections.</p>
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px' }}>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px', flexWrap: 'wrap' }}>
           <button
             onClick={handleStartGame}
             style={{
@@ -99,7 +110,23 @@ export default function DraftView({ onStartGame }: DraftViewProps = {}) {
               fontWeight: 'bold',
             }}
           >
-            Start Game
+            Start PVP Game
+          </button>
+          <button
+            onClick={handleStartDraftGame}
+            style={{
+              padding: '12px 24px',
+              fontSize: '16px',
+              backgroundColor: '#FF9800',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+            }}
+            title="Start a game with your drafted deck vs the RW deck from 'Start Random Game'"
+          >
+            🎲 Start Draft Game
           </button>
           <button
             onClick={resetDraft}

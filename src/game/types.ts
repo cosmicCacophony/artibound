@@ -263,6 +263,8 @@ export type SpellEffectType =
   | 'add_temporary_runes' // Add temporary runes (like Dark Ritual)
   | 'create_seal' // Create a permanent seal/mana rock
   | 'add_permanent_rune' // Add permanent rune to pool
+  | 'return_to_base' // Returns target card to its owner's base
+  | 'draw_and_heal' // Draws cards and heals
 
 export interface SpellEffect {
   type: SpellEffectType
@@ -277,6 +279,9 @@ export interface SpellEffect {
   // Rune generation effects
   runeColors?: RuneColor[] // Colors of runes to add (e.g., ['black', 'black', 'black'] for Dark Ritual)
   sealColor?: RuneColor // Color of seal to create
+  // Draw and heal effects
+  drawCount?: number // Number of cards to draw
+  healAmount?: number // Amount of life to gain
 }
 
 export interface SpellCard extends BaseCard {
@@ -304,6 +309,11 @@ export type ArtifactEffectType =
   | 'rune_generation' // Generate runes each turn
   | 'tower_armor' // Increase tower armor
   | 'card_draw' // Draw cards each turn
+  | 'creep_modifier' // Modifies creep spawn stats
+  | 'tower_heal' // Heals towers at start of turn
+  | 'cleave_aura' // Grants cleave to all allies
+  | 'target_buff' // Single-target buff
+  | 'life_loss_draw' // Lose life but draw card
 
 export interface ArtifactCard extends BaseCard {
   cardType: 'artifact'

@@ -6,6 +6,7 @@ import { useHeroAbilities } from '../hooks/useHeroAbilities'
 import { useTurnManagement } from '../hooks/useTurnManagement'
 import { HeroCard } from './HeroCard'
 import { resolveSimultaneousCombat } from '../game/combatSystem'
+import { createCardFromTemplate } from '../game/sampleData'
 
 interface BattlefieldViewProps {
   battlefieldId: 'battlefieldA' | 'battlefieldB'
@@ -22,11 +23,15 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     setGameState,
     setShowCombatSummary,
     setCombatSummaryData,
+    player1SidebarCards,
+    player2SidebarCards,
+    setPlayer1SidebarCards,
+    setPlayer2SidebarCards,
   } = useGameContext()
   const { handleDeploy, handleChangeSlot, handleRemoveFromBattlefield, handleEquipItem } = useDeployment()
   const { handleDecreaseHealth, handleIncreaseHealth, handleDecreaseAttack, handleIncreaseAttack } = useCombat()
   const { handleAbilityClick } = useHeroAbilities()
-  const { handleToggleStun } = useTurnManagement()
+  const { handleToggleStun, handleSpawnCreep } = useTurnManagement()
 
   const battlefield = gameState[battlefieldId]
   const battlefieldAP1 = gameState.battlefieldA.player1
@@ -232,6 +237,43 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
             </button>
           </div>
         </div>
+        {/* Manual Creep Spawn Button */}
+        {metadata.currentPhase === 'play' && (
+          <div style={{ marginTop: '8px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
+            <button
+              onClick={() => handleSpawnCreep(battlefieldId, 'player1')}
+              disabled={metadata.activePlayer !== 'player1'}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: metadata.activePlayer === 'player1' ? '#4caf50' : '#ccc',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: metadata.activePlayer === 'player1' ? 'pointer' : 'not-allowed',
+                fontSize: '12px',
+              }}
+              title="Spawn a 1/1 creep in the first empty slot for Player 1"
+            >
+              Spawn P1 Creep
+            </button>
+            <button
+              onClick={() => handleSpawnCreep(battlefieldId, 'player2')}
+              disabled={metadata.activePlayer !== 'player2'}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: metadata.activePlayer === 'player2' ? '#4caf50' : '#ccc',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: metadata.activePlayer === 'player2' ? 'pointer' : 'not-allowed',
+                fontSize: '12px',
+              }}
+              title="Spawn a 1/1 creep in the first empty slot for Player 2"
+            >
+              Spawn P2 Creep
+            </button>
+          </div>
+        )}
         {/* Go to Combat Button - Resolves Both Battlefields Simultaneously */}
         {metadata.currentPhase === 'play' && battlefieldId === 'battlefieldA' && (
           <button
@@ -271,17 +313,22 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                 )
                 
                 // Process killed heroes for both battlefields - separate by player
+                // Draw cards for opponent when heroes are killed
                 const processKilledHeroes = (
                   originalBattlefield: typeof gameState.battlefieldA,
                   updatedBattlefield: typeof gameState.battlefieldA,
                   player1Base: Card[],
                   player2Base: Card[],
                   deathCooldowns: Record<string, number>,
-                  goldRewards: { player1: number, player2: number }
+                  player1Library: import('../game/types').BaseCard[],
+                  player2Library: import('../game/types').BaseCard[],
+                  setPlayer1Library: (updater: (prev: import('../game/types').BaseCard[]) => import('../game/types').BaseCard[]) => void,
+                  setPlayer2Library: (updater: (prev: import('../game/types').BaseCard[]) => import('../game/types').BaseCard[]) => void
                 ) => {
                   const newP1Base = [...player1Base]
                   const newP2Base = [...player2Base]
                   const newCooldowns = { ...deathCooldowns }
+                  const cardsToDraw: { player1: import('../game/types').Card[], player2: import('../game/types').Card[] } = { player1: [], player2: [] }
                   
                   // Process player1 heroes
                   originalBattlefield.player1.forEach(originalCard => {
@@ -296,16 +343,17 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                           slot: undefined,
                         })
                         newCooldowns[hero.id] = 2
-                        // Opponent (player2) gets 5 gold for killing hero
-                        goldRewards.player2 += 5
-                      }
-                    } else if (originalCard.cardType === 'generic') {
-                      const stillAlive = updatedBattlefield.player1.some(c => c.id === originalCard.id)
-                      if (!stillAlive) {
-                        // Opponent (player2) gets 2 gold for killing a creep (generic unit)
-                        goldRewards.player2 += 2
+                        // Opponent (player2) draws 2 cards for killing hero
+                        for (let i = 0; i < 2 && player2Library.length > 0; i++) {
+                          const randomIndex = Math.floor(Math.random() * player2Library.length)
+                          const template = player2Library[randomIndex]
+                          const drawnCard = createCardFromTemplate(template, 'player2', 'hand')
+                          cardsToDraw.player2.push(drawnCard)
+                          setPlayer2Library(prev => prev.filter((_, index) => index !== randomIndex))
+                        }
                       }
                     }
+                    // No card draw for killing units (only heroes)
                   })
                   
                   // Process player2 heroes
@@ -321,39 +369,51 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                           slot: undefined,
                         })
                         newCooldowns[hero.id] = 2
-                        // Opponent (player1) gets 5 gold for killing hero
-                        goldRewards.player1 += 5
-                      }
-                    } else if (originalCard.cardType === 'generic') {
-                      const stillAlive = updatedBattlefield.player2.some(c => c.id === originalCard.id)
-                      if (!stillAlive) {
-                        // Opponent (player1) gets 2 gold for killing a creep (generic unit)
-                        goldRewards.player1 += 2
+                        // Opponent (player1) draws 2 cards for killing hero
+                        for (let i = 0; i < 2 && player1Library.length > 0; i++) {
+                          const randomIndex = Math.floor(Math.random() * player1Library.length)
+                          const template = player1Library[randomIndex]
+                          const drawnCard = createCardFromTemplate(template, 'player1', 'hand')
+                          cardsToDraw.player1.push(drawnCard)
+                          setPlayer1Library(prev => prev.filter((_, index) => index !== randomIndex))
+                        }
                       }
                     }
+                    // No card draw for killing units (only heroes)
                   })
                   
-                  return { newP1Base, newP2Base, newCooldowns }
+                  return { newP1Base, newP2Base, newCooldowns, cardsToDraw }
                 }
                 
-                const goldRewards = { player1: 0, player2: 0 }
-                const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA } = processKilledHeroes(
+                const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA, cardsToDraw: cardsToDrawA } = processKilledHeroes(
                   gameState.battlefieldA,
                   resultA.updatedBattlefield,
                   gameState.player1Base,
                   gameState.player2Base,
                   metadata.deathCooldowns,
-                  goldRewards
+                  player1SidebarCards,
+                  player2SidebarCards,
+                  setPlayer1SidebarCards,
+                  setPlayer2SidebarCards
                 )
                 
-                const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB } = processKilledHeroes(
+                const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB, cardsToDraw: cardsToDrawB } = processKilledHeroes(
                   gameState.battlefieldB,
                   resultB.updatedBattlefield,
                   newP1BaseA,
                   newP2BaseA,
                   newCooldownsA,
-                  goldRewards
+                  player1SidebarCards,
+                  player2SidebarCards,
+                  setPlayer1SidebarCards,
+                  setPlayer2SidebarCards
                 )
+                
+                // Combine cards to draw from both battlefields
+                const allCardsToDraw = {
+                  player1: [...cardsToDrawA.player1, ...cardsToDrawB.player1],
+                  player2: [...cardsToDrawA.player2, ...cardsToDrawB.player2],
+                }
                 
                 // Apply combat results
                 // Calculate total overflow damage TO each player's nexus
@@ -372,6 +432,9 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                     battlefieldB: resultB.updatedBattlefield,
                     player1Base: newP1BaseB,
                     player2Base: newP2BaseB,
+                    // Add drawn cards to hands
+                    player1Hand: [...(prev.player1Hand || []), ...allCardsToDraw.player1],
+                    player2Hand: [...(prev.player2Hand || []), ...allCardsToDraw.player2],
                     metadata: {
                       ...prev.metadata,
                       towerA_player1_HP: resultA.updatedTowerHP.towerA_player1,
@@ -380,8 +443,6 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                       towerB_player2_HP: resultB.updatedTowerHP.towerB_player2,
                       player1NexusHP: newP1NexusHP,
                       player2NexusHP: newP2NexusHP,
-                      player1Gold: (prev.metadata.player1Gold as number) + goldRewards.player1,
-                      player2Gold: (prev.metadata.player2Gold as number) + goldRewards.player2,
                       deathCooldowns: newCooldownsB,
                       player1Passed: false,
                       player2Passed: false,

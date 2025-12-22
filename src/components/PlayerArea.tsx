@@ -72,6 +72,8 @@ export function PlayerArea({ player }: PlayerAreaProps) {
           <RunePoolDisplay 
             runePool={player === 'player1' ? metadata.player1RunePool : metadata.player2RunePool}
             playerName={player === 'player1' ? 'Player 1' : 'Player 2'}
+            player={player}
+            seals={player === 'player1' ? (metadata.player1Seals || []) : (metadata.player2Seals || [])}
           />
           
           {/* Legacy Mana Display (for backward compatibility) */}

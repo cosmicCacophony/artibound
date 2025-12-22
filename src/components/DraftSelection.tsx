@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { DraftState, Hero, BaseCard, BattlefieldDefinition, HEROES_REQUIRED, CARDS_REQUIRED, Color } from '../game/types'
 import { allHeroes } from '../game/cardData'
+import { defaultHeroes } from '../game/draftData'
 
 interface DraftSelectionProps {
   draftState: DraftState
@@ -104,8 +105,10 @@ export default function DraftSelection({ draftState, onFinalSelection, autoFillD
   const addDefaultHero = (color: Color) => {
     if (!canAddDefaultHero) return
     
-    // Use first hero of this color from allHeroes as fallback
-    const defaultHero = allHeroes.find(h => h.colors[0] === color)
+    // Use specific default hero for this color
+    const defaultHero = [...defaultHeroes.passable, ...defaultHeroes.disappointing].find(
+      h => h.colors[0] === color
+    )
     if (!defaultHero) return
 
     // Create a new hero instance with unique ID

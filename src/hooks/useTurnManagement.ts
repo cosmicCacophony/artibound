@@ -1,8 +1,8 @@
 import { useCallback, useEffect } from 'react'
-import { TurnPhase, Card, GameMetadata, ShopItem, Hero } from '../game/types'
+import { TurnPhase, Card, GameMetadata, ShopItem, Hero, BaseCard } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { getDefaultTargets, resolveCombat, resolveSimultaneousCombat, resolveRangedAttacks } from '../game/combatSystem'
-import { tier1Items } from '../game/sampleData'
+import { tier1Items, createCardFromTemplate } from '../game/sampleData'
 
 export function useTurnManagement() {
   const { 
@@ -14,6 +14,10 @@ export function useTurnManagement() {
     setCombatTargetsB,
     setShowCombatSummary,
     setCombatSummaryData,
+    player1SidebarCards,
+    player2SidebarCards,
+    setPlayer1SidebarCards,
+    setPlayer2SidebarCards,
   } = useGameContext()
   const metadata = gameState.metadata
 
@@ -70,17 +74,22 @@ export function useTurnManagement() {
       )
       
       // Process killed heroes (same logic as in BattlefieldView) - separate by player
+      // Draw cards for opponent when heroes are killed
       const processKilledHeroes = (
         originalBattlefield: typeof gameState.battlefieldA,
         updatedBattlefield: typeof gameState.battlefieldA,
         player1Base: Card[],
         player2Base: Card[],
         deathCooldowns: Record<string, number>,
-        goldRewards: { player1: number, player2: number }
+        player1Library: BaseCard[],
+        player2Library: BaseCard[],
+        setPlayer1Library: (updater: (prev: BaseCard[]) => BaseCard[]) => void,
+        setPlayer2Library: (updater: (prev: BaseCard[]) => BaseCard[]) => void
       ) => {
         const newP1Base = [...player1Base]
         const newP2Base = [...player2Base]
         const newCooldowns = { ...deathCooldowns }
+        const cardsToDraw: { player1: Card[], player2: Card[] } = { player1: [], player2: [] }
         
         // Process player1 heroes
         originalBattlefield.player1.forEach(originalCard => {
@@ -95,16 +104,17 @@ export function useTurnManagement() {
                 slot: undefined,
               })
               newCooldowns[hero.id] = 2
-              // Opponent (player2) gets 5 gold for killing hero
-              goldRewards.player2 += 5
-            }
-          } else if (originalCard.cardType === 'generic') {
-            const stillAlive = updatedBattlefield.player1.some(c => c.id === originalCard.id)
-            if (!stillAlive) {
-              // Opponent (player2) gets 2 gold for killing a creep (generic unit)
-              goldRewards.player2 += 2
+              // Opponent (player2) draws 2 cards for killing hero
+              for (let i = 0; i < 2 && player2Library.length > 0; i++) {
+                const randomIndex = Math.floor(Math.random() * player2Library.length)
+                const template = player2Library[randomIndex]
+                const drawnCard = createCardFromTemplate(template, 'player2', 'hand')
+                cardsToDraw.player2.push(drawnCard)
+                setPlayer2Library(prev => prev.filter((_, index) => index !== randomIndex))
+              }
             }
           }
+          // No card draw for killing units (only heroes)
         })
         
         // Process player2 heroes
@@ -120,39 +130,67 @@ export function useTurnManagement() {
                 slot: undefined,
               })
               newCooldowns[hero.id] = 2
-              // Opponent (player1) gets 5 gold for killing hero
-              goldRewards.player1 += 5
-            }
-          } else if (originalCard.cardType === 'generic') {
-            const stillAlive = updatedBattlefield.player2.some(c => c.id === originalCard.id)
-            if (!stillAlive) {
-              // Opponent (player1) gets 2 gold for killing a creep (generic unit)
-              goldRewards.player1 += 2
+              // Opponent (player1) draws 2 cards for killing hero
+              for (let i = 0; i < 2 && player1Library.length > 0; i++) {
+                const randomIndex = Math.floor(Math.random() * player1Library.length)
+                const template = player1Library[randomIndex]
+                const drawnCard = createCardFromTemplate(template, 'player1', 'hand')
+                cardsToDraw.player1.push(drawnCard)
+                setPlayer1Library(prev => prev.filter((_, index) => index !== randomIndex))
+              }
             }
           }
+          // No card draw for killing units (only heroes)
         })
         
-        return { newP1Base, newP2Base, newCooldowns }
+        return { newP1Base, newP2Base, newCooldowns, cardsToDraw }
       }
       
-      const goldRewards = { player1: 0, player2: 0 }
-      const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA } = processKilledHeroes(
+      // Track library state as we draw cards (functional updates handle state correctly)
+      let currentP1Library = [...player1SidebarCards]
+      let currentP2Library = [...player2SidebarCards]
+      
+      const updateP1Library = (updater: (prev: BaseCard[]) => BaseCard[]) => {
+        currentP1Library = updater(currentP1Library)
+        setPlayer1SidebarCards(updater)
+      }
+      const updateP2Library = (updater: (prev: BaseCard[]) => BaseCard[]) => {
+        currentP2Library = updater(currentP2Library)
+        setPlayer2SidebarCards(updater)
+      }
+      
+      const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA, cardsToDraw: cardsToDrawA, blackHeroesDied: blackHeroesDiedA } = processKilledHeroes(
         gameState.battlefieldA,
         resultA.updatedBattlefield,
         gameState.player1Base,
         gameState.player2Base,
         metadata.deathCooldowns,
-        goldRewards
+        currentP1Library,
+        currentP2Library,
+        updateP1Library,
+        updateP2Library
       )
       
-      const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB } = processKilledHeroes(
+      const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB, cardsToDraw: cardsToDrawB, blackHeroesDied: blackHeroesDiedB } = processKilledHeroes(
         gameState.battlefieldB,
         resultB.updatedBattlefield,
         newP1BaseA,
         newP2BaseA,
         newCooldownsA,
-        goldRewards
+        currentP1Library,
+        currentP2Library,
+        updateP1Library,
+        updateP2Library
       )
+      
+      // Combine cards to draw from both battlefields
+      const allCardsToDraw = {
+        player1: [...cardsToDrawA.player1, ...cardsToDrawB.player1],
+        player2: [...cardsToDrawA.player2, ...cardsToDrawB.player2],
+      }
+      
+      // Add B runes for black heroes that died
+      const allBlackHeroesDied = [...blackHeroesDiedA, ...blackHeroesDiedB]
       
       // Apply combat results from both battlefields
       // Calculate total overflow damage TO each player's nexus
@@ -165,12 +203,33 @@ export function useTurnManagement() {
         const newP1NexusHP = Math.max(0, prev.metadata.player1NexusHP - totalDamageToP1Nexus)
         const newP2NexusHP = Math.max(0, prev.metadata.player2NexusHP - totalDamageToP2Nexus)
         
+        // Add B runes for black heroes that died
+        let updatedP1RunePool = prev.metadata.player1RunePool
+        let updatedP2RunePool = prev.metadata.player2RunePool
+        
+        allBlackHeroesDied.forEach(({ player }) => {
+          if (player === 'player1') {
+            updatedP1RunePool = {
+              ...updatedP1RunePool,
+              runes: [...updatedP1RunePool.runes, 'black'],
+            }
+          } else {
+            updatedP2RunePool = {
+              ...updatedP2RunePool,
+              runes: [...updatedP2RunePool.runes, 'black'],
+            }
+          }
+        })
+        
         return {
           ...prev,
           battlefieldA: resultA.updatedBattlefield,
           battlefieldB: resultB.updatedBattlefield,
           player1Base: newP1BaseB,
           player2Base: newP2BaseB,
+          // Add drawn cards to hands
+          player1Hand: [...(prev.player1Hand || []), ...allCardsToDraw.player1],
+          player2Hand: [...(prev.player2Hand || []), ...allCardsToDraw.player2],
           metadata: {
             ...prev.metadata,
             towerA_player1_HP: rangedResult.updatedTowerHP.towerA_player1,
@@ -180,9 +239,9 @@ export function useTurnManagement() {
             // Apply overflow damage to nexus (sum from both battlefields + ranged attacks)
             player1NexusHP: Math.max(0, newP1NexusHP - (rangedResult.overflowDamage.player2)),
             player2NexusHP: Math.max(0, newP2NexusHP - (rangedResult.overflowDamage.player1)),
-            player1Gold: (prev.metadata.player1Gold as number) + goldRewards.player1,
-            player2Gold: (prev.metadata.player2Gold as number) + goldRewards.player2,
             deathCooldowns: newCooldownsB,
+            player1RunePool: updatedP1RunePool,
+            player2RunePool: updatedP2RunePool,
           },
         }
       })
@@ -375,6 +434,53 @@ export function useTurnManagement() {
     })
   }, [setGameState])
 
+  const handleSpawnCreep = useCallback((battlefieldId: 'battlefieldA' | 'battlefieldB', player: 'player1' | 'player2') => {
+    setGameState(prev => {
+      const battlefield = prev[battlefieldId]
+      const playerCards = battlefield[player]
+      
+      // Find first empty slot starting from slot 1 (leftmost)
+      let emptySlot: number | null = null
+      for (let slot = 1; slot <= 5; slot++) {
+        const slotOccupied = playerCards.some(c => c.slot === slot)
+        if (!slotOccupied) {
+          emptySlot = slot
+          break
+        }
+      }
+      
+      // If no empty slot, don't spawn
+      if (emptySlot === null) {
+        return prev
+      }
+      
+      // Create creep
+      const creep: import('../game/types').GenericUnit = {
+        id: `creep-${player}-${battlefieldId}-manual-${Date.now()}`,
+        name: 'Creep',
+        description: 'Basic unit spawned manually',
+        cardType: 'generic',
+        colors: [],
+        manaCost: 0,
+        attack: 1,
+        health: 1,
+        maxHealth: 1,
+        currentHealth: 1,
+        location: battlefieldId,
+        owner: player,
+        slot: emptySlot,
+      }
+      
+      return {
+        ...prev,
+        [battlefieldId]: {
+          ...battlefield,
+          [player]: [...playerCards, creep],
+        },
+      }
+    })
+  }, [setGameState])
+
   const handleToggleStun = useCallback((hero: Card) => {
     // Only heroes can be stunned
     if (hero.cardType !== 'hero') return
@@ -532,22 +638,59 @@ export function useTurnManagement() {
       // Rune system updates:
       // 1. Clear temporary runes from previous turn
       // 2. Generate new temporary runes from seals
-      const clearAndGenerateRunes = (pool: import('../game/types').RunePool, seals: import('../game/types').Seal[]) => {
+      // 3. Generate runes from artifacts in base with rune_generation effect
+      const clearAndGenerateRunes = (
+        pool: import('../game/types').RunePool, 
+        seals: import('../game/types').Seal[],
+        playerBase: import('../game/types').Card[]
+      ) => {
         // Generate runes from seals
         const sealRunes = seals.map(seal => seal.color)
+        
+        // Generate runes from artifacts in base with rune_generation effect
+        const artifactRunes: import('../game/types').RuneColor[] = []
+        const artifacts = playerBase.filter(card => card.cardType === 'artifact') as import('../game/types').ArtifactCard[]
+        
+        artifacts.forEach(artifact => {
+          if (artifact.effectType === 'rune_generation') {
+            // Determine which color(s) to generate based on artifact colors
+            // Single-color artifacts: effectValue=1, colors=['black'] -> generates 1 black rune
+            // Dual-color artifacts: effectValue=2, colors=['red','white'] -> generates 1 red + 1 white rune
+            if (artifact.colors && artifact.colors.length > 0) {
+              const effectValue = artifact.effectValue || 1
+              
+              if (artifact.colors.length === 1) {
+                // Single color generator - generate effectValue runes of that color
+                for (let i = 0; i < effectValue; i++) {
+                  artifactRunes.push(artifact.colors[0] as import('../game/types').RuneColor)
+                }
+              } else if (artifact.colors.length === 2 && effectValue === 2) {
+                // Dual color generator - generate 1 of each color
+                artifactRunes.push(artifact.colors[0] as import('../game/types').RuneColor)
+                artifactRunes.push(artifact.colors[1] as import('../game/types').RuneColor)
+              } else if (artifact.colors.length === 2 && effectValue === 1) {
+                // Flexible generator - player chooses, default to first color (could be improved with UI)
+                artifactRunes.push(artifact.colors[0] as import('../game/types').RuneColor)
+              }
+            }
+          }
+        })
+        
         return {
           runes: pool.runes, // Permanent runes persist
-          temporaryRunes: sealRunes, // Seal runes replace previous temporary runes
+          temporaryRunes: [...sealRunes, ...artifactRunes], // Seal and artifact runes replace previous temporary runes
         }
       }
       
       const updatedP1RunePool = clearAndGenerateRunes(
         prev.metadata.player1RunePool,
-        prev.metadata.player1Seals || []
+        prev.metadata.player1Seals || [],
+        prev.player1Base
       )
       const updatedP2RunePool = clearAndGenerateRunes(
         prev.metadata.player2RunePool,
-        prev.metadata.player2Seals || []
+        prev.metadata.player2Seals || [],
+        prev.player2Base
       )
       
       // Temporary stats are now persistent - they don't reset automatically
@@ -685,6 +828,7 @@ export function useTurnManagement() {
     handleToggleStun,
     handlePass,
     handleEndDeployPhase,
+    handleSpawnCreep,
   }
 }
 
