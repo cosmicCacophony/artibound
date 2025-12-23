@@ -125,8 +125,24 @@ export function CardPreview({ card }: CardPreviewProps) {
       )}
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-        <div style={{ fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase', color: '#666' }}>
-          {card.cardType}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase', color: '#666' }}>
+            {card.cardType}
+          </div>
+          {/* Mech badge */}
+          {card.cardType === 'generic' && 'isMech' in card && (card as any).isMech && (
+            <div style={{ 
+              fontSize: '10px', 
+              fontWeight: 'bold', 
+              padding: '2px 6px', 
+              backgroundColor: '#9e9e9e',
+              color: '#fff',
+              borderRadius: '4px',
+              textTransform: 'uppercase'
+            }}>
+              ⚙️ MECH
+            </div>
+          )}
         </div>
         {/* Cost Display: Mana + Rune Requirements */}
         {card.manaCost !== undefined && (

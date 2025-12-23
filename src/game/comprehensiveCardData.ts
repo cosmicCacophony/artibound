@@ -4743,6 +4743,94 @@ export const rareBRCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith'
 ]
 
 // ============================================================================
+// MECH HEROES (UR + W)
+// ============================================================================
+
+export const mechHeroes: Omit<Hero, 'location' | 'owner'>[] = [
+  {
+    id: 'blue-mech-hero-engineer',
+    name: 'Master Engineer',
+    description: 'Mech synergy hero. Mechs you control get +1/+0.',
+    cardType: 'hero',
+    colors: ['blue'],
+    attack: 4,
+    health: 7,
+    maxHealth: 7,
+    currentHealth: 7,
+    signatureCardId: 'blue-mech-sig-engineer',
+    equippedItems: [],
+    supportEffect: 'Mechs you control get +1/+0',
+    ability: {
+      name: 'Salvage',
+      description: 'Return target mech from your graveyard to your hand. Costs 1U, Cooldown 3.',
+      manaCost: 1,
+      cooldown: 3,
+      effectType: 'custom',
+      runeCost: ['blue'],
+    },
+  },
+  {
+    id: 'red-mech-hero-forgemaster',
+    name: 'Forgemaster',
+    description: 'Mech synergy hero. Mechs you control get +1/+0.',
+    cardType: 'hero',
+    colors: ['red'],
+    attack: 5,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
+    signatureCardId: 'red-mech-sig-forgemaster',
+    equippedItems: [],
+    supportEffect: 'Mechs you control get +1/+0',
+    ability: {
+      name: 'Overload',
+      description: 'Mechs gain +2/+0 until end of turn. Costs 1R, Cooldown 2.',
+      manaCost: 1,
+      cooldown: 2,
+      effectType: 'buff_units',
+      runeCost: ['red'],
+    },
+  },
+  {
+    id: 'white-mech-hero-sentinel-commander',
+    name: 'Sentinel Commander',
+    description: 'Mech synergy hero. Mechs you control get +0/+1.',
+    cardType: 'hero',
+    colors: ['white'],
+    attack: 3,
+    health: 8,
+    maxHealth: 8,
+    currentHealth: 8,
+    signatureCardId: 'white-mech-sig-commander',
+    equippedItems: [],
+    supportEffect: 'Mechs you control get +0/+1',
+    ability: {
+      name: 'Fortify',
+      description: 'Mechs gain Shield until end of turn. Costs 1W, Cooldown 3.',
+      manaCost: 1,
+      cooldown: 3,
+      effectType: 'buff_units',
+      runeCost: ['white'],
+    },
+  },
+]
+
+// ============================================================================
+// MECH TRIBAL (UR + W) - Cross-Archetype Synergy
+// ============================================================================
+// Mechs are a tribal mechanic where mechs give each other bonuses
+// Primary: UR (aggro/tempo), Secondary: White (defensive)
+// Splash: Limited options in other colors
+
+// Forward declarations - actual definitions are below
+export const blueMechs: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = []
+export const redMechs: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = []
+export const whiteMechs: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = []
+export const greenMechs: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = []
+export const blackMechs: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = []
+export const mechSignatureCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = []
+
+// ============================================================================
 // ALL CARDS COMBINED
 // ============================================================================
 
@@ -4759,6 +4847,8 @@ export const allHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   ...rwgHeroes,
   ...ubgHeroes,
   ...comboHeroes,
+  // Mech heroes
+  ...mechHeroes,
   // Rare heroes
   ...rareBlueHeroes,
   ...rareWUHeroes,
@@ -4781,6 +4871,13 @@ export const allCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
   ...blackMidrangeCards,
   ...runeFinisherUnits,
   ...creepStackingCards,
+  // Mech tribal cards
+  ...blueMechs,
+  ...redMechs,
+  ...whiteMechs,
+  ...greenMechs,
+  ...blackMechs,
+  ...mechSignatureCards,
   // Rare cards
   ...rareBlackCards,
   ...rareRedCards,
@@ -5093,10 +5190,70 @@ export const variableRuneCostSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   },
 ]
 
+// Mech Support Artifacts
+export const mechArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
+  {
+    id: 'ur-mech-artifact-assembly-line',
+    name: 'Mech Assembly Line',
+    description: 'At start of turn, reduce mech costs by 1. Costs 4.',
+    cardType: 'artifact',
+    colors: ['blue', 'red'],
+    manaCost: 4,
+    consumesRunes: false,
+    effectType: 'mana_generation', // Repurposed for mech cost reduction
+    effectValue: 1,
+  },
+  {
+    id: 'ur-mech-artifact-power-core',
+    name: 'Power Core',
+    description: 'Mechs have +1/+1. Costs 3.',
+    cardType: 'artifact',
+    colors: ['blue', 'red'],
+    manaCost: 3,
+    consumesRunes: false,
+    effectType: 'damage_amplifier', // Repurposed for mech stat buff
+    effectValue: 1,
+  },
+]
+
+// Mech Support Spells
+export const mechSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  {
+    id: 'ur-mech-spell-overcharge',
+    name: 'Overcharge',
+    description: 'Mechs gain +3/+0 and Overwhelm until end of turn. Costs 3UR.',
+    cardType: 'spell',
+    colors: ['blue', 'red'],
+    manaCost: 3,
+    consumesRunes: true,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would be mech buff
+      damage: 0,
+    },
+    initiative: false,
+  },
+  {
+    id: 'white-mech-spell-emergency-repairs',
+    name: 'Emergency Repairs',
+    description: 'Restore all mechs to full health. Costs 3W.',
+    cardType: 'spell',
+    colors: ['white'],
+    manaCost: 3,
+    consumesRunes: true,
+    effect: {
+      type: 'draw_and_heal', // Repurposed for mech heal
+      healAmount: 999, // Full heal
+    },
+    initiative: false,
+  },
+]
+
 export const allArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   ...rwArtifacts,
   ...rgArtifacts,
   ...ubArtifacts,
+  // Mech artifacts
+  ...mechArtifacts,
   // Rare artifacts (equipment)
   ...rareWhiteCards,
   ...rareRGCards,
@@ -5117,6 +5274,8 @@ export const allSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   ...variableRuneCostSpells,
   ...monoRedAggroSpells,
   ...blackMidrangeSpells,
+  // Mech spells
+  ...mechSpells,
   ...runeFinisherSpells,
 ]
 
@@ -5234,6 +5393,525 @@ export const genericBattlefields: BattlefieldDefinition[] = [
     staticAbilityId: 'gold-per-turn',
   },
 ]
+
+// Blue Mechs (8 cards) - Tempo/spell synergy  
+blueMechs.push(...[
+  {
+    id: 'blue-mech-aether-scout',
+    name: 'Aether Scout',
+    description: 'Mech. Other mechs you control cost 1 less mana.',
+    cardType: 'generic',
+    colors: ['blue'],
+    manaCost: 3,
+    consumesRunes: false,
+    attack: 2,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+    isMech: true,
+    mechSynergy: {
+      costReduction: 1,
+    },
+  },
+  {
+    id: 'blue-mech-arcane-automaton',
+    name: 'Arcane Automaton',
+    description: 'Mech. When you cast a spell, mechs you control get +1/+0 until end of turn.',
+    cardType: 'generic',
+    colors: ['blue'],
+    manaCost: 4,
+    consumesRunes: false,
+    attack: 3,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    isMech: true,
+    mechSynergy: {
+      attackBonus: 0, // Bonus applied by spell trigger, not permanently
+    },
+  },
+  {
+    id: 'blue-mech-prototype-enforcer',
+    name: 'Prototype Enforcer',
+    description: 'Mech. ETB: Draw a card if you control another mech.',
+    cardType: 'generic',
+    colors: ['blue'],
+    manaCost: 5,
+    consumesRunes: true, // Requires U rune
+    attack: 4,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    isMech: true,
+    mechSynergy: {
+      etbEffect: 'draw_card',
+    },
+  },
+  {
+    id: 'blue-mech-storm-engine',
+    name: 'Storm Engine',
+    description: 'Mech. Other mechs you control have +1/+1. Costs 6UU.',
+    cardType: 'generic',
+    colors: ['blue', 'blue'],
+    manaCost: 6,
+    consumesRunes: true, // Requires UU runes
+    attack: 5,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+    isMech: true,
+    mechSynergy: {
+      attackBonus: 1,
+      healthBonus: 1,
+    },
+  },
+  {
+    id: 'blue-mech-temporal-construct',
+    name: 'Temporal Construct',
+    description: 'Mech. Other mechs you control have +0/+1.',
+    cardType: 'generic',
+    colors: ['blue'],
+    manaCost: 4,
+    consumesRunes: false,
+    attack: 3,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    isMech: true,
+    mechSynergy: {
+      healthBonus: 1,
+    },
+  },
+  {
+    id: 'blue-mech-thought-forged-sentinel',
+    name: 'Thought-Forged Sentinel',
+    description: 'Mech. ETB: If you control another mech, stun target enemy unit. Costs 5U.',
+    cardType: 'generic',
+    colors: ['blue'],
+    manaCost: 5,
+    consumesRunes: true, // Requires U rune
+    attack: 3,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+    isMech: true,
+    mechSynergy: {
+      etbEffect: 'stun_unit',
+    },
+  },
+  {
+    id: 'blue-mech-adaptive-drone',
+    name: 'Adaptive Drone',
+    description: 'Mech. 2/3 for 3 mana. Efficient tempo play.',
+    cardType: 'generic',
+    colors: ['blue'],
+    manaCost: 3,
+    consumesRunes: false,
+    attack: 2,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    isMech: true,
+    mechSynergy: {
+      attackBonus: 0, // No bonus, just a solid mech body
+    },
+  },
+  {
+    id: 'blue-mech-voltaic-engineer',
+    name: 'Voltaic Engineer',
+    description: 'Mech. Other mechs you control have +1/+0.',
+    cardType: 'generic',
+    colors: ['blue'],
+    manaCost: 4,
+    consumesRunes: false,
+    attack: 3,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    isMech: true,
+    mechSynergy: {
+      attackBonus: 1,
+    },
+  },
+])
+
+// Red Mechs (8 cards) - Aggro/direct damage
+redMechs.push(...[
+  {
+    id: 'red-mech-forge-golem',
+    name: 'Forge Golem',
+    description: 'Mech. When this attacks, mechs you control deal 1 damage to enemy tower.',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 3,
+    consumesRunes: false,
+    attack: 3,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+    isMech: true,
+    mechSynergy: {
+      etbEffect: 'mech_tower_damage', // Custom effect: mechs deal tower damage
+    },
+  },
+  {
+    id: 'red-mech-assault-construct',
+    name: 'Assault Construct',
+    description: 'Mech. ETB: Deal 2 damage to target if you control another mech.',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 4,
+    consumesRunes: false,
+    attack: 4,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    isMech: true,
+    mechSynergy: {
+      etbEffect: 'deal_damage',
+    },
+  },
+  {
+    id: 'red-mech-siege-titan',
+    name: 'Siege Titan',
+    description: 'Mech. Other mechs you control have Overwhelm. Costs 5R.',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 5,
+    consumesRunes: true, // Requires R rune
+    attack: 5,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    isMech: true,
+    mechSynergy: {
+      grantKeyword: 'overwhelm',
+    },
+  },
+  {
+    id: 'red-mech-blazing-colossus',
+    name: 'Blazing Colossus',
+    description: 'Mech. Mechs you control get +2/+0. Costs 7RR.',
+    cardType: 'generic',
+    colors: ['red', 'red'],
+    manaCost: 7,
+    consumesRunes: true, // Requires RR runes
+    attack: 6,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
+    isMech: true,
+    mechSynergy: {
+      attackBonus: 2,
+    },
+  },
+  {
+    id: 'red-mech-war-construct',
+    name: 'War Construct',
+    description: 'Mech. Other mechs you control have +1/+0.',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 4,
+    consumesRunes: false,
+    attack: 4,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    isMech: true,
+    mechSynergy: {
+      attackBonus: 1,
+    },
+  },
+  {
+    id: 'red-mech-flame-forged-titan',
+    name: 'Flame-Forged Titan',
+    description: 'Mech. 5/5 for 6 mana. Big aggressive body.',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 6,
+    consumesRunes: false,
+    attack: 5,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+    isMech: true,
+    mechSynergy: {
+      attackBonus: 0, // No bonus, just a big body
+    },
+  },
+  {
+    id: 'red-mech-molten-juggernaut',
+    name: 'Molten Juggernaut',
+    description: 'Mech. ETB: Deal 1 damage to all enemy units if you control another mech. Costs 5R.',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 5,
+    consumesRunes: true, // Requires R rune
+    attack: 4,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    isMech: true,
+    mechSynergy: {
+      etbEffect: 'aoe_damage',
+    },
+  },
+  {
+    id: 'red-mech-inferno-engine',
+    name: 'Inferno Engine',
+    description: 'Mech. Other mechs you control have +0/+1.',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 3,
+    consumesRunes: false,
+    attack: 2,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    isMech: true,
+    mechSynergy: {
+      healthBonus: 1,
+    },
+  },
+])
+
+// White Mechs (6 cards) - Defensive/protective
+whiteMechs.push(...[
+  {
+    id: 'white-mech-guardian-sentinel',
+    name: 'Guardian Sentinel',
+    description: 'Mech. Other mechs you control have Shield. Costs 4W.',
+    cardType: 'generic',
+    colors: ['white'],
+    manaCost: 4,
+    consumesRunes: true, // Requires W rune
+    attack: 2,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+    isMech: true,
+    mechSynergy: {
+      grantKeyword: 'shield',
+    },
+  },
+  {
+    id: 'white-mech-bastion-automaton',
+    name: 'Bastion Automaton',
+    description: 'Mech. ETB: Gain 2 tower armor if you control another mech. Costs 5W.',
+    cardType: 'generic',
+    colors: ['white'],
+    manaCost: 5,
+    consumesRunes: true, // Requires W rune
+    attack: 3,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
+    isMech: true,
+    mechSynergy: {
+      etbEffect: 'gain_armor',
+    },
+  },
+  {
+    id: 'white-mech-aegis-protector',
+    name: 'Aegis Protector',
+    description: 'Mech. Mechs you control get +0/+2. Costs 6W.',
+    cardType: 'generic',
+    colors: ['white'],
+    manaCost: 6,
+    consumesRunes: true, // Requires W rune
+    attack: 4,
+    health: 7,
+    maxHealth: 7,
+    currentHealth: 7,
+    isMech: true,
+    mechSynergy: {
+      healthBonus: 2,
+    },
+  },
+  {
+    id: 'white-mech-fortress-titan',
+    name: 'Fortress Titan',
+    description: 'Mech. Other mechs you control have Taunt and +1/+1. Costs 7WW.',
+    cardType: 'generic',
+    colors: ['white', 'white'],
+    manaCost: 7,
+    consumesRunes: true, // Requires WW runes
+    attack: 5,
+    health: 8,
+    maxHealth: 8,
+    currentHealth: 8,
+    isMech: true,
+    mechSynergy: {
+      attackBonus: 1,
+      healthBonus: 1,
+      grantKeyword: 'taunt',
+    },
+  },
+  {
+    id: 'white-mech-steel-warden',
+    name: 'Steel Warden',
+    description: 'Mech. Other mechs you control have +0/+1.',
+    cardType: 'generic',
+    colors: ['white'],
+    manaCost: 4,
+    consumesRunes: false,
+    attack: 3,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+    isMech: true,
+    mechSynergy: {
+      healthBonus: 1,
+    },
+  },
+  {
+    id: 'white-mech-radiant-defender',
+    name: 'Radiant Defender',
+    description: 'Mech. 3/6 for 5 mana. Solid defensive body.',
+    cardType: 'generic',
+    colors: ['white'],
+    manaCost: 5,
+    consumesRunes: false,
+    attack: 3,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
+    isMech: true,
+    mechSynergy: {
+      healthBonus: 0, // No bonus, just a defensive body
+    },
+  },
+])
+
+// Splash Mechs (2 per color - Green and Black)
+greenMechs.push(...[
+  {
+    id: 'green-mech-nature-forged-construct',
+    name: 'Nature-Forged Construct',
+    description: 'Mech. ETB: Add one G rune to your pool if you control another mech. Costs 4G.',
+    cardType: 'generic',
+    colors: ['green'],
+    manaCost: 4,
+    consumesRunes: true, // Requires G rune
+    attack: 3,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    isMech: true,
+    mechSynergy: {
+      etbEffect: 'add_rune',
+    },
+  },
+  {
+    id: 'green-mech-verdant-titan',
+    name: 'Verdant Titan',
+    description: 'Mech. 4/5 for 5 mana. Efficient green body.',
+    cardType: 'generic',
+    colors: ['green'],
+    manaCost: 5,
+    consumesRunes: false,
+    attack: 4,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+    isMech: true,
+    mechSynergy: {
+      healthBonus: 0, // No bonus, just efficient stats
+    },
+  },
+])
+
+blackMechs.push(...[
+  {
+    id: 'black-mech-void-construct',
+    name: 'Void Construct',
+    description: 'Mech. ETB: Destroy target unit with 2 or less health if you control another mech. Costs 5B.',
+    cardType: 'generic',
+    colors: ['black'],
+    manaCost: 5,
+    consumesRunes: true, // Requires B rune
+    attack: 3,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    isMech: true,
+    mechSynergy: {
+      etbEffect: 'destroy_unit',
+    },
+  },
+  {
+    id: 'black-mech-corrupted-automaton',
+    name: 'Corrupted Automaton',
+    description: 'Mech. 3/4 for 4 mana. Solid black mech.',
+    cardType: 'generic',
+    colors: ['black'],
+    manaCost: 4,
+    consumesRunes: false,
+    attack: 3,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    isMech: true,
+    mechSynergy: {
+      attackBonus: 0, // No bonus, just a mech body
+    },
+  },
+])
+
+// Mech Signature Cards
+mechSignatureCards.push(...[
+  {
+    id: 'blue-mech-sig-engineer',
+    name: 'Experimental Prototype',
+    description: 'Master Engineer signature. Mech. 3/3 for 4 mana.',
+    cardType: 'generic',
+    colors: ['blue'],
+    manaCost: 4,
+    consumesRunes: false,
+    attack: 3,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    isMech: true,
+    mechSynergy: {
+      attackBonus: 0,
+    },
+  },
+  {
+    id: 'red-mech-sig-forgemaster',
+    name: 'Forge Sentinel',
+    description: 'Forgemaster signature. Mech. 4/2 for 4 mana.',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 4,
+    consumesRunes: false,
+    attack: 4,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+    isMech: true,
+    mechSynergy: {
+      attackBonus: 0,
+    },
+  },
+  {
+    id: 'white-mech-sig-commander',
+    name: 'Guardian Construct',
+    description: 'Sentinel Commander signature. Mech. 2/4 for 4 mana.',
+    cardType: 'generic',
+    colors: ['white'],
+    manaCost: 4,
+    consumesRunes: false,
+    attack: 2,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    isMech: true,
+    mechSynergy: {
+      healthBonus: 0,
+    },
+  },
+])
 
 export const allBattlefields: BattlefieldDefinition[] = [
   ...archetypeBattlefields,

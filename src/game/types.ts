@@ -299,6 +299,16 @@ export interface GenericUnit extends BaseCard {
     abilities?: string[]
   }
   isEvolved?: boolean // Has this unit evolved this turn?
+  // Mech tribal mechanics
+  isMech?: boolean // Mech tribal tag
+  mechSynergy?: {
+    // Bonus this mech provides to other mechs
+    attackBonus?: number // +N attack to all other mechs
+    healthBonus?: number // +N health to all other mechs
+    grantKeyword?: string // Grant keyword (e.g., 'shield', 'overwhelm', 'taunt')
+    costReduction?: number // Reduce mech costs by N
+    etbEffect?: string // Special ETB effect when played with other mechs (e.g., 'draw_card', 'deal_damage', 'gain_armor')
+  }
 }
 
 // Spell Effect Types

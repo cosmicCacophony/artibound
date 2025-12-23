@@ -69,6 +69,10 @@ export function cardMatchesArchetype(card: BaseCard, activeArchetypes: Archetype
     
     // Legacy archetypes (for backward compatibility)
     else if (archetype === 'rw-legion') {
+      // Exclude mech cards from rw-legion archetype
+      const isMechCard = card.id.includes('mech')
+      if (isMechCard) continue
+      
       const hasRed = cardColors.includes('red')
       const hasWhite = cardColors.includes('white')
       const hasGreen = cardColors.includes('green')
@@ -113,6 +117,13 @@ export function heroMatchesArchetype(
   hero: Omit<Hero, 'location' | 'owner'>,
   activeArchetypes: Archetype[]
 ): boolean {
+  // Exclude mech heroes from rw-legion archetype
+  // Mech heroes should only be used in mech-focused decks
+  if (activeArchetypes.includes('rw-legion')) {
+    const isMechHero = hero.id.includes('mech-hero')
+    if (isMechHero) return false
+  }
+  
   // Heroes are just cards with colors, so use the same logic
   return cardMatchesArchetype(hero as BaseCard, activeArchetypes)
 }
