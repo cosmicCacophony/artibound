@@ -174,7 +174,7 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'rw-unit-mana-warrior',
     name: 'Mana Warrior',
-    description: '3/3. You may stun this unit to add 1 generic mana to your mana pool this turn. Costs 3R.',
+    description: '3/3. You may stun this unit to add 1 mana to your mana pool this turn. Costs 3R.',
     cardType: 'generic',
     colors: ['red'],
     manaCost: 3,
@@ -375,7 +375,7 @@ export const monoRedAggroSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'red-aggro-bolt',
     name: 'Fire Bolt',
-    description: 'Generic. Deal 4 damage to target unit or tower.',
+    description: 'Deal 4 damage to target unit or tower.',
     cardType: 'spell',
     colors: ['red'],
     manaCost: 2,
@@ -389,7 +389,7 @@ export const monoRedAggroSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'red-aggro-strike',
     name: 'Lightning Strike',
-    description: 'Generic. Deal 3 damage to target unit. If it dies, deal 2 damage to tower.',
+    description: 'Deal 3 damage to target unit. If it dies, deal 2 damage to tower.',
     cardType: 'spell',
     colors: ['red'],
     manaCost: 2,
@@ -429,7 +429,7 @@ export const monoRedAggroSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'red-aggro-blast',
     name: 'Fire Blast',
-    description: 'Generic. Deal 5 damage to target unit or tower.',
+    description: 'Deal 5 damage to target unit or tower.',
     cardType: 'spell',
     colors: ['red'],
     manaCost: 3,
@@ -443,7 +443,7 @@ export const monoRedAggroSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'red-aggro-burn',
     name: 'Burning Strike',
-    description: 'Generic. Deal 4 damage to target unit or tower. Costs 3RR.',
+    description: 'Deal 4 damage to target unit or tower. Costs 3RR.',
     cardType: 'spell',
     colors: ['red', 'red'],
     manaCost: 3,
@@ -459,7 +459,7 @@ export const monoRedAggroSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'red-aggro-surge',
     name: 'Power Surge',
-    description: 'Generic. Target unit gains +1/+1 and can attack towers this turn.',
+    description: 'Target unit gains +1/+1 and can attack towers this turn.',
     cardType: 'spell',
     colors: ['red'],
     manaCost: 1,
@@ -471,7 +471,7 @@ export const monoRedAggroSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'red-aggro-rage',
     name: 'Battle Rage',
-    description: 'Generic. Target unit gains +2/+2 this turn.',
+    description: 'Target unit gains +2/+2 this turn.',
     cardType: 'spell',
     colors: ['red'],
     manaCost: 2,
@@ -652,7 +652,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-sig-commander-2',
     name: 'Charge Order',
-    description: 'Generic. Commander signature - aggressive. All allies gain +2 attack this turn.',
+    description: 'Commander signature - aggressive. All allies gain +2 attack this turn.',
     cardType: 'spell',
     colors: ['red', 'white'],
     manaCost: 3,
@@ -666,7 +666,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-spell-rally-legion',
     name: 'Rally the Legion',
-    description: 'Generic. All Legion units get +2/+2 this round.',
+    description: 'All Legion units get +2/+2 this round.',
     cardType: 'spell',
     colors: ['red', 'white'],
     manaCost: 4,
@@ -705,7 +705,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-spell-whirling-death',
     name: 'Whirling Death',
-    description: 'Generic. Deal 2 damage to caster\'s adjacent enemies and give them -2 attack.',
+    description: 'Deal 2 damage to caster\'s adjacent enemies and give them -2 attack.',
     cardType: 'spell',
     colors: ['red'],
     manaCost: 2,
@@ -721,7 +721,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-spell-fighting-words',
     name: 'Fighting Words',
-    description: 'Generic. Target unit gains +3 attack this turn.',
+    description: 'Target unit gains +3 attack this turn.',
     cardType: 'spell',
     colors: ['red'],
     manaCost: 1,
@@ -733,7 +733,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-spell-into-the-fray',
     name: 'Into the Fray',
-    description: 'Generic. Target unit gains +3/+3 this turn.',
+    description: 'Target unit gains +3/+3 this turn.',
     cardType: 'spell',
     colors: ['red', 'white'],
     manaCost: 2,
@@ -745,7 +745,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-spell-rally-banner',
     name: 'Rally Banner',
-    description: 'Generic. All allies gain +1/+1 until end of turn. Draw a card.',
+    description: 'All allies gain +1/+1 until end of turn. Draw a card.',
     cardType: 'spell',
     colors: ['red', 'white'],
     manaCost: 4,
@@ -757,7 +757,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-spell-battle-cry',
     name: 'Battle Cry',
-    description: 'Generic. All allies gain +1 attack this turn.',
+    description: 'All allies gain +1 attack this turn.',
     cardType: 'spell',
     colors: ['red'],
     manaCost: 2,
@@ -1170,7 +1170,7 @@ export const ruSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ru-spell-2',
     name: 'Fireball',
-    description: 'Generic. Deal 5 damage',
+    description: 'Deal 5 damage',
     cardType: 'spell',
     colors: ['red'],
     manaCost: 3,
@@ -1886,7 +1886,7 @@ export const blackMidrangeSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'black-midrange-destroy-weak',
     name: 'Dismember',
-    description: 'Generic. Destroy target unit with 3 or less health.',
+    description: 'Destroy target unit with 3 or less health.',
     cardType: 'spell',
     colors: ['black'],
     manaCost: 2,
@@ -1900,7 +1900,7 @@ export const blackMidrangeSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'black-midrange-destroy-medium',
     name: 'Murder',
-    description: 'Generic. Destroy target unit with 4 or less health.',
+    description: 'Destroy target unit with 4 or less health.',
     cardType: 'spell',
     colors: ['black'],
     manaCost: 3,
@@ -1961,7 +1961,7 @@ export const blackMidrangeSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'black-midrange-draw-pain',
     name: 'Painful Truths',
-    description: 'Generic. Draw 2 cards, lose 2 life.',
+    description: 'Draw 2 cards, lose 2 life.',
     cardType: 'spell',
     colors: ['black'],
     manaCost: 3,
@@ -1973,7 +1973,7 @@ export const blackMidrangeSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'black-midrange-draw-simple',
     name: 'Read the Bones',
-    description: 'Generic. Draw 2 cards.',
+    description: 'Draw 2 cards.',
     cardType: 'spell',
     colors: ['black'],
     manaCost: 4,
@@ -2327,7 +2327,7 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     equippedItems: [],
     ability: {
       name: 'Steal Creep',
-      description: 'Take control of target enemy unit (generic only, not heroes)',
+      description: 'Take control of target enemy unit (units only, not heroes)',
       manaCost: 1,
       cooldown: 4,
       effectType: 'steal_unit',
@@ -2917,7 +2917,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'blue-spell-cunning-plan',
     name: 'Cunning Plan',
-    description: 'Generic. Swap target ally or enemy unit at one location with target unit in another spot in the same lane.',
+    description: 'Swap target ally or enemy unit at one location with target unit in another spot in the same lane.',
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 2,
@@ -3041,7 +3041,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-sig-necromancer-1',
     name: 'Death Ritual',
-    description: 'Generic. Necromancer signature - card draw. Draw 2 cards.',
+    description: 'Necromancer signature - card draw. Draw 2 cards.',
     cardType: 'spell',
     colors: ['black'],
     manaCost: 4,
@@ -3303,7 +3303,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-sig-necromancer-2',
     name: 'Soul Drain',
-    description: 'Generic. Necromancer signature - advantage. Deal 2 damage to target unit, draw a card.',
+    description: 'Necromancer signature - advantage. Deal 2 damage to target unit, draw a card.',
     cardType: 'spell',
     colors: ['black'],
     manaCost: 4,
@@ -3335,7 +3335,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-spell-removal',
     name: 'Arcane Removal',
-    description: 'Generic. Deal 6 damage to target unit or hero.',
+    description: 'Deal 6 damage to target unit or hero.',
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 2,
@@ -3350,7 +3350,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-spell-frost-bolt',
     name: 'Frost Bolt',
-    description: 'Generic. Deal 2 damage to enemy unit in front of your hero.',
+    description: 'Deal 2 damage to enemy unit in front of your hero.',
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 2,
@@ -3364,7 +3364,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-spell-light-strike-array',
     name: 'Light Strike Array',
-    description: 'Generic. Deal 2 damage to enemy unit in front of your hero and stun it.',
+    description: 'Deal 2 damage to enemy unit in front of your hero and stun it.',
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 2,
@@ -3380,7 +3380,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ubg-spell-deal-3-initiative',
     name: 'Tactical Strike',
-    description: 'Generic. Deal 3 damage to target unit. You get initiative (play next card first).',
+    description: 'Deal 3 damage to target unit. You get initiative (play next card first).',
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 2,
@@ -3409,7 +3409,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ubg-spell-invulnerable-reflect',
     name: 'Reflective Shield',
-    description: 'Generic. Target hero gains invulnerable this turn. Any damage that hero would take is reflected back to the source.',
+    description: 'Target hero gains invulnerable this turn. Any damage that hero would take is reflected back to the source.',
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 2,
@@ -3421,7 +3421,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ubg-spell-move-hero',
     name: 'Tactical Repositioning',
-    description: 'Generic. Move target hero to be directly in front of target unit in different battlefield.',
+    description: 'Move target hero to be directly in front of target unit in different battlefield.',
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 1,
@@ -3433,7 +3433,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ubg-spell-aoe-2-all',
     name: 'Frost Wave',
-    description: 'Generic. Deal 2 damage to all enemy units in target battlefield.',
+    description: 'Deal 2 damage to all enemy units in target battlefield.',
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 3,
@@ -3448,7 +3448,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ubg-spell-aoe-6-distributed',
     name: 'Arcane Barrage',
-    description: 'Generic. Deal 6 damage evenly divided to target unit and adjacent units. 0 units: 6 to tower. 1 unit: 3+3. 2 units: 2+2+2. 3 units: 2+2+2.',
+    description: 'Deal 6 damage evenly divided to target unit and adjacent units. 0 units: 6 to tower. 1 unit: 3+3. 2 units: 2+2+2. 3 units: 2+2+2.',
     cardType: 'spell',
     colors: ['blue', 'black'],
     manaCost: 4,
@@ -5379,7 +5379,7 @@ export const genericBattlefields: BattlefieldDefinition[] = [
   {
     id: 'battlefield-neutral-1',
     name: 'Neutral Ground',
-    description: 'Generic battlefield',
+    description: 'Neutral battlefield',
     colors: [],
     staticAbility: 'No special ability',
     staticAbilityId: 'none',
@@ -5387,7 +5387,7 @@ export const genericBattlefields: BattlefieldDefinition[] = [
   {
     id: 'battlefield-neutral-2',
     name: 'Training Field',
-    description: 'Generic battlefield',
+    description: 'Neutral battlefield',
     colors: [],
     staticAbility: 'Units gain +1 attack on first turn',
     staticAbilityId: 'first-turn-buff',
@@ -5395,7 +5395,7 @@ export const genericBattlefields: BattlefieldDefinition[] = [
   {
     id: 'battlefield-neutral-3',
     name: 'Ancient Ruins',
-    description: 'Generic battlefield',
+    description: 'Neutral battlefield',
     colors: [],
     staticAbility: 'Gain 1 gold each turn',
     staticAbilityId: 'gold-per-turn',
