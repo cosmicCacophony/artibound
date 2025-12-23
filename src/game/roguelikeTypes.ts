@@ -7,6 +7,8 @@ import { Hero, BaseCard, Color, ArtifactCard, SpellCard, GenericUnit } from './t
  * - Heroes, artifacts, spells, units only
  * - No battlefields, no items
  * - 4 hero picks + 14 mixed packs = 18 packs total
+ * 
+ * Draft order: Normal packs first (packs 1-4), then heroes spread throughout (packs 5, 10, 15, 18)
  */
 
 export type RoguelikeDraftItem = Hero | ArtifactCard | SpellCard | GenericUnit
@@ -56,7 +58,7 @@ export interface RoguelikeDraftState {
 export const ROGUELIKE_HEROES_REQUIRED = 4
 export const ROGUELIKE_CARDS_REQUIRED = 20 // Minimum cards (artifacts + spells + units)
 export const ROGUELIKE_TOTAL_PACKS = 18
-export const ROGUELIKE_HERO_PICK_PACKS = [1, 6, 11, 16] // Packs where you pick a hero
+export const ROGUELIKE_HERO_PICK_PACKS = [5, 10, 15, 18] // Packs where you pick a hero (after normal packs)
 export const ROGUELIKE_PICKS_PER_MIXED_PACK = 2
 
 

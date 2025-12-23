@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
 import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, BattlefieldDefinition, FinalDraftSelection, Color, HEROES_REQUIRED, CARDS_REQUIRED, ShopItem, Archetype, GameMetadata } from '../game/types'
 import { createInitialGameState, createCardLibrary, createGameStateFromDraft } from '../game/sampleData'
-import { draftableHeroes } from '../game/draftData'
 import { allCards, allSpells, allArtifacts, allBattlefields, allHeroes } from '../game/cardData'
 import { ubHeroes } from '../game/comprehensiveCardData'
-import { heroMatchesArchetype, cardMatchesArchetype } from '../game/draftSystem'
+import { heroMatchesArchetype, cardMatchesArchetype } from '../game/archetypeUtils'
 
 interface GameContextType {
   // Game State

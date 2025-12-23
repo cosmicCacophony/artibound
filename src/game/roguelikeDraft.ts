@@ -6,8 +6,10 @@ import { RoguelikePack, RoguelikeDraftState, ROGUELIKE_HERO_PICK_PACKS } from '.
  * Roguelike Draft System
  * 
  * Generates packs for roguelike mode:
- * - Hero picks: Pick 1 hero from 5 (packs 1, 6, 11, 16)
- * - Mixed packs: Pick 2 items from 10-14 items (all other packs)
+ * - Mixed packs: Pick 2 items from 10-14 items (most packs)
+ * - Hero picks: Pick 1 hero from 5 (packs 5, 10, 15, 18)
+ * 
+ * Draft order: Normal packs first, then heroes spread throughout
  */
 
 // Helper to shuffle array

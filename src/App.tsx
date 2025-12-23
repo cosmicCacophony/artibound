@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { Board } from './components/Board'
-import DraftView from './components/DraftView'
 import { RoguelikeDraftView } from './components/RoguelikeDraftView'
 import { GameProvider, useGameContext } from './context/GameContext'
 import './App.css'
 
 function AppContent() {
-  const [view, setView] = useState<'game' | 'draft' | 'roguelike'>('roguelike')
+  const [view, setView] = useState<'game' | 'roguelike'>('roguelike')
   const { initializeRandomGame } = useGameContext()
 
   const handleStartRandomGame = () => {
@@ -29,19 +28,6 @@ function AppContent() {
           }}
         >
           Roguelike Draft
-        </button>
-        <button
-          onClick={() => setView('draft')}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: view === 'draft' ? '#2196F3' : '#ccc',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-          }}
-        >
-          PVP Draft
         </button>
         <button
           onClick={() => setView('game')}
@@ -76,8 +62,6 @@ function AppContent() {
       </div>
       {view === 'roguelike' ? (
         <RoguelikeDraftView onStartGame={() => setView('game')} />
-      ) : view === 'draft' ? (
-        <DraftView onStartGame={() => setView('game')} />
       ) : (
         <Board />
       )}

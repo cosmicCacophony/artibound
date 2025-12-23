@@ -3,7 +3,25 @@ import { useRoguelikeDraft } from '../hooks/useRoguelikeDraft'
 import { RoguelikeDraftItem } from '../game/roguelikeTypes'
 import { Hero, ArtifactCard, SpellCard, GenericUnit, BaseCard, FinalDraftSelection } from '../game/types'
 import { CardPreview } from './CardPreview'
-import { downloadDraftAsJSON } from '../game/draftExport'
+// Simple export function for roguelike draft
+const downloadDraftAsJSON = (draftState: any, _: any, archetype: string) => {
+  const dataStr = JSON.stringify({
+    archetype,
+    draftedCards: draftState.draftedCards,
+    heroes: draftState.heroes,
+    timestamp: new Date().toISOString(),
+  }, null, 2)
+  
+  const dataBlob = new Blob([dataStr], { type: 'application/json' })
+  const url = URL.createObjectURL(dataBlob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `roguelike-draft-${Date.now()}.json`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
 import { useGameContext } from '../context/GameContext'
 import { allBattlefields } from '../game/cardData'
 
