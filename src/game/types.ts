@@ -379,6 +379,7 @@ export type ArtifactEffectType =
   | 'life_loss_draw' // Lose life but draw card
   | 'token_generation' // Spawns tokens each turn
   | 'equipment' // Can be attached to units
+  | 'saga' // Saga-like artifact with multiple chapters
 
 export interface ArtifactCard extends BaseCard {
   cardType: 'artifact'
@@ -394,6 +395,13 @@ export interface ArtifactCard extends BaseCard {
     health?: number
     maxHealth?: number
     abilities?: string[] // e.g., ['cleave', 'taunt', 'flying']
+  }
+  // Saga-specific fields
+  sagaCounters?: number // Current chapter number (1, 2, or 3). Artifact is destroyed when it reaches 3
+  sagaEffects?: {
+    chapter1?: string // Effect description for chapter 1
+    chapter2?: string // Effect description for chapter 2
+    chapter3?: string // Effect description for chapter 3
   }
 }
 

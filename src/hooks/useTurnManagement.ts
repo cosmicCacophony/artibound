@@ -54,7 +54,8 @@ export function useTurnManagement() {
         'battlefieldA',
         initialTowerHP,
         metadata.stunnedHeroes || {},
-        initialTowerArmor
+        initialTowerArmor,
+        gameState
       )
       
       // Use updated tower HP from A for B's combat
@@ -63,7 +64,8 @@ export function useTurnManagement() {
         'battlefieldB',
         resultA.updatedTowerHP,
         metadata.stunnedHeroes || {},
-        initialTowerArmor
+        initialTowerArmor,
+        gameState
       )
       
       // Resolve ranged attacks from base/deploy zone (after battlefield combat)
@@ -635,6 +637,131 @@ export function useTurnManagement() {
       const battlefieldAWithCreeps = spawnCreeps(updatedBattlefieldA, 'battlefieldA')
       const battlefieldBWithCreeps = spawnCreeps(updatedBattlefieldB, 'battlefieldB')
       
+      // Process saga artifacts: increment counters, create tokens, apply effects, destroy after Chapter 3
+      const processSagaArtifacts = (
+        playerBase: import('../game/types').Card[],
+        player: 'player1' | 'player2',
+        battlefields: { battlefieldA: typeof prev.battlefieldA, battlefieldB: typeof prev.battlefieldB }
+      ): {
+        updatedBase: import('../game/types').Card[]
+        updatedBattlefields: { battlefieldA: typeof prev.battlefieldA, battlefieldB: typeof prev.battlefieldB }
+      } => {
+        let updatedBase = [...playerBase]
+        let updatedBattlefieldA = { ...battlefields.battlefieldA }
+        let updatedBattlefieldB = { ...battlefields.battlefieldB }
+        
+        const sagaArtifacts = updatedBase.filter(
+          card => card.cardType === 'artifact' && 
+          (card as import('../game/types').ArtifactCard).effectType === 'saga' &&
+          card.owner === player
+        ) as import('../game/types').ArtifactCard[]
+        
+        for (const artifact of sagaArtifacts) {
+          const currentCounter = artifact.sagaCounters || 0
+          const newCounter = currentCounter + 1
+          
+          // Update artifact with new counter
+          updatedBase = updatedBase.map(card => 
+            card.id === artifact.id 
+              ? { ...card, sagaCounters: newCounter } as import('../game/types').ArtifactCard
+              : card
+          )
+          
+          // Process Chapter 1: Create 1/1 Mech token each turn on both battlefields
+          if (newCounter >= 1) {
+            // Create token on battlefield A
+            let emptySlotA: number | null = null
+            for (let slot = 1; slot <= 5; slot++) {
+              const slotOccupied = updatedBattlefieldA[player].some(c => c.slot === slot)
+              if (!slotOccupied) {
+                emptySlotA = slot
+                break
+              }
+            }
+            if (emptySlotA !== null) {
+              const mechTokenA: import('../game/types').GenericUnit = {
+                id: `mech-token-${player}-battlefieldA-${newTurn}-${Date.now()}`,
+                name: 'Mech Token',
+                description: '1/1 Mech token created by Mech Assembly Line',
+                cardType: 'generic',
+                colors: ['blue', 'red'],
+                manaCost: 0,
+                attack: 1,
+                health: 1,
+                maxHealth: 1,
+                currentHealth: 1,
+                location: 'battlefieldA',
+                owner: player,
+                slot: emptySlotA,
+                isMech: true,
+              }
+              updatedBattlefieldA[player] = [...updatedBattlefieldA[player], mechTokenA]
+            }
+            
+            // Create token on battlefield B
+            let emptySlotB: number | null = null
+            for (let slot = 1; slot <= 5; slot++) {
+              const slotOccupied = updatedBattlefieldB[player].some(c => c.slot === slot)
+              if (!slotOccupied) {
+                emptySlotB = slot
+                break
+              }
+            }
+            if (emptySlotB !== null) {
+              const mechTokenB: import('../game/types').GenericUnit = {
+                id: `mech-token-${player}-battlefieldB-${newTurn}-${Date.now()}-b`,
+                name: 'Mech Token',
+                description: '1/1 Mech token created by Mech Assembly Line',
+                cardType: 'generic',
+                colors: ['blue', 'red'],
+                manaCost: 0,
+                attack: 1,
+                health: 1,
+                maxHealth: 1,
+                currentHealth: 1,
+                location: 'battlefieldB',
+                owner: player,
+                slot: emptySlotB,
+                isMech: true,
+              }
+              updatedBattlefieldB[player] = [...updatedBattlefieldB[player], mechTokenB]
+            }
+          }
+          
+          // Destroy artifact after Chapter 3
+          if (newCounter >= 3) {
+            updatedBase = updatedBase.filter(card => card.id !== artifact.id)
+          }
+        }
+        
+        return { 
+          updatedBase, 
+          updatedBattlefields: { battlefieldA: updatedBattlefieldA, battlefieldB: updatedBattlefieldB }
+        }
+      }
+      
+      // Process sagas for player1
+      const p1Saga = processSagaArtifacts(
+        prev.player1Base, 
+        'player1',
+        { battlefieldA: battlefieldAWithCreeps, battlefieldB: battlefieldBWithCreeps }
+      )
+      
+      // Process sagas for player2 (using updated battlefields from player1)
+      const p2Saga = processSagaArtifacts(
+        prev.player2Base,
+        'player2',
+        p1Saga.updatedBattlefields
+      )
+      
+      // Final battlefields combine both players' saga effects
+      const finalBattlefieldA = p2Saga.updatedBattlefields.battlefieldA
+      const finalBattlefieldB = p2Saga.updatedBattlefields.battlefieldB
+      
+      // Final bases (player1 and player2 processed separately)
+      const finalP1Base = p1Saga.updatedBase
+      const finalP2Base = p2Saga.updatedBase
+      
       // Rune system updates:
       // 1. Clear temporary runes from previous turn
       // 2. Generate new temporary runes from seals
@@ -698,18 +825,12 @@ export function useTurnManagement() {
       
       return {
         ...prev,
-        battlefieldA: {
-          player1: battlefieldAWithCreeps.player1,
-          player2: battlefieldAWithCreeps.player2,
-        },
-        battlefieldB: {
-          player1: battlefieldBWithCreeps.player1,
-          player2: battlefieldBWithCreeps.player2,
-        },
+        battlefieldA: finalBattlefieldA,
+        battlefieldB: finalBattlefieldB,
         player1Hand: prev.player1Hand,
         player2Hand: prev.player2Hand,
-        player1Base: prev.player1Base.map(c => healHeroInBase(c)),
-        player2Base: prev.player2Base.map(c => healHeroInBase(c)),
+        player1Base: finalP1Base.map(c => healHeroInBase(c)),
+        player2Base: finalP2Base.map(c => healHeroInBase(c)),
         metadata: {
           ...prev.metadata,
           currentTurn: newTurn,

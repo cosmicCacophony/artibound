@@ -1,4 +1,4 @@
-import { GameState, PlayerId, GenericUnit, Hero, Card, Battlefield } from './types'
+import { GameState, PlayerId, GenericUnit, Hero, Card, Battlefield, ArtifactCard } from './types'
 
 /**
  * Mech Tribal System
@@ -143,6 +143,10 @@ export function getEffectiveStatsWithMechBonuses(
   health += mechBonuses.healthBonus
   maxHealth += mechBonuses.healthBonus
 
+  // Apply saga bonuses (need gameState for this, but we only have battlefield)
+  // Saga bonuses will be applied in getAttackPowerWithMechBonus and getHealthWithMechBonus
+  // which have access to gameState
+
   return {
     attack,
     health,
@@ -200,7 +204,8 @@ export function getMechETBEffects(
 export function getAttackPowerWithMechBonus(
   unit: Card,
   battlefield: Battlefield,
-  player: PlayerId
+  player: PlayerId,
+  gameState?: GameState
 ): number {
   let baseAttack = 0
   
@@ -220,7 +225,15 @@ export function getAttackPowerWithMechBonus(
 
   // Get mech attack bonuses
   const mechBonuses = getMechBonuses(unit.id, battlefield, player)
-  return baseAttack + mechBonuses.attackBonus
+  let totalAttack = baseAttack + mechBonuses.attackBonus
+  
+  // Apply saga Chapter 2 bonus (+1/+1 per mech) if gameState is provided
+  if (gameState) {
+    const sagaBonuses = getSagaBonuses(gameState, player)
+    totalAttack += sagaBonuses.chapter2Bonus.attack
+  }
+  
+  return totalAttack
 }
 
 /**
@@ -230,7 +243,8 @@ export function getAttackPowerWithMechBonus(
 export function getHealthWithMechBonus(
   unit: Card,
   battlefield: Battlefield,
-  player: PlayerId
+  player: PlayerId,
+  gameState?: GameState
 ): { currentHealth: number, maxHealth: number } {
   let currentHealth = 0
   let maxHealth = 0
@@ -252,9 +266,19 @@ export function getHealthWithMechBonus(
 
   // Get mech health bonuses
   const mechBonuses = getMechBonuses(unit.id, battlefield, player)
+  let totalCurrentHealth = currentHealth + mechBonuses.healthBonus
+  let totalMaxHealth = maxHealth + mechBonuses.healthBonus
+  
+  // Apply saga Chapter 2 bonus (+1/+1 per mech) if gameState is provided
+  if (gameState) {
+    const sagaBonuses = getSagaBonuses(gameState, player)
+    totalCurrentHealth += sagaBonuses.chapter2Bonus.health
+    totalMaxHealth += sagaBonuses.chapter2Bonus.health
+  }
+  
   return {
-    currentHealth: currentHealth + mechBonuses.healthBonus,
-    maxHealth: maxHealth + mechBonuses.healthBonus
+    currentHealth: totalCurrentHealth,
+    maxHealth: totalMaxHealth
   }
 }
 
@@ -278,5 +302,65 @@ export function getEffectiveMechCost(
   
   // Mech cost can't go below 0
   return Math.max(0, baseCost - reduction)
+}
+
+/**
+ * Get saga bonuses from Mech Assembly Line artifact
+ * Returns bonuses based on saga chapter
+ */
+export function getSagaBonuses(
+  gameState: GameState,
+  player: PlayerId
+): {
+  chapter2Bonus: { attack: number, health: number } // +1/+1 per mech
+  chapter3Active: boolean // Cleave +1 and +3 damage to combat target
+} {
+  const playerBase = player === 'player1' ? gameState.player1Base : gameState.player2Base
+  const sagaArtifacts = playerBase.filter(
+    card => card.cardType === 'artifact' && 
+    (card as ArtifactCard).effectType === 'saga' &&
+    (card as ArtifactCard).id === 'ur-mech-artifact-assembly-line'
+  ) as ArtifactCard[]
+  
+  if (sagaArtifacts.length === 0) {
+    return { chapter2Bonus: { attack: 0, health: 0 }, chapter3Active: false }
+  }
+  
+  const artifact = sagaArtifacts[0]
+  const sagaCounter = artifact.sagaCounters || 0
+  
+  // Chapter 2: +1/+1 per mech
+  let chapter2Bonus = { attack: 0, health: 0 }
+  if (sagaCounter >= 2) {
+    const totalMechs = countTotalMechs(gameState, player)
+    chapter2Bonus = { attack: totalMechs, health: totalMechs }
+  }
+  
+  // Chapter 3: Cleave +1 and +3 damage to combat target
+  const chapter3Active = sagaCounter >= 3
+  
+  return { chapter2Bonus, chapter3Active }
+}
+
+/**
+ * Get saga combat damage bonus (Chapter 3: +3 damage to combat target)
+ */
+export function getSagaCombatDamageBonus(
+  gameState: GameState,
+  player: PlayerId
+): number {
+  const sagaBonuses = getSagaBonuses(gameState, player)
+  return sagaBonuses.chapter3Active ? 3 : 0
+}
+
+/**
+ * Check if mechs have cleave from saga (Chapter 3)
+ */
+export function hasSagaCleave(
+  gameState: GameState,
+  player: PlayerId
+): boolean {
+  const sagaBonuses = getSagaBonuses(gameState, player)
+  return sagaBonuses.chapter3Active
 }
 

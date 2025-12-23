@@ -2876,13 +2876,14 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   {
     id: 'blue-artifact-enhanced-creeps',
     name: 'Enhanced Creep Generator',
-    description: 'Artifact. Creeps that spawn become 2/3 instead of 1/1.',
+    description: 'Artifact. Creeps that spawn become 2/3 Mechs instead of 1/1.',
     cardType: 'artifact',
     colors: ['blue'],
     manaCost: 3,
     consumesRunes: true, // Requires U rune
     effectType: 'creep_modifier',
-    effectValue: 1, // Modifies creep stats
+    effectValue: 1, // Modifies creep stats + makes them mechs
+    rarity: 'uncommon',
   },
   {
     id: 'black-artifact-dark-pact',
@@ -4805,12 +4806,13 @@ export const mechHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     equippedItems: [],
     supportEffect: 'Mechs you control get +0/+1',
     ability: {
-      name: 'Fortify',
-      description: 'Mechs gain Shield until end of turn. Costs 1W, Cooldown 3.',
+      name: 'Deploy Sentinel',
+      description: 'Create a 1/1 Mech token. Costs 1W, Cooldown 2.',
       manaCost: 1,
-      cooldown: 3,
-      effectType: 'buff_units',
+      cooldown: 2,
+      effectType: 'create_unit',
       runeCost: ['white'],
+      effectValue: 1, // Creates 1 token
     },
   },
 ]
@@ -5195,13 +5197,19 @@ export const mechArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   {
     id: 'ur-mech-artifact-assembly-line',
     name: 'Mech Assembly Line',
-    description: 'At start of turn, reduce mech costs by 1. Costs 4.',
+    description: 'Saga artifact. Chapter 1: Create a 1/1 Mech token each turn. Chapter 2: Mechs you control get +1/+1 for each mech you control. Chapter 3: All mechs you control gain Cleave +1 and deal 3 damage to their combat target. Destroy after Chapter 3. Costs 4UURR.',
     cardType: 'artifact',
-    colors: ['blue', 'red'],
+    colors: ['blue', 'blue', 'red', 'red'], // 4UURR = 4 generic + 2 blue + 2 red runes
     manaCost: 4,
-    consumesRunes: false,
-    effectType: 'mana_generation', // Repurposed for mech cost reduction
-    effectValue: 1,
+    consumesRunes: true,
+    effectType: 'saga',
+    effectValue: 0,
+    sagaCounters: 0, // Starts at 0, increments each turn
+    sagaEffects: {
+      chapter1: 'Create a 1/1 Mech token each turn',
+      chapter2: 'Mechs you control get +1/+1 for each mech you control',
+      chapter3: 'All mechs you control gain Cleave +1 and deal 3 damage to their combat target',
+    },
   },
   {
     id: 'ur-mech-artifact-power-core',
@@ -5532,6 +5540,80 @@ blueMechs.push(...[
     mechSynergy: {
       attackBonus: 1,
     },
+    rarity: 'common',
+  },
+  // Additional Blue Mechs for prevalence
+  {
+    id: 'blue-mech-cogwork-sentry',
+    name: 'Cogwork Sentry',
+    description: 'Mech. 3/2 for 3 mana. Efficient body.',
+    cardType: 'generic',
+    colors: ['blue'],
+    manaCost: 3,
+    consumesRunes: false,
+    attack: 3,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+    isMech: true,
+    mechSynergy: {
+      attackBonus: 0,
+    },
+    rarity: 'common',
+  },
+  {
+    id: 'blue-mech-flux-automaton',
+    name: 'Flux Automaton',
+    description: 'Mech. Other mechs have +0/+1.',
+    cardType: 'generic',
+    colors: ['blue'],
+    manaCost: 3,
+    consumesRunes: false,
+    attack: 2,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    isMech: true,
+    mechSynergy: {
+      healthBonus: 1,
+    },
+    rarity: 'common',
+  },
+  {
+    id: 'blue-mech-chrono-construct',
+    name: 'Chrono Construct',
+    description: 'Mech. 2/4 for 4 mana. Defensive tempo.',
+    cardType: 'generic',
+    colors: ['blue'],
+    manaCost: 4,
+    consumesRunes: false,
+    attack: 2,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    isMech: true,
+    mechSynergy: {
+      healthBonus: 0,
+    },
+    rarity: 'common',
+  },
+  {
+    id: 'blue-mech-rift-walker',
+    name: 'Rift Walker',
+    description: 'Mech. Other mechs cost 1 less (max 1 reduction per turn).',
+    cardType: 'generic',
+    colors: ['blue'],
+    manaCost: 5,
+    consumesRunes: true,
+    attack: 3,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    isMech: true,
+    mechSynergy: {
+      costReduction: 1,
+    },
+    rarity: 'uncommon',
   },
 ])
 
@@ -5672,6 +5754,80 @@ redMechs.push(...[
     mechSynergy: {
       healthBonus: 1,
     },
+    rarity: 'common',
+  },
+  // Additional Red Mechs for prevalence
+  {
+    id: 'red-mech-battle-automaton',
+    name: 'Battle Automaton',
+    description: 'Mech. 4/2 for 3 mana. Aggressive body.',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 3,
+    consumesRunes: false,
+    attack: 4,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+    isMech: true,
+    mechSynergy: {
+      attackBonus: 0,
+    },
+    rarity: 'common',
+  },
+  {
+    id: 'red-mech-iron-bruiser',
+    name: 'Iron Bruiser',
+    description: 'Mech. Other mechs have +1/+0.',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 4,
+    consumesRunes: false,
+    attack: 3,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    isMech: true,
+    mechSynergy: {
+      attackBonus: 1,
+    },
+    rarity: 'common',
+  },
+  {
+    id: 'red-mech-furnace-sentinel',
+    name: 'Furnace Sentinel',
+    description: 'Mech. 3/3 for 4 mana. Solid stats.',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 4,
+    consumesRunes: false,
+    attack: 3,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    isMech: true,
+    mechSynergy: {
+      attackBonus: 0,
+    },
+    rarity: 'common',
+  },
+  {
+    id: 'red-mech-scorched-construct',
+    name: 'Scorched Construct',
+    description: 'Mech. ETB: Deal 1 damage to target if you control another mech.',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 3,
+    consumesRunes: false,
+    attack: 2,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    isMech: true,
+    mechSynergy: {
+      etbEffect: 'deal_damage',
+    },
+    rarity: 'uncommon',
   },
 ])
 
@@ -5780,6 +5936,62 @@ whiteMechs.push(...[
     mechSynergy: {
       healthBonus: 0, // No bonus, just a defensive body
     },
+    rarity: 'common',
+  },
+  // Additional White Mechs for prevalence
+  {
+    id: 'white-mech-sanctum-guardian',
+    name: 'Sanctum Guardian',
+    description: 'Mech. 2/4 for 3 mana. Defensive.',
+    cardType: 'generic',
+    colors: ['white'],
+    manaCost: 3,
+    consumesRunes: false,
+    attack: 2,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    isMech: true,
+    mechSynergy: {
+      healthBonus: 0,
+    },
+    rarity: 'common',
+  },
+  {
+    id: 'white-mech-light-bearer',
+    name: 'Light Bearer',
+    description: 'Mech. Other mechs have +0/+1.',
+    cardType: 'generic',
+    colors: ['white'],
+    manaCost: 4,
+    consumesRunes: false,
+    attack: 2,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+    isMech: true,
+    mechSynergy: {
+      healthBonus: 1,
+    },
+    rarity: 'common',
+  },
+  {
+    id: 'white-mech-divine-automaton',
+    name: 'Divine Automaton',
+    description: 'Mech. 3/5 for 5 mana. Solid defender.',
+    cardType: 'generic',
+    colors: ['white'],
+    manaCost: 5,
+    consumesRunes: false,
+    attack: 3,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+    isMech: true,
+    mechSynergy: {
+      healthBonus: 0,
+    },
+    rarity: 'common',
   },
 ])
 
@@ -5818,6 +6030,44 @@ greenMechs.push(...[
     mechSynergy: {
       healthBonus: 0, // No bonus, just efficient stats
     },
+    rarity: 'common',
+  },
+  // Additional Green Mechs for prevalence
+  {
+    id: 'green-mech-bramble-construct',
+    name: 'Bramble Construct',
+    description: 'Mech. 3/5 for 5 mana. Solid green body.',
+    cardType: 'generic',
+    colors: ['green'],
+    manaCost: 5,
+    consumesRunes: false,
+    attack: 3,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+    isMech: true,
+    mechSynergy: {
+      healthBonus: 0,
+    },
+    rarity: 'common',
+  },
+  {
+    id: 'green-mech-growth-engine',
+    name: 'Growth Engine',
+    description: 'Mech. Other mechs have +0/+1.',
+    cardType: 'generic',
+    colors: ['green'],
+    manaCost: 4,
+    consumesRunes: false,
+    attack: 2,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    isMech: true,
+    mechSynergy: {
+      healthBonus: 1,
+    },
+    rarity: 'uncommon',
   },
 ])
 
@@ -5855,6 +6105,44 @@ blackMechs.push(...[
     mechSynergy: {
       attackBonus: 0, // No bonus, just a mech body
     },
+    rarity: 'common',
+  },
+  // Additional Black Mechs for prevalence
+  {
+    id: 'black-mech-shadow-automaton',
+    name: 'Shadow Automaton',
+    description: 'Mech. 3/3 for 4 mana. Solid black body.',
+    cardType: 'generic',
+    colors: ['black'],
+    manaCost: 4,
+    consumesRunes: false,
+    attack: 3,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    isMech: true,
+    mechSynergy: {
+      attackBonus: 0,
+    },
+    rarity: 'common',
+  },
+  {
+    id: 'black-mech-death-engine',
+    name: 'Death Engine',
+    description: 'Mech. Other mechs have +1/+0.',
+    cardType: 'generic',
+    colors: ['black'],
+    manaCost: 5,
+    consumesRunes: false,
+    attack: 4,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    isMech: true,
+    mechSynergy: {
+      attackBonus: 1,
+    },
+    rarity: 'uncommon',
   },
 ])
 

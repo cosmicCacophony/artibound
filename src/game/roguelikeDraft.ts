@@ -182,16 +182,18 @@ export function generateHeroPickPack(
 
 /**
  * Generate a mixed pack (all other packs)
+ * Always generates exactly 15 cards
  */
 export function generateMixedPack(
   packNumber: number,
   playerColors: Color[]
 ): RoguelikePack {
-  // Pack contents: 1-2 heroes, 3-4 artifacts, 3-4 spells, 3-4 units
-  const heroCount = Math.random() > 0.5 ? 1 : 2
-  const artifactCount = 3 + Math.floor(Math.random() * 2) // 3-4
-  const spellCount = 3 + Math.floor(Math.random() * 2) // 3-4
-  const unitCount = 3 + Math.floor(Math.random() * 2) // 3-4
+  // Pack contents: Always 15 cards total
+  // Distribution: 2 heroes, 4 artifacts, 4 spells, 5 units
+  const heroCount = 2
+  const artifactCount = 4
+  const spellCount = 4
+  const unitCount = 5
   
   const heroes = getWeightedCards(allHeroes, playerColors, heroCount)
   const artifacts = getWeightedCards(allArtifacts, playerColors, artifactCount)

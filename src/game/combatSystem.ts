@@ -1,4 +1,5 @@
 import { Card, AttackTarget, AttackTargetType, Battlefield, PlayerId, GameMetadata, GameState, GenericUnit } from './types'
+import { getAttackPowerWithMechBonus, getSagaCombatDamageBonus, isMech } from './mechSystem'
 
 /**
  * Combat System - Handles all combat-related logic
@@ -94,7 +95,8 @@ export function resolveAttack(
   towerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
   battlefieldId: 'battlefieldA' | 'battlefieldB',
   stunnedHeroes?: Record<string, boolean>,
-  towerArmor?: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
+  towerArmor?: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
+  gameState?: GameState
 ): {
   updatedBattlefield: Battlefield
   updatedTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
@@ -120,7 +122,19 @@ export function resolveAttack(
       // Check if target is a hero for bonus damage
       const targetIsHero = targetUnit.cardType === 'hero'
       // If stunned, deal 0 damage; otherwise calculate normally
-      attackPower = isStunned ? 0 : getAttackPower(attacker, targetIsHero)
+      if (isStunned) {
+        attackPower = 0
+      } else if (isMech(attacker) && gameState) {
+        // Use mech bonus calculation with saga bonuses
+        attackPower = getAttackPowerWithMechBonus(attacker, battlefield, attacker.owner, gameState)
+        if (targetIsHero && attacker.cardType === 'hero' && 'bonusVsHeroes' in attacker && attacker.bonusVsHeroes) {
+          attackPower += attacker.bonusVsHeroes
+        }
+        // Apply Chapter 3 saga bonus: +3 damage to combat target
+        attackPower += getSagaCombatDamageBonus(gameState, attacker.owner)
+      } else {
+        attackPower = getAttackPower(attacker, targetIsHero)
+      }
       
       // Calculate effective health (currentHealth + temporaryHP)
       const tempHP = (targetUnit.cardType === 'hero' || targetUnit.cardType === 'generic') && 'temporaryHP' in targetUnit
@@ -172,7 +186,16 @@ export function resolveAttack(
     // Otherwise, damage hits tower first (reduced by armor)
     if (currentHP > 0) {
       // If stunned, deal 0 damage; otherwise calculate normally
-      attackPower = isStunned ? 0 : getAttackPower(attacker, false) // No hero bonus vs towers
+      if (isStunned) {
+        attackPower = 0
+      } else if (isMech(attacker) && gameState) {
+        // Use mech bonus calculation with saga bonuses
+        attackPower = getAttackPowerWithMechBonus(attacker, battlefield, attacker.owner, gameState)
+        // Apply Chapter 3 saga bonus: +3 damage to combat target (towers count as combat targets)
+        attackPower += getSagaCombatDamageBonus(gameState, attacker.owner)
+      } else {
+        attackPower = getAttackPower(attacker, false) // No hero bonus vs towers
+      }
       
       // Apply tower armor (reduce damage by armor amount)
       const armor = towerArmor?.[towerKey] || 0
@@ -186,7 +209,14 @@ export function resolveAttack(
       }
     } else {
       // Tower already dead - all damage goes to nexus (will be handled in combat resolution)
-      attackPower = isStunned ? 0 : getAttackPower(attacker, false)
+      if (isStunned) {
+        attackPower = 0
+      } else if (isMech(attacker) && gameState) {
+        attackPower = getAttackPowerWithMechBonus(attacker, battlefield, attacker.owner, gameState)
+        attackPower += getSagaCombatDamageBonus(gameState, attacker.owner)
+      } else {
+        attackPower = getAttackPower(attacker, false)
+      }
       damageDealt = 0 // No damage to tower (it's already dead)
     }
   }
@@ -236,7 +266,8 @@ export function resolveCombat(
   activePlayer: PlayerId,
   initialTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
   stunnedHeroes?: Record<string, boolean>,
-  towerArmor?: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
+  towerArmor?: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
+  gameState?: GameState
 ): {
   updatedBattlefield: Battlefield
   updatedTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
@@ -262,7 +293,8 @@ export function resolveCombat(
         currentTowerHP,
         battlefieldId,
         stunnedHeroes,
-        towerArmor
+        towerArmor,
+        gameState
       )
       
       currentBattlefield = result.updatedBattlefield
@@ -347,7 +379,8 @@ export function resolveSimultaneousCombat(
   battlefieldId: 'battlefieldA' | 'battlefieldB',
   initialTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
   stunnedHeroes?: Record<string, boolean>,
-  towerArmor?: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
+  towerArmor?: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
+  gameState?: GameState
 ): {
   updatedBattlefield: Battlefield
   updatedTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
@@ -384,10 +417,35 @@ export function resolveSimultaneousCombat(
     // Calculate damage amounts (check for stun)
     const p1IsStunned = p1Unit && p1Unit.cardType === 'hero' && stunnedHeroes && stunnedHeroes[p1Unit.id]
     const p2IsStunned = p2Unit && p2Unit.cardType === 'hero' && stunnedHeroes && stunnedHeroes[p2Unit.id]
-    const p1AttackPower = p1Unit && !p1IsStunned ? getAttackPower(p1Unit, p1Target?.type === 'unit' && p1Target.targetId ? 
-      currentBattlefield.player2.find(u => u.id === p1Target.targetId)?.cardType === 'hero' : false) : 0
-    const p2AttackPower = p2Unit && !p2IsStunned ? getAttackPower(p2Unit, p2Target?.type === 'unit' && p2Target.targetId ? 
-      currentBattlefield.player1.find(u => u.id === p2Target.targetId)?.cardType === 'hero' : false) : 0
+    // Calculate attack power (use mech bonuses if applicable)
+    let p1AttackPower = 0
+    if (p1Unit && !p1IsStunned) {
+      const targetIsHero = p1Target?.type === 'unit' && p1Target.targetId ? 
+        currentBattlefield.player2.find(u => u.id === p1Target.targetId)?.cardType === 'hero' : false
+      if (isMech(p1Unit) && gameState) {
+        p1AttackPower = getAttackPowerWithMechBonus(p1Unit, currentBattlefield, p1Unit.owner, gameState)
+        if (targetIsHero && p1Unit.cardType === 'hero' && 'bonusVsHeroes' in p1Unit && p1Unit.bonusVsHeroes) {
+          p1AttackPower += p1Unit.bonusVsHeroes
+        }
+        p1AttackPower += getSagaCombatDamageBonus(gameState, p1Unit.owner)
+      } else {
+        p1AttackPower = getAttackPower(p1Unit, targetIsHero)
+      }
+    }
+    let p2AttackPower = 0
+    if (p2Unit && !p2IsStunned) {
+      const targetIsHero = p2Target?.type === 'unit' && p2Target.targetId ? 
+        currentBattlefield.player1.find(u => u.id === p2Target.targetId)?.cardType === 'hero' : false
+      if (isMech(p2Unit) && gameState) {
+        p2AttackPower = getAttackPowerWithMechBonus(p2Unit, currentBattlefield, p2Unit.owner, gameState)
+        if (targetIsHero && p2Unit.cardType === 'hero' && 'bonusVsHeroes' in p2Unit && p2Unit.bonusVsHeroes) {
+          p2AttackPower += p2Unit.bonusVsHeroes
+        }
+        p2AttackPower += getSagaCombatDamageBonus(gameState, p2Unit.owner)
+      } else {
+        p2AttackPower = getAttackPower(p2Unit, targetIsHero)
+      }
+    }
     
     // Apply Player 1's attack
     if (p1Unit && p1Target) {
@@ -407,7 +465,8 @@ export function resolveSimultaneousCombat(
         currentTowerHP,
         battlefieldId,
         stunnedHeroes,
-        towerArmor
+        towerArmor,
+        gameState
       )
       
       currentBattlefield = result.updatedBattlefield
@@ -490,7 +549,8 @@ export function resolveSimultaneousCombat(
         currentTowerHP,
         battlefieldId,
         stunnedHeroes,
-        towerArmor
+        towerArmor,
+        gameState
       )
       
       currentBattlefield = result.updatedBattlefield

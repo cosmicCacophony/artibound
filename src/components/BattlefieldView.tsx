@@ -379,7 +379,8 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                   'battlefieldA',
                   initialTowerHP,
                   metadata.stunnedHeroes || {},
-                  initialTowerArmor
+                  initialTowerArmor,
+                  gameState
                 )
                 
                 const resultB = resolveSimultaneousCombat(
@@ -387,7 +388,8 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                   'battlefieldB',
                   resultA.updatedTowerHP,
                   metadata.stunnedHeroes || {},
-                  initialTowerArmor
+                  initialTowerArmor,
+                  gameState
                 )
                 
                 // Process killed heroes for both battlefields - separate by player
