@@ -134,3 +134,4 @@ It's intentionally **simpler** than complex multicolor control decks, making it 
 
 **Strategy**: Deploy big creatures, use rune generators to enable buff finishers, overwhelm with size and team-wide buffs.
 
+

@@ -6,6 +6,9 @@ export type PlayerId = 'player1' | 'player2'
 export type Color = 'red' | 'blue' | 'white' | 'black' | 'green'
 export type ColorCombo = Color | `${Color}${Color}` | `${Color}${Color}${Color}` // Single, dual, or triple color
 
+// Rarity System
+export type Rarity = 'common' | 'uncommon' | 'rare'
+
 // Rune System Types - Simplified: Runes are just color requirements
 export type RuneColor = Color // R, W, U, B, G
 
@@ -27,13 +30,33 @@ export interface Seal {
 export const MAX_COLORS_PER_DECK = 4
 
 // Archetype Types
-export type Archetype = 'rw-legion' | 'ub-control' | 'ubg-control' | 'all'
+export type Archetype = 
+  // Two-color guilds (primary)
+  | 'guild-rg'   // Red-Green: Efficient creatures + cleave
+  | 'guild-wg'   // White-Green: Efficient creatures + tower protection
+  | 'guild-wu'   // White-Blue: Spellcaster + tower protection
+  | 'guild-ub'   // Blue-Black: Spellcaster + removal
+  | 'guild-br'   // Black-Red: Removal + aggro
+  | 'guild-rw'   // Red-White Legion: Go-wide (special strong 2-color)
+  // Three-color wedges (splash)
+  | 'wedge-rgw'  // Naya
+  | 'wedge-gwu'  // Bant: Midrange value
+  | 'wedge-wub'  // Esper: Control/finishers
+  | 'wedge-ubr'  // Grixis: Spellcaster control
+  | 'wedge-brg'  // Jund: Midrange value
+  | 'five-color' // Rainbow (high-roll deck)
+  // Legacy (for compatibility)
+  | 'rw-legion'
+  | 'ub-control'
+  | 'ubg-control'
+  | 'all'
 
 export interface BaseCard {
   id: string
   name: string
   description: string
   cardType: CardType
+  rarity?: Rarity // Card rarity (defaults to 'common' if not specified)
   manaCost?: number // Cost to play this card (uses mana)
   colors?: Color[] // Colors required to cast in lane with matching hero color
   consumesRunes?: boolean // If true, casting this card consumes runes from the pool
@@ -158,6 +181,14 @@ export interface GameMetadata {
   // 'p1_lane2' -> Player 1 can counter-deploy to lane 2 (battlefieldB)
   // 'complete' -> Turn 1 deployment done
   turn1DeploymentPhase?: 'p1_lane1' | 'p2_lane1' | 'p2_lane2' | 'p1_lane2' | 'complete'
+  // Spellcaster synergy tracking
+  player1SpellsCastThisTurn: number
+  player2SpellsCastThisTurn: number
+  // Evolve/diversity tracking
+  player1ColorsPlayedThisTurn: Color[]
+  player2ColorsPlayedThisTurn: Color[]
+  player1CardTypesPlayedThisTurn: CardType[]
+  player2CardTypesPlayedThisTurn: CardType[]
 }
 
 // Hero Ability Types
@@ -174,15 +205,27 @@ export type HeroAbilityEffectType =
   | 'sacrifice_unit' // Sacrifice a unit for effect
   | 'custom' // Custom effect
 
+export type HeroAbilityTrigger = 
+  | 'on_deploy'
+  | 'on_spell_cast' // New: Triggers when you cast a spell
+  | 'start_of_turn'
+  | 'passive'
+  | 'activated' // Manual activation with mana cost
+
 export interface HeroAbility {
   name: string
   description: string
+  trigger?: HeroAbilityTrigger // When the ability triggers (defaults to 'activated')
   manaCost: number // Typically 1
   cooldown: number // Turns until can use again (typically 2-3)
   effectType: HeroAbilityEffectType
   effectValue?: number // Value for the effect (damage, heal amount, etc.)
   startsOnCooldown?: boolean // If true, ability starts on cooldown at game start
   runeCost?: RuneColor[] // Rune cost for ability (e.g., ['black', 'black', 'black'] for 3 any-color runes)
+  // Spellcaster-specific fields
+  manaRestore?: number // Restore N mana when you cast a spell
+  spellCostReduction?: number // Your spells cost N less
+  spellDamageBonus?: number // Your spells deal +N damage
   // For tracking cooldown: Record<heroId, turnLastUsed>
   // Stored in GameMetadata.heroAbilityCooldowns
 }
@@ -201,6 +244,7 @@ export interface Hero extends BaseCard {
   owner: PlayerId
   slot?: number // Slot position 1-5 on battlefield
   equippedItems?: string[] // Array of item IDs
+  attachedEquipment?: string[] // IDs of equipment artifacts attached to this hero
   signatureCardId?: string // ID of the signature card for this hero (2 copies added to deck)
   bonusVsHeroes?: number // Bonus damage when attacking heroes (e.g., +3 for assassins)
   ability?: HeroAbility // Hero's activated ability (mana cost + cooldown)
@@ -246,6 +290,15 @@ export interface GenericUnit extends BaseCard {
   stackPower?: number // Combined power if stacked
   stackHealth?: number // Combined health if stacked
   rangedAttack?: number // If set, this unit can attack from base/deployZone, dealing damage evenly to both towers
+  attachedEquipment?: string[] // IDs of equipment artifacts attached to this unit
+  // Evolve mechanics
+  evolveThreshold?: number // Number of different colors/types needed to evolve
+  evolveBonus?: {
+    attack?: number
+    health?: number
+    abilities?: string[]
+  }
+  isEvolved?: boolean // Has this unit evolved this turn?
 }
 
 // Spell Effect Types
@@ -315,6 +368,7 @@ export type ArtifactEffectType =
   | 'target_buff' // Single-target buff
   | 'life_loss_draw' // Lose life but draw card
   | 'token_generation' // Spawns tokens each turn
+  | 'equipment' // Can be attached to units
 
 export interface ArtifactCard extends BaseCard {
   cardType: 'artifact'
@@ -322,6 +376,15 @@ export interface ArtifactCard extends BaseCard {
   owner: PlayerId
   effectType: ArtifactEffectType
   effectValue: number // Value for the effect (e.g., +1 attack, +1 mana, etc.)
+  // Equipment-specific fields
+  attachedToUnitId?: string // ID of unit this equipment is attached to (undefined if in base)
+  equipCost?: number // Mana cost to re-equip after unit dies
+  equipmentBonuses?: {
+    attack?: number
+    health?: number
+    maxHealth?: number
+    abilities?: string[] // e.g., ['cleave', 'taunt', 'flying']
+  }
 }
 
 export type Card = Hero | SignatureCard | HybridCard | GenericUnit | SpellCard | ItemCard | ArtifactCard

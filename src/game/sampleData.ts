@@ -1780,6 +1780,13 @@ export function createInitialGameState(): {
     // Seals (mana rocks)
     player1Seals: [],
     player2Seals: [],
+    // New mechanics tracking
+    player1SpellsCastThisTurn: 0,
+    player2SpellsCastThisTurn: 0,
+    player1ColorsPlayedThisTurn: [],
+    player2ColorsPlayedThisTurn: [],
+    player1CardTypesPlayedThisTurn: [],
+    player2CardTypesPlayedThisTurn: [],
   }
 
   // Spawn initial 1/1 creeps in slot 1 for both players on both battlefields
@@ -2007,6 +2014,13 @@ export function createGameStateFromDraft(
     // Seals (mana rocks)
     player1Seals: [],
     player2Seals: [],
+    // New mechanics tracking
+    player1SpellsCastThisTurn: 0,
+    player2SpellsCastThisTurn: 0,
+    player1ColorsPlayedThisTurn: [],
+    player2ColorsPlayedThisTurn: [],
+    player1CardTypesPlayedThisTurn: [],
+    player2CardTypesPlayedThisTurn: [],
   }
 
   // Battlefields removed - simplifying game to focus on color system and combat

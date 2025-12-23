@@ -1859,6 +1859,7 @@ export const runeFinisherUnits: Omit<GenericUnit, 'location' | 'owner' | 'stacke
     name: 'Multicolor Titan',
     description: '6/6. This has +1/+1 for each different colored rune you control.',
     cardType: 'generic',
+    rarity: 'uncommon',
     colors: ['blue', 'black', 'green'],
     manaCost: 6,
     attack: 6,
@@ -4013,14 +4014,15 @@ export const ubgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
 ]
 
 export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
-  // Only UBG spell - Exorcism (7 mana, requires all 3 colors)
+  // Exorcism moved to UBR (Grixis wedge) - control finisher
   {
-    id: 'ubg-spell-exorcism',
+    id: 'ubr-spell-exorcism',
     name: 'Exorcism',
     description: 'Deal 12 total damage distributed to enemy units in front and tower. 0 units: 12 to tower. 1 unit: 6 to unit, 6 to tower. 2 units: 4 to each unit, 4 to tower. 3 units: 3 to each unit, 3 to tower.',
     cardType: 'spell',
-    colors: ['blue', 'black', 'green'], // Requires all 3 colors (UBG) - consumes U, G, B runes
-    consumesRunes: true, // This spell requires and consumes UBG runes
+    rarity: 'rare',
+    colors: ['blue', 'black', 'red'], // Changed to UBR (Grixis) - spellcaster control finisher
+    consumesRunes: true, // This spell requires and consumes UBR runes
     manaCost: 7,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for Exorcism damage distribution
@@ -4523,6 +4525,224 @@ export const creepStackingCards: Omit<GenericUnit, 'location' | 'owner' | 'stack
 ]
 
 // ============================================================================
+// RARE CARDS - Guild System Showcase
+// ============================================================================
+
+// 5 Mono-Color Rares
+
+export const rareWhiteCards: (Omit<ArtifactCard, 'location' | 'owner'>)[] = [
+  {
+    id: 'rare-white-armory',
+    name: 'Armory of the Divine',
+    cardType: 'artifact',
+    rarity: 'rare',
+    colors: ['white'],
+    manaCost: 6,
+    effectType: 'equipment',
+    effectValue: 0,
+    equipCost: 2,
+    equipmentBonuses: {
+      attack: 2,
+      health: 3,
+      abilities: ['taunt']
+    },
+    description: 'Equipment. Attach to a unit. +2/+3 and Taunt. When equipped unit dies, return this to base. Re-equip for 2 mana.',
+  },
+]
+
+export const rareBlueHeroes: Omit<Hero, 'location' | 'owner'>[] = [
+  {
+    id: 'rare-blue-archmage',
+    name: 'Archmage\'s Apprentice',
+    cardType: 'hero',
+    rarity: 'rare',
+    colors: ['blue'],
+    manaCost: 4,
+    attack: 2,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
+    signatureCardId: 'rare-blue-archmage-sig',
+    equippedItems: [],
+    ability: {
+      name: 'Mana Surge',
+      description: 'When you cast your first spell each turn, restore 2 mana',
+      trigger: 'on_spell_cast',
+      manaCost: 0,
+      cooldown: 0,
+      effectType: 'custom',
+      manaRestore: 2,
+    },
+    description: '2/6. When you cast your first spell each turn, restore 2 mana. Spellcaster synergy hero.',
+  },
+]
+
+export const rareBlackCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+  {
+    id: 'rare-black-devourer',
+    name: 'Void Devourer',
+    cardType: 'generic',
+    rarity: 'rare',
+    colors: ['black'],
+    manaCost: 5,
+    attack: 3,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    evolveThreshold: 3,
+    evolveBonus: {
+      attack: 3,
+      health: 3,
+      abilities: ['When this kills a unit, draw a card']
+    },
+    description: '3/4. Evolve 3: If you\'ve played 3 different colors this turn, this becomes 6/7 and gains "When this kills a unit, draw a card".',
+  },
+]
+
+export const rareRedCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+  {
+    id: 'rare-red-titan',
+    name: 'Inferno Titan',
+    cardType: 'generic',
+    rarity: 'rare',
+    colors: ['red'],
+    manaCost: 8,
+    consumesRunes: true,
+    attack: 7,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+    description: '7/5, Cleave. When deployed: Deal 3 damage to all enemy units. When this attacks a tower: Deal 2 damage to the enemy nexus.',
+  },
+]
+
+export const rareGreenCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+  {
+    id: 'rare-green-colossus',
+    name: 'Worldshaper Colossus',
+    cardType: 'generic',
+    rarity: 'rare',
+    colors: ['green'],
+    manaCost: 7,
+    attack: 6,
+    health: 8,
+    maxHealth: 8,
+    currentHealth: 8,
+    evolveThreshold: 2,
+    evolveBonus: {
+      abilities: ['Can attack the turn it\'s deployed', 'Overrun (excess damage goes to tower)']
+    },
+    description: '6/8. Evolve 2: If you\'ve played 2 different colors this turn, this can attack immediately and gains Overrun.',
+  },
+]
+
+// 5 Guild Rares
+
+export const rareRGCards: (Omit<ArtifactCard, 'location' | 'owner'>)[] = [
+  {
+    id: 'rare-rg-battlemaster',
+    name: 'Savage Battlemaster',
+    cardType: 'artifact',
+    rarity: 'rare',
+    colors: ['red', 'green'],
+    manaCost: 6,
+    consumesRunes: true,
+    effectType: 'equipment',
+    effectValue: 0,
+    equipCost: 3,
+    equipmentBonuses: {
+      attack: 3,
+      health: 2,
+      abilities: ['cleave']
+    },
+    description: 'Equipment. +3/+2 and Cleave. When equipped unit dies, return to base. Re-equip for 3 mana. RG aggro finisher.',
+  },
+]
+
+export const rareWGCards: (Omit<ArtifactCard, 'location' | 'owner'>)[] = [
+  {
+    id: 'rare-wg-sanctuary',
+    name: 'Guardian\'s Sanctuary',
+    cardType: 'artifact',
+    rarity: 'rare',
+    colors: ['white', 'green'],
+    manaCost: 7,
+    consumesRunes: true,
+    effectType: 'equipment',
+    effectValue: 0,
+    equipCost: 2,
+    equipmentBonuses: {
+      attack: 2,
+      health: 4,
+      abilities: ['taunt', 'At start of turn: Heal 2 HP to your towers']
+    },
+    description: 'Equipment. +2/+4, Taunt. At start of turn: Heal 2 HP to all your towers. Returns to base when unit dies.',
+  },
+]
+
+export const rareWUHeroes: Omit<Hero, 'location' | 'owner'>[] = [
+  {
+    id: 'rare-wu-spellweaver',
+    name: 'Spellweaver\'s Aegis',
+    cardType: 'hero',
+    rarity: 'rare',
+    colors: ['white', 'blue'],
+    manaCost: 5,
+    consumesRunes: true,
+    attack: 3,
+    health: 7,
+    maxHealth: 7,
+    currentHealth: 7,
+    signatureCardId: 'rare-wu-spellweaver-sig',
+    equippedItems: [],
+    ability: {
+      name: 'Arcane Protection',
+      description: 'Your spells cost 1 less. When you cast a spell, your towers gain +1 armor until end of turn.',
+      trigger: 'passive',
+      manaCost: 0,
+      cooldown: 0,
+      effectType: 'custom',
+      spellCostReduction: 1,
+    },
+    description: '3/7. Your spells cost 1 less. When you cast a spell, your towers gain +1 armor until end of turn. WU spellcaster.',
+  },
+]
+
+export const rareUBCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+  {
+    id: 'rare-ub-assassin',
+    name: 'Shadowmind Assassin',
+    cardType: 'generic',
+    rarity: 'rare',
+    colors: ['blue', 'black'],
+    manaCost: 6,
+    consumesRunes: true,
+    attack: 4,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    description: '4/4. When deployed: Destroy target unit with 3 or less power, draw a card. When this kills a unit in combat: Draw a card. Rewards spell-heavy control.',
+  },
+]
+
+export const rareBRCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+  {
+    id: 'rare-br-demolisher',
+    name: 'Chaos Demolisher',
+    cardType: 'generic',
+    rarity: 'rare',
+    colors: ['black', 'red'],
+    manaCost: 7,
+    consumesRunes: true,
+    attack: 6,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    description: '6/4, Cleave. When deployed: Deal 2 damage to all units and all towers. Aggressive control finisher for BR.',
+  },
+]
+
+// ============================================================================
 // ALL CARDS COMBINED
 // ============================================================================
 
@@ -4539,6 +4759,9 @@ export const allHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   ...rwgHeroes,
   ...ubgHeroes,
   ...comboHeroes,
+  // Rare heroes
+  ...rareBlueHeroes,
+  ...rareWUHeroes,
 ]
 
 export const allCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
@@ -4558,6 +4781,12 @@ export const allCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
   ...blackMidrangeCards,
   ...runeFinisherUnits,
   ...creepStackingCards,
+  // Rare cards
+  ...rareBlackCards,
+  ...rareRedCards,
+  ...rareGreenCards,
+  ...rareUBCards,
+  ...rareBRCards,
 ]
 
 // ============================================================================
@@ -4852,6 +5081,7 @@ export const variableRuneCostSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     name: 'Time of Triumph',
     description: 'All your units gain +3/+3 and trample this turn. Draw a card for each unit you control. Costs 9RRGG.',
     cardType: 'spell',
+    rarity: 'rare',
     colors: ['red', 'red', 'green', 'green'],
     manaCost: 9,
     consumesRunes: true,
@@ -4867,7 +5097,10 @@ export const allArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   ...rwArtifacts,
   ...rgArtifacts,
   ...ubArtifacts,
-  // Note: RW, RG, and UBG artifacts are included
+  // Rare artifacts (equipment)
+  ...rareWhiteCards,
+  ...rareRGCards,
+  ...rareWGCards,
 ]
 
 export const allSpells: Omit<SpellCard, 'location' | 'owner'>[] = [

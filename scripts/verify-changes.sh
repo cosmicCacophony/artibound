@@ -41,3 +41,4 @@ echo "   - Verify changes with: git diff"
 echo "   - Test after each change: npm run dev"
 
 
+

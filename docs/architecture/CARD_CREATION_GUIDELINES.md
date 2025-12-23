@@ -1,91 +1,246 @@
 # Card Creation Guidelines
 
 > **Created:** 2024-12-XX  
-> **Last Updated:** 2024-12-XX  
+> **Last Updated:** 2025-12-23  
 > **Status:** Active  
 > **Relevance:** High  
 > **Category:** Architecture  
-> **Notes:** Critical guidelines for creating cards that work with the RW vs UBG testing framework
+> **Notes:** Guidelines for creating cards in the guild-based archetype system
 
-## Primary Testing Framework: RW vs UBG
+## Guild-Based Archetype System
 
-**IMPORTANT:** All new cards should be designed for the **RW vs UBG testing framework** used in "Start Random Game".
+**IMPORTANT:** Artibound uses a **guild-based archetype system** with 5 two-color guilds, 5 three-color wedges, and support for five-color decks.
 
-### Archetype System
+See [`docs/design/GUILD_SYSTEM.md`](../design/GUILD_SYSTEM.md) for complete guild design documentation.
 
-The game uses two primary archetypes for testing:
-- **RW (Red/White) - Legion Aggro**: `'rw-legion'` archetype
-- **UBG (Blue/Black/Green) - Control**: `'ubg-control'` archetype
+### Supported Archetypes
 
-### Card Color Requirements
+**Two-Color Guilds:**
+- `'guild-rg'` - Red-Green: Efficient creatures + cleave
+- `'guild-wg'` - White-Green: Efficient creatures + tower protection
+- `'guild-wu'` - White-Blue: Spellcaster + tower protection
+- `'guild-ub'` - Blue-Black: Spellcaster + removal
+- `'guild-br'` - Black-Red: Removal + aggro
+- `'guild-rw'` - Red-White Legion: Go-wide (special)
 
-When creating cards, they must match the archetype color requirements:
+**Three-Color Wedges:**
+- `'wedge-rgw'` - Naya (RG + white splash)
+- `'wedge-gwu'` - Bant (WG + blue splash)
+- `'wedge-wub'` - Esper (WU + black splash)
+- `'wedge-ubr'` - Grixis (UB + red splash)
+- `'wedge-brg'` - Jund (BR + green splash)
 
-#### RW Archetype Cards
-- **Allowed Colors:** `['red']`, `['white']`, `['red', 'white']`
-- **Examples:**
-  - `colors: ['red']` - Red-only cards
-  - `colors: ['white']` - White-only cards  
-  - `colors: ['red', 'white']` - Dual-color RW cards
+**Five-Color:**
+- `'five-color'` - Rainbow (high-roll deck)
 
-#### UBG Archetype Cards
-- **Allowed Colors:** Any combination of Blue, Black, and Green
-- **Examples:**
-  - `colors: ['blue']` - Blue-only cards
-  - `colors: ['black']` - Black-only cards
-  - `colors: ['green']` - Green-only cards
-  - `colors: ['blue', 'black']` - UB dual-color
-  - `colors: ['blue', 'green']` - UG dual-color
-  - `colors: ['black', 'green']` - BG dual-color
-  - `colors: ['blue', 'black', 'green']` - UBG triple-color
+**Legacy (for backward compatibility):**
+- `'rw-legion'`, `'ub-control'`, `'ubg-control'`
 
-### Card Matching Logic
+## Rarity System
+
+All cards should have a rarity field:
+
+```typescript
+rarity?: 'common' | 'uncommon' | 'rare'
+```
+
+**Target Distribution:**
+- **70% common**: Core cards, curve fillers, basic effects
+- **20% uncommon**: Good removal, solid units, multicolor cards
+- **10% rare**: Bombs, finishers, unique effects
+
+**Rarity Guidelines:**
+- **Common**: Simple effects, fair stats, 1-5 mana
+- **Uncommon**: Good effects, above-curve stats, 3-6 mana
+- **Rare**: Unique effects, game-changing, 4-9 mana
+
+## Color Identity
+
+When creating cards, follow these color identities:
+
+### White
+- **Mechanics**: Tower protection, unit buffs, healing, equipment
+- **Playstyle**: Defensive, supportive, resilient
+- **Card Types**: Protection spells, healing, taunt units, equipment
+
+### Blue
+- **Mechanics**: Card draw, spellcaster synergy, bounce, cost reduction
+- **Playstyle**: Controlling, reactive, spell-based
+- **Card Types**: Cantrips, bounce spells, spellcaster heroes
+
+### Black
+- **Mechanics**: Removal, sacrifice, life drain, evolve
+- **Playstyle**: Controlling, value-oriented, resource conversion
+- **Card Types**: Destroy effects, sacrifice outlets, card draw
+
+### Red
+- **Mechanics**: Direct damage, cleave, aggressive units, burn
+- **Playstyle**: Aggressive, proactive, fast
+- **Card Types**: Burn spells, cleave units, aggressive creatures
+
+### Green
+- **Mechanics**: Efficient creatures, +1/+1 counters, evolve, overrun
+- **Playstyle**: Midrange, creature-based, efficient
+- **Card Types**: Efficient creatures, ramp, combat tricks
+
+## New Mechanics
+
+See [`docs/design/NEW_MECHANICS.md`](../design/NEW_MECHANICS.md) for complete mechanics documentation.
+
+### Equipment Artifacts
+
+Equipment can be attached to units and survives when they die:
+
+```typescript
+{
+  cardType: 'artifact',
+  effectType: 'equipment',
+  rarity: 'rare',
+  equipCost: 2,
+  equipmentBonuses: {
+    attack: 2,
+    health: 3,
+    abilities: ['taunt']
+  }
+}
+```
+
+**Design Guidelines:**
+- Mana cost: 4-8
+- Equip cost: 1-4 (usually 2-3)
+- Bonuses: +1/+1 to +4/+4
+- Abilities: cleave, taunt, overrun, etc.
+
+### Spellcaster Synergies
+
+Heroes with spell synergies:
+
+```typescript
+{
+  cardType: 'hero',
+  ability: {
+    trigger: 'on_spell_cast',
+    manaRestore: 2,           // Restore mana when casting spells
+    spellCostReduction: 1,    // Spells cost less
+    spellDamageBonus: 1,      // Spells deal more damage
+  }
+}
+```
+
+**Design Guidelines:**
+- Mana restore: 1-2 (once per turn)
+- Cost reduction: 1-2
+- Damage bonus: 1-2
+- Lower attack (2-4), higher health (6-8)
+
+### Evolve Mechanics
+
+Units that get bonuses when you play diverse colors:
+
+```typescript
+{
+  cardType: 'generic',
+  evolveThreshold: 3,
+  evolveBonus: {
+    attack: 3,
+    health: 3,
+    abilities: ['When this kills a unit, draw a card']
+  }
+}
+```
+
+**Design Guidelines:**
+- Evolve 2: +1/+1 to +2/+2
+- Evolve 3: +2/+2 to +3/+3 with ability
+- Evolve 4: +4/+4 with multiple abilities
+
+## Card Matching Logic
 
 Cards are matched to archetypes using `cardMatchesArchetype()` in `src/game/draftSystem.ts`:
 
-- **RW cards** must have colors that are subsets of `['red', 'white']`
-- **UBG cards** must have colors that are subsets of `['blue', 'black', 'green']`
-- Cards with colors outside these sets will **NOT** appear in the random game
+**Guild Matching:**
+- Card colors must be a subset of guild colors
+- Example: `['red']` or `['red', 'green']` matches `guild-rg`
 
-### Artifact Guidelines
+**Wedge Matching:**
+- Card colors must be a subset of wedge's 3 colors
+- Example: `['red', 'green', 'white']` matches `wedge-rgw`
 
-When creating artifacts:
+**Five-Color:**
+- Any colored card matches
 
-1. **RW Artifacts** - Must use R, W, or RW colors
-   - Example: `colors: ['red', 'white']` for RW artifacts
-   - Example: `colors: ['red']` for red-only artifacts
-   - Example: `colors: ['white']` for white-only artifacts
+## Common Patterns
 
-2. **UBG Artifacts** - Must use U, G, B, or any combination
-   - Example: `colors: ['blue']` for blue-only artifacts
-   - Example: `colors: ['black', 'green']` for BG artifacts
-   - Example: `colors: ['blue', 'black', 'green']` for UBG artifacts
+### Efficient Creatures (Green)
+```typescript
+{
+  name: 'Efficient Bear',
+  cardType: 'generic',
+  rarity: 'common',
+  colors: ['green'],
+  manaCost: 3,
+  attack: 3,
+  health: 3,
+}
+```
 
-### Where Cards Are Used
+### Removal Spell (Black)
+```typescript
+{
+  name: 'Destroy',
+  cardType: 'spell',
+  rarity: 'uncommon',
+  colors: ['black'],
+  manaCost: 3,
+  consumesRunes: true,
+  effect: {
+    type: 'targeted_damage',
+    damage: 999, // Destroy effect
+  }
+}
+```
 
-- **"Start Random Game"** button uses `initializeRandomGame()` in `GameContext.tsx`
-- Cards are filtered by archetype using `cardMatchesArchetype()`
-- Only cards matching the player's archetype appear in their deck
+### Multicolor Bomb (Rare)
+```typescript
+{
+  name: 'Guild Champion',
+  cardType: 'generic',
+  rarity: 'rare',
+  colors: ['red', 'green'],
+  manaCost: 6,
+  consumesRunes: true,
+  attack: 6,
+  health: 6,
+  // + special ability
+}
+```
 
-### Common Mistakes to Avoid
-
-1. ❌ **Creating GW (Green/White) artifacts** - These won't appear in RW vs UBG games
-2. ❌ **Creating UW (Blue/White) artifacts** - These won't appear in RW vs UBG games  
-3. ❌ **Creating cards with colors outside RW or UBG** - They won't be used in testing
-4. ✅ **Always check archetype compatibility** - Use R/W for RW, U/B/G for UBG
-
-### Testing Your Cards
+## Testing Your Cards
 
 After creating cards:
-1. Click "Start Random Game" 
-2. Verify cards appear in the correct player's deck
-3. Check that RW player only gets R/W cards
-4. Check that UBG player only gets U/B/G cards
+1. Generate draft packs
+2. Verify cards appear with correct rarity distribution
+3. Check guild/wedge filtering works
+4. Test new mechanics (equipment, spellcaster, evolve)
 
-### File Locations
+## File Locations
 
-- Card definitions: `src/game/comprehensiveCardData.ts`
-- Archetype matching: `src/game/draftSystem.ts`
-- Random game initialization: `src/context/GameContext.tsx`
+- **Card definitions**: `src/game/comprehensiveCardData.ts`
+- **Archetype matching**: `src/game/draftSystem.ts`
+- **Equipment system**: `src/game/equipmentSystem.ts`
+- **Spellcaster system**: `src/game/spellcasterSystem.ts`
+- **Evolve system**: `src/game/evolveSystem.ts`
+- **Type definitions**: `src/game/types.ts`
+
+## Common Mistakes to Avoid
+
+1. ❌ **Forgetting rarity field** - Always specify rarity
+2. ❌ **Wrong color combinations** - Check guild compatibility
+3. ❌ **Equipment without equipCost** - Equipment needs equip cost
+4. ❌ **Evolve without threshold** - Evolve units need threshold
+5. ✅ **Follow color identity** - Match mechanics to colors
+6. ✅ **Balance rarity distribution** - Mostly commons, few rares
+7. ✅ **Test in draft** - Verify cards work in packs
+
 
 

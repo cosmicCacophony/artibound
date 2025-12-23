@@ -1,4 +1,5 @@
-import { PlayerId } from '../game/types'
+import React, { useState } from 'react'
+import { PlayerId, Hero, HeroAbility } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { RunePoolDisplay } from './RunePoolDisplay'
 import { useDeployment } from '../hooks/useDeployment'
@@ -6,6 +7,7 @@ import { useTurnManagement } from '../hooks/useTurnManagement'
 import { useItemShop } from '../hooks/useItemShop'
 import { useHeroAbilities } from '../hooks/useHeroAbilities'
 import { HeroCard } from './HeroCard'
+import { HeroAbilityEditor } from './HeroAbilityEditor'
 
 interface PlayerAreaProps {
   player: PlayerId
@@ -22,6 +24,7 @@ export function PlayerArea({ player }: PlayerAreaProps) {
     setItemShopPlayer,
     itemShopPlayer,
   } = useGameContext()
+  const [editingHeroId, setEditingHeroId] = useState<string | null>(null)
   const { handleDeploy } = useDeployment()
   const { handleToggleSpellPlayed, handleToggleStun } = useTurnManagement()
   const { generateItemShop } = useItemShop()
@@ -267,6 +270,7 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                 isPlayed={card.location === 'base' && !!metadata.playedSpells[card.id]}
                 onTogglePlayed={card.location === 'base' ? () => handleToggleSpellPlayed(card) : undefined}
                 onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, card.owner)}
+                onEditAbility={card.cardType === 'hero' ? (heroId) => setEditingHeroId(heroId) : undefined}
               />
             ))
           ) : (
@@ -274,6 +278,64 @@ export function PlayerArea({ player }: PlayerAreaProps) {
           )}
         </div>
       </div>
+
+      {editingHeroId && (() => {
+        const editingHero = [
+          ...gameState.player1Hand,
+          ...gameState.player2Hand,
+          ...gameState.player1Base,
+          ...gameState.player2Base,
+          ...gameState.player1DeployZone,
+          ...gameState.player2DeployZone,
+          ...gameState.battlefieldA.player1,
+          ...gameState.battlefieldA.player2,
+          ...gameState.battlefieldB.player1,
+          ...gameState.battlefieldB.player2,
+        ].find(c => c.id === editingHeroId && c.cardType === 'hero') as Hero | undefined
+
+        if (!editingHero) return null
+
+        return (
+          <HeroAbilityEditor
+            hero={editingHero}
+            onSave={(heroId, ability) => {
+              setGameState(prev => {
+                const findAndUpdateHero = (cards: any[]): any[] => {
+                  return cards.map(card => {
+                    if (card.id === heroId && card.cardType === 'hero') {
+                      return {
+                        ...card,
+                        ability: ability,
+                      } as Hero
+                    }
+                    return card
+                  })
+                }
+
+                return {
+                  ...prev,
+                  player1Hand: findAndUpdateHero(prev.player1Hand),
+                  player2Hand: findAndUpdateHero(prev.player2Hand),
+                  player1Base: findAndUpdateHero(prev.player1Base),
+                  player2Base: findAndUpdateHero(prev.player2Base),
+                  player1DeployZone: findAndUpdateHero(prev.player1DeployZone),
+                  player2DeployZone: findAndUpdateHero(prev.player2DeployZone),
+                  battlefieldA: {
+                    player1: findAndUpdateHero(prev.battlefieldA.player1),
+                    player2: findAndUpdateHero(prev.battlefieldA.player2),
+                  },
+                  battlefieldB: {
+                    player1: findAndUpdateHero(prev.battlefieldB.player1),
+                    player2: findAndUpdateHero(prev.battlefieldB.player2),
+                  },
+                }
+              })
+              setEditingHeroId(null)
+            }}
+            onClose={() => setEditingHeroId(null)}
+          />
+        )
+      })()}
     </div>
   )
 }

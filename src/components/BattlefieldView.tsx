@@ -1,10 +1,12 @@
-import { Card } from '../game/types'
+import { useState } from 'react'
+import { Card, Hero, HeroAbility } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { useDeployment } from '../hooks/useDeployment'
 import { useCombat } from '../hooks/useCombat'
 import { useHeroAbilities } from '../hooks/useHeroAbilities'
 import { useTurnManagement } from '../hooks/useTurnManagement'
 import { HeroCard } from './HeroCard'
+import { HeroAbilityEditor } from './HeroAbilityEditor'
 import { resolveSimultaneousCombat } from '../game/combatSystem'
 import { createCardFromTemplate } from '../game/sampleData'
 
@@ -28,6 +30,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     setPlayer1SidebarCards,
     setPlayer2SidebarCards,
   } = useGameContext()
+  const [editingHeroId, setEditingHeroId] = useState<string | null>(null)
   const { handleDeploy, handleChangeSlot, handleRemoveFromBattlefield, handleEquipItem } = useDeployment()
   const { handleDecreaseHealth, handleIncreaseHealth, handleDecreaseAttack, handleIncreaseAttack } = useCombat()
   const { handleAbilityClick } = useHeroAbilities()
@@ -136,6 +139,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
               isStunned={cardInSlot.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[cardInSlot.id])}
               onToggleStun={cardInSlot.cardType === 'hero' ? () => handleToggleStun(cardInSlot) : undefined}
               onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, cardInSlot.owner)}
+              onEditAbility={cardInSlot.cardType === 'hero' ? (heroId) => setEditingHeroId(heroId) : undefined}
             />
           </div>
         ) : (
@@ -147,9 +151,68 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     )
   }
 
+  const handleSaveAbility = (heroId: string, ability: HeroAbility | undefined) => {
+    setGameState(prev => {
+      // Find the hero in all possible locations
+      const findAndUpdateHero = (cards: Card[]): Card[] => {
+        return cards.map(card => {
+          if (card.id === heroId && card.cardType === 'hero') {
+            return {
+              ...card,
+              ability: ability,
+            } as Hero
+          }
+          return card
+        })
+      }
+
+      return {
+        ...prev,
+        player1Hand: findAndUpdateHero(prev.player1Hand),
+        player2Hand: findAndUpdateHero(prev.player2Hand),
+        player1Base: findAndUpdateHero(prev.player1Base),
+        player2Base: findAndUpdateHero(prev.player2Base),
+        player1DeployZone: findAndUpdateHero(prev.player1DeployZone),
+        player2DeployZone: findAndUpdateHero(prev.player2DeployZone),
+        battlefieldA: {
+          player1: findAndUpdateHero(prev.battlefieldA.player1),
+          player2: findAndUpdateHero(prev.battlefieldA.player2),
+        },
+        battlefieldB: {
+          player1: findAndUpdateHero(prev.battlefieldB.player1),
+          player2: findAndUpdateHero(prev.battlefieldB.player2),
+        },
+      }
+    })
+    setEditingHeroId(null)
+  }
+
+  const editingHero = editingHeroId 
+    ? [
+        ...gameState.player1Hand,
+        ...gameState.player2Hand,
+        ...gameState.player1Base,
+        ...gameState.player2Base,
+        ...gameState.player1DeployZone,
+        ...gameState.player2DeployZone,
+        ...gameState.battlefieldA.player1,
+        ...gameState.battlefieldA.player2,
+        ...gameState.battlefieldB.player1,
+        ...gameState.battlefieldB.player2,
+      ].find(c => c.id === editingHeroId && c.cardType === 'hero') as Hero | undefined
+    : undefined
+
   return (
-    <div
-      style={{
+    <>
+      {editingHero && (
+        <HeroAbilityEditor
+          hero={editingHero}
+          onSave={handleSaveAbility}
+          onClose={() => setEditingHeroId(null)}
+        />
+      )}
+      <div
+        style={{
         border: `2px solid ${borderColor}`,
         borderRadius: '6px',
         padding: '12px',
@@ -551,6 +614,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
         </button>
       )}
     </div>
+    </>
   )
 }
 

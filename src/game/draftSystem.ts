@@ -132,6 +132,36 @@ function selectHeroesForPack(
   return selected
 }
 
+// Helper: Get guild colors
+function getGuildColors(archetype: Archetype): Color[] {
+  switch (archetype) {
+    case 'guild-rg': return ['red', 'green']
+    case 'guild-wg': return ['white', 'green']
+    case 'guild-wu': return ['white', 'blue']
+    case 'guild-ub': return ['blue', 'black']
+    case 'guild-br': return ['black', 'red']
+    case 'guild-rw': return ['red', 'white']
+    default: return []
+  }
+}
+
+// Helper: Get wedge colors
+function getWedgeColors(archetype: Archetype): Color[] {
+  switch (archetype) {
+    case 'wedge-rgw': return ['red', 'green', 'white']
+    case 'wedge-gwu': return ['green', 'white', 'blue']
+    case 'wedge-wub': return ['white', 'blue', 'black']
+    case 'wedge-ubr': return ['blue', 'black', 'red']
+    case 'wedge-brg': return ['black', 'red', 'green']
+    default: return []
+  }
+}
+
+// Helper: Check if array is subset of another
+function isSubset(subset: Color[], superset: Color[]): boolean {
+  return subset.every(color => superset.includes(color))
+}
+
 // Helper to check if card matches active archetypes
 export function cardMatchesArchetype(card: BaseCard, activeArchetypes: Archetype[]): boolean {
   if (activeArchetypes.includes('all')) return true
@@ -141,77 +171,108 @@ export function cardMatchesArchetype(card: BaseCard, activeArchetypes: Archetype
   // If card has no colors, reject it (colorless cards don't belong to archetypes)
   if (cardColors.length === 0) return false
   
-  const hasRed = cardColors.includes('red')
-  const hasWhite = cardColors.includes('white')
-  const hasBlue = cardColors.includes('blue')
-  const hasBlack = cardColors.includes('black')
-  const hasGreen = cardColors.includes('green')
-  
-  // RW Legion: ONLY cards with red and/or white, NO other colors
-  if (activeArchetypes.includes('rw-legion')) {
-    // Must have at least one RW color
-    if (!hasRed && !hasWhite) return false
-    // Must NOT have any non-RW colors
-    if (hasGreen || hasBlue || hasBlack) return false
-    return true
-  }
-  
-  // UB Control: ONLY cards with blue and/or black, NO other colors
-  if (activeArchetypes.includes('ub-control')) {
-    // Must have at least one UB color
-    if (!hasBlue && !hasBlack) return false
-    // Must NOT have any non-UB colors
-    if (hasGreen || hasRed || hasWhite) return false
-    return true
-  }
-  
-  // UBG Control: ONLY cards with blue, black, and/or green, NO red or white
-  if (activeArchetypes.includes('ubg-control')) {
-    // Must have at least one UBG color
-    if (!hasBlue && !hasBlack && !hasGreen) return false
-    // Must NOT have red or white
-    if (hasRed || hasWhite) return false
-    return true
+  // Check each archetype
+  for (const archetype of activeArchetypes) {
+    // Guild matching
+    if (archetype.startsWith('guild-')) {
+      const guildColors = getGuildColors(archetype)
+      if (isSubset(cardColors, guildColors)) return true
+    }
+    
+    // Wedge matching
+    else if (archetype.startsWith('wedge-')) {
+      const wedgeColors = getWedgeColors(archetype)
+      if (isSubset(cardColors, wedgeColors)) return true
+    }
+    
+    // Five-color: Accept any colored card
+    else if (archetype === 'five-color') {
+      return cardColors.length > 0
+    }
+    
+    // Legacy archetypes (for backward compatibility)
+    else if (archetype === 'rw-legion') {
+      const hasRed = cardColors.includes('red')
+      const hasWhite = cardColors.includes('white')
+      const hasGreen = cardColors.includes('green')
+      const hasBlue = cardColors.includes('blue')
+      const hasBlack = cardColors.includes('black')
+      
+      if (!hasRed && !hasWhite) continue
+      if (hasGreen || hasBlue || hasBlack) continue
+      return true
+    }
+    else if (archetype === 'ub-control') {
+      const hasBlue = cardColors.includes('blue')
+      const hasBlack = cardColors.includes('black')
+      const hasGreen = cardColors.includes('green')
+      const hasRed = cardColors.includes('red')
+      const hasWhite = cardColors.includes('white')
+      
+      if (!hasBlue && !hasBlack) continue
+      if (hasGreen || hasRed || hasWhite) continue
+      return true
+    }
+    else if (archetype === 'ubg-control') {
+      const hasBlue = cardColors.includes('blue')
+      const hasBlack = cardColors.includes('black')
+      const hasGreen = cardColors.includes('green')
+      const hasRed = cardColors.includes('red')
+      const hasWhite = cardColors.includes('white')
+      
+      if (!hasBlue && !hasBlack && !hasGreen) continue
+      if (hasRed || hasWhite) continue
+      return true
+    }
   }
   
   return false
 }
 
 // Select cards for a pack (generic, spell, multicolor - NO signature cards), filtered by archetype
+// NEW: Includes rarity-based distribution (1 rare, 2-3 uncommons, rest commons)
 function selectCardsForPack(activeArchetypes: Archetype[] = ['all']): BaseCard[] {
   const selected: BaseCard[] = []
   
-  // Filter cards by archetype
-  const filteredGenericCards = activeArchetypes.includes('all')
-    ? allGenericCards
-    : allGenericCards.filter(card => cardMatchesArchetype(card, activeArchetypes))
+  // Filter all cards by archetype
+  const allFilteredCards = activeArchetypes.includes('all')
+    ? [...allGenericCards, ...allSpellCards]
+    : [...allGenericCards, ...allSpellCards].filter(card => cardMatchesArchetype(card, activeArchetypes))
   
-  const filteredSpellCards = activeArchetypes.includes('all')
-    ? allSpellCards
-    : allSpellCards.filter(card => cardMatchesArchetype(card, activeArchetypes))
+  // Separate by rarity
+  const rares = allFilteredCards.filter(c => c.rarity === 'rare')
+  const uncommons = allFilteredCards.filter(c => c.rarity === 'uncommon')
+  const commons = allFilteredCards.filter(c => !c.rarity || c.rarity === 'common')
   
-  const filteredMulticolorCards = activeArchetypes.includes('all')
-    ? allMulticolorCards
-    : allMulticolorCards.filter(card => cardMatchesArchetype(card, activeArchetypes))
-  
-  // 8-10 generic units (signature cards are auto-added when heroes are drafted)
-  const genericPool = shuffleArray(filteredGenericCards)
-  selected.push(...genericPool.slice(0, 8 + Math.floor(Math.random() * 3)))
-  
-  // 3-4 spell cards
-  const spellPool = shuffleArray(filteredSpellCards)
-  selected.push(...spellPool.slice(0, 3 + Math.floor(Math.random() * 2)))
-  
-  // 1-2 multicolor cards (potential bombs)
-  const multicolorCount = Math.random() > 0.4 ? 2 : 1 // 60% chance for 2, 40% for 1
-  const multicolorPool = shuffleArray(filteredMulticolorCards)
-  if (multicolorPool.length > 0) {
-    selected.push(...multicolorPool.slice(0, multicolorCount))
+  // Guarantee 1 rare
+  if (rares.length > 0) {
+    const rarePool = shuffleArray(rares)
+    selected.push(rarePool[0])
   }
   
-  // Trim to CARDS_PER_PACK (should be close to 15 already)
-  const shuffled = shuffleArray(selected)
-  return shuffled.slice(0, CARDS_PER_PACK)
+  // 2-3 uncommons
+  const uncommonCount = 2 + Math.floor(Math.random() * 2) // 2 or 3
+  if (uncommons.length > 0) {
+    const uncommonPool = shuffleArray(uncommons)
+    selected.push(...uncommonPool.slice(0, Math.min(uncommonCount, uncommons.length)))
+  }
+  
+  // Fill rest with commons (target 15 total)
+  const commonsNeeded = CARDS_PER_PACK - selected.length
+  if (commons.length > 0) {
+    const commonPool = shuffleArray(commons)
+    selected.push(...commonPool.slice(0, Math.min(commonsNeeded, commons.length)))
+  }
+  
+  // If we don't have enough cards, fill with whatever is available
+  if (selected.length < CARDS_PER_PACK && allFilteredCards.length > selected.length) {
+    const remaining = allFilteredCards.filter(c => !selected.includes(c))
+    const remainingPool = shuffleArray(remaining)
+    selected.push(...remainingPool.slice(0, CARDS_PER_PACK - selected.length))
+  }
+  
+  // Final shuffle and return
+  return shuffleArray(selected).slice(0, CARDS_PER_PACK)
 }
 
 // Select 3 battlefields for a pack
