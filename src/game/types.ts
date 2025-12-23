@@ -314,6 +314,7 @@ export type ArtifactEffectType =
   | 'cleave_aura' // Grants cleave to all allies
   | 'target_buff' // Single-target buff
   | 'life_loss_draw' // Lose life but draw card
+  | 'token_generation' // Spawns tokens each turn
 
 export interface ArtifactCard extends BaseCard {
   cardType: 'artifact'

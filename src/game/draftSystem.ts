@@ -290,9 +290,48 @@ export function generateAllDraftPacks(): DraftPack[] {
   return packs
 }
 
+// Determine if a round is a hero pick round
+// Pattern: 2 normal packs, then hero pack, then normal, then hero, etc.
+// Round 1-2: Normal picks
+// Round 3: Hero pick
+// Round 4: Normal picks
+// Round 5: Hero pick
+// etc.
+export function isHeroPickRound(roundNumber: number): boolean {
+  // After the first 2 normal packs, every 3rd round is a hero pick
+  // Round 3, 6, 9, etc. are hero picks
+  if (roundNumber <= 2) return false
+  return (roundNumber - 2) % 2 === 1 // Round 3, 5, 7, 9... are hero picks
+}
+
+// Generate a hero-only pack (only heroes, no cards or battlefields)
+export function generateHeroPack(packNumber: number, activeArchetypes: Archetype[] = ['all']): DraftPack {
+  const heroes = selectHeroesForPack(packNumber, allHeroes, activeArchetypes)
+  // Only include heroes in the pool
+  const poolItems: DraftPoolItem[] = heroes.map(hero => ({
+    id: `pack-${packNumber}-hero-${hero.id}`,
+    type: 'hero' as DraftPickType,
+    item: hero as Hero,
+    packNumber,
+  }))
+
+  return {
+    packNumber,
+    heroes: heroes as Hero[],
+    cards: [],
+    battlefields: [],
+    remainingItems: poolItems,
+    picks: [],
+    isComplete: false,
+  }
+}
+
 // Generate a single random pack for the new round-based system
 // By default, limit to RW and UBG archetypes for testing
 export function generateRandomPack(roundNumber: number, activeArchetypes: Archetype[] = ['rw-legion', 'ubg-control']): DraftPack {
+  if (isHeroPickRound(roundNumber)) {
+    return generateHeroPack(roundNumber, activeArchetypes)
+  }
   return generateDraftPack(roundNumber, activeArchetypes)
 }
 

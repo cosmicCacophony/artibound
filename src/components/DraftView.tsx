@@ -4,7 +4,9 @@ import { DraftPoolItem, DraftPickType } from '../game/types'
 import DraftPackComponent from './DraftPack'
 import DraftPicks from './DraftPicks'
 import DraftSelection from './DraftSelection'
+import DeckCutting from './DeckCutting'
 import { useGameContext } from '../context/GameContext'
+import { isHeroPickRound } from '../game/draftSystem'
 
 interface DraftViewProps {
   onStartGame?: () => void
@@ -19,6 +21,8 @@ export default function DraftView({ onStartGame }: DraftViewProps = {}) {
 
   const currentPack = getCurrentPack()
   const isPlayer1Turn = draftState.currentPicker === 'player1'
+  const isHeroRound = isHeroPickRound(draftState.currentRound)
+  const roundTotalPicks = isHeroRound ? 2 : 4
 
   const handleItemClick = (item: DraftPoolItem) => {
     // Allow selecting items for the current player's turn
@@ -70,11 +74,30 @@ export default function DraftView({ onStartGame }: DraftViewProps = {}) {
     )
   }
 
-  // Show completion screen if both players have made final selections
-  if (draftState.isSelectionComplete) {
+  // Show deck cutting phase if both players have made final selections
+  const [cutDecks, setCutDecks] = useState<{ player1: any, player2: any } | null>(null)
+
+  if (draftState.isSelectionComplete && !cutDecks) {
+    const handleDeckCutting = (player1Cut: any, player2Cut: any) => {
+      setCutDecks({ player1: player1Cut, player2: player2Cut })
+    }
+
+    if (draftState.player1Final && draftState.player2Final) {
+      return (
+        <DeckCutting
+          player1Final={draftState.player1Final}
+          player2Final={draftState.player2Final}
+          onConfirm={handleDeckCutting}
+        />
+      )
+    }
+  }
+
+  // Show completion screen if both players have made final selections and deck cutting is done
+  if (draftState.isSelectionComplete && cutDecks) {
     const handleStartGame = () => {
-      if (draftState.player1Final && draftState.player2Final) {
-        initializeGameFromDraft(draftState.player1Final, draftState.player2Final)
+      if (cutDecks.player1 && cutDecks.player2) {
+        initializeGameFromDraft(cutDecks.player1, cutDecks.player2)
         if (onStartGame) {
           onStartGame()
         }
@@ -159,7 +182,17 @@ export default function DraftView({ onStartGame }: DraftViewProps = {}) {
             <strong>Pick:</strong> {draftState.pickNumber}
           </div>
           <div>
-            <strong>Round Picks Remaining:</strong> {draftState.roundPicksRemaining} / 4
+            <strong>Round Picks Remaining:</strong> {draftState.roundPicksRemaining} / {roundTotalPicks}
+          </div>
+          <div style={{
+            padding: '6px 12px',
+            backgroundColor: isHeroRound ? '#9C27B0' : '#2196F3',
+            color: 'white',
+            borderRadius: '4px',
+            fontSize: '12px',
+            fontWeight: 'bold',
+          }}>
+            {isHeroRound ? '🎯 Hero Pick Round' : '📦 Normal Pick Round'}
           </div>
           <div style={{
             padding: '8px 16px',

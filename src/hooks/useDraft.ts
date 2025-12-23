@@ -17,7 +17,7 @@ import {
   Color,
   Archetype,
 } from '../game/types'
-import { generateAllDraftPacks, removeItemFromPack, isPackComplete, generateRandomPack, heroMatchesArchetype, cardMatchesArchetype } from '../game/draftSystem'
+import { generateAllDraftPacks, removeItemFromPack, isPackComplete, generateRandomPack, heroMatchesArchetype, cardMatchesArchetype, isHeroPickRound } from '../game/draftSystem'
 import { defaultHeroes, defaultBattlefield, draftableHeroes } from '../game/draftData'
 import { allCards, allSpells, allArtifacts, allBattlefields, allHeroes } from '../game/cardData'
 
@@ -30,22 +30,37 @@ function hasEnoughItems(drafted: DraftedItems): boolean {
   )
 }
 
+// Import isHeroPickRound from draftSystem
+import { generateAllDraftPacks, removeItemFromPack, isPackComplete, generateRandomPack, heroMatchesArchetype, cardMatchesArchetype, isHeroPickRound } from '../game/draftSystem'
+
 // Get the pick pattern for a round
-// Each pack: 4 picks total, each player gets exactly 2 picks
-// Simple pattern: P1 picks 2, P2 picks 2, then new pack
+// Normal packs: 4 picks total, each player gets exactly 2 picks
+// Hero packs: 2 picks total, each player gets exactly 1 pick
 function getRoundPattern(roundNumber: number): {
   startingPlayer: PlayerId
   picks: { player: PlayerId; count: number }[]
   totalPicks: number
 } {
-  // Always: P1 picks 2, then P2 picks 2
-  return {
-    startingPlayer: 'player1',
-    picks: [
-      { player: 'player1', count: 2 },
-      { player: 'player2', count: 2 },
-    ],
-    totalPicks: 4,
+  if (isHeroPickRound(roundNumber)) {
+    // Hero pick round: P1 picks 1, then P2 picks 1
+    return {
+      startingPlayer: 'player1',
+      picks: [
+        { player: 'player1', count: 1 },
+        { player: 'player2', count: 1 },
+      ],
+      totalPicks: 2,
+    }
+  } else {
+    // Normal pick round: P1 picks 2, then P2 picks 2
+    return {
+      startingPlayer: 'player1',
+      picks: [
+        { player: 'player1', count: 2 },
+        { player: 'player2', count: 2 },
+      ],
+      totalPicks: 4,
+    }
   }
 }
 
@@ -150,24 +165,34 @@ export function useDraft() {
       let nextPack: DraftPack | null = updatedPack
       let nextRoundPattern = draftState.roundPattern
       
-      // Simple logic: Each player picks 2, then switch. After 4 picks total, new pack.
+      // Logic: Each player picks based on round type, then switch. After all picks done, new pack.
       if (picksRemainingThisTurn > 0) {
         // Same player continues with their remaining picks
       } else {
-        // Current player's turn is done (they've picked their 2)
+        // Current player's turn is done
         // Switch to the other player
         nextPicker = draftState.currentPicker === 'player1' ? 'player2' : 'player1'
-        nextPicksRemainingThisTurn = 2 // Other player gets 2 picks
         
-        // If round is complete (4 picks done), start new round with new pack
+        // If round is complete, start new round with new pack
         if (roundPicksRemaining <= 0) {
           nextRound = draftState.currentRound + 1
           const nextRoundPatternData = getRoundPattern(nextRound)
-          nextRoundPattern = 0 // Always same pattern now
-          nextPicker = nextRoundPatternData.startingPlayer // Always P1 starts
-          nextPicksRemainingThisTurn = nextRoundPatternData.picks[0].count // Always 2
-          nextRoundPicksRemaining = nextRoundPatternData.totalPicks // Always 4
-          nextPack = generateRandomPack(nextRound) // Generate new random pack
+          nextRoundPattern = 0
+          nextPicker = nextRoundPatternData.startingPlayer
+          nextPicksRemainingThisTurn = nextRoundPatternData.picks[0].count // 1 for hero packs, 2 for normal packs
+          nextRoundPicksRemaining = nextRoundPatternData.totalPicks // 2 for hero packs, 4 for normal packs
+          nextPack = generateRandomPack(nextRound) // Generate new random pack (hero or normal)
+        } else {
+          // Get the next picker's count from the current round pattern
+          const currentRoundPatternData = getRoundPattern(draftState.currentRound)
+          const currentPickerIndex = currentRoundPatternData.picks.findIndex(p => p.player === draftState.currentPicker)
+          const nextPickerIndex = currentPickerIndex + 1
+          if (nextPickerIndex < currentRoundPatternData.picks.length) {
+            nextPicksRemainingThisTurn = currentRoundPatternData.picks[nextPickerIndex].count
+          } else {
+            // Shouldn't happen, but fallback
+            nextPicksRemainingThisTurn = 1
+          }
         }
       }
 
@@ -374,12 +399,14 @@ export function useDraft() {
         if (!currentPack || currentPack.remainingItems.length === 0) {
           // Generate new pack for next round
           const nextRound = currentState.currentRound + 1
+          const nextRoundPatternData = getRoundPattern(nextRound)
           currentState = {
             ...currentState,
             currentRound: nextRound,
             currentPack: generateRandomPack(nextRound),
-            roundPicksRemaining: 4,
-            picksRemainingThisTurn: currentState.currentPicker === 'player1' ? 2 : 2,
+            roundPicksRemaining: nextRoundPatternData.totalPicks,
+            picksRemainingThisTurn: nextRoundPatternData.picks[0].count,
+            currentPicker: nextRoundPatternData.startingPlayer,
           }
           continue
         }
@@ -389,12 +416,14 @@ export function useDraft() {
         if (remainingItems.length === 0) {
           // Generate new pack
           const nextRound = currentState.currentRound + 1
+          const nextRoundPatternData = getRoundPattern(nextRound)
           currentState = {
             ...currentState,
             currentRound: nextRound,
             currentPack: generateRandomPack(nextRound),
-            roundPicksRemaining: 4,
-            picksRemainingThisTurn: 2,
+            roundPicksRemaining: nextRoundPatternData.totalPicks,
+            picksRemainingThisTurn: nextRoundPatternData.picks[0].count,
+            currentPicker: nextRoundPatternData.startingPlayer,
           }
           continue
         }
@@ -462,24 +491,34 @@ export function useDraft() {
         let nextPack: DraftPack | null = updatedPack
         let nextRoundPattern = currentState.roundPattern
         
-        // Simple logic: Each player picks 2, then switch. After 4 picks total, new pack.
+        // Logic: Each player picks based on round type, then switch. After all picks done, new pack.
         if (picksRemainingThisTurn > 0) {
           // Same player continues with their remaining picks
         } else {
-          // Current player's turn is done (they've picked their 2)
+          // Current player's turn is done
           // Switch to the other player
           nextPicker = currentState.currentPicker === 'player1' ? 'player2' : 'player1'
-          nextPicksRemainingThisTurn = 2 // Other player gets 2 picks
           
-          // If round is complete (4 picks done), start new round with new pack
+          // If round is complete, start new round with new pack
           if (roundPicksRemaining <= 0) {
             nextRound = currentState.currentRound + 1
             const nextRoundPatternData = getRoundPattern(nextRound)
-            nextRoundPattern = 0 // Always same pattern now
-            nextPicker = nextRoundPatternData.startingPlayer // Always P1 starts
-            nextPicksRemainingThisTurn = nextRoundPatternData.picks[0].count // Always 2
-            nextRoundPicksRemaining = nextRoundPatternData.totalPicks // Always 4
-            nextPack = generateRandomPack(nextRound) // Generate new random pack
+            nextRoundPattern = 0
+            nextPicker = nextRoundPatternData.startingPlayer
+            nextPicksRemainingThisTurn = nextRoundPatternData.picks[0].count
+            nextRoundPicksRemaining = nextRoundPatternData.totalPicks
+            nextPack = generateRandomPack(nextRound) // Generate new random pack (hero or normal)
+          } else {
+            // Get the next picker's count from the current round pattern
+            const currentRoundPatternData = getRoundPattern(currentState.currentRound)
+            const currentPickerIndex = currentRoundPatternData.picks.findIndex(p => p.player === currentState.currentPicker)
+            const nextPickerIndex = currentPickerIndex + 1
+            if (nextPickerIndex < currentRoundPatternData.picks.length) {
+              nextPicksRemainingThisTurn = currentRoundPatternData.picks[nextPickerIndex].count
+            } else {
+              // Shouldn't happen, but fallback
+              nextPicksRemainingThisTurn = 1
+            }
           }
         }
 

@@ -197,6 +197,19 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 5,
     currentHealth: 5,
   },
+  {
+    id: 'rw-unit-cleaving-champion',
+    name: 'Cleaving Champion',
+    description: '4/4. Cleave (damages adjacent units when attacking). Costs 5 (4RWR).',
+    cardType: 'generic',
+    colors: ['red', 'red', 'white'], // Requires 2 red + 1 white runes (RWR)
+    manaCost: 5,
+    consumesRunes: true, // Requires RWR runes
+    attack: 4,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+  },
 ]
 
 // ============================================================================
@@ -444,18 +457,6 @@ export const monoRedAggroSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   },
   // Combat tricks (1-2 mana)
   {
-    id: 'red-aggro-rush',
-    name: 'Rush',
-    description: 'Generic. Target unit gains +2/+0 this turn.',
-    cardType: 'spell',
-    colors: ['red'],
-    manaCost: 1,
-    effect: {
-      type: 'targeted_damage', // Placeholder - would be a buff
-      damage: 0,
-    },
-  },
-  {
     id: 'red-aggro-surge',
     name: 'Power Surge',
     description: 'Generic. Target unit gains +1/+1 and can attack towers this turn.',
@@ -618,6 +619,16 @@ export const rwArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     manaCost: 3,
     effectType: 'damage_amplifier',
     effectValue: 1, // +1 attack to units in front of heroes
+  },
+  {
+    id: 'rw-artifact-legion-barracks',
+    name: 'Legion Barracks',
+    description: 'Artifact. At the start of your turn, spawn a 1/1 Legion token.',
+    cardType: 'artifact',
+    colors: ['red', 'white'],
+    manaCost: 4,
+    effectType: 'token_generation',
+    effectValue: 1, // Spawns 1x 1/1 Legion token each turn
   },
 ]
 
@@ -3462,9 +3473,9 @@ export const rwgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     cardType: 'hero',
     colors: ['red', 'white'], // Converted from RWG to RW (2-rune max)
     attack: 4,
-    health: 11,
-    maxHealth: 11,
-    currentHealth: 11,
+    health: 9,
+    maxHealth: 9,
+    currentHealth: 9,
     supportEffect: 'Allies gain +1/+1. If you control heroes of 3+ different colors, allies gain +2/+2 instead.',
     signatureCardId: 'rwg-sig-commander-1',
     equippedItems: [],
@@ -3503,35 +3514,35 @@ export const rwgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   {
     id: 'rrg-hero-wild-fury',
     name: 'Wild Fury',
-    description: 'Rare. Aggressive growth hero with double red commitment. More powerful than normal RG heroes. Especially aggressive.',
+    description: 'Rare. Aggressive growth hero.',
     cardType: 'hero',
-    colors: ['red', 'red', 'green'], // Requires 2 red + 1 green
-    attack: 5, // Especially aggressive rare hero
-    health: 10, // +1 over normal RG hero
-    maxHealth: 10,
-    currentHealth: 10,
-    supportEffect: 'Allies gain +2 attack. When this attacks, all your units gain +2/+2 until end of turn.',
+    colors: ['red', 'green'], // Converted from RRG to RG (2-rune max)
+    attack: 4,
+    health: 9,
+    maxHealth: 9,
+    currentHealth: 9,
+    supportEffect: 'Allies gain +1 attack. When this attacks, all your units gain +2/+2 until end of turn.',
     signatureCardId: 'rrg-sig-fury-1',
     equippedItems: [],
     ability: {
       name: 'Primal Rage',
-      description: 'All your units gain +3/+3 this turn. Put a +2/+2 counter on each of your units.',
+      description: 'All your units gain +2/+2 this turn. Put a +1/+1 counter on each of your units.',
       manaCost: 1,
       cooldown: 2,
       effectType: 'buff_units',
-      effectValue: 3, // Stronger than normal RG hero
+      effectValue: 2,
     },
   },
   {
     id: 'bbu-hero-void-tyrant',
     name: 'Void Tyrant',
-    description: 'Rare. Control finisher hero with double black commitment. More powerful than normal BU heroes.',
+    description: 'Rare. Control finisher hero.',
     cardType: 'hero',
-    colors: ['black', 'black', 'blue'], // Requires 2 black + 1 blue
-    attack: 4, // +1 over normal BU hero
-    health: 12, // +1 over normal BU hero
-    maxHealth: 12,
-    currentHealth: 12,
+    colors: ['black', 'blue'], // Converted from BBU to BU (2-rune max)
+    attack: 4,
+    health: 11,
+    maxHealth: 11,
+    currentHealth: 11,
     supportEffect: 'When an enemy unit dies, draw a card. Spells you cast deal +1 damage.',
     signatureCardId: 'bbu-sig-tyrant-1',
     equippedItems: [],
@@ -3547,13 +3558,13 @@ export const rwgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   {
     id: 'ggw-hero-nature-guardian',
     name: 'Nature Guardian',
-    description: 'Rare. Resilient support hero with double green commitment. More powerful than normal GW heroes.',
+    description: 'Rare. Resilient support hero.',
     cardType: 'hero',
-    colors: ['green', 'green', 'white'], // Requires 2 green + 1 white
-    attack: 4, // +1 over normal GW hero
-    health: 13, // +2 over normal GW hero
-    maxHealth: 13,
-    currentHealth: 13,
+    colors: ['green', 'white'], // Converted from GGW to GW (2-rune max)
+    attack: 4,
+    health: 11,
+    maxHealth: 11,
+    currentHealth: 11,
     supportEffect: 'Allies gain +0/+3. When a unit dies, put a +1/+1 counter on all your units.',
     signatureCardId: 'ggw-sig-guardian-1',
     equippedItems: [],
@@ -4569,21 +4580,6 @@ export const runeSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     },
     initiative: false,
   },
-  // Pyretic Ritual - Red ramp (RR temporary)
-  {
-    id: 'rune-spell-pyretic-ritual',
-    name: 'Pyretic Ritual',
-    description: 'Add RR (2 red runes) until end of turn. Fire begets fire.',
-    cardType: 'spell',
-    colors: ['red'],
-    manaCost: 1,
-    consumesRunes: false,
-    effect: {
-      type: 'add_temporary_runes',
-      runeColors: ['red', 'red'],
-    },
-    initiative: false,
-  },
   // High Tide - Blue ramp (UU temporary)
   {
     id: 'rune-spell-high-tide',
@@ -4598,21 +4594,6 @@ export const runeSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       runeColors: ['blue', 'blue'],
     },
     initiative: true, // Gives initiative like cantrips
-  },
-  // Rite of Flame - Red burst (RRR temporary)
-  {
-    id: 'rune-spell-rite-of-flame',
-    name: 'Rite of Flame',
-    description: 'Add RRR (3 red runes) until end of turn. A burst of primal energy.',
-    cardType: 'spell',
-    colors: ['red'],
-    manaCost: 2,
-    consumesRunes: true,
-    effect: {
-      type: 'add_temporary_runes',
-      runeColors: ['red', 'red', 'red'],
-    },
-    initiative: false,
   },
   // Cabal Ritual - Black burst with condition
   {

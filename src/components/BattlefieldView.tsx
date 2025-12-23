@@ -239,39 +239,54 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
         </div>
         {/* Manual Creep Spawn Button */}
         {metadata.currentPhase === 'play' && (
-          <div style={{ marginTop: '8px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
-            <button
-              onClick={() => handleSpawnCreep(battlefieldId, 'player1')}
-              disabled={metadata.activePlayer !== 'player1'}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: metadata.activePlayer === 'player1' ? '#4caf50' : '#ccc',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: metadata.activePlayer === 'player1' ? 'pointer' : 'not-allowed',
-                fontSize: '12px',
-              }}
-              title="Spawn a 1/1 creep in the first empty slot for Player 1"
-            >
-              Spawn P1 Creep
-            </button>
-            <button
-              onClick={() => handleSpawnCreep(battlefieldId, 'player2')}
-              disabled={metadata.activePlayer !== 'player2'}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: metadata.activePlayer === 'player2' ? '#4caf50' : '#ccc',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: metadata.activePlayer === 'player2' ? 'pointer' : 'not-allowed',
-                fontSize: '12px',
-              }}
-              title="Spawn a 1/1 creep in the first empty slot for Player 2"
-            >
-              Spawn P2 Creep
-            </button>
+          <div style={{ marginTop: '8px', display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {(() => {
+              // Use actionPlayer if available, otherwise fall back to activePlayer
+              const currentActionPlayer = metadata.actionPlayer || metadata.activePlayer
+              const isPlayer1Turn = currentActionPlayer === 'player1'
+              const isPlayer2Turn = currentActionPlayer === 'player2'
+              
+              return (
+                <>
+                  <button
+                    onClick={() => handleSpawnCreep(battlefieldId, 'player1')}
+                    disabled={!isPlayer1Turn}
+                    style={{
+                      padding: '6px 12px',
+                      backgroundColor: isPlayer1Turn ? '#4caf50' : '#ccc',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: isPlayer1Turn ? 'pointer' : 'not-allowed',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      opacity: isPlayer1Turn ? 1 : 0.6,
+                    }}
+                    title="Spawn a 1/1 creep in the first empty slot for Player 1"
+                  >
+                    Spawn P1 Creep
+                  </button>
+                  <button
+                    onClick={() => handleSpawnCreep(battlefieldId, 'player2')}
+                    disabled={!isPlayer2Turn}
+                    style={{
+                      padding: '6px 12px',
+                      backgroundColor: isPlayer2Turn ? '#f44336' : '#ccc',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: isPlayer2Turn ? 'pointer' : 'not-allowed',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      opacity: isPlayer2Turn ? 1 : 0.6,
+                    }}
+                    title="Spawn a 1/1 creep in the first empty slot for Player 2"
+                  >
+                    Spawn P2 Creep
+                  </button>
+                </>
+              )
+            })()}
           </div>
         )}
         {/* Go to Combat Button - Resolves Both Battlefields Simultaneously */}
