@@ -1184,11 +1184,11 @@ export const ruSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ru-spell-3',
     name: 'Arcane Burst',
-    description: 'Damage 3 adjacent units',
+    description: 'Damage 3 adjacent units. Costs 4U.',
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 4,
-    consumesRunes: true, // Not generic - consumes runes
+    consumesRunes: true, // Requires U rune
     effect: {
       type: 'adjacent_damage',
       damage: 3,
@@ -1452,14 +1452,14 @@ export const gwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   {
     id: 'gw-hero-protector',
     name: 'Divine Protector',
-    description: 'Shields allies',
+    description: 'Allies within range 2 gain +2 regeneration (heal at end of combat before lethal)',
     cardType: 'hero',
     colors: ['white'],
     attack: 3,
     health: 10,
     maxHealth: 10,
     currentHealth: 10,
-    supportEffect: 'Allies gain +1/+1',
+    supportEffect: 'Allies within range 2 gain +2 regeneration',
     signatureCardId: 'gw-sig-protector-1',
     equippedItems: [],
     ability: {
@@ -1696,10 +1696,11 @@ export const blackMidrangeCards: Omit<GenericUnit, 'location' | 'owner' | 'stack
   {
     id: 'black-midrange-knowledge-seeker',
     name: 'Knowledge Seeker',
-    description: 'When this attacks, draw a card.',
+    description: 'When this attacks, draw a card. Costs 5BB.',
     cardType: 'generic',
     colors: ['black'],
-    manaCost: 4,
+    manaCost: 5,
+    consumesRunes: true, // Requires BB runes
     attack: 5,
     health: 4,
     maxHealth: 4,
@@ -1758,9 +1759,9 @@ export const runeFinisherSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rune-finisher-multicolor-wrath',
     name: 'Multicolor Wrath',
-    description: 'Deal 6 damage to all enemy units. If you control heroes of 3+ different colors, destroy all enemy units instead. Costs 6 (any 3 colors).',
+    description: 'Deal 6 damage to all enemy units. If you control heroes of 3+ different colors, destroy all enemy units instead. Costs 6UUBBGG.',
     cardType: 'spell',
-    colors: ['blue', 'black', 'green'], // Flexible - requires any 3 colors
+    colors: ['blue', 'black', 'green'], // Requires UUBBGG (2 of each color)
     manaCost: 6,
     consumesRunes: true,
     effect: {
@@ -2931,11 +2932,11 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-spell-void-cascade',
     name: 'Void Cascade',
-    description: 'Deal 5 damage to all enemy units.',
+    description: 'Deal 5 damage to all enemy units. Costs 5UUB.',
     cardType: 'spell',
-    colors: ['blue', 'black'], // Requires U and B runes
+    colors: ['blue', 'black'], // Requires UUB runes (2 blue, 1 black)
     manaCost: 5,
-    consumesRunes: true, // Not generic - consumes U and B runes
+    consumesRunes: true, // Not generic - consumes UUB runes
     effect: {
       type: 'aoe_damage',
       damage: 5,
@@ -3083,11 +3084,11 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'spell-natures-wisdom',
     name: 'Nature\'s Wisdom',
-    description: 'Draw 2 cards and gain 2 life.',
+    description: 'Draw 2 cards and gain 2 life. Costs 2UG.',
     cardType: 'spell',
     colors: ['green', 'blue'],
-    manaCost: 3,
-    consumesRunes: true, // Requires U and G runes
+    manaCost: 2,
+    consumesRunes: true, // Requires UG runes
     effect: {
       type: 'draw_and_heal', // Draw cards and heal
       damage: 0,
@@ -3409,10 +3410,11 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ubg-spell-invulnerable-reflect',
     name: 'Reflective Shield',
-    description: 'Target hero gains invulnerable this turn. Any damage that hero would take is reflected back to the source.',
+    description: 'Target hero gains invulnerable this turn. Any damage that hero would take is reflected back to the source. Costs 2U.',
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 2,
+    consumesRunes: true, // Requires U rune
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for invulnerable + reflect
       damage: 0,
@@ -4133,6 +4135,46 @@ export const uwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 6,
     maxHealth: 6,
     currentHealth: 6,
+  },
+  // White adjacency units - positional gameplay
+  {
+    id: 'white-unit-guardian-angel',
+    name: 'Guardian Angel',
+    description: 'Adjacent allies gain +0/+2. Costs 3W.',
+    cardType: 'generic',
+    colors: ['white'],
+    manaCost: 3,
+    consumesRunes: true, // Requires W rune
+    attack: 2,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+  },
+  {
+    id: 'white-unit-holy-sentinel',
+    name: 'Holy Sentinel',
+    description: 'Adjacent allies gain +0/+3. Costs 4WW.',
+    cardType: 'generic',
+    colors: ['white'],
+    manaCost: 4,
+    consumesRunes: true, // Requires WW runes
+    attack: 3,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+  },
+  {
+    id: 'white-unit-fortified-bastion',
+    name: 'Fortified Bastion',
+    description: 'Adjacent allies gain +0/+4. Costs 5WWW.',
+    cardType: 'generic',
+    colors: ['white'],
+    manaCost: 5,
+    consumesRunes: true, // Requires WWW runes
+    attack: 2,
+    health: 8,
+    maxHealth: 8,
+    currentHealth: 8,
   },
 ]
 

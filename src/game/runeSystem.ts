@@ -145,7 +145,7 @@ export function createSeal(name: string, color: RuneColor, owner: PlayerId): Sea
  * Get all available runes (permanent + temporary)
  */
 export function getAllAvailableRunes(pool: RunePool): RuneColor[] {
-  return [...pool.runes, ...pool.temporaryRunes]
+  return [...pool.runes, ...(pool.temporaryRunes || [])]
 }
 
 /**
@@ -334,12 +334,12 @@ export function getAvailableRunesByColor(pool: RunePool): Record<Color, number> 
  * Get total available runes (permanent + temporary)
  */
 export function getAvailableRuneCount(pool: RunePool): number {
-  return pool.runes.length + pool.temporaryRunes.length
+  return pool.runes.length + (pool.temporaryRunes?.length || 0)
 }
 
 /**
  * Get count of temporary runes only
  */
 export function getTemporaryRuneCount(pool: RunePool): number {
-  return pool.temporaryRunes.length
+  return pool.temporaryRunes?.length || 0
 }
