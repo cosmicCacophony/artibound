@@ -1,7 +1,56 @@
 # Artibound Design Documentation Index
 
-> **Last Updated:** 2024-12-XX  
+> **Last Updated:** 2025-12-25  
 > **Purpose:** Central index of all design documentation with metadata for tracking relevance and cleanup
+
+---
+
+## 🌟 START HERE: Master Guides (Read These First)
+
+**These three guides contain everything you need to understand and work on Artibound:**
+
+### 1. **[DESIGN_PHILOSOPHY_GUIDE.md](./DESIGN_PHILOSOPHY_GUIDE.md)** ⭐⭐⭐
+**Purpose:** The "why" behind Artibound - core design philosophy, rune death mechanic, PVE focus
+
+**Read this to understand:**
+- What makes Artibound unique (full draft, 2-battlefield, rune death mechanic)
+- The rune system and how it enables multicolor
+- Bouncing philosophy and why it matters
+- Updated color → mana system (3-mana = dual color!)
+- PVE roguelike focus
+
+**~500 lines | Essential reading for anyone working on the game**
+
+---
+
+### 2. **[CARD_CREATION_MASTER_GUIDE.md](./CARD_CREATION_MASTER_GUIDE.md)** ⭐⭐⭐
+**Purpose:** Complete workflow for creating any card in Artibound
+
+**Read this to learn:**
+- Step-by-step card creation process
+- Updated power level → mana → color system
+- Rune cost design philosophy
+- 3-color card design principles
+- Common patterns and examples
+- How to test cards vs bosses
+
+**~600 lines | Use this every time you create a card**
+
+---
+
+### 3. **[ARCHETYPE_DESIGN_GUIDE.md](./ARCHETYPE_DESIGN_GUIDE.md)** ⭐⭐⭐
+**Purpose:** Complete reference for all archetypes and boss matchups
+
+**Read this to understand:**
+- All 8 core archetypes (RW, UB, UBG, GU, RGW, Black-based, 5-color)
+- Each archetype's identity, win condition, and key cards
+- Rune strategy and bouncing frequency per archetype
+- Boss matchups (vs RW Legion boss)
+- Draft strategies for each archetype
+
+**~700 lines | Reference this when drafting or balancing archetypes**
+
+---
 
 ## Document Metadata System
 
@@ -262,32 +311,35 @@ All documentation files should include a metadata header with:
 
 ## Quick Reference: Which Doc to Use?
 
+**🌟 I'm new to Artibound - where do I start?**
+→ Read the 3 master guides (see "START HERE" section at top)
+
 **Designing a new card?**
-→ `design/ARTIFACT_CARD_ANALYSIS.md` (power level system)
-→ `core/CARD_DESIGN_AND_COUNTERPLAY.md` (counterplay principles)
-→ `design/RW_UB_CARDS.md` or `design/MULTICOLOR_CARD_EXAMPLES.md` (examples)
+→ **`CARD_CREATION_MASTER_GUIDE.md`** (complete workflow) ⭐
+→ `design/THREE_COLOR_CARD_DESIGN_PRINCIPLES.md` (3-color specifics)
+→ `design/ARTIFACT_CARD_ANALYSIS.md` (Artifact Foundry analysis)
 
-**Designing a 3-color card?**
-→ `design/THREE_COLOR_CARD_DESIGN_PRINCIPLES.md` (commitment vs value principles)
+**Understanding an archetype?**
+→ **`ARCHETYPE_DESIGN_GUIDE.md`** (all archetypes + boss matchups) ⭐
+→ `design/GU_SPLASH_ARCHETYPES.md` (GU details)
+→ `design/RGW_BIG_DUMB_CREATURES.md` (RGW details)
 
-**Understanding Exorcism positioning?**
-→ `analysis/EXORCISM_BOARD_STATES.md`
-
-**Understanding early game decisions?**
-→ `analysis/EARLY_GAME_DECISIONS.md`
+**Understanding the core philosophy?**
+→ **`DESIGN_PHILOSOPHY_GUIDE.md`** (rune death, bouncing, PVE focus) ⭐
+→ `core/MULTICOLOR_DESIGN.md` (original bouncing philosophy)
 
 **Understanding bouncing?**
-→ `core/MULTICOLOR_DESIGN.md`
+→ **`DESIGN_PHILOSOPHY_GUIDE.md`** (bouncing section)
+→ `core/MULTICOLOR_DESIGN.md` (detailed bouncing mechanics)
+
+**Understanding rune system?**
+→ **`DESIGN_PHILOSOPHY_GUIDE.md`** (rune death mechanic)
+→ `design/RUNE_ARTIFACT_DESIGN.md` (artifact design)
+→ `design/RUNE_TENSION_DESIGN.md` (rune tension)
 
 **Planning a playtest?**
 → `testing/FAST_TESTING_AND_DESIGN.md` (efficient approach)
 → `testing/TESTING_PLAN.md` (comprehensive scenarios)
-
-**Understanding the core system?**
-→ `core/MULTICOLOR_DESIGN.md`
-
-**Understanding draft philosophy and development approach?**
-→ `core/DRAFT_PHILOSOPHY_AND_DEVELOPMENT_APPROACH.md`
 
 **Understanding technical architecture?**
 → `architecture/ARCHITECTURE.md`
