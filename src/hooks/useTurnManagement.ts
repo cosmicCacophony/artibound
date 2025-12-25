@@ -436,8 +436,54 @@ export function useTurnManagement() {
     })
   }, [setGameState])
 
-  // REMOVED: handleSpawnCreep (Core Game Redesign - Phase 1)
-  // Manual creep spawning removed - no longer needed without auto-spawn system
+  // Spawn a 1/1 creep for generic unit token generation
+  const handleSpawnCreep = useCallback((battlefieldId: 'battlefieldA' | 'battlefieldB', player: 'player1' | 'player2') => {
+    setGameState(prev => {
+      const battlefield = prev[battlefieldId]
+      const playerUnits = battlefield[player]
+      
+      // Find first available slot (1-5)
+      let availableSlot: number | null = null
+      for (let slot = 1; slot <= 5; slot++) {
+        const isOccupied = playerUnits.some(unit => unit.slot === slot)
+        if (!isOccupied) {
+          availableSlot = slot
+          break
+        }
+      }
+      
+      // If no slots available, don't spawn
+      if (availableSlot === null) {
+        console.log(`No available slot for ${player} creep on ${battlefieldId}`)
+        return prev
+      }
+      
+      // Create the creep
+      const creep: import('../game/types').GenericUnit = {
+        id: `creep-${player}-${battlefieldId}-${Date.now()}-${Math.random()}`,
+        name: 'Creep',
+        description: 'Basic 1/1 unit that can have health adjusted',
+        cardType: 'generic',
+        colors: [],
+        manaCost: 0,
+        attack: 1,
+        health: 1,
+        maxHealth: 1,
+        currentHealth: 1,
+        location: battlefieldId,
+        owner: player,
+        slot: availableSlot,
+      }
+      
+      return {
+        ...prev,
+        [battlefieldId]: {
+          ...battlefield,
+          [player]: [...playerUnits, creep],
+        },
+      }
+    })
+  }, [setGameState])
 
   const handleToggleStun = useCallback((hero: Card) => {
     // Only heroes can be stunned
@@ -868,7 +914,7 @@ export function useTurnManagement() {
     handleToggleStun,
     handlePass,
     handleEndDeployPhase,
-    // handleSpawnCreep removed - no longer needed (Core Game Redesign)
+    handleSpawnCreep, // Re-added for token generation mechanics
   }
 }
 
