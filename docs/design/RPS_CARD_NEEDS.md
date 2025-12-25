@@ -292,7 +292,6 @@ This document lists specific cards needed to enable the Rock-Paper-Scissors arch
 ---
 
 ## Related Documents
-- `docs/design/RPS_ARCHETYPE_SYSTEM.md` - RPS system overview
-- `docs/design/GU_SPLASH_ARCHETYPES.md` - GU + splash details
-- `docs/architecture/CARD_CREATION_GUIDELINES.md` - Card creation guidelines
+- `docs/ARCHETYPE_DESIGN_GUIDE.md` - All archetypes (consolidated)
+- `docs/CARD_CREATION_MASTER_GUIDE.md` - Card creation guidelines
 

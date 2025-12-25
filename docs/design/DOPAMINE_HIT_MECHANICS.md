@@ -449,7 +449,7 @@ A collection of powerful mechanics that create "dopamine hits" - exciting, memor
 
 ## Related Documents
 - `docs/design/RARE_HERO_SYSTEM.md` - Rare hero system
-- `docs/design/RPS_ARCHETYPE_SYSTEM.md` - RPS system overview
+- `docs/ARCHETYPE_DESIGN_GUIDE.md` - All archetypes (consolidated)
 - `src/game/combatSystem.ts` - Combat system implementation
 
 

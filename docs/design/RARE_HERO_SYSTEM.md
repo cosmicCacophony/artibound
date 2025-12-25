@@ -379,9 +379,9 @@ function generatePackWithSynergy() {
 ---
 
 ## Related Documents
-- `docs/design/RPS_ARCHETYPE_SYSTEM.md` - RPS system overview
-- `docs/core/DRAFT_PHILOSOPHY_AND_DEVELOPMENT_APPROACH.md` - Draft philosophy
-- `docs/design/RUNE_ARTIFACT_DESIGN.md` - Rune artifact design
+- `docs/ARCHETYPE_DESIGN_GUIDE.md` - All archetypes (consolidated)
+- `docs/CARD_CREATION_MASTER_GUIDE.md` - Rune artifact design (consolidated)
+- `docs/DESIGN_PHILOSOPHY_GUIDE.md` - Draft philosophy
 - `src/game/roguelikeDraft.ts` - Draft pack generation
 
 
