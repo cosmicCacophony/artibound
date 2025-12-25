@@ -436,52 +436,8 @@ export function useTurnManagement() {
     })
   }, [setGameState])
 
-  const handleSpawnCreep = useCallback((battlefieldId: 'battlefieldA' | 'battlefieldB', player: 'player1' | 'player2') => {
-    setGameState(prev => {
-      const battlefield = prev[battlefieldId]
-      const playerCards = battlefield[player]
-      
-      // Find first empty slot starting from slot 1 (leftmost)
-      let emptySlot: number | null = null
-      for (let slot = 1; slot <= 5; slot++) {
-        const slotOccupied = playerCards.some(c => c.slot === slot)
-        if (!slotOccupied) {
-          emptySlot = slot
-          break
-        }
-      }
-      
-      // If no empty slot, don't spawn
-      if (emptySlot === null) {
-        return prev
-      }
-      
-      // Create creep
-      const creep: import('../game/types').GenericUnit = {
-        id: `creep-${player}-${battlefieldId}-manual-${Date.now()}`,
-        name: 'Creep',
-        description: 'Basic unit spawned manually',
-        cardType: 'generic',
-        colors: [],
-        manaCost: 0,
-        attack: 1,
-        health: 1,
-        maxHealth: 1,
-        currentHealth: 1,
-        location: battlefieldId,
-        owner: player,
-        slot: emptySlot,
-      }
-      
-      return {
-        ...prev,
-        [battlefieldId]: {
-          ...battlefield,
-          [player]: [...playerCards, creep],
-        },
-      }
-    })
-  }, [setGameState])
+  // REMOVED: handleSpawnCreep (Core Game Redesign - Phase 1)
+  // Manual creep spawning removed - no longer needed without auto-spawn system
 
   const handleToggleStun = useCallback((hero: Card) => {
     // Only heroes can be stunned
@@ -594,48 +550,11 @@ export function useTurnManagement() {
       const updatedBattlefieldA = spawnVoidApprentices(prev.battlefieldA, 'battlefieldA')
       const updatedBattlefieldB = spawnVoidApprentices(prev.battlefieldB, 'battlefieldB')
       
-      // Spawn 1/1 creeps in first empty slot closest to left (slot 1, then 2, then 3, etc.) for both players on both battlefields
-      const spawnCreeps = (battlefield: typeof prev.battlefieldA, battlefieldId: 'battlefieldA' | 'battlefieldB') => {
-        const updated = { ...battlefield }
-        
-        // Spawn for both players
-        for (const player of ['player1', 'player2'] as const) {
-          // Find first empty slot starting from slot 1 (leftmost)
-          let emptySlot: number | null = null
-          for (let slot = 1; slot <= 5; slot++) {
-            const slotOccupied = updated[player].some(c => c.slot === slot)
-            if (!slotOccupied) {
-              emptySlot = slot
-              break
-            }
-          }
-          
-          // Spawn creep in first empty slot if one exists
-          if (emptySlot !== null) {
-            const creep: import('../game/types').GenericUnit = {
-              id: `creep-${player}-${battlefieldId}-${newTurn}-${Date.now()}`,
-              name: 'Creep',
-              description: 'Basic unit spawned each turn',
-              cardType: 'generic',
-              colors: [],
-              manaCost: 0,
-              attack: 1,
-              health: 1,
-              maxHealth: 1,
-              currentHealth: 1,
-              location: battlefieldId,
-              owner: player,
-              slot: emptySlot,
-            }
-            updated[player] = [...updated[player], creep]
-          }
-        }
-        
-        return updated
-      }
-      
-      const battlefieldAWithCreeps = spawnCreeps(updatedBattlefieldA, 'battlefieldA')
-      const battlefieldBWithCreeps = spawnCreeps(updatedBattlefieldB, 'battlefieldB')
+      // REMOVED: Auto-spawn creep system (Core Game Redesign - Phase 1)
+      // Creeps no longer spawn automatically each turn - board stays cleaner, heroes are primary threats
+      // Keep Void Apprentice spawning (mech-specific ability)
+      const battlefieldAWithCreeps = updatedBattlefieldA // No longer spawning creeps
+      const battlefieldBWithCreeps = updatedBattlefieldB // No longer spawning creeps
       
       // Process saga artifacts: increment counters, create tokens, apply effects, destroy after Chapter 3
       const processSagaArtifacts = (
@@ -949,7 +868,7 @@ export function useTurnManagement() {
     handleToggleStun,
     handlePass,
     handleEndDeployPhase,
-    handleSpawnCreep,
+    // handleSpawnCreep removed - no longer needed (Core Game Redesign)
   }
 }
 

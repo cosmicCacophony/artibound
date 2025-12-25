@@ -1814,12 +1814,12 @@ export function createInitialGameState(): {
     player1DeployZone: [...player1AllHeroes], // All heroes ready to deploy
     player2DeployZone: [...player2AllHeroes], // All heroes ready to deploy
     battlefieldA: { 
-      player1: [createInitialCreep('player1', 'battlefieldA')], 
-      player2: [createInitialCreep('player2', 'battlefieldA')] 
+      player1: [], // REMOVED: No initial creeps (Core Game Redesign)
+      player2: [] // REMOVED: No initial creeps (Core Game Redesign)
     },
     battlefieldB: { 
-      player1: [createInitialCreep('player1', 'battlefieldB')], 
-      player2: [createInitialCreep('player2', 'battlefieldB')] 
+      player1: [], // REMOVED: No initial creeps (Core Game Redesign)
+      player2: [] // REMOVED: No initial creeps (Core Game Redesign)
     },
     metadata,
   }
@@ -2050,12 +2050,12 @@ export function createGameStateFromDraft(
     player1DeployZone,
     player2DeployZone,
     battlefieldA: { 
-      player1: [createInitialCreep('player1', 'battlefieldA')], // Start with 1/1 creep in slot 1
-      player2: [createInitialCreep('player2', 'battlefieldA')] 
+      player1: [], // REMOVED: No initial creeps (Core Game Redesign)
+      player2: [] // REMOVED: No initial creeps (Core Game Redesign)
     },
     battlefieldB: { 
-      player1: [createInitialCreep('player1', 'battlefieldB')], // Start with 1/1 creep in slot 1
-      player2: [createInitialCreep('player2', 'battlefieldB')] 
+      player1: [], // REMOVED: No initial creeps (Core Game Redesign)
+      player2: [] // REMOVED: No initial creeps (Core Game Redesign)
     },
     cardLibrary: [], // Card library is managed separately via player1SidebarCards/player2SidebarCards
     player1Library: player1LibraryCards,
