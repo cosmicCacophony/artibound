@@ -73,3 +73,4 @@ export function getChromaticPayoffDescription(hero: Hero): string | null {
   return `Triggers on ${colors} runes: ${payoff.description}`
 }
 
+

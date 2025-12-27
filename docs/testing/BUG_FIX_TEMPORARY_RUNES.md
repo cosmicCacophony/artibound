@@ -147,3 +147,4 @@ If we add more optional properties to game state objects, remember to:
 2. Provide default values (`|| []`, `|| 0`)
 3. Test with incomplete/old state data
 
+

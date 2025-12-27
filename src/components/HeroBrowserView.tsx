@@ -380,3 +380,4 @@ function HeroCard({ hero }: { hero: Hero }) {
   )
 }
 
+

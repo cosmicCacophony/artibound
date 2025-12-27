@@ -76,22 +76,16 @@ export function useTurnManagement() {
       )
       
       // Process killed heroes (same logic as in BattlefieldView) - separate by player
-      // Draw cards for opponent when heroes are killed
       const processKilledHeroes = (
         originalBattlefield: typeof gameState.battlefieldA,
         updatedBattlefield: typeof gameState.battlefieldA,
         player1Base: Card[],
         player2Base: Card[],
-        deathCooldowns: Record<string, number>,
-        player1Library: BaseCard[],
-        player2Library: BaseCard[],
-        setPlayer1Library: (updater: (prev: BaseCard[]) => BaseCard[]) => void,
-        setPlayer2Library: (updater: (prev: BaseCard[]) => BaseCard[]) => void
+        deathCooldowns: Record<string, number>
       ) => {
         const newP1Base = [...player1Base]
         const newP2Base = [...player2Base]
         const newCooldowns = { ...deathCooldowns }
-        const cardsToDraw: { player1: Card[], player2: Card[] } = { player1: [], player2: [] }
         
         // Process player1 heroes
         originalBattlefield.player1.forEach(originalCard => {
@@ -106,17 +100,8 @@ export function useTurnManagement() {
                 slot: undefined,
               })
               newCooldowns[hero.id] = 2
-              // Opponent (player2) draws 2 cards for killing hero
-              for (let i = 0; i < 2 && player2Library.length > 0; i++) {
-                const randomIndex = Math.floor(Math.random() * player2Library.length)
-                const template = player2Library[randomIndex]
-                const drawnCard = createCardFromTemplate(template, 'player2', 'hand')
-                cardsToDraw.player2.push(drawnCard)
-                setPlayer2Library(prev => prev.filter((_, index) => index !== randomIndex))
-              }
             }
           }
-          // No card draw for killing units (only heroes)
         })
         
         // Process player2 heroes
@@ -132,64 +117,28 @@ export function useTurnManagement() {
                 slot: undefined,
               })
               newCooldowns[hero.id] = 2
-              // Opponent (player1) draws 2 cards for killing hero
-              for (let i = 0; i < 2 && player1Library.length > 0; i++) {
-                const randomIndex = Math.floor(Math.random() * player1Library.length)
-                const template = player1Library[randomIndex]
-                const drawnCard = createCardFromTemplate(template, 'player1', 'hand')
-                cardsToDraw.player1.push(drawnCard)
-                setPlayer1Library(prev => prev.filter((_, index) => index !== randomIndex))
-              }
             }
           }
-          // No card draw for killing units (only heroes)
         })
         
-        return { newP1Base, newP2Base, newCooldowns, cardsToDraw }
+        return { newP1Base, newP2Base, newCooldowns }
       }
       
-      // Track library state as we draw cards (functional updates handle state correctly)
-      let currentP1Library = [...player1SidebarCards]
-      let currentP2Library = [...player2SidebarCards]
-      
-      const updateP1Library = (updater: (prev: BaseCard[]) => BaseCard[]) => {
-        currentP1Library = updater(currentP1Library)
-        setPlayer1SidebarCards(updater)
-      }
-      const updateP2Library = (updater: (prev: BaseCard[]) => BaseCard[]) => {
-        currentP2Library = updater(currentP2Library)
-        setPlayer2SidebarCards(updater)
-      }
-      
-      const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA, cardsToDraw: cardsToDrawA, blackHeroesDied: blackHeroesDiedA } = processKilledHeroes(
+      const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA, blackHeroesDied: blackHeroesDiedA } = processKilledHeroes(
         gameState.battlefieldA,
         resultA.updatedBattlefield,
         gameState.player1Base,
         gameState.player2Base,
-        metadata.deathCooldowns,
-        currentP1Library,
-        currentP2Library,
-        updateP1Library,
-        updateP2Library
+        metadata.deathCooldowns
       )
       
-      const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB, cardsToDraw: cardsToDrawB, blackHeroesDied: blackHeroesDiedB } = processKilledHeroes(
+      const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB, blackHeroesDied: blackHeroesDiedB } = processKilledHeroes(
         gameState.battlefieldB,
         resultB.updatedBattlefield,
         newP1BaseA,
         newP2BaseA,
-        newCooldownsA,
-        currentP1Library,
-        currentP2Library,
-        updateP1Library,
-        updateP2Library
+        newCooldownsA
       )
-      
-      // Combine cards to draw from both battlefields
-      const allCardsToDraw = {
-        player1: [...cardsToDrawA.player1, ...cardsToDrawB.player1],
-        player2: [...cardsToDrawA.player2, ...cardsToDrawB.player2],
-      }
       
       // Add B runes for black heroes that died
       const allBlackHeroesDied = [...blackHeroesDiedA, ...blackHeroesDiedB]

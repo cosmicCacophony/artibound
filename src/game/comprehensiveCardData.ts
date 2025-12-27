@@ -585,6 +585,38 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     },
     initiative: false,
   },
+  // New multi-target damage spells
+  {
+    id: 'red-spell-forked-lightning',
+    name: 'Forked Lightning',
+    description: 'Deal 2 damage to up to 2 different targets. Costs 4R.',
+    cardType: 'spell',
+    colors: ['red'],
+    manaCost: 4,
+    consumesRunes: true, // Requires R rune
+    effect: {
+      type: 'multi_target_damage',
+      damage: 2,
+      maxTargets: 2,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+  {
+    id: 'red-spell-chain-lightning',
+    name: 'Chain Lightning',
+    description: 'Deal 3 damage to target, then 2 damage to an adjacent unit, then 1 to another adjacent. Costs 5RR.',
+    cardType: 'spell',
+    colors: ['red', 'red'],
+    manaCost: 5,
+    consumesRunes: true, // Requires RR runes
+    effect: {
+      type: 'chain_damage',
+      chainDamages: [3, 2, 1],
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
 ]
 
 // ============================================================================
@@ -1127,6 +1159,56 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     effect: {
       type: 'targeted_damage',
       damage: 0,
+    },
+  },
+  // New multi-target damage spells
+  {
+    id: 'black-spell-twin-strike',
+    name: 'Twin Strike',
+    description: 'Deal 4 damage to up to 2 different targets. Costs 5BB.',
+    cardType: 'spell',
+    colors: ['black', 'black'],
+    manaCost: 5,
+    consumesRunes: true, // Requires BB runes
+    effect: {
+      type: 'multi_target_damage',
+      damage: 4,
+      maxTargets: 2,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+  {
+    id: 'black-spell-spread-plague',
+    name: 'Spread the Plague',
+    description: 'Deal 3 damage to target and all adjacent units (max 3). Costs 6B.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 6,
+    consumesRunes: true, // Requires B rune
+    effect: {
+      type: 'adjacent_damage',
+      damage: 3,
+      adjacentCount: 3,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+  // RB multicolor spell
+  {
+    id: 'rb-spell-dual-elimination',
+    name: 'Dual Elimination',
+    description: 'Deal 5 damage to up to 2 different targets. Costs 4RB.',
+    cardType: 'spell',
+    colors: ['red', 'black'],
+    manaCost: 4,
+    consumesRunes: true, // Requires RB runes
+    effect: {
+      type: 'multi_target_damage',
+      damage: 5,
+      maxTargets: 2,
+      affectsUnits: true,
+      affectsHeroes: true,
     },
   },
 ]
@@ -3517,6 +3599,23 @@ export const rwgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     effect: {
       type: 'stun', // Stun prevents attacking
       damage: 0,
+    },
+  },
+  // New blue multi-target damage spell
+  {
+    id: 'blue-spell-arcane-missiles',
+    name: 'Arcane Missiles',
+    description: 'Deal 3 damage split among up to 3 targets (you choose distribution). Costs 3U.',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 3,
+    consumesRunes: true, // Requires U rune
+    effect: {
+      type: 'split_damage',
+      damage: 3,
+      maxTargets: 3,
+      affectsUnits: true,
+      affectsHeroes: true,
     },
   },
 ]

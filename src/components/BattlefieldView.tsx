@@ -399,16 +399,11 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                   updatedBattlefield: typeof gameState.battlefieldA,
                   player1Base: Card[],
                   player2Base: Card[],
-                  deathCooldowns: Record<string, number>,
-                  player1Library: import('../game/types').BaseCard[],
-                  player2Library: import('../game/types').BaseCard[],
-                  setPlayer1Library: (updater: (prev: import('../game/types').BaseCard[]) => import('../game/types').BaseCard[]) => void,
-                  setPlayer2Library: (updater: (prev: import('../game/types').BaseCard[]) => import('../game/types').BaseCard[]) => void
+                  deathCooldowns: Record<string, number>
                 ) => {
                   const newP1Base = [...player1Base]
                   const newP2Base = [...player2Base]
                   const newCooldowns = { ...deathCooldowns }
-                  const cardsToDraw: { player1: import('../game/types').Card[], player2: import('../game/types').Card[] } = { player1: [], player2: [] }
                   
                   // Process player1 heroes
                   originalBattlefield.player1.forEach(originalCard => {
@@ -423,17 +418,8 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                           slot: undefined,
                         })
                         newCooldowns[hero.id] = 2
-                        // Opponent (player2) draws 2 cards for killing hero
-                        for (let i = 0; i < 2 && player2Library.length > 0; i++) {
-                          const randomIndex = Math.floor(Math.random() * player2Library.length)
-                          const template = player2Library[randomIndex]
-                          const drawnCard = createCardFromTemplate(template, 'player2', 'hand')
-                          cardsToDraw.player2.push(drawnCard)
-                          setPlayer2Library(prev => prev.filter((_, index) => index !== randomIndex))
-                        }
                       }
                     }
-                    // No card draw for killing units (only heroes)
                   })
                   
                   // Process player2 heroes
@@ -449,51 +435,28 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                           slot: undefined,
                         })
                         newCooldowns[hero.id] = 2
-                        // Opponent (player1) draws 2 cards for killing hero
-                        for (let i = 0; i < 2 && player1Library.length > 0; i++) {
-                          const randomIndex = Math.floor(Math.random() * player1Library.length)
-                          const template = player1Library[randomIndex]
-                          const drawnCard = createCardFromTemplate(template, 'player1', 'hand')
-                          cardsToDraw.player1.push(drawnCard)
-                          setPlayer1Library(prev => prev.filter((_, index) => index !== randomIndex))
-                        }
                       }
                     }
-                    // No card draw for killing units (only heroes)
                   })
                   
-                  return { newP1Base, newP2Base, newCooldowns, cardsToDraw }
+                  return { newP1Base, newP2Base, newCooldowns }
                 }
                 
-                const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA, cardsToDraw: cardsToDrawA } = processKilledHeroes(
+                const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA } = processKilledHeroes(
                   gameState.battlefieldA,
                   resultA.updatedBattlefield,
                   gameState.player1Base,
                   gameState.player2Base,
-                  metadata.deathCooldowns,
-                  player1SidebarCards,
-                  player2SidebarCards,
-                  setPlayer1SidebarCards,
-                  setPlayer2SidebarCards
+                  metadata.deathCooldowns
                 )
                 
-                const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB, cardsToDraw: cardsToDrawB } = processKilledHeroes(
+                const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB } = processKilledHeroes(
                   gameState.battlefieldB,
                   resultB.updatedBattlefield,
                   newP1BaseA,
                   newP2BaseA,
-                  newCooldownsA,
-                  player1SidebarCards,
-                  player2SidebarCards,
-                  setPlayer1SidebarCards,
-                  setPlayer2SidebarCards
+                  newCooldownsA
                 )
-                
-                // Combine cards to draw from both battlefields
-                const allCardsToDraw = {
-                  player1: [...cardsToDrawA.player1, ...cardsToDrawB.player1],
-                  player2: [...cardsToDrawA.player2, ...cardsToDrawB.player2],
-                }
                 
                 // Apply combat results
                 // Calculate total overflow damage TO each player's nexus

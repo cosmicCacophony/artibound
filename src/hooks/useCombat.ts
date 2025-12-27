@@ -1,12 +1,11 @@
 import { useCallback } from 'react'
-import { Card, AttackTarget, GameMetadata, BaseCard } from '../game/types'
+import { Card, AttackTarget, GameMetadata } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { getDefaultTargets, resolveCombat } from '../game/combatSystem'
-import { createCardFromTemplate } from '../game/sampleData'
 import { removeRunesFromHero } from '../game/runeSystem'
 
 export function useCombat() {
-  const { gameState, setGameState, combatTargetsA, setCombatTargetsA, combatTargetsB, setCombatTargetsB, player1SidebarCards, player2SidebarCards, setPlayer1SidebarCards, setPlayer2SidebarCards } = useGameContext()
+  const { gameState, setGameState, combatTargetsA, setCombatTargetsA, combatTargetsB, setCombatTargetsB } = useGameContext()
   const metadata = gameState.metadata
 
   const handleDecreaseHealth = useCallback((card: Card) => {
@@ -22,23 +21,7 @@ export function useCombat() {
 
       if (card.cardType === 'hero') {
         // Hero dies - goes to base with death cooldown (1 round before can redeploy)
-        // Card Draw System: Opponent draws 1 card when a hero is killed
         const hero = card as import('../game/types').Hero
-        
-        // Draw a card for the opponent from their library
-        const opponentLibrary = opponent === 'player1' ? player1SidebarCards : player2SidebarCards
-        const setOpponentLibrary = opponent === 'player1' ? setPlayer1SidebarCards : setPlayer2SidebarCards
-        
-        let drawnCard: Card | null = null
-        if (opponentLibrary.length > 0) {
-          // Draw a random card from the library
-          const randomIndex = Math.floor(Math.random() * opponentLibrary.length)
-          const template = opponentLibrary[randomIndex]
-          drawnCard = createCardFromTemplate(template, opponent, 'hand')
-          
-          // Remove from library
-          setOpponentLibrary(prev => prev.filter((_, index) => index !== randomIndex))
-        }
         
         setGameState(prev => {
           const removeFromLocation = (cards: Card[]) => cards.filter(c => c.id !== card.id)
@@ -59,10 +42,6 @@ export function useCombat() {
               currentHealth: 0, // Dead - will heal to full in base after cooldown
               slot: undefined,
             }],
-            // Add drawn card to opponent's hand if one was drawn
-            [`${opponent}Hand`]: drawnCard 
-              ? [...(prev[`${opponent}Hand` as keyof typeof prev] as Card[]), drawnCard]
-              : (prev[`${opponent}Hand` as keyof typeof prev] as Card[]),
             metadata: {
               ...prev.metadata,
               [runePoolKey]: updatedRunePool,
@@ -75,7 +54,6 @@ export function useCombat() {
         })
       } else {
         // Generic unit dies - remove completely, track death cooldown
-        // No card draw for killing units (only heroes)
         setGameState(prev => {
           return {
             ...prev,
@@ -115,7 +93,7 @@ export function useCombat() {
         }
       })
     }
-  }, [setGameState, player1SidebarCards, player2SidebarCards, setPlayer1SidebarCards, setPlayer2SidebarCards])
+  }, [setGameState])
 
   const handleIncreaseHealth = useCallback((card: Card) => {
     if (!('currentHealth' in card) || !('maxHealth' in card)) return

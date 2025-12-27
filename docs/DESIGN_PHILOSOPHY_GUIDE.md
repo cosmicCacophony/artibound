@@ -429,3 +429,4 @@ After beating a boss, player receives rewards (Slay the Spire style):
 
 *This document defines the core philosophy of Artibound. When making design decisions, refer back to these principles. The rune death mechanic is the centerpiece that makes everything else work.*
 
+

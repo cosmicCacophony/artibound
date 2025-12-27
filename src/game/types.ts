@@ -340,6 +340,9 @@ export type SpellEffectType =
   | 'aoe_damage' // Area of effect damage
   | 'board_wipe' // Destroy all units/heroes
   | 'targeted_damage' // Damage to specific target(s)
+  | 'multi_target_damage' // Choose multiple separate targets (e.g., "Deal 2 damage to up to 2 targets")
+  | 'chain_damage' // Sequential damage to adjacent units (e.g., "3 damage, then 2 to adjacent, then 1")
+  | 'split_damage' // Distribute damage among targets (e.g., "Deal 3 damage split among up to 3 targets")
   | 'adjacent_damage' // Damage to adjacent units
   | 'all_units_damage' // Damage to all units
   | 'stun' // Stun target (cannot attack this turn)
@@ -355,7 +358,9 @@ export type SpellEffectType =
 export interface SpellEffect {
   type: SpellEffectType
   damage?: number // Damage amount
-  targetCount?: number // For AOE: how many targets
+  targetCount?: number // For multi-target spells: how many targets can be selected
+  maxTargets?: number // Maximum number of targets for split/multi-target
+  chainDamages?: number[] // For chain damage: array of damage values [3, 2, 1]
   affectsHeroes?: boolean // Does it affect heroes?
   affectsUnits?: boolean // Does it affect units?
   affectsOwnUnits?: boolean // For board wipes: affects own units too?

@@ -3,6 +3,8 @@
 ## Overview
 Successfully implemented "Blood Magic" as black's unique rune identity - hero abilities that allow players to pay tower life instead of runes when casting spells. Costs scale by color relationship to black.
 
+**This completes the third core rune mechanic, establishing runes as the central game system.** Each color now has (or will have) unique ways to interact with runes, creating deep strategic gameplay around rune generation, consumption, and manipulation.
+
 ## Design Philosophy
 
 **Core Concept:** Black heroes enable "Blood Magic" - cast spells without enough runes by paying tower life for each missing rune.
@@ -182,13 +184,50 @@ Players must constantly evaluate:
 
 ## Technical Notes
 
-### Three Unique Identities
+### Three Unique Identities (Implemented)
+
+**These three mechanics form the core of Artibound's rune system:**
 
 1. **Blue (Free Spells):** Pay X+Runes, refund X mana → Tempo advantage
-2. **Green (Chromatic Payoff):** Spend off-color runes → Get bonuses → Rewards diversity
-3. **Black (Blood Magic):** Pay life for missing runes → Ultimate flexibility, high risk
+   - Enables spell-slinging without depleting mana
+   - Still requires rune generation
+   - Rewards multicolor for rune access
 
-Each color has a unique relationship with the rune system!
+2. **Green (Chromatic Payoff):** Spend off-color runes → Get bonuses → Rewards diversity
+   - Incentivizes multicolor drafting
+   - Rewards spending any runes, not just your colors
+   - Scales with color diversity
+
+3. **Black (Blood Magic):** Pay life for missing runes → Ultimate flexibility, high risk
+   - Enables any spell regardless of runes
+   - Escalating costs based on color relationships
+   - High risk/reward decision-making
+
+**Each color has a unique relationship with the rune system - this is Artibound's core identity!**
+
+### Future Color Mechanics (Design Space)
+
+**After testing the existing three mechanics, consider:**
+
+**Red (Rune Amplification) - PROPOSED:**
+- **Concept:** Spend extra runes to amplify spell effects
+- **Examples:**
+  - "Deal 3 damage. For each extra R rune spent, deal +2 damage"
+  - "Attack +3. Spend RR: Attack +6 instead"
+  - "Fireball: Deal X damage where X = runes spent"
+- **Identity:** Red's aggressive, all-in nature
+- **Strategic Value:** Converts excess runes into raw power
+
+**White (Rune Blessing) - PROPOSED:**
+- **Concept:** Spend extra runes for scaling stat bonuses
+- **Examples:**
+  - "Target hero gains +1/+1 for each extra W rune spent"
+  - "Deploy: You may spend up to 3 extra runes. Gain +1/+1 per rune spent"
+  - "Protection: Pay WW: This hero gains +0/+3 and cannot be destroyed this turn"
+- **Identity:** White's protective, scaling buffs
+- **Strategic Value:** Converts runes into permanent advantages
+
+**Design Priority:** Test Blue, Green, and Black mechanics thoroughly before implementing Red/White to ensure the system is fun and balanced.
 
 ### Integration Points
 

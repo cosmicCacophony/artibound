@@ -293,3 +293,4 @@ After balancing core 5:
 - **GW is newest** - just added adjacency units, needs testing
 - **RG and UB need card verification** - ensure strong card pool exists
 
+

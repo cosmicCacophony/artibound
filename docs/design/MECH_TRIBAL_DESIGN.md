@@ -314,3 +314,4 @@ The tribal mechanic serves as a "glue" between strategies, enabling interesting 
 *This document should be used alongside `COLOR_IDENTITY_DESIGN.md` and other tribal mechanics documentation.*
 
 
+
