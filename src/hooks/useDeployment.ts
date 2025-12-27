@@ -1,8 +1,8 @@
 import { useCallback } from 'react'
-import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT, Hero, ItemCard, BaseCard, SpellCard } from '../game/types'
+import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT, Hero, ItemCard, BaseCard, SpellCard, BloodMagicConfig } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { tier1Items } from '../game/sampleData'
-import { canAffordCard, consumeRunesForCard, addRunesFromHero, removeRunesFromHero, addTemporaryRunes, consumeRunesForCardWithTracking } from '../game/runeSystem'
+import { canAffordCard, consumeRunesForCard, addRunesFromHero, removeRunesFromHero, addTemporaryRunes, consumeRunesForCardWithTracking, getBloodMagicCost } from '../game/runeSystem'
 import { canPlayCardInLane } from '../game/colorSystem'
 import { getAllChromaticPayoffs } from '../game/chromaticSystem'
 
@@ -243,16 +243,69 @@ export function useDeployment() {
       
       // Check rune requirements (color requirements) - only for non-heroes
       if (!canAffordCard(cardTemplate, playerMana, playerRunePool)) {
-        const missingRunes = cardTemplate.colors?.filter(color => {
-          const available = playerRunePool.runes.filter(r => r === color).length
-          return available === 0
-        }) || []
-        if (missingRunes.length > 0) {
-          alert(`Missing required runes: ${missingRunes.join(', ')}`)
+        // Check if player has Blood Magic ability
+        const playerHeroes = [
+          ...gameState.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
+          ...gameState.battlefieldB[selectedCard.owner as 'player1' | 'player2']
+        ].filter(c => c.cardType === 'hero') as Hero[]
+        
+        // Find any hero with blood magic
+        const bloodMagicHero = playerHeroes.find(h => h.ability?.bloodMagic?.enabled)
+        
+        if (bloodMagicHero?.ability?.bloodMagic) {
+          // Check if Blood Magic can substitute
+          const bloodMagicResult = getBloodMagicCost(
+            cardTemplate,
+            playerRunePool,
+            bloodMagicHero.ability.bloodMagic
+          )
+          
+          if (bloodMagicResult.canCast) {
+            const totalLifeCost = bloodMagicResult.lifeCostPerTower * 2
+            const runeList = bloodMagicResult.missingRunes.join(', ')
+            const confirmed = confirm(
+              `Blood Magic: Pay ${totalLifeCost} tower life to cast ${cardTemplate.name}?\n\n` +
+              `Missing runes: ${runeList}\n` +
+              `Cost: ${bloodMagicResult.lifeCostPerTower} life per tower (${totalLifeCost} total)\n\n` +
+              `This will damage both of your towers!`
+            )
+            
+            if (!confirmed) {
+              return
+            }
+            
+            // Store blood magic usage for deployment phase
+            // We'll apply the tower damage during actual deployment
+            metadata.pendingBloodMagicCost = totalLifeCost
+          } else {
+            // Can't afford even with blood magic
+            const missingRunes = cardTemplate.colors?.filter(color => {
+              const available = playerRunePool.runes.filter(r => r === color).length
+              return available === 0
+            }) || []
+            if (missingRunes.length > 0) {
+              const reason = bloodMagicResult.missingRunes.length > (bloodMagicHero.ability.bloodMagic.maxSubstitutions || Infinity)
+                ? ` (exceeds max ${bloodMagicHero.ability.bloodMagic.maxSubstitutions} substitutions)`
+                : ''
+              alert(`Missing required runes: ${missingRunes.join(', ')}${reason}`)
+            } else {
+              alert(`Cannot afford ${cardTemplate.name}`)
+            }
+            return
+          }
         } else {
-          alert(`Cannot afford ${cardTemplate.name}`)
+          // No blood magic available
+          const missingRunes = cardTemplate.colors?.filter(color => {
+            const available = playerRunePool.runes.filter(r => r === color).length
+            return available === 0
+          }) || []
+          if (missingRunes.length > 0) {
+            alert(`Missing required runes: ${missingRunes.join(', ')}`)
+          } else {
+            alert(`Cannot afford ${cardTemplate.name}`)
+          }
+          return
         }
-        return
       }
     }
 
@@ -355,6 +408,7 @@ export function useDeployment() {
         
         let updatedRunePool = prev.metadata[runePoolKey] as any
         let updatedMana = prev.metadata[manaKey] as number
+        let bloodMagicTowerUpdates: Partial<GameMetadata> = {}
         
         // Heroes don't cost runes - they GIVE runes when deployed
         // Bouncing heroes does NOT remove runes - bouncing should be strategic, not punishing
@@ -421,6 +475,22 @@ export function useDeployment() {
               }
             }
           }
+          
+          // Apply Blood Magic tower damage (black's rune identity)
+          if (prev.metadata.pendingBloodMagicCost && prev.metadata.pendingBloodMagicCost > 0) {
+            const lifeCost = prev.metadata.pendingBloodMagicCost
+            const towerAKey = `towerA_${selectedCard.owner}_HP` as const
+            const towerBKey = `towerB_${selectedCard.owner}_HP` as const
+            const costPerTower = lifeCost / 2
+            
+            bloodMagicTowerUpdates = {
+              [towerAKey]: Math.max(0, prev.metadata[towerAKey] - costPerTower),
+              [towerBKey]: Math.max(0, prev.metadata[towerBKey] - costPerTower),
+              pendingBloodMagicCost: undefined // Clear the pending cost
+            }
+            
+            console.log(`Blood Magic: Paid ${lifeCost} tower life (${costPerTower} per tower) to cast ${cardTemplate.name}`)
+          }
         }
         
         return {
@@ -441,6 +511,7 @@ export function useDeployment() {
             ...(isHeroCard ? { [movedToBaseKey]: true } : {}),
             [runePoolKey]: updatedRunePool,
             ...(!isHeroCard ? { [manaKey]: updatedMana } : {}),
+            ...bloodMagicTowerUpdates,
           },
         }
       } else if (location === 'battlefieldA' || location === 'battlefieldB') {
@@ -484,6 +555,7 @@ export function useDeployment() {
               // Handle runes and mana
               let updatedRunePool = prev.metadata[runePoolKey] as any
               let updatedMana = prev.metadata[manaKey] as number
+              let bloodMagicTowerUpdates: Partial<GameMetadata> = {}
               const isHeroCard = selectedCard.cardType === 'hero'
               
         // If hero is deploying, add runes from that hero
@@ -562,6 +634,22 @@ export function useDeployment() {
                     }
                   }
                 }
+                
+                // Apply Blood Magic tower damage (black's rune identity)
+                if (prev.metadata.pendingBloodMagicCost && prev.metadata.pendingBloodMagicCost > 0) {
+                  const lifeCost = prev.metadata.pendingBloodMagicCost
+                  const towerAKey = `towerA_${selectedCard.owner}_HP` as const
+                  const towerBKey = `towerB_${selectedCard.owner}_HP` as const
+                  const costPerTower = lifeCost / 2
+                  
+                  bloodMagicTowerUpdates = {
+                    [towerAKey]: Math.max(0, prev.metadata[towerAKey] - costPerTower),
+                    [towerBKey]: Math.max(0, prev.metadata[towerBKey] - costPerTower),
+                    pendingBloodMagicCost: undefined // Clear the pending cost
+                  }
+                  
+                  console.log(`Blood Magic: Paid ${lifeCost} tower life (${costPerTower} per tower) to cast ${cardTemplate.name}`)
+                }
               }
               
               return {
@@ -587,6 +675,7 @@ export function useDeployment() {
                   ...prev.metadata,
                   [runePoolKey]: updatedRunePool,
                   ...(!isHeroCard ? { [manaKey]: updatedMana } : {}),
+                  ...bloodMagicTowerUpdates,
                 },
               }
             }
@@ -600,6 +689,7 @@ export function useDeployment() {
         // Pay mana and consume runes if needed
         let updatedRunePool = prev.metadata[runePoolKey] as any
         let updatedMana = prev.metadata[manaKey] as number
+        let bloodMagicTowerUpdates: Partial<GameMetadata> = {}
         
         // Check if this is a hero card
         const isHeroCard = selectedCard.cardType === 'hero'
@@ -666,6 +756,22 @@ export function useDeployment() {
               }
             }
           }
+          
+          // Apply Blood Magic tower damage (black's rune identity)
+          if (prev.metadata.pendingBloodMagicCost && prev.metadata.pendingBloodMagicCost > 0) {
+            const lifeCost = prev.metadata.pendingBloodMagicCost
+            const towerAKey = `towerA_${selectedCard.owner}_HP` as const
+            const towerBKey = `towerB_${selectedCard.owner}_HP` as const
+            const costPerTower = lifeCost / 2
+            
+            bloodMagicTowerUpdates = {
+              [towerAKey]: Math.max(0, prev.metadata[towerAKey] - costPerTower),
+              [towerBKey]: Math.max(0, prev.metadata[towerBKey] - costPerTower),
+              pendingBloodMagicCost: undefined // Clear the pending cost
+            }
+            
+            console.log(`Blood Magic: Paid ${lifeCost} tower life (${costPerTower} per tower) to cast ${cardTemplate.name}`)
+          }
         }
         
         // If hero is deploying to a battlefield, add runes from that hero
@@ -709,6 +815,7 @@ export function useDeployment() {
             ...prev.metadata,
             [runePoolKey]: updatedRunePool,
             ...(!isHeroCard ? { [manaKey]: updatedMana } : {}),
+            ...bloodMagicTowerUpdates,
           },
         }
       }

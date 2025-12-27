@@ -189,6 +189,8 @@ export interface GameMetadata {
   player2ColorsPlayedThisTurn: Color[]
   player1CardTypesPlayedThisTurn: CardType[]
   player2CardTypesPlayedThisTurn: CardType[]
+  // Blood Magic: Pending tower damage from blood magic usage (applied during deployment)
+  pendingBloodMagicCost?: number
 }
 
 // Hero Ability Types
@@ -221,6 +223,14 @@ export interface ChromaticPayoff {
   description: string // Display text for the payoff
 }
 
+// Blood Magic System - Black's rune identity
+export interface BloodMagicConfig {
+  enabled: boolean
+  costReduction?: number // Reduce all costs by this amount (min 1)
+  maxSubstitutions?: number // Max runes you can substitute (undefined = unlimited)
+  description: string
+}
+
 export interface HeroAbility {
   name: string
   description: string
@@ -237,6 +247,8 @@ export interface HeroAbility {
   spellDamageBonus?: number // Your spells deal +N damage
   // Chromatic Payoff field - Green's unique rune identity
   chromaticPayoff?: ChromaticPayoff // Triggers when player spends off-color runes
+  // Blood Magic field - Black's unique rune identity
+  bloodMagic?: BloodMagicConfig // Pay life for missing runes
   // For tracking cooldown: Record<heroId, turnLastUsed>
   // Stored in GameMetadata.heroAbilityCooldowns
 }

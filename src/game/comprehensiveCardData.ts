@@ -976,6 +976,85 @@ export const rbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       effectValue: 1,
     },
   },
+  // Blood Magic Heroes (Black's Rune Identity)
+  {
+    id: 'rb-hero-blood-mage',
+    name: 'Blood Mage',
+    description: '4/6. Blood Magic: Pay tower life instead of missing runes (B: 2 life/tower, R/G: 3 life/tower, U/W: 4 life/tower).',
+    cardType: 'hero',
+    colors: ['red', 'black'],
+    attack: 4,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
+    equippedItems: [],
+    ability: {
+      name: 'Blood Magic',
+      description: 'Passive: Pay tower life instead of missing runes. B: 2 life/tower, R/G: 3 life/tower, U/W: 4 life/tower.',
+      manaCost: 0,
+      cooldown: 0,
+      trigger: 'passive',
+      effectType: 'buff_units',
+      effectValue: 0,
+      bloodMagic: {
+        enabled: true,
+        description: 'Pay tower life for missing runes (B: 2, R/G: 3, U/W: 4 per tower)'
+      }
+    }
+  },
+  {
+    id: 'rb-hero-blood-adept',
+    name: 'Blood Magic Adept',
+    description: '3/7. Blood Magic with cost reduction. Pay 1 less life per rune (B: 1, R/G: 2, U/W: 3 per tower).',
+    cardType: 'hero',
+    colors: ['red', 'black'],
+    attack: 3,
+    health: 7,
+    maxHealth: 7,
+    currentHealth: 7,
+    equippedItems: [],
+    ability: {
+      name: 'Efficient Blood Magic',
+      description: 'Passive: Pay reduced tower life for missing runes. B: 1 life/tower, R/G: 2 life/tower, U/W: 3 life/tower.',
+      manaCost: 0,
+      cooldown: 0,
+      trigger: 'passive',
+      effectType: 'buff_units',
+      effectValue: 0,
+      bloodMagic: {
+        enabled: true,
+        costReduction: 1,
+        description: 'Pay reduced tower life for missing runes (B: 1, R/G: 2, U/W: 3 per tower)'
+      }
+    }
+  },
+  // Mono-Black Blood Magic Hero - Dark Ritualist (Black runes only, very cheap)
+  {
+    id: 'black-hero-dark-ritualist',
+    name: 'Dark Ritualist',
+    description: '3/8. Mono-Black Blood Magic: Pay 1 life per tower for BLACK runes only. Does not work for other colors.',
+    cardType: 'hero',
+    colors: ['black'],
+    attack: 3,
+    health: 8,
+    maxHealth: 8,
+    currentHealth: 8,
+    equippedItems: [],
+    ability: {
+      name: 'Dark Ritual Blood Magic',
+      description: 'Passive: Pay 1 life per tower (2 total) for BLACK runes only. Other colors cannot be substituted.',
+      manaCost: 0,
+      cooldown: 0,
+      trigger: 'passive',
+      effectType: 'buff_units',
+      effectValue: 0,
+      bloodMagic: {
+        enabled: true,
+        costReduction: 1, // Reduces black cost from 2 to 1
+        description: 'Pay 1 life/tower for BLACK runes only (mono-black support)'
+      }
+    }
+  },
 ]
 
 export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
@@ -1302,6 +1381,32 @@ export const gbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
         effectValue: 1,
         perRuneSpent: true, // Triggers per rune!
         description: 'Deal 1 damage per U/W rune spent'
+      }
+    }
+  },
+  // Blood Magic Hero - Greedy Ritualist (Unlimited)
+  {
+    id: 'gb-hero-greedy-ritualist',
+    name: 'Greedy Ritualist',
+    description: '5/5. Blood Magic (unlimited): Pay tower life for missing runes. B: 2, R/G: 3, U/W: 4 per tower. Glass cannon enabler.',
+    cardType: 'hero',
+    colors: ['green', 'black'],
+    attack: 5,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+    equippedItems: [],
+    ability: {
+      name: 'Greedy Blood Magic',
+      description: 'Passive: Pay tower life for any number of missing runes. B: 2, R/G: 3, U/W: 4 per tower.',
+      manaCost: 0,
+      cooldown: 0,
+      trigger: 'passive',
+      effectType: 'buff_units',
+      effectValue: 0,
+      bloodMagic: {
+        enabled: true,
+        description: 'Pay tower life for unlimited runes (B: 2, R/G: 3, U/W: 4 per tower)'
       }
     }
   },
@@ -1711,6 +1816,33 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       effectType: 'create_unit',
       effectValue: 3, // 3/3 stats
     },
+  },
+  // Blood Magic Hero - Desperate Necromancer (Limited substitutions)
+  {
+    id: 'ub-hero-desperate-necromancer',
+    name: 'Desperate Necromancer',
+    description: '3/7. Blood Magic (max 2 runes per spell): Pay tower life for up to 2 missing runes per spell. B: 2, R/G: 3, U/W: 4 per tower.',
+    cardType: 'hero',
+    colors: ['blue', 'black'],
+    attack: 3,
+    health: 7,
+    maxHealth: 7,
+    currentHealth: 7,
+    equippedItems: [],
+    ability: {
+      name: 'Limited Blood Magic',
+      description: 'Passive: Pay tower life for up to 2 missing runes per spell. B: 2, R/G: 3, U/W: 4 per tower.',
+      manaCost: 0,
+      cooldown: 0,
+      trigger: 'passive',
+      effectType: 'buff_units',
+      effectValue: 0,
+      bloodMagic: {
+        enabled: true,
+        maxSubstitutions: 2,
+        description: 'Pay tower life for up to 2 missing runes (B: 2, R/G: 3, U/W: 4 per tower)'
+      }
+    }
   },
 ]
 
