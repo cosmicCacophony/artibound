@@ -244,12 +244,17 @@ export function generateMixedPack(
   const spells = getWeightedCards(allSpells, playerColors, spellCount)
   const units = getWeightedCards(allCards, playerColors, unitCount)
   
-  // Flatten all items for easy picking
-  const allItems: any[] = [
-    ...heroes,
+  // Shuffle non-hero cards, but keep heroes at the front
+  const nonHeroItems = shuffleArray([
     ...artifacts,
     ...spells,
     ...units,
+  ])
+  
+  // Heroes always appear first, then shuffled non-hero items
+  const allItems: any[] = [
+    ...heroes,
+    ...nonHeroItems,
   ]
   
   return {
@@ -258,7 +263,7 @@ export function generateMixedPack(
     artifacts,
     spells,
     units,
-    allItems: shuffleArray(allItems), // Shuffle so order isn't predictable
+    allItems, // Heroes first, rest shuffled
   }
 }
 

@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT, Hero, ItemCard, BaseCard } from '../game/types'
+import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT, Hero, ItemCard, BaseCard, SpellCard } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { tier1Items } from '../game/sampleData'
 import { canAffordCard, consumeRunesForCard, addRunesFromHero, removeRunesFromHero, addTemporaryRunes } from '../game/runeSystem'
@@ -368,9 +368,16 @@ export function useDeployment() {
           
           // Handle spell effects that add temporary runes (like Dark Ritual)
           if (cardTemplate.cardType === 'spell' && cardTemplate.effect) {
-            const spellEffect = cardTemplate.effect
+            const spellCard = cardTemplate as SpellCard
+            const spellEffect = spellCard.effect
+            
             if (spellEffect.type === 'add_temporary_runes' && spellEffect.runeColors) {
               updatedRunePool = addTemporaryRunes(updatedRunePool, spellEffect.runeColors as any)
+            }
+            
+            // Handle mana refund for "free spells" (Urza block inspired)
+            if (spellCard.refundMana && spellCard.refundMana > 0) {
+              updatedMana = updatedMana + spellCard.refundMana
             }
           }
         }
@@ -464,9 +471,16 @@ export function useDeployment() {
                 
                 // Handle spell effects that add temporary runes (like Dark Ritual)
                 if (cardTemplate.cardType === 'spell' && cardTemplate.effect) {
-                  const spellEffect = cardTemplate.effect
+                  const spellCard = cardTemplate as SpellCard
+                  const spellEffect = spellCard.effect
+                  
                   if (spellEffect.type === 'add_temporary_runes' && spellEffect.runeColors) {
                     updatedRunePool = addTemporaryRunes(updatedRunePool, spellEffect.runeColors as any)
+                  }
+                  
+                  // Handle mana refund for "free spells" (Urza block inspired)
+                  if (spellCard.refundMana && spellCard.refundMana > 0) {
+                    updatedMana = updatedMana + spellCard.refundMana
                   }
                 }
               }
@@ -523,9 +537,16 @@ export function useDeployment() {
           
           // Handle spell effects that add temporary runes (like Dark Ritual)
           if (cardTemplate.cardType === 'spell' && cardTemplate.effect) {
-            const spellEffect = cardTemplate.effect
+            const spellCard = cardTemplate as SpellCard
+            const spellEffect = spellCard.effect
+            
             if (spellEffect.type === 'add_temporary_runes' && spellEffect.runeColors) {
               updatedRunePool = addTemporaryRunes(updatedRunePool, spellEffect.runeColors as any)
+            }
+            
+            // Handle mana refund for "free spells" (Urza block inspired)
+            if (spellCard.refundMana && spellCard.refundMana > 0) {
+              updatedMana = updatedMana + spellCard.refundMana
             }
           }
         }
@@ -732,6 +753,12 @@ export function useDeployment() {
           }
         : prev.metadata.deathCooldowns
       
+      // Remove runes from the hero when it's removed via X button (counts as death)
+      const runePoolKey = card.owner === 'player1' ? 'player1RunePool' : 'player2RunePool'
+      const updatedRunePool = isHero && hero 
+        ? removeRunesFromHero(hero, prev.metadata[runePoolKey])
+        : prev.metadata[runePoolKey]
+      
       return {
         ...prev,
         [location]: {
@@ -741,6 +768,7 @@ export function useDeployment() {
         [`${card.owner}Base`]: [...prev[`${card.owner}Base` as keyof typeof prev] as Card[], cardToBase],
         metadata: {
           ...prev.metadata,
+          [runePoolKey]: updatedRunePool,
           // No card draw for manually removing units/heroes (only combat kills give card draw)
           deathCooldowns: updatedDeathCooldowns,
         },

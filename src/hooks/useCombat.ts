@@ -3,6 +3,7 @@ import { Card, AttackTarget, GameMetadata, BaseCard } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { getDefaultTargets, resolveCombat } from '../game/combatSystem'
 import { createCardFromTemplate } from '../game/sampleData'
+import { removeRunesFromHero } from '../game/runeSystem'
 
 export function useCombat() {
   const { gameState, setGameState, combatTargetsA, setCombatTargetsA, combatTargetsB, setCombatTargetsB, player1SidebarCards, player2SidebarCards, setPlayer1SidebarCards, setPlayer2SidebarCards } = useGameContext()
@@ -42,6 +43,10 @@ export function useCombat() {
         setGameState(prev => {
           const removeFromLocation = (cards: Card[]) => cards.filter(c => c.id !== card.id)
           
+          // Remove runes from the hero when it dies
+          const runePoolKey = player === 'player1' ? 'player1RunePool' : 'player2RunePool'
+          const updatedRunePool = removeRunesFromHero(hero, prev.metadata[runePoolKey])
+          
           return {
             ...prev,
             [location === 'battlefieldA' ? 'battlefieldA' : 'battlefieldB']: {
@@ -60,6 +65,7 @@ export function useCombat() {
               : (prev[`${opponent}Hand` as keyof typeof prev] as Card[]),
             metadata: {
               ...prev.metadata,
+              [runePoolKey]: updatedRunePool,
               deathCooldowns: {
                 ...prev.metadata.deathCooldowns,
                 [card.id]: 2, // Set cooldown counter to 2 (decreases by 1 each turn, prevents deployment for 1 full round)

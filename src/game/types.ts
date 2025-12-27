@@ -354,6 +354,7 @@ export interface SpellCard extends BaseCard {
   effect: SpellEffect
   description: string // Flavor text describing the spell
   initiative?: boolean // Does this spell give initiative (like Artifact)?
+  refundMana?: number // Mana to refund after casting (for "free spell" mechanic inspired by Urza block)
 }
 
 export interface ItemCard extends BaseCard {
