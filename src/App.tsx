@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { Board } from './components/Board'
 import { RoguelikeDraftView } from './components/RoguelikeDraftView'
 import { HeroBrowserView } from './components/HeroBrowserView'
+import { CardBrowserView } from './components/CardBrowserView'
 import { GameProvider, useGameContext } from './context/GameContext'
 import './App.css'
 
 function AppContent() {
-  const [view, setView] = useState<'game' | 'roguelike' | 'heroes'>('roguelike')
+  const [view, setView] = useState<'game' | 'roguelike' | 'heroes' | 'cards'>('roguelike')
   const { initializeRandomGame } = useGameContext()
 
   const handleStartRandomGame = () => {
@@ -56,6 +57,19 @@ function AppContent() {
         >
           📖 Browse Heroes
         </button>
+        <button
+          onClick={() => setView('cards')}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: view === 'cards' ? '#9C27B0' : '#ccc',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          🃏 Browse Cards
+        </button>
         <div style={{ marginLeft: 'auto' }}>
           <button
             onClick={handleStartRandomGame}
@@ -78,6 +92,8 @@ function AppContent() {
         <RoguelikeDraftView onStartGame={() => setView('game')} />
       ) : view === 'heroes' ? (
         <HeroBrowserView onClose={() => setView('roguelike')} />
+      ) : view === 'cards' ? (
+        <CardBrowserView onClose={() => setView('roguelike')} />
       ) : (
         <Board />
       )}

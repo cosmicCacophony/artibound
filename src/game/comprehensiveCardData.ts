@@ -307,34 +307,34 @@ export const rwArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-artifact-white-generator',
     name: 'Divine Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 white rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary white rune to your rune pool.',
     cardType: 'artifact',
     colors: ['white'],
     manaCost: 4,
     effectType: 'rune_generation',
-    effectValue: 1, // Generates 1 white rune per turn
+    effectValue: 1, // Generates 1 temporary white rune per turn
   },
   // Rune Generators - Dual Color
   {
     id: 'rw-artifact-dual-generator',
     name: 'Legion Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 red rune and 1 white rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary red rune and 1 temporary white rune to your rune pool.',
     cardType: 'artifact',
     colors: ['red', 'white'],
-    manaCost: 5,
+    manaCost: 4,
     effectType: 'rune_generation',
-    effectValue: 2, // Generates 2 runes (1R + 1W) per turn
+    effectValue: 2, // Generates 2 temporary runes (1R + 1W) per turn
   },
   // Rune Generators - Flexible Either/Or
   {
     id: 'rw-artifact-flexible-generator',
     name: 'Adaptive Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 red rune or 1 white rune to your rune pool (your choice).',
+    description: 'Artifact. At the start of your turn, add 1 temporary red rune or 1 temporary white rune to your rune pool (your choice).',
     cardType: 'artifact',
     colors: ['red', 'white'],
     manaCost: 4,
     effectType: 'rune_generation',
-    effectValue: 1, // Generates 1 rune (choice of R or W) per turn
+    effectValue: 1, // Generates 1 temporary rune (choice of R or W) per turn
   },
   // 3+X Artifact Cycle
   {
@@ -705,20 +705,6 @@ export const rgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
 ]
 
 export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
-  // Generic RG cards
-  {
-    id: 'rg-beefy-2',
-    name: 'Raging Bear',
-    description: 'Big aggressive threat. Costs 5RG.',
-    cardType: 'generic',
-    colors: ['red', 'green'],
-    manaCost: 5,
-    consumesRunes: true, // Multicolor 5+ mana should require runes
-    attack: 6,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
-  },
   // RG Dopamine Hit: Multi-Fight Unit
   {
     id: 'rg-unit-battle-tyrant',
@@ -1407,18 +1393,6 @@ export const blackMidrangeCards: Omit<GenericUnit, 'location' | 'owner' | 'stack
     maxHealth: 4,
     currentHealth: 4,
   },
-  {
-    id: 'black-midrange-void-assassin',
-    name: 'Void Assassin',
-    description: 'When this enters, destroy target unit with 3 or less health.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 5,
-    attack: 5,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-  },
 ]
 
 // ============================================================================
@@ -1537,19 +1511,6 @@ export const guHeroes: Omit<Hero, 'location' | 'owner'>[] = [
 ]
 
 export const guCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
-  // Generic GU cards
-  {
-    id: 'gu-ramp-1',
-    name: 'Mana Crystal',
-    description: 'Ramps mana',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 3,
-    attack: 1,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
   // REMOVED: Leyline (gu-ramp-2) - No longer fits color identity (was easier)
   {
     id: 'gu-finisher-1',
@@ -1802,22 +1763,22 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-artifact-void-generator',
     name: 'Void Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 blue rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary blue rune to your rune pool.',
     cardType: 'artifact',
     colors: ['blue'],
     manaCost: 4,
     effectType: 'rune_generation',
-    effectValue: 1, // Generates 1 blue rune per turn
+    effectValue: 1, // Generates 1 temporary blue rune per turn
   },
   {
     id: 'ub-artifact-sacrificial-altar',
     name: 'Sacrificial Altar Artifact',
-    description: 'Artifact. At the start of your turn, add 1 black rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary black rune to your rune pool.',
     cardType: 'artifact',
     colors: ['black'],
     manaCost: 4,
     effectType: 'rune_generation',
-    effectValue: 1, // Generates 1 black rune per turn
+    effectValue: 1, // Generates 1 temporary black rune per turn
   },
   {
     id: 'ub-artifact-mana-surge',
@@ -1834,105 +1795,105 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-artifact-green-generator',
     name: 'Nature Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 green rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary green rune to your rune pool.',
     cardType: 'artifact',
     colors: ['green'],
     manaCost: 4,
     effectType: 'rune_generation',
-    effectValue: 1, // Generates 1 green rune per turn
+    effectValue: 1, // Generates 1 temporary green rune per turn
   },
   // Rune Generators - Dual Color
   {
     id: 'ub-artifact-ub-dual-generator',
     name: 'Void Shadow Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 blue rune and 1 black rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary blue rune and 1 temporary black rune to your rune pool.',
     cardType: 'artifact',
     colors: ['blue', 'black'],
-    manaCost: 5,
+    manaCost: 4,
     effectType: 'rune_generation',
-    effectValue: 2, // Generates 2 runes (1U + 1B) per turn
+    effectValue: 2, // Generates 2 temporary runes (1U + 1B) per turn
   },
   {
     id: 'ub-artifact-gu-dual-generator',
     name: 'Nature Arcane Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 green rune and 1 blue rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary green rune and 1 temporary blue rune to your rune pool.',
     cardType: 'artifact',
     colors: ['green', 'blue'],
-    manaCost: 5,
+    manaCost: 4,
     effectType: 'rune_generation',
-    effectValue: 2, // Generates 2 runes (1G + 1U) per turn
+    effectValue: 2, // Generates 2 temporary runes (1G + 1U) per turn
   },
   {
     id: 'ub-artifact-bg-dual-generator',
     name: 'Shadow Growth Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 black rune and 1 green rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary black rune and 1 temporary green rune to your rune pool.',
     cardType: 'artifact',
     colors: ['black', 'green'],
-    manaCost: 5,
+    manaCost: 4,
     effectType: 'rune_generation',
-    effectValue: 2, // Generates 2 runes (1B + 1G) per turn
+    effectValue: 2, // Generates 2 temporary runes (1B + 1G) per turn
   },
   {
     id: 'ub-artifact-rb-dual-generator',
     name: 'Blood Fire Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 red rune and 1 black rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary red rune and 1 temporary black rune to your rune pool.',
     cardType: 'artifact',
     colors: ['red', 'black'],
-    manaCost: 5,
+    manaCost: 4,
     effectType: 'rune_generation',
-    effectValue: 2, // Generates 2 runes (1R + 1B) per turn
+    effectValue: 2, // Generates 2 temporary runes (1R + 1B) per turn
   },
   {
     id: 'ub-artifact-gw-dual-generator',
     name: 'Nature Light Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 green rune and 1 white rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary green rune and 1 temporary white rune to your rune pool.',
     cardType: 'artifact',
     colors: ['green', 'white'],
-    manaCost: 5,
+    manaCost: 4,
     effectType: 'rune_generation',
-    effectValue: 2, // Generates 2 runes (1G + 1W) per turn
+    effectValue: 2, // Generates 2 temporary runes (1G + 1W) per turn
   },
   // Rune Generators - Flexible Either/Or
   {
     id: 'ub-artifact-ub-flexible-generator',
     name: 'Adaptive Void Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 blue rune or 1 black rune to your rune pool (your choice).',
+    description: 'Artifact. At the start of your turn, add 1 temporary blue rune or 1 temporary black rune to your rune pool (your choice).',
     cardType: 'artifact',
     colors: ['blue', 'black'],
     manaCost: 4,
     effectType: 'rune_generation',
-    effectValue: 1, // Generates 1 rune (choice of U or B) per turn
+    effectValue: 1, // Generates 1 temporary rune (choice of U or B) per turn
   },
   {
     id: 'ub-artifact-gu-flexible-generator',
     name: 'Adaptive Nature Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 green rune or 1 blue rune to your rune pool (your choice).',
+    description: 'Artifact. At the start of your turn, add 1 temporary green rune or 1 temporary blue rune to your rune pool (your choice).',
     cardType: 'artifact',
     colors: ['green', 'blue'],
     manaCost: 4,
     effectType: 'rune_generation',
-    effectValue: 1, // Generates 1 rune (choice of G or U) per turn
+    effectValue: 1, // Generates 1 temporary rune (choice of G or U) per turn
   },
   // Rune Generators - Any Color (Premium)
   {
     id: 'ub-artifact-prismatic-generator',
     name: 'Prismatic Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 rune of any color to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary rune of any color to your rune pool.',
     cardType: 'artifact',
     colors: [], // Colorless - can generate any color
-    manaCost: 5,
+    manaCost: 4,
     effectType: 'rune_generation',
-    effectValue: 1, // Generates 1 rune of any color per turn
+    effectValue: 1, // Generates 1 temporary rune of any color per turn
   },
   {
     id: 'ub-artifact-universal-mana-rock',
     name: 'Universal Mana Rock Artifact',
-    description: 'Artifact. At the start of your turn, add 1 rune of any color to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary rune of any color to your rune pool.',
     cardType: 'artifact',
     colors: [], // Colorless - can generate any color
-    manaCost: 5,
+    manaCost: 4,
     effectType: 'rune_generation',
-    effectValue: 1, // Generates 1 rune of any color per turn
+    effectValue: 1, // Generates 1 temporary rune of any color per turn
   },
   // 3+X Artifact Cycle
   {
