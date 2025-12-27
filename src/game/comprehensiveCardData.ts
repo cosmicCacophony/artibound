@@ -1864,16 +1864,6 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     effectType: 'rune_generation',
     effectValue: 1, // Generates 1 temporary rune (choice of U or B) per turn
   },
-  {
-    id: 'ub-artifact-gu-flexible-generator',
-    name: 'Adaptive Nature Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary green rune or 1 temporary blue rune to your rune pool (your choice).',
-    cardType: 'artifact',
-    colors: ['green', 'blue'],
-    manaCost: 4,
-    effectType: 'rune_generation',
-    effectValue: 1, // Generates 1 temporary rune (choice of G or U) per turn
-  },
   // Rune Generators - Any Color (Premium)
   {
     id: 'ub-artifact-prismatic-generator',
@@ -2737,8 +2727,9 @@ export const rwgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
     name: 'Wild Legionnaire',
     description: 'Legion. When this attacks, put a +1/+1 counter on it.',
     cardType: 'generic',
-    colors: ['red', 'green'], // Can be cast with RG heroes
+    colors: ['red', 'white', 'green'], // 3RGW
     manaCost: 3,
+    consumesRunes: true,
     attack: 3,
     health: 3,
     maxHealth: 3,
@@ -2936,19 +2927,6 @@ export const rwgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 0,
     },
   },
-  {
-    id: 'rwg-spell-nature-rage',
-    name: 'Nature\'s Rage',
-    description: 'All your units gain +2/+2 until end of turn. Put a +1/+1 counter on each of your units. Costs 4RWG.',
-    cardType: 'spell',
-    colors: ['red', 'white', 'green'],
-    manaCost: 4,
-    consumesRunes: true,
-    effect: {
-      type: 'targeted_damage', // Placeholder - would be team buff + counters
-      damage: 0,
-    },
-  },
   // Rare Hero Signature Spells - Powerful finishers for pack synergy moments
   {
     id: 'rrg-spell-primal-convergence',
@@ -3101,6 +3079,22 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 12, // Total damage, distribution handled by custom logic based on units in front
       affectsUnits: true,
       affectsHeroes: true,
+    },
+  },
+  {
+    id: 'ubr-spell-dominate-will',
+    name: 'Dominate Will',
+    description: 'Take control of target enemy unit. Costs 9UUBBRR, refunds 9 mana.',
+    cardType: 'spell',
+    rarity: 'rare',
+    colors: ['blue', 'blue', 'black', 'black', 'red', 'red'], // UUBBRR
+    consumesRunes: true, // Requires UUBBRR runes
+    manaCost: 9,
+    refundMana: 9, // Free spell mechanic - refunds mana cost
+    effect: {
+      type: 'steal_unit',
+      affectsUnits: true,
+      affectsHeroes: false,
     },
   },
   // NEW: 4GUB spell - 6 damage, draw a card when it kills
@@ -3579,17 +3573,17 @@ export const rareRGCards: (Omit<ArtifactCard, 'location' | 'owner'>)[] = [
     cardType: 'artifact',
     rarity: 'rare',
     colors: ['red', 'green'],
-    manaCost: 6,
+    manaCost: 3,
     consumesRunes: true,
     effectType: 'equipment',
     effectValue: 0,
     equipCost: 3,
     equipmentBonuses: {
-      attack: 3,
-      health: 2,
+      attack: 1,
+      health: 1,
       abilities: ['cleave']
     },
-    description: 'Equipment. +3/+2 and Cleave. When equipped unit dies, return to base. Re-equip for 3 mana. RG aggro finisher.',
+    description: 'Equipment. +1/+1 and Cleave. When equipped unit dies, return to base. Re-equip for 3 mana. RG aggro finisher.',
   },
 ]
 

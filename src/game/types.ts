@@ -347,6 +347,7 @@ export type SpellEffectType =
   | 'add_permanent_rune' // Add permanent rune to pool
   | 'return_to_base' // Returns target card to its owner's base
   | 'draw_and_heal' // Draws cards and heals
+  | 'steal_unit' // Take control of target enemy unit
 
 export interface SpellEffect {
   type: SpellEffectType
