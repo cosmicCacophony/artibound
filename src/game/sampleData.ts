@@ -1,5 +1,5 @@
-import { Hero, SignatureCard, HybridCard, GenericUnit, Card, BaseCard, Item, GameMetadata, TOWER_HP, NEXUS_HP, STARTING_GOLD, BattlefieldDefinition, SpellCard, SpellEffect, BattlefieldBuff, BattlefieldId, BattlefieldBuffEffectType } from './types'
-import { allCards, allSpells } from './cardData'
+import { Hero, SignatureCard, HybridCard, GenericUnit, Card, BaseCard, Item, GameMetadata, TOWER_HP, NEXUS_HP, STARTING_GOLD, BattlefieldDefinition, SpellCard, SpellEffect, BattlefieldBuff, BattlefieldId, BattlefieldBuffEffectType, RunePool } from './types'
+import { allCards, allSpells, allArtifacts } from './cardData'
 
 // Item definitions
 export const tier1Items: Item[] = [
@@ -23,10 +23,10 @@ export const tier1Items: Item[] = [
   {
     id: 'item-goldmine',
     name: 'Gold Mine',
-    description: '+1 gold per turn',
-    cost: 8,
+    description: '+5 gold per turn',
+    cost: 10,
     tier: 1,
-    goldPerTurn: 1,
+    goldPerTurn: 5,
   },
   // Artifact Foundry items - Simple stat boosts
   {
@@ -40,11 +40,10 @@ export const tier1Items: Item[] = [
   {
     id: 'item-ring-tarrasque',
     name: 'Ring of Tarrasque',
-    description: '+3 Attack, +3 HP, Regeneration',
+    description: '+6 HP, Regeneration',
     cost: 12,
     tier: 2,
-    attackBonus: 3,
-    hpBonus: 3,
+    hpBonus: 6,
     specialEffects: ['regeneration'],
   },
   {
@@ -58,11 +57,10 @@ export const tier1Items: Item[] = [
   {
     id: 'item-red-mist-maul',
     name: 'Red Mist Maul',
-    description: '+2 Attack, +3 HP, Siege',
+    description: '+5 Attack, Siege',
     cost: 10,
     tier: 1,
-    attackBonus: 2,
-    hpBonus: 3,
+    attackBonus: 5,
     specialEffects: ['siege'],
   },
   {
@@ -77,12 +75,11 @@ export const tier1Items: Item[] = [
   {
     id: 'item-barbed-mail',
     name: 'Barbed Mail',
-    description: '+1 Attack, +2 HP, Retaliate, Taunt',
+    description: '+4 HP, Retaliate',
     cost: 7,
     tier: 1,
-    attackBonus: 1,
-    hpBonus: 2,
-    specialEffects: ['retaliate', 'taunt'],
+    hpBonus: 4,
+    specialEffects: ['retaliate'],
   },
   {
     id: 'item-demagicking-maul',
@@ -146,11 +143,10 @@ export const tier1Items: Item[] = [
   {
     id: 'item-bracers-sacrifice',
     name: 'Bracers of Sacrifice',
-    description: '+1 Attack, +2 HP. Activated: Slay this hero and deal 4 damage to adjacent enemies.',
+    description: '+3 HP. Activated: Slay this hero and deal 4 damage to adjacent enemies.',
     cost: 8,
     tier: 1,
-    attackBonus: 1,
-    hpBonus: 2,
+    hpBonus: 3,
     hasActivatedAbility: true,
     activatedAbilityDescription: 'Slay this hero and deal 4 damage to adjacent enemies.',
   },
@@ -167,43 +163,39 @@ export const tier1Items: Item[] = [
   {
     id: 'item-cleave-axe',
     name: 'Cleave Axe',
-    description: '+3 Attack, +2 HP. Cleave (damages adjacent units).',
+    description: '+5 Attack, Cleave (damages adjacent units).',
     cost: 10,
     tier: 1,
-    attackBonus: 3,
-    hpBonus: 2,
+    attackBonus: 5,
     specialEffects: ['cleave'],
   },
   {
     id: 'item-chainmail',
     name: 'Chainmail',
-    description: '+1 Attack, +4 HP. Retaliate (deals damage back when attacked).',
+    description: '+5 HP, Retaliate (deals damage back when attacked).',
     cost: 8,
     tier: 1,
-    attackBonus: 1,
-    hpBonus: 4,
+    hpBonus: 5,
     specialEffects: ['retaliate'],
   },
   {
     id: 'item-siege-engine',
     name: 'Siege Engine',
-    description: '+2 Attack, +3 HP. Siege (can attack towers directly).',
+    description: '+5 Attack, Siege (can attack towers directly).',
     cost: 12,
     tier: 1,
-    attackBonus: 2,
-    hpBonus: 3,
+    attackBonus: 5,
     specialEffects: ['siege'],
   },
   // Counterplay Items - Anti-Hero
   {
     id: 'item-mortreds-dagger',
     name: "Mortred's Dagger",
-    description: '+4 Attack. When this hero attacks, deal 4 damage to target enemy hero. (Cooldown: 3 turns)',
+    description: '+5 Attack. Strike (hero strikes first in combat).',
     cost: 30,
     tier: 2,
-    attackBonus: 4,
-    hasActivatedAbility: true,
-    activatedAbilityDescription: 'When this hero attacks, deal 4 damage to target enemy hero. (Cooldown: 3 turns)',
+    attackBonus: 5,
+    specialEffects: ['strike'], // Hero strikes first in combat
   },
   {
     id: 'item-executioners-blade',
@@ -225,10 +217,55 @@ export const tier1Items: Item[] = [
     hasActivatedAbility: true,
     activatedAbilityDescription: 'When this hero attacks, it strikes the enemy (deals damage equal to attack).',
   },
+  {
+    id: 'item-tower-shield',
+    name: 'Tower Shield',
+    description: '+3 HP. Your tower in this hero\'s battlefield gains +3 armor.',
+    cost: 30,
+    tier: 2,
+    hpBonus: 3,
+    armor: 3, // Tower armor bonus
+    hasActivatedAbility: true,
+    activatedAbilityDescription: 'Your tower in this hero\'s battlefield gains +3 armor.',
+    specialEffects: ['tower_armor'], // Special effect: grants +3 armor to tower
+  },
+  {
+    id: 'item-horn-alpha',
+    name: 'Horn of the Alpha',
+    description: '+4 HP. Activated (Cost: 1 gold, Cooldown: 2 turns): Create an 8/8 unit with Trample in an empty slot.',
+    cost: 40,
+    tier: 2,
+    hpBonus: 4,
+    hasActivatedAbility: true,
+    activatedAbilityDescription: 'Create an 8/8 unit with Trample in an empty slot. (Cost: 1 gold, Cooldown: 2 turns)',
+    specialEffects: ['create_unit'], // Special effect: creates unit
+  },
+  {
+    id: 'item-refresher-orb',
+    name: 'Refresher Orb',
+    description: '+6 HP. Activated: Refresh all cooldowns on equipped hero (hero ability + item abilities), draw a card, restore 3 mana.',
+    cost: 50,
+    tier: 2,
+    hpBonus: 6,
+    hasActivatedAbility: true,
+    activatedAbilityDescription: 'Refresh all cooldowns on equipped hero (hero ability + item abilities), draw a card, restore 3 mana.',
+    specialEffects: ['refresh_cooldowns'], // Special effect: refreshes cooldowns, draws card, restores mana
+  },
+  {
+    id: 'item-arcane-amplifier',
+    name: 'Arcane Amplifier',
+    description: '+3 HP. Spell Echo (copy a cast spell).',
+    cost: 50,
+    tier: 2,
+    hpBonus: 3,
+    specialEffects: ['spell_echo'], // Special effect: copy a cast spell
+  },
 ]
 
 // Battlefield Buff definitions (templates - will be instantiated with playerId and battlefieldId)
-export const battlefieldBuffTemplates: Omit<BattlefieldBuff, 'id' | 'battlefieldId' | 'playerId'>[] = [
+// REMOVED: Battlefield buffs are no longer available in the shop
+// Keeping the type definitions for potential future use, but not exporting templates
+const battlefieldBuffTemplates: Omit<BattlefieldBuff, 'id' | 'battlefieldId' | 'playerId'>[] = [
   // Generic battlefield buffs
   {
     name: 'Combat Training',
@@ -767,6 +804,7 @@ export function createCardLibrary(player: 'player1' | 'player2'): (BaseCard & Pa
   const allCardsBase: BaseCard[] = [
     ...allCards,
     ...allSpells,
+    ...allArtifacts,
   ]
   
   return allCardsBase.map(card => {
@@ -813,6 +851,7 @@ export function createCardFromTemplate(
     owner,
     manaCost: template.manaCost,
     colors: template.colors,
+    consumesRunes: template.consumesRunes,
   }
 
   // Handle spell cards - check comprehensive data first, then test deck data
@@ -1242,7 +1281,7 @@ export const redWhiteSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     name: 'Fireball',
     description: 'Damage spell - deals 4 damage',
     cardType: 'spell',
-    colors: ['red'],
+    colors: ['red'], // Hero combat spell - keeps rune requirement (uncommon)
     manaCost: 4,
     effect: {
       type: 'targeted_damage',
@@ -1257,7 +1296,7 @@ export const redWhiteSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     name: 'Smite',
     description: 'Divine damage spell - deals 3 damage',
     cardType: 'spell',
-    colors: ['white'],
+    colors: undefined, // Common spell - no rune requirement
     manaCost: 3,
     effect: {
       type: 'targeted_damage',
@@ -1607,31 +1646,47 @@ export function createInitialGameState(): {
   player2Hand: Card[]
   player1Base: Card[]
   player2Base: Card[]
+  player1DeployZone: Card[]
+  player2DeployZone: Card[]
   battlefieldA: { player1: Card[], player2: Card[] }
   battlefieldB: { player1: Card[], player2: Card[] }
   metadata: GameMetadata
 } {
-  // Player 1: First 2 heroes ready to deploy on turn 1 (can move freely)
+  // Player 1: All heroes start in deployZone (ready to deploy)
   const player1AllHeroes = warriorTestDeckHeroes.map(hero => 
-    createHeroFromTestDeck(hero, 'player1', 'base')
+    createHeroFromTestDeck(hero, 'player1', 'deployZone')
   )
-  const player1ReadyToDeploy = player1AllHeroes.slice(0, 2) // First 2 heroes in base, ready to deploy
-  const player1RemainingHeroes = player1AllHeroes.slice(2) // Last 2 heroes also in base, but not deployed yet
   
-  // Player 2: First 2 heroes ready to deploy on turn 1 (can move freely)
+  // Player 2: All heroes start in deployZone (ready to deploy)
   const player2AllHeroes = mageTestDeckHeroes.map(hero => 
-    createHeroFromTestDeck(hero, 'player2', 'base')
+    createHeroFromTestDeck(hero, 'player2', 'deployZone')
   )
-  const player2ReadyToDeploy = player2AllHeroes.slice(0, 2) // First 2 heroes in base, ready to deploy
-  const player2RemainingHeroes = player2AllHeroes.slice(2) // Last 2 heroes also in base, but not deployed yet
 
-  // Create some starting cards for hands (mix of signature cards and generics)
-  // Player 1: Start with 2 RW signature cards and 1 aggro generic
+  // Create starting cards for hands - include key test cards (sweepers, rune spells, combos)
+  // Find key cards by ID from allSpells and allCards
+  const findSpell = (id: string) => allSpells.find(s => s.id === id)
+  const findCard = (id: string) => allCards.find(c => c.id === id)
+  
+  // Key spells to always include for testing
+  const exorcism = findSpell('ubg-spell-exorcism') // Board wipe
+  const annihilate = findSpell('ubg-spell-annihilate') // AOE damage
+  const darkRitual = findSpell('rune-spell-dark-ritual') // Rune ramp
+  const sealOfFire = findSpell('rune-spell-seal-of-fire') // Seal
+  const sealOfKnowledge = findSpell('rune-spell-seal-of-knowledge') // Seal
+  const lightningBolt = findSpell('vrune-spell-lightning-bolt') // 1R damage
+  const damnation = findSpell('vrune-spell-damnation') // Board wipe
+  const highTide = findSpell('rune-spell-high-tide') // Blue ramp
+  
+  // Player 1: RW aggro cards + key test spells
   const player1HandCards: BaseCard[] = [
     rwWarriorSignatureCards[0],
     rwBerserkerSignatureCards[0],
     rwAggroGenericCards[0],
-  ]
+    // Add rune spells for testing
+    ...(sealOfFire ? [sealOfFire] : []),
+    ...(lightningBolt ? [lightningBolt] : []),
+  ].filter(Boolean) as BaseCard[]
+  
   const player1Hand = player1HandCards.map(card => createCardFromTemplate({
     id: card.id,
     name: card.name,
@@ -1639,14 +1694,23 @@ export function createInitialGameState(): {
     cardType: card.cardType,
     manaCost: card.manaCost,
     colors: card.colors,
+    consumesRunes: card.consumesRunes,
   }, 'player1', 'hand'))
 
-  // Player 2: Start with 2 UB signature cards and 1 control generic
+  // Player 2: UB control cards + key test spells (sweepers, rune ramp)
   const player2HandCards: BaseCard[] = [
     ubMageSignatureCards[0],
     ubSorcererSignatureCards[0],
     ubControlGenericCards[0],
-  ]
+    // Add key test spells
+    ...(exorcism ? [exorcism] : []),
+    ...(annihilate ? [annihilate] : []),
+    ...(darkRitual ? [darkRitual] : []),
+    ...(sealOfKnowledge ? [sealOfKnowledge] : []),
+    ...(highTide ? [highTide] : []),
+    ...(damnation ? [damnation] : []),
+  ].filter(Boolean) as BaseCard[]
+  
   const player2Hand = player2HandCards.map(card => createCardFromTemplate({
     id: card.id,
     name: card.name,
@@ -1654,7 +1718,23 @@ export function createInitialGameState(): {
     cardType: card.cardType,
     manaCost: card.manaCost,
     colors: card.colors,
+    consumesRunes: card.consumesRunes,
   }, 'player2', 'hand'))
+
+  // Initialize hero ability cooldowns for heroes that start on cooldown
+  const initialCooldowns: Record<string, number> = {}
+  const allStartingHeroes = [...player1AllHeroes, ...player2AllHeroes]
+  allStartingHeroes.forEach(hero => {
+    if (hero.ability?.startsOnCooldown) {
+      // Set turnLastUsed so ability becomes available after cooldown turns
+      // If cooldown is 4, set to 1 so it's ready on turn 5 (1 + 4 = 5)
+      initialCooldowns[hero.id] = 1
+    }
+  })
+
+  // Initialize empty rune pools - runes are added when heroes deploy
+  const player1InitialRunePool: RunePool = { runes: [], temporaryRunes: [] }
+  const player2InitialRunePool: RunePool = { runes: [], temporaryRunes: [] }
 
   const metadata: GameMetadata = {
     currentTurn: 1,
@@ -1672,31 +1752,76 @@ export function createInitialGameState(): {
     towerA_player2_HP: TOWER_HP,
     towerB_player1_HP: TOWER_HP,
     towerB_player2_HP: TOWER_HP,
+    towerA_player1_Armor: 0,
+    towerA_player2_Armor: 0,
+    towerB_player1_Armor: 0,
+    towerB_player2_Armor: 0,
     player1Tier: 1,
     player2Tier: 1,
     deathCooldowns: {}, // Track hero death cooldowns - Record<cardId, counter> (starts at 2, decreases by 1 each turn, prevents deployment for 1 full round)
     player1MovedToBase: false, // Track if player 1 moved a hero to base this turn
     player2MovedToBase: false, // Track if player 2 moved a hero to base this turn
+    player1HeroesDeployedThisTurn: 0, // Track heroes deployed during deploy phase
+    player2HeroesDeployedThisTurn: 0, // Track heroes deployed during deploy phase
     playedSpells: {}, // Track cards that have been played (for toggle X overlay) - Record<cardId, true> (works for any card type)
     player1BattlefieldBuffs: [], // Permanent battlefield upgrades for player 1
     player2BattlefieldBuffs: [], // Permanent battlefield upgrades for player 2
     battlefieldDeathCounters: {}, // Track death counters for RW-bf2 (death counter -> draw card) - Record<"player-battlefield", count>
     actionPlayer: 'player1', // Player 1 starts with action
     initiativePlayer: 'player1', // Player 1 starts with initiative
-    heroAbilityCooldowns: {}, // Track hero ability cooldowns - Record<heroId, turnLastUsed>
+    heroAbilityCooldowns: initialCooldowns, // Track hero ability cooldowns - Record<heroId, turnLastUsed>
     player1Passed: false, // Track if player 1 has passed this turn
     player2Passed: false, // Track if player 2 has passed this turn
     stunnedHeroes: {}, // Track stunned heroes (don't deal combat damage, only receive it)
     turn1DeploymentPhase: 'p1_lane1', // Turn 1 deployment phase: p1_lane1 -> p2_lane1 -> p2_lane2 -> p1_lane2 -> complete
+    // Rune system
+    player1RunePool: player1InitialRunePool,
+    player2RunePool: player2InitialRunePool,
+    // Seals (mana rocks)
+    player1Seals: [],
+    player2Seals: [],
+    // New mechanics tracking
+    player1SpellsCastThisTurn: 0,
+    player2SpellsCastThisTurn: 0,
+    player1ColorsPlayedThisTurn: [],
+    player2ColorsPlayedThisTurn: [],
+    player1CardTypesPlayedThisTurn: [],
+    player2CardTypesPlayedThisTurn: [],
+    heroCounters: {}, // Track counters on heroes (e.g., WB Life Channeler)
   }
+
+  // Spawn initial 1/1 creeps in slot 1 for both players on both battlefields
+  const createInitialCreep = (player: 'player1' | 'player2', battlefieldId: 'battlefieldA' | 'battlefieldB'): GenericUnit => ({
+    id: `creep-${player}-${battlefieldId}-initial-${Date.now()}`,
+    name: 'Creep',
+    description: 'Basic unit spawned each turn',
+    cardType: 'generic',
+    colors: [],
+    manaCost: 0,
+    attack: 1,
+    health: 1,
+    maxHealth: 1,
+    currentHealth: 1,
+    location: battlefieldId,
+    owner: player,
+    slot: 1,
+  })
 
   return {
     player1Hand: player1Hand,
     player2Hand: player2Hand,
-    player1Base: [...player1ReadyToDeploy, ...player1RemainingHeroes], // All 4 heroes in base (first 2 ready to deploy on turn 1)
-    player2Base: [...player2ReadyToDeploy, ...player2RemainingHeroes], // All 4 heroes in base (first 2 ready to deploy on turn 1)
-    battlefieldA: { player1: [], player2: [] },
-    battlefieldB: { player1: [], player2: [] },
+    player1Base: [], // All heroes start in deployZone
+    player2Base: [], // All heroes start in deployZone
+    player1DeployZone: [...player1AllHeroes], // All heroes ready to deploy
+    player2DeployZone: [...player2AllHeroes], // All heroes ready to deploy
+    battlefieldA: { 
+      player1: [], // REMOVED: No initial creeps (Core Game Redesign)
+      player2: [] // REMOVED: No initial creeps (Core Game Redesign)
+    },
+    battlefieldB: { 
+      player1: [], // REMOVED: No initial creeps (Core Game Redesign)
+      player2: [] // REMOVED: No initial creeps (Core Game Redesign)
+    },
     metadata,
   }
 }
@@ -1735,6 +1860,8 @@ export function createGameStateFromDraft(
   player2Hand: Card[]
   player1Base: Card[]
   player2Base: Card[]
+  player1DeployZone: Card[]
+  player2DeployZone: Card[]
   battlefieldA: { player1: Card[], player2: Card[] }
   battlefieldB: { player1: Card[], player2: Card[] }
   cardLibrary: BaseCard[]
@@ -1794,10 +1921,12 @@ export function createGameStateFromDraft(
   const player1Archetype = detectArchetype(player1Heroes)
   const player2Archetype = detectArchetype(player2Heroes)
   
-  // All heroes start in base (they will be deployed during the counter-deployment phase)
+  // All heroes start in deployZone (ready to deploy)
   // Battlefields start empty
-  const player1Base = player1Heroes
-  const player2Base = player2Heroes
+  const player1Base: Card[] = []
+  const player2Base: Card[] = []
+  const player1DeployZone = player1Heroes.map(hero => ({ ...hero, location: 'deployZone' as const }))
+  const player2DeployZone = player2Heroes.map(hero => ({ ...hero, location: 'deployZone' as const }))
 
   // Shuffle cards randomly for variety in each game
   const randomShuffle = <T extends unknown>(arr: T[]): T[] => {
@@ -1826,6 +1955,21 @@ export function createGameStateFromDraft(
     createCardFromTemplate(card, 'player2', 'hand')
   )
 
+  // Initialize hero ability cooldowns for heroes that start on cooldown
+  const initialCooldowns: Record<string, number> = {}
+  const allDraftHeroes = [...player1Selection.heroes, ...player2Selection.heroes]
+  allDraftHeroes.forEach(hero => {
+    if (hero.ability?.startsOnCooldown) {
+      // Set turnLastUsed so ability becomes available after cooldown turns
+      // If cooldown is 4, set to 1 so it's ready on turn 5 (1 + 4 = 5)
+      initialCooldowns[hero.id] = 1
+    }
+  })
+
+  // Initialize empty rune pools - runes are added when heroes deploy
+  const player1InitialRunePool: RunePool = { runes: [], temporaryRunes: [] }
+  const player2InitialRunePool: RunePool = { runes: [], temporaryRunes: [] }
+
   // Initialize metadata
   const metadata: GameMetadata = {
     currentTurn: 1,
@@ -1843,37 +1987,77 @@ export function createGameStateFromDraft(
     towerA_player2_HP: TOWER_HP,
     towerB_player1_HP: TOWER_HP,
     towerB_player2_HP: TOWER_HP,
+    towerA_player1_Armor: 0,
+    towerA_player2_Armor: 0,
+    towerB_player1_Armor: 0,
+    towerB_player2_Armor: 0,
     player1Tier: 1,
     player2Tier: 1,
     deathCooldowns: {},
     player1MovedToBase: false,
     player2MovedToBase: false,
+    player1HeroesDeployedThisTurn: 0,
+    player2HeroesDeployedThisTurn: 0,
     playedSpells: {},
     player1BattlefieldBuffs: [],
     player2BattlefieldBuffs: [],
     battlefieldDeathCounters: {}, // Track death counters for RW-bf2 (death counter -> draw card) - Record<"player-battlefield", count>
     actionPlayer: 'player1', // Player 1 starts with action
     initiativePlayer: 'player1', // Player 1 starts with initiative
-    heroAbilityCooldowns: {}, // Track hero ability cooldowns - Record<heroId, turnLastUsed>
+    heroAbilityCooldowns: initialCooldowns, // Track hero ability cooldowns - Record<heroId, turnLastUsed>
     player1Passed: false, // Track if player 1 has passed this turn
     player2Passed: false, // Track if player 2 has passed this turn
     turn1DeploymentPhase: 'p1_lane1', // Turn 1 deployment: Player 1 deploys to lane 1 first
+    stunnedHeroes: {}, // Track stunned heroes (don't deal combat damage, only receive it)
+    // Rune system - start with empty pools, runes added when heroes deploy
+    player1RunePool: player1InitialRunePool,
+    player2RunePool: player2InitialRunePool,
+    // Seals (mana rocks)
+    player1Seals: [],
+    player2Seals: [],
+    // New mechanics tracking
+    player1SpellsCastThisTurn: 0,
+    player2SpellsCastThisTurn: 0,
+    player1ColorsPlayedThisTurn: [],
+    player2ColorsPlayedThisTurn: [],
+    player1CardTypesPlayedThisTurn: [],
+    player2CardTypesPlayedThisTurn: [],
+    heroCounters: {}, // Track counters on heroes (e.g., WB Life Channeler)
   }
 
   // Battlefields removed - simplifying game to focus on color system and combat
+  
+  // Spawn initial 1/1 creeps in slot 1 for both players on both battlefields
+  const createInitialCreep = (player: 'player1' | 'player2', battlefieldId: 'battlefieldA' | 'battlefieldB'): GenericUnit => ({
+    id: `creep-${player}-${battlefieldId}-initial-${Date.now()}`,
+    name: 'Creep',
+    description: 'Basic unit spawned each turn',
+    cardType: 'generic',
+    colors: [],
+    manaCost: 0,
+    attack: 1,
+    health: 1,
+    maxHealth: 1,
+    currentHealth: 1,
+    location: battlefieldId,
+    owner: player,
+    slot: 1,
+  })
 
   return {
     player1Hand,
     player2Hand,
     player1Base,
     player2Base,
+    player1DeployZone,
+    player2DeployZone,
     battlefieldA: { 
-      player1: [], // Empty - heroes will be deployed during counter-deployment phase
-      player2: [] 
+      player1: [], // REMOVED: No initial creeps (Core Game Redesign)
+      player2: [] // REMOVED: No initial creeps (Core Game Redesign)
     },
     battlefieldB: { 
-      player1: [], // Empty - heroes will be deployed during counter-deployment phase
-      player2: [] 
+      player1: [], // REMOVED: No initial creeps (Core Game Redesign)
+      player2: [] // REMOVED: No initial creeps (Core Game Redesign)
     },
     cardLibrary: [], // Card library is managed separately via player1SidebarCards/player2SidebarCards
     player1Library: player1LibraryCards,

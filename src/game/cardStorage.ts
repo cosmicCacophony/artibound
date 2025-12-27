@@ -5,12 +5,13 @@
  * Changes persist across app restarts.
  */
 
-import { Hero, BaseCard, GenericUnit, SpellCard, BattlefieldDefinition } from './types'
-import { allHeroes, allCards, allSpells, allBattlefields } from './comprehensiveCardData'
+import { Hero, BaseCard, GenericUnit, SpellCard, BattlefieldDefinition, ArtifactCard } from './types'
+import { allHeroes, allCards, allSpells, allBattlefields, allArtifacts } from './comprehensiveCardData'
 
 const STORAGE_KEY_CARDS = 'artibound_edited_cards'
 const STORAGE_KEY_HEROES = 'artibound_edited_heroes'
 const STORAGE_KEY_SPELLS = 'artibound_edited_spells'
+const STORAGE_KEY_ARTIFACTS = 'artibound_edited_artifacts'
 const STORAGE_KEY_BATTLEFIELDS = 'artibound_edited_battlefields'
 
 /**
@@ -49,6 +50,19 @@ export function getSpellsWithOverrides(): Omit<SpellCard, 'location' | 'owner'>[
   return defaultSpells.map(spell => {
     const override = overrides[spell.id]
     return override ? { ...spell, ...override } : spell
+  })
+}
+
+/**
+ * Get all artifacts with localStorage overrides applied
+ */
+export function getArtifactsWithOverrides(): Omit<ArtifactCard, 'location' | 'owner'>[] {
+  const defaultArtifacts = allArtifacts
+  const overrides = getArtifactOverrides()
+  
+  return defaultArtifacts.map(artifact => {
+    const override = overrides[artifact.id]
+    return override ? { ...artifact, ...override } : artifact
   })
 }
 
@@ -93,6 +107,15 @@ export function updateSpell(spellId: string, updates: Partial<Omit<SpellCard, 'l
 }
 
 /**
+ * Update an artifact and save to localStorage
+ */
+export function updateArtifact(artifactId: string, updates: Partial<Omit<ArtifactCard, 'location' | 'owner'>>): void {
+  const overrides = getArtifactOverrides()
+  overrides[artifactId] = { ...overrides[artifactId], ...updates }
+  saveArtifactOverrides(overrides)
+}
+
+/**
  * Update a battlefield and save to localStorage
  */
 export function updateBattlefield(battlefieldId: string, updates: Partial<BattlefieldDefinition>): void {
@@ -129,6 +152,15 @@ export function resetSpell(spellId: string): void {
 }
 
 /**
+ * Reset an artifact to its default value
+ */
+export function resetArtifact(artifactId: string): void {
+  const overrides = getArtifactOverrides()
+  delete overrides[artifactId]
+  saveArtifactOverrides(overrides)
+}
+
+/**
  * Reset a battlefield to its default value
  */
 export function resetBattlefield(battlefieldId: string): void {
@@ -144,6 +176,7 @@ export function clearAllOverrides(): void {
   localStorage.removeItem(STORAGE_KEY_CARDS)
   localStorage.removeItem(STORAGE_KEY_HEROES)
   localStorage.removeItem(STORAGE_KEY_SPELLS)
+  localStorage.removeItem(STORAGE_KEY_ARTIFACTS)
   localStorage.removeItem(STORAGE_KEY_BATTLEFIELDS)
 }
 
@@ -209,6 +242,23 @@ function getBattlefieldOverrides(): Record<string, Partial<BattlefieldDefinition
   }
 }
 
+function getArtifactOverrides(): Record<string, Partial<Omit<ArtifactCard, 'location' | 'owner'>>> {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_ARTIFACTS)
+    return stored ? JSON.parse(stored) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveArtifactOverrides(overrides: Record<string, Partial<Omit<ArtifactCard, 'location' | 'owner'>>>): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_ARTIFACTS, JSON.stringify(overrides))
+  } catch (error) {
+    console.error('Failed to save artifact overrides:', error)
+  }
+}
+
 function saveBattlefieldOverrides(overrides: Record<string, Partial<BattlefieldDefinition>>): void {
   try {
     localStorage.setItem(STORAGE_KEY_BATTLEFIELDS, JSON.stringify(overrides))
@@ -216,6 +266,12 @@ function saveBattlefieldOverrides(overrides: Record<string, Partial<BattlefieldD
     console.error('Failed to save battlefield overrides:', error)
   }
 }
+
+
+
+
+
+
 
 
 

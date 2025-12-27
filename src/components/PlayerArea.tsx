@@ -1,10 +1,13 @@
-import { PlayerId } from '../game/types'
+import React, { useState } from 'react'
+import { PlayerId, Hero, HeroAbility } from '../game/types'
 import { useGameContext } from '../context/GameContext'
+import { RunePoolDisplay } from './RunePoolDisplay'
 import { useDeployment } from '../hooks/useDeployment'
 import { useTurnManagement } from '../hooks/useTurnManagement'
 import { useItemShop } from '../hooks/useItemShop'
 import { useHeroAbilities } from '../hooks/useHeroAbilities'
 import { HeroCard } from './HeroCard'
+import { HeroAbilityEditor } from './HeroAbilityEditor'
 
 interface PlayerAreaProps {
   player: PlayerId
@@ -21,6 +24,7 @@ export function PlayerArea({ player }: PlayerAreaProps) {
     setItemShopPlayer,
     itemShopPlayer,
   } = useGameContext()
+  const [editingHeroId, setEditingHeroId] = useState<string | null>(null)
   const { handleDeploy } = useDeployment()
   const { handleToggleSpellPlayed, handleToggleStun } = useTurnManagement()
   const { generateItemShop } = useItemShop()
@@ -28,6 +32,7 @@ export function PlayerArea({ player }: PlayerAreaProps) {
 
   const playerHand = player === 'player1' ? gameState.player1Hand : gameState.player2Hand
   const playerBase = player === 'player1' ? gameState.player1Base : gameState.player2Base
+  const playerDeployZone = player === 'player1' ? gameState.player1DeployZone : gameState.player2DeployZone
   const playerMana = player === 'player1' ? metadata.player1Mana : metadata.player2Mana
   const playerMaxMana = player === 'player1' ? metadata.player1MaxMana : metadata.player2MaxMana
   const playerGold = player === 'player1' ? metadata.player1Gold : metadata.player2Gold
@@ -65,7 +70,16 @@ export function PlayerArea({ player }: PlayerAreaProps) {
             <span style={{ fontSize: '20px', opacity: metadata.actionPlayer === player ? 0.6 : 1 }} title="Has Initiative (will act first next turn)">⚡</span>
           )}
         </h2>
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Rune Pool Display */}
+          <RunePoolDisplay 
+            runePool={player === 'player1' ? metadata.player1RunePool : metadata.player2RunePool}
+            playerName={player === 'player1' ? 'Player 1' : 'Player 2'}
+            player={player}
+            seals={player === 'player1' ? (metadata.player1Seals || []) : (metadata.player2Seals || [])}
+          />
+          
+          {/* Legacy Mana Display (for backward compatibility) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ fontSize: '16px', fontWeight: 'bold', color: playerManaColor }}>
               Mana: {playerMana}/{playerMaxMana}
@@ -155,9 +169,38 @@ export function PlayerArea({ player }: PlayerAreaProps) {
         </div>
       </div>
       
-      {/* Base */}
-      <div style={{ marginBottom: '20px' }}>
-        <h3>Base ({playerBase.length})</h3>
+      {/* Deploy Zone - Heroes ready to deploy */}
+      <div style={{ marginBottom: '20px', border: `2px solid ${playerColor}`, borderRadius: '8px', padding: '15px', backgroundColor: '#f5f5f5' }}>
+        <h3 style={{ marginTop: 0, color: playerTitleColor }}>Deploy Zone ({playerDeployZone.length})</h3>
+        <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px' }}>Heroes ready to deploy to battlefields</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '60px' }}>
+          {playerDeployZone.length > 0 ? (
+            playerDeployZone.map(card => (
+              <HeroCard
+                key={card.id}
+                card={card}
+                onClick={(e) => handleCardClick(card.id, e)}
+                isSelected={selectedCardId === card.id}
+                showStats={true}
+                isDead={!!metadata.deathCooldowns[card.id]}
+                cooldownCounter={metadata.deathCooldowns[card.id]}
+                isPlayed={!!metadata.playedSpells[card.id]}
+                onTogglePlayed={() => handleToggleSpellPlayed(card)}
+                isStunned={card.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[card.id])}
+                onToggleStun={card.cardType === 'hero' ? () => handleToggleStun(card) : undefined}
+                onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, card.owner)}
+              />
+            ))
+          ) : (
+            <p style={{ color: '#999' }}>Empty</p>
+          )}
+        </div>
+      </div>
+
+      {/* Base - Heroes on cooldown and artifacts */}
+      <div style={{ marginBottom: '20px', border: '2px solid #999', borderRadius: '8px', padding: '15px', backgroundColor: '#e8e8e8' }}>
+        <h3 style={{ marginTop: 0, color: '#666' }}>Base ({playerBase.length})</h3>
+        <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px' }}>Heroes on cooldown and artifacts</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '60px' }}>
           {playerBase.length > 0 ? (
             playerBase.map(card => (
@@ -227,6 +270,7 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                 isPlayed={card.location === 'base' && !!metadata.playedSpells[card.id]}
                 onTogglePlayed={card.location === 'base' ? () => handleToggleSpellPlayed(card) : undefined}
                 onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, card.owner)}
+                onEditAbility={card.cardType === 'hero' ? (heroId) => setEditingHeroId(heroId) : undefined}
               />
             ))
           ) : (
@@ -234,6 +278,64 @@ export function PlayerArea({ player }: PlayerAreaProps) {
           )}
         </div>
       </div>
+
+      {editingHeroId && (() => {
+        const editingHero = [
+          ...gameState.player1Hand,
+          ...gameState.player2Hand,
+          ...gameState.player1Base,
+          ...gameState.player2Base,
+          ...gameState.player1DeployZone,
+          ...gameState.player2DeployZone,
+          ...gameState.battlefieldA.player1,
+          ...gameState.battlefieldA.player2,
+          ...gameState.battlefieldB.player1,
+          ...gameState.battlefieldB.player2,
+        ].find(c => c.id === editingHeroId && c.cardType === 'hero') as Hero | undefined
+
+        if (!editingHero) return null
+
+        return (
+          <HeroAbilityEditor
+            hero={editingHero}
+            onSave={(heroId, ability) => {
+              setGameState(prev => {
+                const findAndUpdateHero = (cards: any[]): any[] => {
+                  return cards.map(card => {
+                    if (card.id === heroId && card.cardType === 'hero') {
+                      return {
+                        ...card,
+                        ability: ability,
+                      } as Hero
+                    }
+                    return card
+                  })
+                }
+
+                return {
+                  ...prev,
+                  player1Hand: findAndUpdateHero(prev.player1Hand),
+                  player2Hand: findAndUpdateHero(prev.player2Hand),
+                  player1Base: findAndUpdateHero(prev.player1Base),
+                  player2Base: findAndUpdateHero(prev.player2Base),
+                  player1DeployZone: findAndUpdateHero(prev.player1DeployZone),
+                  player2DeployZone: findAndUpdateHero(prev.player2DeployZone),
+                  battlefieldA: {
+                    player1: findAndUpdateHero(prev.battlefieldA.player1),
+                    player2: findAndUpdateHero(prev.battlefieldA.player2),
+                  },
+                  battlefieldB: {
+                    player1: findAndUpdateHero(prev.battlefieldB.player1),
+                    player2: findAndUpdateHero(prev.battlefieldB.player2),
+                  },
+                }
+              })
+              setEditingHeroId(null)
+            }}
+            onClose={() => setEditingHeroId(null)}
+          />
+        )
+      })()}
     </div>
   )
 }

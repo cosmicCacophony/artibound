@@ -1,8 +1,8 @@
 import { useCallback, useEffect } from 'react'
-import { TurnPhase, Card, GameMetadata, ShopItem } from '../game/types'
+import { TurnPhase, Card, GameMetadata, ShopItem, Hero, BaseCard } from '../game/types'
 import { useGameContext } from '../context/GameContext'
-import { getDefaultTargets, resolveCombat, resolveSimultaneousCombat } from '../game/combatSystem'
-import { tier1Items } from '../game/sampleData'
+import { getDefaultTargets, resolveCombat, resolveSimultaneousCombat, resolveRangedAttacks } from '../game/combatSystem'
+import { tier1Items, createCardFromTemplate } from '../game/sampleData'
 
 export function useTurnManagement() {
   const { 
@@ -14,6 +14,10 @@ export function useTurnManagement() {
     setCombatTargetsB,
     setShowCombatSummary,
     setCombatSummaryData,
+    player1SidebarCards,
+    player2SidebarCards,
+    setPlayer1SidebarCards,
+    setPlayer2SidebarCards,
   } = useGameContext()
   const metadata = gameState.metadata
 
@@ -38,11 +42,20 @@ export function useTurnManagement() {
         towerB_player2: metadata.towerB_player2_HP,
       }
       
+      const initialTowerArmor = {
+        towerA_player1: metadata.towerA_player1_Armor,
+        towerA_player2: metadata.towerA_player2_Armor,
+        towerB_player1: metadata.towerB_player1_Armor,
+        towerB_player2: metadata.towerB_player2_Armor,
+      }
+      
       const resultA = resolveSimultaneousCombat(
         gameState.battlefieldA,
         'battlefieldA',
         initialTowerHP,
-        metadata.stunnedHeroes || {}
+        metadata.stunnedHeroes || {},
+        initialTowerArmor,
+        gameState
       )
       
       // Use updated tower HP from A for B's combat
@@ -50,7 +63,16 @@ export function useTurnManagement() {
         gameState.battlefieldB,
         'battlefieldB',
         resultA.updatedTowerHP,
-        metadata.stunnedHeroes || {}
+        metadata.stunnedHeroes || {},
+        initialTowerArmor,
+        gameState
+      )
+      
+      // Resolve ranged attacks from base/deploy zone (after battlefield combat)
+      const rangedResult = resolveRangedAttacks(
+        gameState,
+        resultB.updatedTowerHP,
+        initialTowerArmor
       )
       
       // Process killed heroes (same logic as in BattlefieldView) - separate by player
@@ -59,8 +81,7 @@ export function useTurnManagement() {
         updatedBattlefield: typeof gameState.battlefieldA,
         player1Base: Card[],
         player2Base: Card[],
-        deathCooldowns: Record<string, number>,
-        goldRewards: { player1: number, player2: number }
+        deathCooldowns: Record<string, number>
       ) => {
         const newP1Base = [...player1Base]
         const newP2Base = [...player2Base]
@@ -78,15 +99,7 @@ export function useTurnManagement() {
                 currentHealth: 0,
                 slot: undefined,
               })
-              newCooldowns[hero.id] = 1
-              // Opponent (player2) gets 5 gold for killing hero
-              goldRewards.player2 += 5
-            }
-          } else if (originalCard.cardType === 'generic') {
-            const stillAlive = updatedBattlefield.player1.some(c => c.id === originalCard.id)
-            if (!stillAlive) {
-              // Opponent (player2) gets 2 gold for killing unit
-              goldRewards.player2 += 2
+              newCooldowns[hero.id] = 2
             }
           }
         })
@@ -103,15 +116,7 @@ export function useTurnManagement() {
                 currentHealth: 0,
                 slot: undefined,
               })
-              newCooldowns[hero.id] = 1
-              // Opponent (player1) gets 5 gold for killing hero
-              goldRewards.player1 += 5
-            }
-          } else if (originalCard.cardType === 'generic') {
-            const stillAlive = updatedBattlefield.player2.some(c => c.id === originalCard.id)
-            if (!stillAlive) {
-              // Opponent (player1) gets 2 gold for killing unit
-              goldRewards.player1 += 2
+              newCooldowns[hero.id] = 2
             }
           }
         })
@@ -119,24 +124,24 @@ export function useTurnManagement() {
         return { newP1Base, newP2Base, newCooldowns }
       }
       
-      const goldRewards = { player1: 0, player2: 0 }
-      const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA } = processKilledHeroes(
+      const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA, blackHeroesDied: blackHeroesDiedA } = processKilledHeroes(
         gameState.battlefieldA,
         resultA.updatedBattlefield,
         gameState.player1Base,
         gameState.player2Base,
-        metadata.deathCooldowns,
-        goldRewards
+        metadata.deathCooldowns
       )
       
-      const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB } = processKilledHeroes(
+      const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB, blackHeroesDied: blackHeroesDiedB } = processKilledHeroes(
         gameState.battlefieldB,
         resultB.updatedBattlefield,
         newP1BaseA,
         newP2BaseA,
-        newCooldownsA,
-        goldRewards
+        newCooldownsA
       )
+      
+      // Add B runes for black heroes that died
+      const allBlackHeroesDied = [...blackHeroesDiedA, ...blackHeroesDiedB]
       
       // Apply combat results from both battlefields
       // Calculate total overflow damage TO each player's nexus
@@ -149,47 +154,74 @@ export function useTurnManagement() {
         const newP1NexusHP = Math.max(0, prev.metadata.player1NexusHP - totalDamageToP1Nexus)
         const newP2NexusHP = Math.max(0, prev.metadata.player2NexusHP - totalDamageToP2Nexus)
         
+        // Add B runes for black heroes that died
+        let updatedP1RunePool = prev.metadata.player1RunePool
+        let updatedP2RunePool = prev.metadata.player2RunePool
+        
+        allBlackHeroesDied.forEach(({ player }) => {
+          if (player === 'player1') {
+            updatedP1RunePool = {
+              ...updatedP1RunePool,
+              runes: [...updatedP1RunePool.runes, 'black'],
+            }
+          } else {
+            updatedP2RunePool = {
+              ...updatedP2RunePool,
+              runes: [...updatedP2RunePool.runes, 'black'],
+            }
+          }
+        })
+        
         return {
           ...prev,
           battlefieldA: resultA.updatedBattlefield,
           battlefieldB: resultB.updatedBattlefield,
           player1Base: newP1BaseB,
           player2Base: newP2BaseB,
+          // Add drawn cards to hands
+          player1Hand: [...(prev.player1Hand || []), ...allCardsToDraw.player1],
+          player2Hand: [...(prev.player2Hand || []), ...allCardsToDraw.player2],
           metadata: {
             ...prev.metadata,
-            towerA_player1_HP: resultA.updatedTowerHP.towerA_player1,
-            towerA_player2_HP: resultA.updatedTowerHP.towerA_player2,
-            towerB_player1_HP: resultB.updatedTowerHP.towerB_player1,
-            towerB_player2_HP: resultB.updatedTowerHP.towerB_player2,
-            // Apply overflow damage to nexus (sum from both battlefields)
-            player1NexusHP: newP1NexusHP,
-            player2NexusHP: newP2NexusHP,
-            player1Gold: (prev.metadata.player1Gold as number) + goldRewards.player1,
-            player2Gold: (prev.metadata.player2Gold as number) + goldRewards.player2,
+            towerA_player1_HP: rangedResult.updatedTowerHP.towerA_player1,
+            towerA_player2_HP: rangedResult.updatedTowerHP.towerA_player2,
+            towerB_player1_HP: rangedResult.updatedTowerHP.towerB_player1,
+            towerB_player2_HP: rangedResult.updatedTowerHP.towerB_player2,
+            // Apply overflow damage to nexus (sum from both battlefields + ranged attacks)
+            player1NexusHP: Math.max(0, newP1NexusHP - (rangedResult.overflowDamage.player2)),
+            player2NexusHP: Math.max(0, newP2NexusHP - (rangedResult.overflowDamage.player1)),
             deathCooldowns: newCooldownsB,
+            player1RunePool: updatedP1RunePool,
+            player2RunePool: updatedP2RunePool,
           },
         }
       })
       
-      // Show combat summary modal
+      // Show combat summary modal (include ranged attacks in combat log)
       setCombatSummaryData({
         battlefieldA: {
           name: 'Battlefield A',
-          combatLog: resultA.combatLog,
+          combatLog: [...resultA.combatLog, ...rangedResult.combatLog],
           towerHP: {
-            player1: resultA.updatedTowerHP.towerA_player1,
-            player2: resultA.updatedTowerHP.towerA_player2,
+            player1: rangedResult.updatedTowerHP.towerA_player1,
+            player2: rangedResult.updatedTowerHP.towerA_player2,
           },
-          overflowDamage: resultA.overflowDamage,
+          overflowDamage: {
+            player1: resultA.overflowDamage.player1 + rangedResult.overflowDamage.player1,
+            player2: resultA.overflowDamage.player2 + rangedResult.overflowDamage.player2,
+          },
         },
         battlefieldB: {
           name: 'Battlefield B',
           combatLog: resultB.combatLog,
           towerHP: {
-            player1: resultB.updatedTowerHP.towerB_player1,
-            player2: resultB.updatedTowerHP.towerB_player2,
+            player1: rangedResult.updatedTowerHP.towerB_player1,
+            player2: rangedResult.updatedTowerHP.towerB_player2,
           },
-          overflowDamage: resultB.overflowDamage,
+          overflowDamage: {
+            player1: resultB.overflowDamage.player1,
+            player2: resultB.overflowDamage.player2,
+          },
         },
       })
       setShowCombatSummary(true)
@@ -201,6 +233,69 @@ export function useTurnManagement() {
       
       // Reset pass flags at start of new turn
       const resetPassFlags = true
+      
+      // Decrement cooldowns and move heroes from base to deployZone when cooldown expires
+      setGameState(prev => {
+        const processCooldowns = (player: 'player1' | 'player2') => {
+          const base = prev[`${player}Base` as keyof typeof prev] as Card[]
+          const deployZone = prev[`${player}DeployZone` as keyof typeof prev] as Card[]
+          const cooldowns = { ...prev.metadata.deathCooldowns }
+          
+          const heroesToMove: Card[] = []
+          const heroesToKeep: Card[] = []
+          
+          // Decrement all cooldowns and process heroes
+          base.forEach(card => {
+            if (card.cardType === 'hero') {
+              const currentCooldown = cooldowns[card.id] || 0
+              if (currentCooldown > 0) {
+                // Decrement cooldown
+                cooldowns[card.id] = currentCooldown - 1
+              }
+              
+              const newCooldown = cooldowns[card.id] || 0
+              if (newCooldown === 0) {
+                // Cooldown expired - move to deployZone and heal to full
+                const hero = card as import('../game/types').Hero
+                heroesToMove.push({ 
+                  ...hero, 
+                  location: 'deployZone' as const,
+                  currentHealth: hero.maxHealth, // Heal to full when ready to deploy
+                })
+                // Remove from cooldowns when moved to deployZone
+                delete cooldowns[card.id]
+              } else {
+                // Still on cooldown - keep in base
+                heroesToKeep.push(card)
+              }
+            } else {
+              // Non-hero cards (artifacts) stay in base
+              heroesToKeep.push(card)
+            }
+          })
+          
+          return {
+            newBase: heroesToKeep,
+            newDeployZone: [...deployZone, ...heroesToMove],
+            newCooldowns: cooldowns,
+          }
+        }
+        
+        const p1Result = processCooldowns('player1')
+        const p2Result = processCooldowns('player2')
+        
+        return {
+          ...prev,
+          player1Base: p1Result.newBase,
+          player1DeployZone: p1Result.newDeployZone,
+          player2Base: p2Result.newBase,
+          player2DeployZone: p2Result.newDeployZone,
+          metadata: {
+            ...prev.metadata,
+            deathCooldowns: { ...p1Result.newCooldowns, ...p2Result.newCooldowns },
+          },
+        }
+      })
       
       // Regenerate mana for next player (+1 max mana, restore to max)
       const nextPlayerMaxMana = Math.min(
@@ -290,6 +385,55 @@ export function useTurnManagement() {
     })
   }, [setGameState])
 
+  // Spawn a 1/1 creep for generic unit token generation
+  const handleSpawnCreep = useCallback((battlefieldId: 'battlefieldA' | 'battlefieldB', player: 'player1' | 'player2') => {
+    setGameState(prev => {
+      const battlefield = prev[battlefieldId]
+      const playerUnits = battlefield[player]
+      
+      // Find first available slot (1-5)
+      let availableSlot: number | null = null
+      for (let slot = 1; slot <= 5; slot++) {
+        const isOccupied = playerUnits.some(unit => unit.slot === slot)
+        if (!isOccupied) {
+          availableSlot = slot
+          break
+        }
+      }
+      
+      // If no slots available, don't spawn
+      if (availableSlot === null) {
+        console.log(`No available slot for ${player} creep on ${battlefieldId}`)
+        return prev
+      }
+      
+      // Create the creep
+      const creep: import('../game/types').GenericUnit = {
+        id: `creep-${player}-${battlefieldId}-${Date.now()}-${Math.random()}`,
+        name: 'Creep',
+        description: 'Basic 1/1 unit that can have health adjusted',
+        cardType: 'generic',
+        colors: [],
+        manaCost: 0,
+        attack: 1,
+        health: 1,
+        maxHealth: 1,
+        currentHealth: 1,
+        location: battlefieldId,
+        owner: player,
+        slot: availableSlot,
+      }
+      
+      return {
+        ...prev,
+        [battlefieldId]: {
+          ...battlefield,
+          [player]: [...playerUnits, creep],
+        },
+      }
+    })
+  }, [setGameState])
+
   const handleToggleStun = useCallback((hero: Card) => {
     // Only heroes can be stunned
     if (hero.cardType !== 'hero') return
@@ -365,8 +509,8 @@ export function useTurnManagement() {
           
           if (darkArchmage && darkArchmage.slot !== undefined) {
             const archmageSlot = darkArchmage.slot
-            // Find adjacent slots (slot - 1 and slot + 1, within 1-4 range)
-            const adjacentSlots = [archmageSlot - 1, archmageSlot + 1].filter(s => s >= 1 && s <= 4)
+            // Find adjacent slots (slot - 1 and slot + 1, within 1-5 range)
+            const adjacentSlots = [archmageSlot - 1, archmageSlot + 1].filter(s => s >= 1 && s <= 5)
             
             // Find an available adjacent slot
             for (const slot of adjacentSlots) {
@@ -401,61 +545,158 @@ export function useTurnManagement() {
       const updatedBattlefieldA = spawnVoidApprentices(prev.battlefieldA, 'battlefieldA')
       const updatedBattlefieldB = spawnVoidApprentices(prev.battlefieldB, 'battlefieldB')
       
-      // Reset temporary HP and attack at start of new turn
-      const resetTemporaryStats = (c: Card): Card => {
-        if (c.cardType === 'hero' || c.cardType === 'generic') {
-          const cardWithTempStats = c as import('../game/types').Hero | import('../game/types').GenericUnit
-          let updatedCard = { ...cardWithTempStats }
+      // REMOVED: Auto-spawn creep system (Core Game Redesign - Phase 1)
+      // Creeps no longer spawn automatically each turn - board stays cleaner, heroes are primary threats
+      // Keep Void Apprentice spawning
+      const battlefieldAWithCreeps = updatedBattlefieldA // No longer spawning creeps
+      const battlefieldBWithCreeps = updatedBattlefieldB // No longer spawning creeps
+      
+      // Process saga artifacts: increment counters, create tokens, apply effects, destroy after Chapter 3
+      const processSagaArtifacts = (
+        playerBase: import('../game/types').Card[],
+        player: 'player1' | 'player2',
+        battlefields: { battlefieldA: typeof prev.battlefieldA, battlefieldB: typeof prev.battlefieldB }
+      ): {
+        updatedBase: import('../game/types').Card[]
+        updatedBattlefields: { battlefieldA: typeof prev.battlefieldA, battlefieldB: typeof prev.battlefieldB }
+      } => {
+        let updatedBase = [...playerBase]
+        let updatedBattlefieldA = { ...battlefields.battlefieldA }
+        let updatedBattlefieldB = { ...battlefields.battlefieldB }
+        
+        const sagaArtifacts = updatedBase.filter(
+          card => card.cardType === 'artifact' && 
+          (card as import('../game/types').ArtifactCard).effectType === 'saga' &&
+          card.owner === player
+        ) as import('../game/types').ArtifactCard[]
+        
+        for (const artifact of sagaArtifacts) {
+          const currentCounter = artifact.sagaCounters || 0
+          const newCounter = currentCounter + 1
           
-          // Reset temporary HP
-          if ('temporaryHP' in cardWithTempStats && cardWithTempStats.temporaryHP && cardWithTempStats.temporaryHP > 0) {
-            // Remove temporary HP, but don't let currentHealth go below 0
-            const newCurrentHealth = Math.max(0, cardWithTempStats.currentHealth - cardWithTempStats.temporaryHP)
-            updatedCard = {
-              ...updatedCard,
-              temporaryHP: 0,
-              currentHealth: newCurrentHealth,
-            }
+          // Update artifact with new counter
+          updatedBase = updatedBase.map(card => 
+            card.id === artifact.id 
+              ? { ...card, sagaCounters: newCounter } as import('../game/types').ArtifactCard
+              : card
+          )
+          
+          // Destroy artifact after Chapter 3
+          if (newCounter >= 3) {
+            updatedBase = updatedBase.filter(card => card.id !== artifact.id)
           }
-          
-          // Reset temporary attack
-          if ('temporaryAttack' in cardWithTempStats && cardWithTempStats.temporaryAttack && cardWithTempStats.temporaryAttack > 0) {
-            updatedCard = {
-              ...updatedCard,
-              temporaryAttack: 0,
-            }
-          }
-          
-          return updatedCard
         }
-        return c
+        
+        return { 
+          updatedBase, 
+          updatedBattlefields: { battlefieldA: updatedBattlefieldA, battlefieldB: updatedBattlefieldB }
+        }
       }
+      
+      // Process sagas for player1
+      const p1Saga = processSagaArtifacts(
+        prev.player1Base, 
+        'player1',
+        { battlefieldA: battlefieldAWithCreeps, battlefieldB: battlefieldBWithCreeps }
+      )
+      
+      // Process sagas for player2 (using updated battlefields from player1)
+      const p2Saga = processSagaArtifacts(
+        prev.player2Base,
+        'player2',
+        p1Saga.updatedBattlefields
+      )
+      
+      // Final battlefields combine both players' saga effects
+      const finalBattlefieldA = p2Saga.updatedBattlefields.battlefieldA
+      const finalBattlefieldB = p2Saga.updatedBattlefields.battlefieldB
+      
+      // Final bases (player1 and player2 processed separately)
+      const finalP1Base = p1Saga.updatedBase
+      const finalP2Base = p2Saga.updatedBase
+      
+      // Rune system updates:
+      // 1. Clear temporary runes from previous turn
+      // 2. Generate new temporary runes from seals
+      // 3. Generate runes from artifacts in base with rune_generation effect
+      const clearAndGenerateRunes = (
+        pool: import('../game/types').RunePool, 
+        seals: import('../game/types').Seal[],
+        playerBase: import('../game/types').Card[]
+      ) => {
+        // Generate runes from seals
+        const sealRunes = seals.map(seal => seal.color)
+        
+        // Generate runes from artifacts in base with rune_generation effect
+        const artifactRunes: import('../game/types').RuneColor[] = []
+        const artifacts = playerBase.filter(card => card.cardType === 'artifact') as import('../game/types').ArtifactCard[]
+        
+        artifacts.forEach(artifact => {
+          if (artifact.effectType === 'rune_generation') {
+            // Determine which color(s) to generate based on artifact colors
+            // Single-color artifacts: effectValue=1, colors=['black'] -> generates 1 black rune
+            // Dual-color artifacts: effectValue=2, colors=['red','white'] -> generates 1 red + 1 white rune
+            if (artifact.colors && artifact.colors.length > 0) {
+              const effectValue = artifact.effectValue || 1
+              
+              if (artifact.colors.length === 1) {
+                // Single color generator - generate effectValue runes of that color
+                for (let i = 0; i < effectValue; i++) {
+                  artifactRunes.push(artifact.colors[0] as import('../game/types').RuneColor)
+                }
+              } else if (artifact.colors.length === 2 && effectValue === 2) {
+                // Dual color generator - generate 1 of each color
+                artifactRunes.push(artifact.colors[0] as import('../game/types').RuneColor)
+                artifactRunes.push(artifact.colors[1] as import('../game/types').RuneColor)
+              } else if (artifact.colors.length === 2 && effectValue === 1) {
+                // Flexible generator - player chooses, default to first color (could be improved with UI)
+                artifactRunes.push(artifact.colors[0] as import('../game/types').RuneColor)
+              }
+            }
+          }
+        })
+        
+        return {
+          runes: pool.runes, // Permanent runes persist
+          temporaryRunes: [...sealRunes, ...artifactRunes], // Seal and artifact runes replace previous temporary runes
+        }
+      }
+      
+      const updatedP1RunePool = clearAndGenerateRunes(
+        prev.metadata.player1RunePool,
+        prev.metadata.player1Seals || [],
+        prev.player1Base
+      )
+      const updatedP2RunePool = clearAndGenerateRunes(
+        prev.metadata.player2RunePool,
+        prev.metadata.player2Seals || [],
+        prev.player2Base
+      )
+      
+      // Temporary stats are now persistent - they don't reset automatically
+      // Players can manually remove them if needed
       
       return {
         ...prev,
-        battlefieldA: {
-          player1: updatedBattlefieldA.player1.map(resetTemporaryStats),
-          player2: updatedBattlefieldA.player2.map(resetTemporaryStats),
-        },
-        battlefieldB: {
-          player1: updatedBattlefieldB.player1.map(resetTemporaryStats),
-          player2: updatedBattlefieldB.player2.map(resetTemporaryStats),
-        },
-        player1Hand: prev.player1Hand.map(resetTemporaryStats),
-        player2Hand: prev.player2Hand.map(resetTemporaryStats),
-        player1Base: prev.player1Base.map(c => resetTemporaryStats(healHeroInBase(c))),
-        player2Base: prev.player2Base.map(c => resetTemporaryStats(healHeroInBase(c))),
+        battlefieldA: finalBattlefieldA,
+        battlefieldB: finalBattlefieldB,
+        player1Hand: prev.player1Hand,
+        player2Hand: prev.player2Hand,
+        player1Base: finalP1Base.map(c => healHeroInBase(c)),
+        player2Base: finalP2Base.map(c => healHeroInBase(c)),
         metadata: {
           ...prev.metadata,
           currentTurn: newTurn,
+          // Start new turn in deploy phase
+          currentPhase: 'deploy',
           // Restore mana to max for both players
           player1Mana: newPlayer1MaxMana,
           player2Mana: newPlayer2MaxMana,
           player1MaxMana: newPlayer1MaxMana,
           player2MaxMana: newPlayer2MaxMana,
-          // Both players get 2 gold at the start of each turn
-          player1Gold: (prev.metadata.player1Gold as number) + 2,
-          player2Gold: (prev.metadata.player2Gold as number) + 2,
+          // Both players get 5 gold at the start of each turn
+          player1Gold: (prev.metadata.player1Gold as number) + 5,
+          player2Gold: (prev.metadata.player2Gold as number) + 5,
           // Action goes to whoever has initiative
           actionPlayer: nextAction,
           // Initiative carries over (unless it was null, then default to player1)
@@ -465,6 +706,12 @@ export function useTurnManagement() {
           // Reset movement flags
           player1MovedToBase: false,
           player2MovedToBase: false,
+          // Reset deploy phase hero counters
+          player1HeroesDeployedThisTurn: 0,
+          player2HeroesDeployedThisTurn: 0,
+          // Update rune pools (clear temp, generate from seals)
+          player1RunePool: updatedP1RunePool,
+          player2RunePool: updatedP2RunePool
         },
       }
     })
@@ -532,12 +779,30 @@ export function useTurnManagement() {
     })
   }, [setGameState])
 
+  const handleEndDeployPhase = useCallback(() => {
+    setGameState(prev => {
+      if (prev.metadata.currentPhase !== 'deploy') {
+        return prev
+      }
+      
+      return {
+        ...prev,
+        metadata: {
+          ...prev.metadata,
+          currentPhase: 'play',
+        },
+      }
+    })
+  }, [setGameState])
+
   return {
     handleNextPhase,
     handleNextTurn,
     handleToggleSpellPlayed,
     handleToggleStun,
     handlePass,
+    handleEndDeployPhase,
+    handleSpawnCreep, // Re-added for token generation mechanics
   }
 }
 

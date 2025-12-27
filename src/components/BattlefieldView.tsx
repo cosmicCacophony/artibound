@@ -1,11 +1,14 @@
-import { Card } from '../game/types'
+import { useState } from 'react'
+import { Card, Hero, HeroAbility } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { useDeployment } from '../hooks/useDeployment'
 import { useCombat } from '../hooks/useCombat'
 import { useHeroAbilities } from '../hooks/useHeroAbilities'
 import { useTurnManagement } from '../hooks/useTurnManagement'
 import { HeroCard } from './HeroCard'
+import { HeroAbilityEditor } from './HeroAbilityEditor'
 import { resolveSimultaneousCombat } from '../game/combatSystem'
+import { createCardFromTemplate } from '../game/sampleData'
 
 interface BattlefieldViewProps {
   battlefieldId: 'battlefieldA' | 'battlefieldB'
@@ -22,11 +25,16 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     setGameState,
     setShowCombatSummary,
     setCombatSummaryData,
+    player1SidebarCards,
+    player2SidebarCards,
+    setPlayer1SidebarCards,
+    setPlayer2SidebarCards,
   } = useGameContext()
+  const [editingHeroId, setEditingHeroId] = useState<string | null>(null)
   const { handleDeploy, handleChangeSlot, handleRemoveFromBattlefield, handleEquipItem } = useDeployment()
   const { handleDecreaseHealth, handleIncreaseHealth, handleDecreaseAttack, handleIncreaseAttack } = useCombat()
   const { handleAbilityClick } = useHeroAbilities()
-  const { handleToggleStun } = useTurnManagement()
+  const { handleToggleStun, handleSpawnCreep } = useTurnManagement()
 
   const battlefield = gameState[battlefieldId]
   const battlefieldAP1 = gameState.battlefieldA.player1
@@ -68,7 +76,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     const cardInSlot = battlefield[player].find(c => c.slot === slotNum)
     const isSelected = selectedCard && selectedCard.id === cardInSlot?.id
     const canMoveHere = selectedCard && selectedCard.owner === player && 
-      (selectedCard.location === battlefieldId || selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB' || selectedCard.location === 'hand' || selectedCard.location === 'base')
+      (selectedCard.location === battlefieldId || selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB' || selectedCard.location === 'hand' || selectedCard.location === 'base' || selectedCard.location === 'deployZone')
     
     // Check if we can equip an item to a hero
     const canEquipItem = selectedCard && 
@@ -131,6 +139,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
               isStunned={cardInSlot.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[cardInSlot.id])}
               onToggleStun={cardInSlot.cardType === 'hero' ? () => handleToggleStun(cardInSlot) : undefined}
               onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, cardInSlot.owner)}
+              onEditAbility={cardInSlot.cardType === 'hero' ? (heroId) => setEditingHeroId(heroId) : undefined}
             />
           </div>
         ) : (
@@ -142,9 +151,68 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     )
   }
 
+  const handleSaveAbility = (heroId: string, ability: HeroAbility | undefined) => {
+    setGameState(prev => {
+      // Find the hero in all possible locations
+      const findAndUpdateHero = (cards: Card[]): Card[] => {
+        return cards.map(card => {
+          if (card.id === heroId && card.cardType === 'hero') {
+            return {
+              ...card,
+              ability: ability,
+            } as Hero
+          }
+          return card
+        })
+      }
+
+      return {
+        ...prev,
+        player1Hand: findAndUpdateHero(prev.player1Hand),
+        player2Hand: findAndUpdateHero(prev.player2Hand),
+        player1Base: findAndUpdateHero(prev.player1Base),
+        player2Base: findAndUpdateHero(prev.player2Base),
+        player1DeployZone: findAndUpdateHero(prev.player1DeployZone),
+        player2DeployZone: findAndUpdateHero(prev.player2DeployZone),
+        battlefieldA: {
+          player1: findAndUpdateHero(prev.battlefieldA.player1),
+          player2: findAndUpdateHero(prev.battlefieldA.player2),
+        },
+        battlefieldB: {
+          player1: findAndUpdateHero(prev.battlefieldB.player1),
+          player2: findAndUpdateHero(prev.battlefieldB.player2),
+        },
+      }
+    })
+    setEditingHeroId(null)
+  }
+
+  const editingHero = editingHeroId 
+    ? [
+        ...gameState.player1Hand,
+        ...gameState.player2Hand,
+        ...gameState.player1Base,
+        ...gameState.player2Base,
+        ...gameState.player1DeployZone,
+        ...gameState.player2DeployZone,
+        ...gameState.battlefieldA.player1,
+        ...gameState.battlefieldA.player2,
+        ...gameState.battlefieldB.player1,
+        ...gameState.battlefieldB.player2,
+      ].find(c => c.id === editingHeroId && c.cardType === 'hero') as Hero | undefined
+    : undefined
+
   return (
-    <div
-      style={{
+    <>
+      {editingHero && (
+        <HeroAbilityEditor
+          hero={editingHero}
+          onSave={handleSaveAbility}
+          onClose={() => setEditingHeroId(null)}
+        />
+      )}
+      <div
+        style={{
         border: `2px solid ${borderColor}`,
         borderRadius: '6px',
         padding: '12px',
@@ -232,6 +300,58 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
             </button>
           </div>
         </div>
+        {/* Manual Creep Spawn Button */}
+        {metadata.currentPhase === 'play' && (
+          <div style={{ marginTop: '8px', display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {(() => {
+              // Use actionPlayer if available, otherwise fall back to activePlayer
+              const currentActionPlayer = metadata.actionPlayer || metadata.activePlayer
+              const isPlayer1Turn = currentActionPlayer === 'player1'
+              const isPlayer2Turn = currentActionPlayer === 'player2'
+              
+              return (
+                <>
+                  <button
+                    onClick={() => handleSpawnCreep(battlefieldId, 'player1')}
+                    disabled={!isPlayer1Turn}
+                    style={{
+                      padding: '6px 12px',
+                      backgroundColor: isPlayer1Turn ? '#4caf50' : '#ccc',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: isPlayer1Turn ? 'pointer' : 'not-allowed',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      opacity: isPlayer1Turn ? 1 : 0.6,
+                    }}
+                    title="Spawn a 1/1 creep in the first empty slot for Player 1"
+                  >
+                    Spawn P1 Creep
+                  </button>
+                  <button
+                    onClick={() => handleSpawnCreep(battlefieldId, 'player2')}
+                    disabled={!isPlayer2Turn}
+                    style={{
+                      padding: '6px 12px',
+                      backgroundColor: isPlayer2Turn ? '#f44336' : '#ccc',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: isPlayer2Turn ? 'pointer' : 'not-allowed',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      opacity: isPlayer2Turn ? 1 : 0.6,
+                    }}
+                    title="Spawn a 1/1 creep in the first empty slot for Player 2"
+                  >
+                    Spawn P2 Creep
+                  </button>
+                </>
+              )
+            })()}
+          </div>
+        )}
         {/* Go to Combat Button - Resolves Both Battlefields Simultaneously */}
         {metadata.currentPhase === 'play' && battlefieldId === 'battlefieldA' && (
           <button
@@ -246,29 +366,40 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                   towerB_player2: metadata.towerB_player2_HP,
                 }
                 
+                const initialTowerArmor = {
+                  towerA_player1: metadata.towerA_player1_Armor,
+                  towerA_player2: metadata.towerA_player2_Armor,
+                  towerB_player1: metadata.towerB_player1_Armor,
+                  towerB_player2: metadata.towerB_player2_Armor,
+                }
+                
                 // Resolve combat for both battlefields simultaneously
                 const resultA = resolveSimultaneousCombat(
                   gameState.battlefieldA,
                   'battlefieldA',
                   initialTowerHP,
-                  metadata.stunnedHeroes || {}
+                  metadata.stunnedHeroes || {},
+                  initialTowerArmor,
+                  gameState
                 )
                 
                 const resultB = resolveSimultaneousCombat(
                   gameState.battlefieldB,
                   'battlefieldB',
                   resultA.updatedTowerHP,
-                  metadata.stunnedHeroes || {}
+                  metadata.stunnedHeroes || {},
+                  initialTowerArmor,
+                  gameState
                 )
                 
                 // Process killed heroes for both battlefields - separate by player
+                // Draw cards for opponent when heroes are killed
                 const processKilledHeroes = (
                   originalBattlefield: typeof gameState.battlefieldA,
                   updatedBattlefield: typeof gameState.battlefieldA,
                   player1Base: Card[],
                   player2Base: Card[],
-                  deathCooldowns: Record<string, number>,
-                  goldRewards: { player1: number, player2: number }
+                  deathCooldowns: Record<string, number>
                 ) => {
                   const newP1Base = [...player1Base]
                   const newP2Base = [...player2Base]
@@ -286,15 +417,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                           currentHealth: 0,
                           slot: undefined,
                         })
-                        newCooldowns[hero.id] = 1
-                        // Opponent (player2) gets 5 gold for killing hero
-                        goldRewards.player2 += 5
-                      }
-                    } else if (originalCard.cardType === 'generic') {
-                      const stillAlive = updatedBattlefield.player1.some(c => c.id === originalCard.id)
-                      if (!stillAlive) {
-                        // Opponent (player2) gets 2 gold for killing unit
-                        goldRewards.player2 += 2
+                        newCooldowns[hero.id] = 2
                       }
                     }
                   })
@@ -311,15 +434,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                           currentHealth: 0,
                           slot: undefined,
                         })
-                        newCooldowns[hero.id] = 1
-                        // Opponent (player1) gets 5 gold for killing hero
-                        goldRewards.player1 += 5
-                      }
-                    } else if (originalCard.cardType === 'generic') {
-                      const stillAlive = updatedBattlefield.player2.some(c => c.id === originalCard.id)
-                      if (!stillAlive) {
-                        // Opponent (player1) gets 2 gold for killing unit
-                        goldRewards.player1 += 2
+                        newCooldowns[hero.id] = 2
                       }
                     }
                   })
@@ -327,14 +442,12 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                   return { newP1Base, newP2Base, newCooldowns }
                 }
                 
-                const goldRewards = { player1: 0, player2: 0 }
                 const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA } = processKilledHeroes(
                   gameState.battlefieldA,
                   resultA.updatedBattlefield,
                   gameState.player1Base,
                   gameState.player2Base,
-                  metadata.deathCooldowns,
-                  goldRewards
+                  metadata.deathCooldowns
                 )
                 
                 const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB } = processKilledHeroes(
@@ -342,8 +455,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                   resultB.updatedBattlefield,
                   newP1BaseA,
                   newP2BaseA,
-                  newCooldownsA,
-                  goldRewards
+                  newCooldownsA
                 )
                 
                 // Apply combat results
@@ -371,8 +483,6 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                       towerB_player2_HP: resultB.updatedTowerHP.towerB_player2,
                       player1NexusHP: newP1NexusHP,
                       player2NexusHP: newP2NexusHP,
-                      player1Gold: (prev.metadata.player1Gold as number) + goldRewards.player1,
-                      player2Gold: (prev.metadata.player2Gold as number) + goldRewards.player2,
                       deathCooldowns: newCooldownsB,
                       player1Passed: false,
                       player2Passed: false,
@@ -430,16 +540,16 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       {/* Player 2 side */}
       <div style={{ marginBottom: '12px' }}>
         <h4 style={{ fontSize: '12px', marginBottom: '6px' }}>Player 2</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', marginBottom: '4px' }}>
-          {[1, 2, 3, 4].map(slotNum => renderSlot(slotNum, 'player2'))}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', marginBottom: '4px' }}>
+          {[1, 2, 3, 4, 5].map(slotNum => renderSlot(slotNum, 'player2'))}
         </div>
       </div>
 
       {/* Player 1 side */}
       <div>
         <h4 style={{ fontSize: '14px', marginBottom: '10px' }}>Player 1</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
-          {[1, 2, 3, 4].map(slotNum => renderSlot(slotNum, 'player1'))}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px' }}>
+          {[1, 2, 3, 4, 5].map(slotNum => renderSlot(slotNum, 'player1'))}
         </div>
       </div>
 
@@ -466,6 +576,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
         </button>
       )}
     </div>
+    </>
   )
 }
 

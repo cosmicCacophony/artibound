@@ -1,4 +1,5 @@
-import { Card, AttackTarget, AttackTargetType, Battlefield, PlayerId, GameMetadata } from './types'
+import { Card, AttackTarget, AttackTargetType, Battlefield, PlayerId, GameMetadata, GameState, GenericUnit } from './types'
+import { getSagaCombatDamageBonus } from './sagaSystem'
 
 /**
  * Combat System - Handles all combat-related logic
@@ -93,7 +94,9 @@ export function resolveAttack(
   battlefield: Battlefield,
   towerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
   battlefieldId: 'battlefieldA' | 'battlefieldB',
-  stunnedHeroes?: Record<string, boolean>
+  stunnedHeroes?: Record<string, boolean>,
+  towerArmor?: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
+  gameState?: GameState
 ): {
   updatedBattlefield: Battlefield
   updatedTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
@@ -119,7 +122,18 @@ export function resolveAttack(
       // Check if target is a hero for bonus damage
       const targetIsHero = targetUnit.cardType === 'hero'
       // If stunned, deal 0 damage; otherwise calculate normally
-      attackPower = isStunned ? 0 : getAttackPower(attacker, targetIsHero)
+      if (isStunned) {
+        attackPower = 0
+      } else {
+        attackPower = getAttackPower(attacker, targetIsHero)
+        if (targetIsHero && attacker.cardType === 'hero' && 'bonusVsHeroes' in attacker && attacker.bonusVsHeroes) {
+          attackPower += attacker.bonusVsHeroes
+        }
+        // Apply Chapter 3 saga bonus: +3 damage to combat target
+        if (gameState) {
+          attackPower += getSagaCombatDamageBonus(gameState, attacker.owner)
+        }
+      }
       
       // Calculate effective health (currentHealth + temporaryHP)
       const tempHP = (targetUnit.cardType === 'hero' || targetUnit.cardType === 'generic') && 'temporaryHP' in targetUnit
@@ -168,12 +182,24 @@ export function resolveAttack(
     const currentHP = towerHP[towerKey]
     
     // If tower is already dead, all damage goes to nexus (handled in combat resolution)
-    // Otherwise, damage hits tower first
+    // Otherwise, damage hits tower first (reduced by armor)
     if (currentHP > 0) {
       // If stunned, deal 0 damage; otherwise calculate normally
-      attackPower = isStunned ? 0 : getAttackPower(attacker, false) // No hero bonus vs towers
-      const newHP = Math.max(0, currentHP - attackPower)
-      damageDealt = Math.min(attackPower, currentHP)
+      if (isStunned) {
+        attackPower = 0
+      } else {
+        attackPower = getAttackPower(attacker, false) // No hero bonus vs towers
+        // Apply Chapter 3 saga bonus: +3 damage to combat target (towers count as combat targets)
+        if (gameState) {
+          attackPower += getSagaCombatDamageBonus(gameState, attacker.owner)
+        }
+      }
+      
+      // Apply tower armor (reduce damage by armor amount)
+      const armor = towerArmor?.[towerKey] || 0
+      const damageAfterArmor = Math.max(0, attackPower - armor)
+      const newHP = Math.max(0, currentHP - damageAfterArmor)
+      damageDealt = Math.min(damageAfterArmor, currentHP)
       
       updatedTowerHP = {
         ...updatedTowerHP,
@@ -181,7 +207,14 @@ export function resolveAttack(
       }
     } else {
       // Tower already dead - all damage goes to nexus (will be handled in combat resolution)
-      attackPower = isStunned ? 0 : getAttackPower(attacker, false)
+      if (isStunned) {
+        attackPower = 0
+      } else {
+        attackPower = getAttackPower(attacker, false)
+        if (gameState) {
+          attackPower += getSagaCombatDamageBonus(gameState, attacker.owner)
+        }
+      }
       damageDealt = 0 // No damage to tower (it's already dead)
     }
   }
@@ -230,7 +263,9 @@ export function resolveCombat(
   combatActions: Map<string, AttackTarget>, // Map of unit ID -> target (only active player's units)
   activePlayer: PlayerId,
   initialTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
-  stunnedHeroes?: Record<string, boolean>
+  stunnedHeroes?: Record<string, boolean>,
+  towerArmor?: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
+  gameState?: GameState
 ): {
   updatedBattlefield: Battlefield
   updatedTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
@@ -255,7 +290,9 @@ export function resolveCombat(
         currentBattlefield,
         currentTowerHP,
         battlefieldId,
-        stunnedHeroes
+        stunnedHeroes,
+        towerArmor,
+        gameState
       )
       
       currentBattlefield = result.updatedBattlefield
@@ -339,7 +376,9 @@ export function resolveSimultaneousCombat(
   battlefield: Battlefield,
   battlefieldId: 'battlefieldA' | 'battlefieldB',
   initialTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
-  stunnedHeroes?: Record<string, boolean>
+  stunnedHeroes?: Record<string, boolean>,
+  towerArmor?: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
+  gameState?: GameState
 ): {
   updatedBattlefield: Battlefield
   updatedTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
@@ -363,8 +402,8 @@ export function resolveSimultaneousCombat(
   const player1Units = battlefield.player1.filter(u => u.slot !== undefined)
   const player2Units = battlefield.player2.filter(u => u.slot !== undefined)
   
-  // Process each slot (1-4) - both units attack simultaneously
-  for (let slot = 1; slot <= 4; slot++) {
+  // Process each slot (1-5) - both units attack simultaneously
+  for (let slot = 1; slot <= 5; slot++) {
     const p1Unit = player1Units.find(u => u.slot === slot)
     const p2Unit = player2Units.find(u => u.slot === slot)
     
@@ -376,10 +415,31 @@ export function resolveSimultaneousCombat(
     // Calculate damage amounts (check for stun)
     const p1IsStunned = p1Unit && p1Unit.cardType === 'hero' && stunnedHeroes && stunnedHeroes[p1Unit.id]
     const p2IsStunned = p2Unit && p2Unit.cardType === 'hero' && stunnedHeroes && stunnedHeroes[p2Unit.id]
-    const p1AttackPower = p1Unit && !p1IsStunned ? getAttackPower(p1Unit, p1Target?.type === 'unit' && p1Target.targetId ? 
-      currentBattlefield.player2.find(u => u.id === p1Target.targetId)?.cardType === 'hero' : false) : 0
-    const p2AttackPower = p2Unit && !p2IsStunned ? getAttackPower(p2Unit, p2Target?.type === 'unit' && p2Target.targetId ? 
-      currentBattlefield.player1.find(u => u.id === p2Target.targetId)?.cardType === 'hero' : false) : 0
+    // Calculate attack power
+    let p1AttackPower = 0
+    if (p1Unit && !p1IsStunned) {
+      const targetIsHero = p1Target?.type === 'unit' && p1Target.targetId ? 
+        currentBattlefield.player2.find(u => u.id === p1Target.targetId)?.cardType === 'hero' : false
+      p1AttackPower = getAttackPower(p1Unit, targetIsHero)
+      if (targetIsHero && p1Unit.cardType === 'hero' && 'bonusVsHeroes' in p1Unit && p1Unit.bonusVsHeroes) {
+        p1AttackPower += p1Unit.bonusVsHeroes
+      }
+      if (gameState) {
+        p1AttackPower += getSagaCombatDamageBonus(gameState, p1Unit.owner)
+      }
+    }
+    let p2AttackPower = 0
+    if (p2Unit && !p2IsStunned) {
+      const targetIsHero = p2Target?.type === 'unit' && p2Target.targetId ? 
+        currentBattlefield.player1.find(u => u.id === p2Target.targetId)?.cardType === 'hero' : false
+      p2AttackPower = getAttackPower(p2Unit, targetIsHero)
+      if (targetIsHero && p2Unit.cardType === 'hero' && 'bonusVsHeroes' in p2Unit && p2Unit.bonusVsHeroes) {
+        p2AttackPower += p2Unit.bonusVsHeroes
+      }
+      if (gameState) {
+        p2AttackPower += getSagaCombatDamageBonus(gameState, p2Unit.owner)
+      }
+    }
     
     // Apply Player 1's attack
     if (p1Unit && p1Target) {
@@ -398,7 +458,9 @@ export function resolveSimultaneousCombat(
         currentBattlefield,
         currentTowerHP,
         battlefieldId,
-        stunnedHeroes
+        stunnedHeroes,
+        towerArmor,
+        gameState
       )
       
       currentBattlefield = result.updatedBattlefield
@@ -480,7 +542,9 @@ export function resolveSimultaneousCombat(
         currentBattlefield,
         currentTowerHP,
         battlefieldId,
-        stunnedHeroes
+        stunnedHeroes,
+        towerArmor,
+        gameState
       )
       
       currentBattlefield = result.updatedBattlefield
@@ -539,3 +603,99 @@ export function resolveSimultaneousCombat(
   }
 }
 
+
+/**
+ * Resolve ranged attacks from base/deploy zone
+ * Ranged units deal damage evenly to both towers
+ */
+export function resolveRangedAttacks(
+  gameState: GameState,
+  initialTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number },
+  towerArmor?: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
+): {
+  updatedTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
+  overflowDamage: { player1: number, player2: number }
+  combatLog: CombatLogEntry[]
+} {
+  let currentTowerHP = { ...initialTowerHP }
+  let overflowDamage = { player1: 0, player2: 0 }
+  const combatLog: CombatLogEntry[] = []
+  
+  // Get ranged units from base and deploy zone for both players
+  const getRangedUnits = (player: PlayerId): GenericUnit[] => {
+    const base = player === 'player1' ? gameState.player1Base : gameState.player2Base
+    const deployZone = player === 'player1' ? gameState.player1DeployZone : gameState.player2DeployZone
+    const allCards = [...base, ...deployZone]
+    return allCards.filter(card => 
+      card.cardType === 'generic' && 
+      'rangedAttack' in card && 
+      card.rangedAttack !== undefined &&
+      card.rangedAttack > 0
+    ) as GenericUnit[]
+  }
+  
+  // Process ranged attacks for both players
+  for (const player of ['player1', 'player2'] as PlayerId[]) {
+    const rangedUnits = getRangedUnits(player)
+    const opponent = player === 'player1' ? 'player2' : 'player1'
+    
+    for (const unit of rangedUnits) {
+      if (!unit.rangedAttack) continue
+      
+      const damage = unit.rangedAttack
+      // Split damage evenly: floor(damage/2) to each tower, remainder to first tower
+      const damageToEach = Math.floor(damage / 2)
+      const remainder = damage % 2
+      
+      // Damage to tower A
+      const towerAKey = opponent === 'player1' ? 'towerA_player1' : 'towerA_player2'
+      const towerAHPBefore = currentTowerHP[towerAKey]
+      const armorA = towerArmor?.[towerAKey] || 0
+      const damageAfterArmorA = Math.max(0, damageToEach + remainder - armorA)
+      const newTowerAHP = Math.max(0, towerAHPBefore - damageAfterArmorA)
+      
+      if (towerAHPBefore > 0 && newTowerAHP === 0) {
+        // Tower destroyed - calculate overflow
+        const overflow = Math.max(0, damageToEach + remainder - towerAHPBefore)
+        overflowDamage[player] += overflow
+      } else if (towerAHPBefore === 0) {
+        // Tower already dead - all damage goes to nexus
+        overflowDamage[player] += damageToEach + remainder
+      }
+      
+      currentTowerHP[towerAKey] = newTowerAHP
+      
+      // Damage to tower B
+      const towerBKey = opponent === 'player1' ? 'towerB_player1' : 'towerB_player2'
+      const towerBHPBefore = currentTowerHP[towerBKey]
+      const armorB = towerArmor?.[towerBKey] || 0
+      const damageAfterArmorB = Math.max(0, damageToEach - armorB)
+      const newTowerBHP = Math.max(0, towerBHPBefore - damageAfterArmorB)
+      
+      if (towerBHPBefore > 0 && newTowerBHP === 0) {
+        // Tower destroyed - calculate overflow
+        const overflow = Math.max(0, damageToEach - towerBHPBefore)
+        overflowDamage[player] += overflow
+      } else if (towerBHPBefore === 0) {
+        // Tower already dead - all damage goes to nexus
+        overflowDamage[player] += damageToEach
+      }
+      
+      currentTowerHP[towerBKey] = newTowerBHP
+      
+      // Log the ranged attack
+      combatLog.push({
+        attackerId: unit.id,
+        attackerName: unit.name,
+        targetType: 'tower',
+        damage: damage,
+      })
+    }
+  }
+  
+  return {
+    updatedTowerHP: currentTowerHP,
+    overflowDamage,
+    combatLog,
+  }
+}

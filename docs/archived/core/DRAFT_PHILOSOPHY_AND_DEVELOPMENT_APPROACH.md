@@ -1,7 +1,7 @@
 # Draft Philosophy & Development Approach
 
 > **Created:** 2025-01-XX  
-> **Last Updated:** 2025-01-XX  
+> **Last Updated:** 2025-12-22  
 > **Status:** Active  
 > **Relevance:** High  
 > **Category:** Design  
@@ -103,7 +103,7 @@
 ### Archetype Power Tiers
 
 #### Tier 1: Strong Baseline Archetypes
-**Archetypes:** RW, WB, UGR, RBG
+**Archetypes:** RW Legion, WB, UGR, RBG
 
 **Characteristics:**
 - Higher card quality on average
@@ -111,6 +111,7 @@
 - Harder to hate-draft effectively
 - More consistent even when countered
 - Don't require specific build-around cards
+- **RW Legion**: Tier 1 - Strong baseline aggro deck with Legion synergies, consistent board presence
 
 **Draft Incentives:**
 - Players can commit early
@@ -119,7 +120,7 @@
 - Good for players learning the game
 
 #### Tier 2: Build-Around Archetypes
-**Archetypes:** UGB (Exorcism), UBW (control finisher), RGW (buff/protect engine)
+**Archetypes:** UGB (Exorcism), UBW (control finisher), RGW (buff/protect engine), **UB AOE Damage (2 colors)**
 
 **Characteristics:**
 - Need 1-2 key cards to function
@@ -127,15 +128,17 @@
 - Competitive with key cards
 - Clear pivot points in draft
 - Obvious hate-draft targets
+- **UB AOE Damage (2 colors)**: Tier 2-3 - Can clear one lane effectively but lacks big finishers. Needs 3-4 colors to become Tier 1 (access to Exorcism or other powerful finishers)
 
 **Draft Incentives:**
 - Players can pivot if they see key cards
 - Opponents can hate-draft key cards
 - Rewards recognizing archetype signals
 - Higher risk/reward
+- **UB AOE Damage**: To reach Tier 1, must commit to 3-4 colors to access powerful finishers (Exorcism, etc.)
 
 #### Tier 3: Greedy Archetypes
-**Archetypes:** RGWB (needs multiple pieces)
+**Archetypes:** RGWB (needs multiple pieces), **UB AOE Damage (2 colors, no finisher)**
 
 **Characteristics:**
 - Need 2+ key cards to function
@@ -143,12 +146,14 @@
 - Very strong with key cards
 - High risk/reward
 - Easy to disrupt
+- **UB AOE Damage (2 colors)**: Tier 2-3 - Lacks big finishers, struggles to close games. Can control one lane but loses to stat-based decks like RW Legion. Needs to expand to 3-4 colors for Tier 1 power level.
 
 **Draft Incentives:**
 - Players can gamble on getting multiple pieces
 - Opponents can easily disrupt
 - Rewards deep archetype knowledge
 - Highest risk/reward
+- **UB AOE Damage**: Must decide whether to commit to 3-4 colors for finishers or accept Tier 2-3 power level
 
 ### Rock-Paper-Scissors Balance
 

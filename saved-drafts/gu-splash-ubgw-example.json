@@ -1,0 +1,332 @@
+{
+  "metadata": {
+    "timestamp": "2024-12-15T00:00:00.000Z",
+    "version": "1.0.0",
+    "strategy": "Started with blue, found spell damage artifacts, prioritized spell damage, then moved into more colors for Exorcism and a big green unit as finisher. GU (Green/Blue) base with UBGW splash.",
+    "archetype": "GU Spell Damage with UBGW Splash"
+  },
+  "summary": {
+    "heroes": 4,
+    "artifacts": 6,
+    "spells": 11,
+    "units": 4,
+    "totalCards": 21,
+    "colors": ["blue", "white", "black", "green"],
+    "totalPicks": 18
+  },
+  "deck": {
+    "heroes": [
+      {
+        "id": "ru-hero-sorcerer",
+        "name": "Battle Sorcerer",
+        "description": "Spell-focused hero",
+        "cardType": "hero",
+        "colors": ["blue"],
+        "attack": 4,
+        "health": 6,
+        "maxHealth": 6,
+        "currentHealth": 6,
+        "supportEffect": "Draw card when casting spell",
+        "signatureCardId": "ru-sig-sorcerer-1",
+        "equippedItems": []
+      },
+      {
+        "id": "uw-hero-paladin",
+        "name": "Arcane Paladin",
+        "description": "Proactive control",
+        "cardType": "hero",
+        "colors": ["blue", "white"],
+        "attack": 4,
+        "health": 10,
+        "maxHealth": 10,
+        "currentHealth": 10,
+        "supportEffect": "Allies gain +1/+1",
+        "signatureCardId": "uw-sig-paladin-1",
+        "equippedItems": []
+      },
+      {
+        "id": "ubg-hero-void-druid",
+        "name": "Void Druid",
+        "description": "Combines UB control with Green resilience",
+        "cardType": "hero",
+        "colors": ["blue", "black", "green"],
+        "attack": 3,
+        "health": 9,
+        "maxHealth": 9,
+        "currentHealth": 9,
+        "supportEffect": "When you cast a spell, draw a card. If you control heroes of 4 different colors, draw 2 cards instead.",
+        "signatureCardId": "ubg-sig-druid-1",
+        "equippedItems": []
+      },
+      {
+        "id": "uw-hero-paladin",
+        "name": "Arcane Paladin",
+        "description": "Proactive control",
+        "cardType": "hero",
+        "colors": ["blue", "white"],
+        "attack": 4,
+        "health": 10,
+        "maxHealth": 10,
+        "currentHealth": 10,
+        "supportEffect": "Allies gain +1/+1",
+        "signatureCardId": "uw-sig-paladin-1",
+        "equippedItems": []
+      }
+    ],
+    "artifacts": [
+      {
+        "id": "ub-artifact-divine-wrath",
+        "name": "Divine Wrath Artifact",
+        "description": "Artifact. Your spells deal +2 additional damage.",
+        "cardType": "artifact",
+        "colors": ["blue"],
+        "manaCost": 5,
+        "effectType": "spell_amplifier",
+        "effectValue": 2
+      },
+      {
+        "id": "ub-artifact-void-generator",
+        "name": "Void Generator Artifact",
+        "description": "Artifact. At the start of your turn, add 1 blue rune to your rune pool.",
+        "cardType": "artifact",
+        "colors": ["blue"],
+        "manaCost": 4,
+        "effectType": "rune_generation",
+        "effectValue": 1
+      },
+      {
+        "id": "ub-artifact-divine-wrath",
+        "name": "Divine Wrath Artifact",
+        "description": "Artifact. Your spells deal +2 additional damage.",
+        "cardType": "artifact",
+        "colors": ["blue"],
+        "manaCost": 5,
+        "effectType": "spell_amplifier",
+        "effectValue": 2
+      },
+      {
+        "id": "rw-artifact-unbreakable-column",
+        "name": "Unbreakable Column Artifact",
+        "description": "Artifact. All your units gain +0/+1.",
+        "cardType": "artifact",
+        "colors": ["white"],
+        "manaCost": 3,
+        "effectType": "defensive_buff",
+        "effectValue": 1
+      },
+      {
+        "id": "ub-artifact-natures-revenge",
+        "name": "Nature's Revenge Artifact",
+        "description": "Artifact. When you deal damage to an enemy unit, if it dies, gain +1 max mana.",
+        "cardType": "artifact",
+        "colors": ["green"],
+        "manaCost": 3,
+        "effectType": "mana_generation",
+        "effectValue": 1
+      },
+      {
+        "id": "ub-artifact-divine-wrath",
+        "name": "Divine Wrath Artifact",
+        "description": "Artifact. Your spells deal +2 additional damage.",
+        "cardType": "artifact",
+        "colors": ["blue"],
+        "manaCost": 5,
+        "effectType": "spell_amplifier",
+        "effectValue": 2
+      }
+    ],
+    "spells": [
+      {
+        "id": "ub-spell-removal",
+        "name": "Arcane Removal",
+        "description": "Generic. Deal 6 damage to target unit or hero.",
+        "cardType": "spell",
+        "colors": ["blue"],
+        "manaCost": 2,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 6,
+          "affectsUnits": true,
+          "affectsHeroes": true
+        }
+      },
+      {
+        "id": "ub-spell-light-strike-array",
+        "name": "Light Strike Array",
+        "description": "Generic. Deal 2 damage to enemy unit in front of your hero and stun it.",
+        "cardType": "spell",
+        "colors": ["blue"],
+        "manaCost": 2,
+        "effect": {
+          "type": "damage_and_stun",
+          "damage": 2,
+          "affectsUnits": true,
+          "affectsHeroes": true,
+          "stunDuration": 1
+        }
+      },
+      {
+        "id": "ru-spell-3",
+        "name": "Arcane Burst",
+        "description": "Damage 3 adjacent units",
+        "cardType": "spell",
+        "colors": ["blue"],
+        "manaCost": 4,
+        "consumesRunes": true,
+        "effect": {
+          "type": "adjacent_damage",
+          "damage": 3,
+          "adjacentCount": 3,
+          "affectsUnits": true,
+          "affectsHeroes": false
+        }
+      },
+      {
+        "id": "vrune-spell-necromantic-rite",
+        "name": "Necromantic Rite",
+        "description": "Deal 5 damage to all enemy units. If opponent has 4+ units, destroy all enemy units instead. Costs 7UUU.",
+        "cardType": "spell",
+        "colors": ["blue", "blue", "blue"],
+        "manaCost": 7,
+        "consumesRunes": true,
+        "effect": {
+          "type": "all_units_damage",
+          "damage": 5,
+          "affectsUnits": true,
+          "affectsHeroes": false,
+          "affectsEnemyUnits": true,
+          "affectsOwnUnits": false
+        }
+      },
+      {
+        "id": "gu-spell-2",
+        "name": "Titan's Wrath",
+        "description": "Deal 10 damage",
+        "cardType": "spell",
+        "colors": ["green", "blue"],
+        "consumesRunes": true,
+        "manaCost": 7,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 10,
+          "affectsUnits": true,
+          "affectsHeroes": true
+        }
+      },
+      {
+        "id": "ub-spell-removal",
+        "name": "Arcane Removal",
+        "description": "Generic. Deal 6 damage to target unit or hero.",
+        "cardType": "spell",
+        "colors": ["blue"],
+        "manaCost": 2,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 6,
+          "affectsUnits": true,
+          "affectsHeroes": true
+        }
+      },
+      {
+        "id": "ru-spell-3",
+        "name": "Arcane Burst",
+        "description": "Damage 3 adjacent units",
+        "cardType": "spell",
+        "colors": ["blue"],
+        "manaCost": 4,
+        "consumesRunes": true,
+        "effect": {
+          "type": "adjacent_damage",
+          "damage": 3,
+          "adjacentCount": 3,
+          "affectsUnits": true,
+          "affectsHeroes": false
+        }
+      },
+      {
+        "id": "vrune-spell-counterspell",
+        "name": "Arcane Denial",
+        "description": "Stun target unit for 1 turn. Costs 1UU - heavy blue commitment early.",
+        "cardType": "spell",
+        "colors": ["blue", "blue"],
+        "manaCost": 1,
+        "consumesRunes": true,
+        "effect": {
+          "type": "stun",
+          "stunDuration": 1,
+          "affectsUnits": true,
+          "affectsHeroes": true
+        }
+      },
+      {
+        "id": "ub-spell-removal",
+        "name": "Arcane Removal",
+        "description": "Generic. Deal 6 damage to target unit or hero.",
+        "cardType": "spell",
+        "colors": ["blue"],
+        "manaCost": 2,
+        "effect": {
+          "type": "targeted_damage",
+          "damage": 6,
+          "affectsUnits": true,
+          "affectsHeroes": true
+        }
+      }
+    ],
+    "units": [
+      {
+        "id": "combo-unit-cloud-sprite",
+        "name": "Cloud Sprite",
+        "description": "Bounce. When a hero is deployed to this lane, this gains +1/+1.",
+        "cardType": "generic",
+        "colors": ["blue"],
+        "manaCost": 1,
+        "attack": 1,
+        "health": 1,
+        "maxHealth": 1,
+        "currentHealth": 1
+      },
+      {
+        "id": "gu-finisher-1",
+        "name": "Colossus",
+        "description": "Big finisher",
+        "cardType": "generic",
+        "colors": ["green"],
+        "manaCost": 9,
+        "attack": 9,
+        "health": 9,
+        "maxHealth": 9,
+        "currentHealth": 9
+      },
+      {
+        "id": "ubg-etb-natures-guardian",
+        "name": "Nature's Guardian",
+        "description": "4/5. When this enters, all your units gain +1/+1 until end of turn.",
+        "cardType": "generic",
+        "colors": ["green", "blue"],
+        "manaCost": 5,
+        "attack": 4,
+        "health": 5,
+        "maxHealth": 5,
+        "currentHealth": 5
+      },
+      {
+        "id": "gu-sig-druid-1",
+        "name": "Mana Bloom",
+        "description": "Druid signature - ramp",
+        "cardType": "generic",
+        "colors": ["green"],
+        "manaCost": 3,
+        "attack": 2,
+        "health": 3,
+        "maxHealth": 3,
+        "currentHealth": 3
+      }
+    ]
+  }
+}
+
+
+
+
+

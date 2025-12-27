@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Board } from './components/Board'
-import DraftView from './components/DraftView'
+import { RoguelikeDraftView } from './components/RoguelikeDraftView'
+import { HeroBrowserView } from './components/HeroBrowserView'
+import { CardBrowserView } from './components/CardBrowserView'
 import { GameProvider, useGameContext } from './context/GameContext'
 import './App.css'
 
 function AppContent() {
-  const [view, setView] = useState<'game' | 'draft'>('draft')
+  const [view, setView] = useState<'game' | 'roguelike' | 'heroes' | 'cards'>('roguelike')
   const { initializeRandomGame } = useGameContext()
 
   const handleStartRandomGame = () => {
@@ -17,17 +19,17 @@ function AppContent() {
     <div className="App">
       <div style={{ padding: '20px', borderBottom: '1px solid #ccc', display: 'flex', gap: '12px', alignItems: 'center' }}>
         <button
-          onClick={() => setView('draft')}
+          onClick={() => setView('roguelike')}
           style={{
             padding: '8px 16px',
-            backgroundColor: view === 'draft' ? '#2196F3' : '#ccc',
+            backgroundColor: view === 'roguelike' ? '#2196F3' : '#ccc',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
             cursor: 'pointer',
           }}
         >
-          Draft
+          Roguelike Draft
         </button>
         <button
           onClick={() => setView('game')}
@@ -41,6 +43,32 @@ function AppContent() {
           }}
         >
           Game
+        </button>
+        <button
+          onClick={() => setView('heroes')}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: view === 'heroes' ? '#9C27B0' : '#ccc',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          📖 Browse Heroes
+        </button>
+        <button
+          onClick={() => setView('cards')}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: view === 'cards' ? '#9C27B0' : '#ccc',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          🃏 Browse Cards
         </button>
         <div style={{ marginLeft: 'auto' }}>
           <button
@@ -60,8 +88,12 @@ function AppContent() {
           </button>
         </div>
       </div>
-      {view === 'draft' ? (
-        <DraftView onStartGame={() => setView('game')} />
+      {view === 'roguelike' ? (
+        <RoguelikeDraftView onStartGame={() => setView('game')} />
+      ) : view === 'heroes' ? (
+        <HeroBrowserView onClose={() => setView('roguelike')} />
+      ) : view === 'cards' ? (
+        <CardBrowserView onClose={() => setView('roguelike')} />
       ) : (
         <Board />
       )}

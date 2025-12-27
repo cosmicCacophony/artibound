@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { Card, AttackTarget, GameMetadata } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { getDefaultTargets, resolveCombat } from '../game/combatSystem'
+import { removeRunesFromHero } from '../game/runeSystem'
 
 export function useCombat() {
   const { gameState, setGameState, combatTargetsA, setCombatTargetsA, combatTargetsB, setCombatTargetsB } = useGameContext()
@@ -20,12 +21,14 @@ export function useCombat() {
 
       if (card.cardType === 'hero') {
         // Hero dies - goes to base with death cooldown (1 round before can redeploy)
-        // Gold System: Gold is awarded immediately on kill (5 for heroes, 2 for units)
-        // Item Shop: Appears after combat phases (after both combatA and combatB)
-        // TODO: Integrate battlefield gold-on-kill bonus (requires passing battlefield definition through combat system)
         const hero = card as import('../game/types').Hero
+        
         setGameState(prev => {
           const removeFromLocation = (cards: Card[]) => cards.filter(c => c.id !== card.id)
+          
+          // Remove runes from the hero when it dies
+          const runePoolKey = player === 'player1' ? 'player1RunePool' : 'player2RunePool'
+          const updatedRunePool = removeRunesFromHero(hero, prev.metadata[runePoolKey])
           
           return {
             ...prev,
@@ -41,8 +44,7 @@ export function useCombat() {
             }],
             metadata: {
               ...prev.metadata,
-              // Opponent gets gold for killing the hero
-              [`${opponent}Gold`]: (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 5,
+              [runePoolKey]: updatedRunePool,
               deathCooldowns: {
                 ...prev.metadata.deathCooldowns,
                 [card.id]: 2, // Set cooldown counter to 2 (decreases by 1 each turn, prevents deployment for 1 full round)
@@ -52,8 +54,6 @@ export function useCombat() {
         })
       } else {
         // Generic unit dies - remove completely, track death cooldown
-        // Gold System: Gold is awarded immediately on kill
-        const opponent = player === 'player1' ? 'player2' : 'player1'
         setGameState(prev => {
           return {
             ...prev,
@@ -63,8 +63,6 @@ export function useCombat() {
             },
             metadata: {
               ...prev.metadata,
-              // Opponent gets gold for killing the unit
-              [`${opponent}Gold`]: (prev.metadata[`${opponent}Gold` as keyof GameMetadata] as number) + 2,
               deathCooldowns: {
                 ...prev.metadata.deathCooldowns,
                 [card.id]: 2, // Set cooldown counter to 2 (decreases by 1 each turn, prevents deployment for 1 full round)

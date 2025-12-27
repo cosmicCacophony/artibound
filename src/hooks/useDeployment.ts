@@ -1,7 +1,10 @@
 import { useCallback } from 'react'
-import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT, Hero, ItemCard } from '../game/types'
+import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT, Hero, ItemCard, BaseCard, SpellCard, BloodMagicConfig } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { tier1Items } from '../game/sampleData'
+import { canAffordCard, consumeRunesForCard, addRunesFromHero, removeRunesFromHero, addTemporaryRunes, consumeRunesForCardWithTracking, getBloodMagicCost } from '../game/runeSystem'
+import { canPlayCardInLane } from '../game/colorSystem'
+import { getAllChromaticPayoffs } from '../game/chromaticSystem'
 
 export function useDeployment() {
   const { gameState, setGameState, selectedCard, selectedCardId, setSelectedCardId, getAvailableSlots } = useGameContext()
@@ -11,6 +14,123 @@ export function useDeployment() {
     if (!selectedCardId || !selectedCard) return
     
     const isPlayPhase = metadata.currentPhase === 'play'
+    const isDeployPhase = metadata.currentPhase === 'deploy'
+    
+    // Deploy phase: only heroes can be deployed, and bouncing is allowed
+    if (isDeployPhase) {
+      if (selectedCard.cardType !== 'hero') {
+        alert('Only heroes can be deployed during the deploy phase!')
+        return
+      }
+      if (location !== 'battlefieldA' && location !== 'battlefieldB') {
+        alert('Heroes must be deployed to a battlefield during deploy phase!')
+        return
+      }
+      // Check if hero is on cooldown
+      const cooldownCounter = metadata.deathCooldowns[selectedCard.id]
+      if (cooldownCounter !== undefined && cooldownCounter > 0) {
+        alert(`Hero is on cooldown! ${cooldownCounter} turn${cooldownCounter !== 1 ? 's' : ''} remaining.`)
+        return
+      }
+      
+      // No turn 2 restriction - players can deploy any number of heroes
+      
+      // Handle deploy phase deployment with bounce mechanic
+      setGameState(prev => {
+        const battlefieldKey = location as 'battlefieldA' | 'battlefieldB'
+        const playerKey = selectedCard.owner as 'player1' | 'player2'
+        const battlefield = prev[battlefieldKey][playerKey]
+        
+        // Find slot - use target slot or first available
+        let finalSlot = targetSlot
+        if (!finalSlot) {
+          for (let i = 1; i <= 5; i++) {
+            if (!battlefield.some(c => c.slot === i)) {
+              finalSlot = i
+              break
+            }
+          }
+        }
+        if (!finalSlot) finalSlot = 1 // Default to slot 1 if all full (will bounce)
+        
+        // Check if there's an existing hero in this slot
+        const existingHeroInSlot = battlefield.find(c => c.slot === finalSlot && c.cardType === 'hero') as Hero | undefined
+        
+        // Remove deploying hero from base or deploy zone
+        const newBase = (prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[])
+          .filter(c => c.id !== selectedCard.id)
+        const newDeployZone = (prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[])
+          .filter(c => c.id !== selectedCard.id)
+        
+        // If there's an existing hero, bounce it to base with 1 cooldown
+        let updatedBase = newBase
+        let updatedCooldowns = { ...prev.metadata.deathCooldowns }
+        let updatedRunePool = prev.metadata[`${selectedCard.owner}RunePool` as keyof typeof prev.metadata] as any
+        
+        if (existingHeroInSlot) {
+          // Bounce the existing hero to base
+          const bouncedHero = {
+            ...existingHeroInSlot,
+            location: 'base' as const,
+            slot: undefined,
+          }
+          updatedBase = [...updatedBase, bouncedHero]
+          // Add 1 turn cooldown to bounced hero
+          updatedCooldowns[existingHeroInSlot.id] = 1
+        }
+        
+        // Add runes from the deploying hero (if coming from base/deployZone, not already on battlefield)
+        const wasOnBattlefield = selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB'
+        const isFromBaseOrDeployZone = selectedCard.location === 'base' || selectedCard.location === 'deployZone'
+        if (!wasOnBattlefield && isFromBaseOrDeployZone && (selectedCard as Hero).colors) {
+          const heroColors = (selectedCard as Hero).colors || []
+          updatedRunePool = {
+            runes: [...updatedRunePool.runes, ...heroColors],
+          }
+        }
+        
+        // Remove existing hero from battlefield if bounced, and remove the deploying hero from battlefield (if moving)
+        const updatedBattlefield = battlefield
+          .filter(c => c.id !== selectedCard.id && (existingHeroInSlot ? c.id !== existingHeroInSlot.id : true))
+        
+        // Add the deploying hero to the battlefield
+        const deployedHero = {
+          ...selectedCard,
+          location: battlefieldKey,
+          slot: finalSlot,
+        }
+        
+        return {
+          ...prev,
+          [`${selectedCard.owner}Base`]: updatedBase,
+          [`${selectedCard.owner}DeployZone`]: newDeployZone,
+          [battlefieldKey]: {
+            ...prev[battlefieldKey],
+            [playerKey]: [...updatedBattlefield, deployedHero].sort((a, b) => (a.slot || 0) - (b.slot || 0)),
+          },
+          // Also remove from other battlefield if hero was there
+          ...(selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB' ? {
+            [selectedCard.location]: {
+              ...prev[selectedCard.location as 'battlefieldA' | 'battlefieldB'],
+              [playerKey]: prev[selectedCard.location as 'battlefieldA' | 'battlefieldB'][playerKey]
+                .filter(c => c.id !== selectedCard.id),
+            },
+          } : {}),
+          metadata: {
+            ...prev.metadata,
+            deathCooldowns: updatedCooldowns,
+            [`${selectedCard.owner}RunePool`]: updatedRunePool,
+            // Increment heroes deployed counter (only counts if deploying from base/deployZone, not moving between battlefields)
+            ...(selectedCard.location === 'base' || selectedCard.location === 'deployZone' ? {
+              [`${selectedCard.owner}HeroesDeployedThisTurn`]: ((prev.metadata[`${selectedCard.owner}HeroesDeployedThisTurn` as keyof typeof prev.metadata] as number) || 0) + 1,
+            } : {}),
+          },
+        }
+      })
+      
+      setSelectedCardId(null)
+      return
+    }
     
     if (!isPlayPhase) {
       alert(`Cannot deploy during ${metadata.currentPhase} phase!`)
@@ -105,16 +225,91 @@ export function useDeployment() {
       }
     }
     
-    // Check mana cost (spells don't cost mana to move to base, only when played)
+    // Check costs (heroes don't cost runes - they GIVE runes when deployed)
     const isSpell = selectedCard.cardType === 'spell'
-    const manaCost = selectedCard.manaCost || 0
+    const isHero = selectedCard.cardType === 'hero'
+    const cardTemplate = selectedCard as BaseCard
     const playerMana = selectedCard.owner === 'player1' ? metadata.player1Mana : metadata.player2Mana
+    const playerRunePool = selectedCard.owner === 'player1' ? metadata.player1RunePool : metadata.player2RunePool
     
-    // Only check mana for non-spells, or spells being deployed to battlefields (not base)
-    if (!isSpell || location !== 'base') {
-      if (manaCost > playerMana) {
-        alert(`Not enough mana! Need ${manaCost}, have ${playerMana}`)
+    // Only check costs for non-heroes, or spells being deployed to battlefields (not base)
+    // Heroes don't cost runes - they generate runes when deployed
+    if (!isHero && (!isSpell || location !== 'base')) {
+      // Check mana cost
+      if (cardTemplate.manaCost && cardTemplate.manaCost > playerMana) {
+        alert(`Not enough mana! Need ${cardTemplate.manaCost}, have ${playerMana}`)
         return
+      }
+      
+      // Check rune requirements (color requirements) - only for non-heroes
+      if (!canAffordCard(cardTemplate, playerMana, playerRunePool)) {
+        // Check if player has Blood Magic ability
+        const playerHeroes = [
+          ...gameState.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
+          ...gameState.battlefieldB[selectedCard.owner as 'player1' | 'player2']
+        ].filter(c => c.cardType === 'hero') as Hero[]
+        
+        // Find any hero with blood magic, or check card's built-in Blood Magic
+        const bloodMagicHero = playerHeroes.find(h => h.ability?.bloodMagic?.enabled)
+        const cardBloodMagic = cardTemplate.bloodMagic
+        
+        // Use card's built-in Blood Magic if available, otherwise check hero
+        const bloodMagicConfig = cardBloodMagic || bloodMagicHero?.ability?.bloodMagic
+        
+        if (bloodMagicConfig) {
+          // Check if Blood Magic can substitute
+          const bloodMagicResult = getBloodMagicCost(
+            cardTemplate,
+            playerRunePool,
+            bloodMagicConfig
+          )
+          
+          if (bloodMagicResult.canCast) {
+            const totalLifeCost = bloodMagicResult.lifeCostPerTower * 2
+            const runeList = bloodMagicResult.missingRunes.join(', ')
+            const confirmed = confirm(
+              `Blood Magic: Pay ${totalLifeCost} tower life to cast ${cardTemplate.name}?\n\n` +
+              `Missing runes: ${runeList}\n` +
+              `Cost: ${bloodMagicResult.lifeCostPerTower} life per tower (${totalLifeCost} total)\n\n` +
+              `This will damage both of your towers!`
+            )
+            
+            if (!confirmed) {
+              return
+            }
+            
+            // Store blood magic usage for deployment phase
+            // We'll apply the tower damage during actual deployment
+            metadata.pendingBloodMagicCost = totalLifeCost
+          } else {
+            // Can't afford even with blood magic
+            const missingRunes = cardTemplate.colors?.filter(color => {
+              const available = playerRunePool.runes.filter(r => r === color).length
+              return available === 0
+            }) || []
+            if (missingRunes.length > 0) {
+              const reason = bloodMagicResult.missingRunes.length > (bloodMagicConfig.maxSubstitutions || Infinity)
+                ? ` (exceeds max ${bloodMagicConfig.maxSubstitutions} substitutions)`
+                : ''
+              alert(`Missing required runes: ${missingRunes.join(', ')}${reason}`)
+            } else {
+              alert(`Cannot afford ${cardTemplate.name}`)
+            }
+            return
+          }
+        } else {
+          // No blood magic available
+          const missingRunes = cardTemplate.colors?.filter(color => {
+            const available = playerRunePool.runes.filter(r => r === color).length
+            return available === 0
+          }) || []
+          if (missingRunes.length > 0) {
+            alert(`Missing required runes: ${missingRunes.join(', ')}`)
+          } else {
+            alert(`Cannot afford ${cardTemplate.name}`)
+          }
+          return
+        }
       }
     }
 
@@ -124,10 +319,20 @@ export function useDeployment() {
         ? gameState.battlefieldA[selectedCard.owner as 'player1' | 'player2']
         : gameState.battlefieldB[selectedCard.owner as 'player1' | 'player2']
       
+      // Check lane color requirements for non-hero cards
+      if (!isHero && cardTemplate.colors && cardTemplate.colors.length > 0) {
+        const laneHeroes = battlefield.filter(c => c.cardType === 'hero') as Hero[]
+        if (!canPlayCardInLane(cardTemplate, laneHeroes)) {
+          const heroColors = laneHeroes.flatMap(h => h.colors || [])
+          alert(`Cannot play ${cardTemplate.name} here! Requires ${cardTemplate.colors.join('+')} hero(es), but lane has: ${heroColors.length > 0 ? heroColors.join(', ') : 'no heroes'}`)
+          return
+        }
+      }
+      
       const availableSlots = getAvailableSlots(battlefield)
       
       if (selectedCard.cardType !== 'generic' && availableSlots <= 0 && !targetSlot) {
-        alert('Battlefield is full! Maximum 4 slots.')
+        alert('Battlefield is full! Maximum 5 slots.')
         return
       }
 
@@ -200,14 +405,120 @@ export function useDeployment() {
           ? { ...selectedCard, location, currentHealth: (selectedCard as any).maxHealth, slot: undefined }
           : { ...selectedCard, location, slot: undefined }
         
-        // Deduct mana (spells don't cost mana to move to base, only when played)
+        // Handle runes and mana costs
+        const runePoolKey = `${selectedCard.owner}RunePool` as keyof GameMetadata
         const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
-        const shouldDeductMana = !isSpell // Only deduct mana for non-spells
+        const isHeroCard = selectedCard.cardType === 'hero'
+        
+        let updatedRunePool = prev.metadata[runePoolKey] as any
+        let updatedMana = prev.metadata[manaKey] as number
+        let bloodMagicTowerUpdates: Partial<GameMetadata> = {}
+        
+        // Heroes don't cost runes - they GIVE runes when deployed
+        // Bouncing heroes does NOT remove runes - bouncing should be strategic, not punishing
+        // Non-hero cards (including spells): pay mana and consume runes
+        if (!isHeroCard) {
+          // Pay mana cost
+          if (cardTemplate.manaCost) {
+            updatedMana = updatedMana - cardTemplate.manaCost
+          }
+          // Consume runes for color requirements (only if consumesRunes: true)
+          // Track which colors were consumed for chromatic payoff triggers
+          const { newPool, consumedColors } = consumeRunesForCardWithTracking(cardTemplate, updatedRunePool)
+          updatedRunePool = newPool
+          
+          // Handle spell effects that add temporary runes (like Dark Ritual)
+          if (cardTemplate.cardType === 'spell' && cardTemplate.effect) {
+            const spellCard = cardTemplate as SpellCard
+            const spellEffect = spellCard.effect
+            
+            if (spellEffect.type === 'add_temporary_runes' && spellEffect.runeColors) {
+              updatedRunePool = addTemporaryRunes(updatedRunePool, spellEffect.runeColors as any)
+            }
+            
+            // Handle mana refund for "free spells" (Urza block inspired)
+            if (spellCard.refundMana && spellCard.refundMana > 0) {
+              updatedMana = updatedMana + spellCard.refundMana
+            }
+          }
+          
+          // Check for chromatic payoffs (green's rune identity)
+          if (consumedColors.length > 0) {
+            // Get all player's heroes from both battlefields
+            const playerHeroes = [
+              ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
+              ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']
+            ].filter(card => card.cardType === 'hero') as Hero[]
+            
+            const chromaticPayoffs = getAllChromaticPayoffs(playerHeroes, consumedColors)
+            
+            // Apply payoff effects
+            for (const { hero, payoff } of chromaticPayoffs) {
+              switch (payoff.effectType) {
+                case 'mana':
+                  updatedMana += payoff.effectValue
+                  console.log(`Chromatic: ${hero.name} grants ${payoff.effectValue} mana`)
+                  break
+                case 'heal':
+                  // Healing will be applied to the hero in the battlefield state update
+                  console.log(`Chromatic: ${hero.name} heals for ${payoff.effectValue}`)
+                  break
+                case 'buff':
+                  // Buff will be applied to the hero in the battlefield state update
+                  console.log(`Chromatic: ${hero.name} gains +${payoff.effectValue} attack`)
+                  break
+                case 'damage':
+                  console.log(`Chromatic: ${hero.name} deals ${payoff.effectValue} damage`)
+                  break
+                case 'draw':
+                  console.log(`Chromatic: Draw ${payoff.effectValue} cards`)
+                  break
+                case 'rune':
+                  console.log(`Chromatic: Add ${payoff.effectValue} runes`)
+                  break
+              }
+            }
+          }
+          
+          // Apply Blood Magic tower damage (black's rune identity)
+          if (prev.metadata.pendingBloodMagicCost && prev.metadata.pendingBloodMagicCost > 0) {
+            const lifeCost = prev.metadata.pendingBloodMagicCost
+            const towerAKey = `towerA_${selectedCard.owner}_HP` as const
+            const towerBKey = `towerB_${selectedCard.owner}_HP` as const
+            const costPerTower = lifeCost / 2
+            
+            bloodMagicTowerUpdates = {
+              [towerAKey]: Math.max(0, prev.metadata[towerAKey] - costPerTower),
+              [towerBKey]: Math.max(0, prev.metadata[towerBKey] - costPerTower),
+              pendingBloodMagicCost: undefined // Clear the pending cost
+            }
+            
+            // Track life spent for WB hero (Life Channeler) - increment counters
+            const playerHeroes = [
+              ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
+              ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']
+            ].filter(card => card.cardType === 'hero') as Hero[]
+            
+            const wbHero = playerHeroes.find(h => h.id === 'wb-hero-life-channeler')
+            if (wbHero) {
+              const currentCounters = prev.metadata.heroCounters?.[wbHero.id] || 0
+              const newCounters = currentCounters + lifeCost
+              bloodMagicTowerUpdates.heroCounters = {
+                ...prev.metadata.heroCounters,
+                [wbHero.id]: newCounters
+              }
+              console.log(`Life Channeler: Gained ${lifeCost} counters (total: ${newCounters})`)
+            }
+            
+            console.log(`Blood Magic: Paid ${lifeCost} tower life (${costPerTower} per tower) to cast ${cardTemplate.name}`)
+          }
+        }
         
         return {
           ...prev,
           [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
           [`${selectedCard.owner}Base`]: [...prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[], healedCard],
+          [`${selectedCard.owner}DeployZone`]: removeFromLocation(prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[]),
           battlefieldA: {
             ...prev.battlefieldA,
             [selectedCard.owner]: removeFromLocation(prev.battlefieldA[selectedCard.owner as 'player1' | 'player2']),
@@ -218,8 +529,10 @@ export function useDeployment() {
           },
           metadata: {
             ...prev.metadata,
-            ...(isHero ? { [movedToBaseKey]: true } : {}),
-            ...(shouldDeductMana ? { [manaKey]: (prev.metadata[manaKey] as number) - manaCost } : {}),
+            ...(isHeroCard ? { [movedToBaseKey]: true } : {}),
+            [runePoolKey]: updatedRunePool,
+            ...(!isHeroCard ? { [manaKey]: updatedMana } : {}),
+            ...bloodMagicTowerUpdates,
           },
         }
       } else if (location === 'battlefieldA' || location === 'battlefieldB') {
@@ -257,12 +570,131 @@ export function useDeployment() {
             if (otherCard) {
               // Swap positions
               const otherBattlefieldKey = location === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
+              const runePoolKey = `${selectedCard.owner}RunePool` as keyof GameMetadata
               const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
+              
+              // Handle runes and mana
+              let updatedRunePool = prev.metadata[runePoolKey] as any
+              let updatedMana = prev.metadata[manaKey] as number
+              let bloodMagicTowerUpdates: Partial<GameMetadata> = {}
+              const isHeroCard = selectedCard.cardType === 'hero'
+              
+        // If hero is deploying, add runes from that hero
+        if (isHeroCard && (location === 'battlefieldA' || location === 'battlefieldB')) {
+          // Hero is deploying - add runes from that hero
+          // Find the card in previous state to check its actual location
+          const prevCard = [...prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[],
+                            ...prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[],
+                            ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
+                            ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']]
+                            .find(c => c.id === selectedCardId)
+          // Check if hero was previously on a battlefield (if so, don't add runes again)
+          const wasOnBattlefield = prevCard && (prevCard.location === 'battlefieldA' || prevCard.location === 'battlefieldB')
+          if (!wasOnBattlefield) {
+            // Hero is deploying for the first time (from base/hand) - add runes
+            updatedRunePool = addRunesFromHero(selectedCard as Hero, updatedRunePool)
+          }
+        } else if (!isHeroCard) {
+                // Non-hero cards (including spells): pay mana and consume runes
+                // Pay mana cost
+                if (cardTemplate.manaCost) {
+                  updatedMana = updatedMana - cardTemplate.manaCost
+                }
+                // Consume runes for color requirements (only if consumesRunes: true)
+                // Track which colors were consumed for chromatic payoff triggers
+                const { newPool, consumedColors } = consumeRunesForCardWithTracking(cardTemplate, updatedRunePool)
+                updatedRunePool = newPool
+                
+                // Handle spell effects that add temporary runes (like Dark Ritual)
+                if (cardTemplate.cardType === 'spell' && cardTemplate.effect) {
+                  const spellCard = cardTemplate as SpellCard
+                  const spellEffect = spellCard.effect
+                  
+                  if (spellEffect.type === 'add_temporary_runes' && spellEffect.runeColors) {
+                    updatedRunePool = addTemporaryRunes(updatedRunePool, spellEffect.runeColors as any)
+                  }
+                  
+                  // Handle mana refund for "free spells" (Urza block inspired)
+                  if (spellCard.refundMana && spellCard.refundMana > 0) {
+                    updatedMana = updatedMana + spellCard.refundMana
+                  }
+                }
+                
+                // Check for chromatic payoffs (green's rune identity)
+                if (consumedColors.length > 0) {
+                  // Get all player's heroes from both battlefields
+                  const playerHeroes = [
+                    ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
+                    ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']
+                  ].filter(card => card.cardType === 'hero') as Hero[]
+                  
+                  const chromaticPayoffs = getAllChromaticPayoffs(playerHeroes, consumedColors)
+                  
+                  // Apply payoff effects
+                  for (const { hero, payoff } of chromaticPayoffs) {
+                    switch (payoff.effectType) {
+                      case 'mana':
+                        updatedMana += payoff.effectValue
+                        console.log(`Chromatic: ${hero.name} grants ${payoff.effectValue} mana`)
+                        break
+                      case 'heal':
+                        console.log(`Chromatic: ${hero.name} heals for ${payoff.effectValue}`)
+                        break
+                      case 'buff':
+                        console.log(`Chromatic: ${hero.name} gains +${payoff.effectValue} attack`)
+                        break
+                      case 'damage':
+                        console.log(`Chromatic: ${hero.name} deals ${payoff.effectValue} damage`)
+                        break
+                      case 'draw':
+                        console.log(`Chromatic: Draw ${payoff.effectValue} cards`)
+                        break
+                      case 'rune':
+                        console.log(`Chromatic: Add ${payoff.effectValue} runes`)
+                        break
+                    }
+                  }
+                }
+                
+                // Apply Blood Magic tower damage (black's rune identity)
+                if (prev.metadata.pendingBloodMagicCost && prev.metadata.pendingBloodMagicCost > 0) {
+                  const lifeCost = prev.metadata.pendingBloodMagicCost
+                  const towerAKey = `towerA_${selectedCard.owner}_HP` as const
+                  const towerBKey = `towerB_${selectedCard.owner}_HP` as const
+                  const costPerTower = lifeCost / 2
+                  
+                  bloodMagicTowerUpdates = {
+                    [towerAKey]: Math.max(0, prev.metadata[towerAKey] - costPerTower),
+                    [towerBKey]: Math.max(0, prev.metadata[towerBKey] - costPerTower),
+                    pendingBloodMagicCost: undefined // Clear the pending cost
+                  }
+                  
+                  // Track life spent for WB hero (Life Channeler) - increment counters
+                  const playerHeroes = [
+                    ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
+                    ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']
+                  ].filter(card => card.cardType === 'hero') as Hero[]
+                  
+                  const wbHero = playerHeroes.find(h => h.id === 'wb-hero-life-channeler')
+                  if (wbHero) {
+                    const currentCounters = prev.metadata.heroCounters?.[wbHero.id] || 0
+                    const newCounters = currentCounters + lifeCost
+                    bloodMagicTowerUpdates.heroCounters = {
+                      ...prev.metadata.heroCounters,
+                      [wbHero.id]: newCounters
+                    }
+                    console.log(`Life Channeler: Gained ${lifeCost} counters (total: ${newCounters})`)
+                  }
+                  
+                  console.log(`Blood Magic: Paid ${lifeCost} tower life (${costPerTower} per tower) to cast ${cardTemplate.name}`)
+                }
+              }
               
               return {
                 ...prev,
                 [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
                 [`${selectedCard.owner}Base`]: removeFromLocation(prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[]),
+                [`${selectedCard.owner}DeployZone`]: removeFromLocation(prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[]),
                 [otherBattlefieldKey]: {
                   ...prev[otherBattlefieldKey],
                   [selectedCard.owner]: removeFromLocation(prev[otherBattlefieldKey][selectedCard.owner as 'player1' | 'player2']),
@@ -279,7 +711,9 @@ export function useDeployment() {
                 },
                 metadata: {
                   ...prev.metadata,
-                  [manaKey]: (prev.metadata[manaKey] as number) - manaCost,
+                  [runePoolKey]: updatedRunePool,
+                  ...(!isHeroCard ? { [manaKey]: updatedMana } : {}),
+                  ...bloodMagicTowerUpdates,
                 },
               }
             }
@@ -287,12 +721,137 @@ export function useDeployment() {
         }
 
         const otherBattlefieldKey = location === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
+        const runePoolKey = `${selectedCard.owner}RunePool` as keyof GameMetadata
         const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
+        
+        // Pay mana and consume runes if needed
+        let updatedRunePool = prev.metadata[runePoolKey] as any
+        let updatedMana = prev.metadata[manaKey] as number
+        let bloodMagicTowerUpdates: Partial<GameMetadata> = {}
+        
+        // Check if this is a hero card
+        const isHeroCard = selectedCard.cardType === 'hero'
+        
+        // Heroes don't cost mana or runes - they GIVE runes when deployed
+        // Non-hero cards (including spells): pay mana and consume runes
+        if (!isHeroCard) {
+          // Pay mana cost
+          if (cardTemplate.manaCost) {
+            updatedMana = updatedMana - cardTemplate.manaCost
+          }
+          // Consume runes for color requirements (only if consumesRunes: true)
+          // Track which colors were consumed for chromatic payoff triggers
+          const { newPool, consumedColors } = consumeRunesForCardWithTracking(cardTemplate, updatedRunePool)
+          updatedRunePool = newPool
+          
+          // Handle spell effects that add temporary runes (like Dark Ritual)
+          if (cardTemplate.cardType === 'spell' && cardTemplate.effect) {
+            const spellCard = cardTemplate as SpellCard
+            const spellEffect = spellCard.effect
+            
+            if (spellEffect.type === 'add_temporary_runes' && spellEffect.runeColors) {
+              updatedRunePool = addTemporaryRunes(updatedRunePool, spellEffect.runeColors as any)
+            }
+            
+            // Handle mana refund for "free spells" (Urza block inspired)
+            if (spellCard.refundMana && spellCard.refundMana > 0) {
+              updatedMana = updatedMana + spellCard.refundMana
+            }
+          }
+          
+          // Check for chromatic payoffs (green's rune identity)
+          if (consumedColors.length > 0) {
+            // Get all player's heroes from both battlefields
+            const playerHeroes = [
+              ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
+              ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']
+            ].filter(card => card.cardType === 'hero') as Hero[]
+            
+            const chromaticPayoffs = getAllChromaticPayoffs(playerHeroes, consumedColors)
+            
+            // Apply payoff effects
+            for (const { hero, payoff } of chromaticPayoffs) {
+              switch (payoff.effectType) {
+                case 'mana':
+                  updatedMana += payoff.effectValue
+                  console.log(`Chromatic: ${hero.name} grants ${payoff.effectValue} mana`)
+                  break
+                case 'heal':
+                  console.log(`Chromatic: ${hero.name} heals for ${payoff.effectValue}`)
+                  break
+                case 'buff':
+                  console.log(`Chromatic: ${hero.name} gains +${payoff.effectValue} attack`)
+                  break
+                case 'damage':
+                  console.log(`Chromatic: ${hero.name} deals ${payoff.effectValue} damage`)
+                  break
+                case 'draw':
+                  console.log(`Chromatic: Draw ${payoff.effectValue} cards`)
+                  break
+                case 'rune':
+                  console.log(`Chromatic: Add ${payoff.effectValue} runes`)
+                  break
+              }
+            }
+          }
+          
+          // Apply Blood Magic tower damage (black's rune identity)
+          if (prev.metadata.pendingBloodMagicCost && prev.metadata.pendingBloodMagicCost > 0) {
+            const lifeCost = prev.metadata.pendingBloodMagicCost
+            const towerAKey = `towerA_${selectedCard.owner}_HP` as const
+            const towerBKey = `towerB_${selectedCard.owner}_HP` as const
+            const costPerTower = lifeCost / 2
+            
+            bloodMagicTowerUpdates = {
+              [towerAKey]: Math.max(0, prev.metadata[towerAKey] - costPerTower),
+              [towerBKey]: Math.max(0, prev.metadata[towerBKey] - costPerTower),
+              pendingBloodMagicCost: undefined // Clear the pending cost
+            }
+            
+            // Track life spent for WB hero (Life Channeler) - increment counters
+            const playerHeroes = [
+              ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
+              ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']
+            ].filter(card => card.cardType === 'hero') as Hero[]
+            
+            const wbHero = playerHeroes.find(h => h.id === 'wb-hero-life-channeler')
+            if (wbHero) {
+              const currentCounters = prev.metadata.heroCounters?.[wbHero.id] || 0
+              const newCounters = currentCounters + lifeCost
+              bloodMagicTowerUpdates.heroCounters = {
+                ...prev.metadata.heroCounters,
+                [wbHero.id]: newCounters
+              }
+              console.log(`Life Channeler: Gained ${lifeCost} counters (total: ${newCounters})`)
+            }
+            
+            console.log(`Blood Magic: Paid ${lifeCost} tower life (${costPerTower} per tower) to cast ${cardTemplate.name}`)
+          }
+        }
+        
+        // If hero is deploying to a battlefield, add runes from that hero
+        if (isHeroCard && (location === 'battlefieldA' || location === 'battlefieldB')) {
+          // Hero is deploying - add runes from that hero (one-time)
+          // Find the card in previous state to check its actual location
+          const prevCard = [...prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[],
+                            ...prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[],
+                            ...prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[],
+                            ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
+                            ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']]
+                            .find(c => c.id === selectedCardId)
+          // Check if hero was previously on a battlefield (if so, don't add runes again)
+          const wasOnBattlefield = prevCard && (prevCard.location === 'battlefieldA' || prevCard.location === 'battlefieldB')
+          if (!wasOnBattlefield) {
+            // Hero is deploying for the first time (from base/deployZone/hand) - add runes
+            updatedRunePool = addRunesFromHero(selectedCard as Hero, updatedRunePool)
+          }
+        }
         
         return {
           ...prev,
           [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
           [`${selectedCard.owner}Base`]: removeFromLocation(prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[]),
+          [`${selectedCard.owner}DeployZone`]: removeFromLocation(prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[]),
           // Remove from the other battlefield if the card is moving from there
           [otherBattlefieldKey]: {
             ...prev[otherBattlefieldKey],
@@ -309,7 +868,9 @@ export function useDeployment() {
           },
           metadata: {
             ...prev.metadata,
-            [manaKey]: (prev.metadata[manaKey] as number) - manaCost,
+            [runePoolKey]: updatedRunePool,
+            ...(!isHeroCard ? { [manaKey]: updatedMana } : {}),
+            ...bloodMagicTowerUpdates,
           },
         }
       }
@@ -404,6 +965,9 @@ export function useDeployment() {
   }, [setGameState])
 
   const handleRemoveFromBattlefield = useCallback((card: Card, location: 'battlefieldA' | 'battlefieldB') => {
+    // Award gold to opponent when removing a generic unit (creep)
+    const opponent = card.owner === 'player1' ? 'player2' : 'player1'
+    
     // If stacked, unstack it
     if (card.cardType === 'generic') {
       const genericCard = card as GenericUnit
@@ -436,21 +1000,59 @@ export function useDeployment() {
               [card.owner]: updatedBattlefield,
             },
             [`${card.owner}Base`]: [...prev[`${card.owner}Base` as keyof typeof prev] as Card[], { ...cleanCard, location: 'base' }],
+            metadata: {
+              ...prev.metadata,
+              // No card draw for manually removing units (only combat kills give card draw)
+            },
           }
         })
         return
       }
     }
     
-    // Regular removal
-    setGameState(prev => ({
-      ...prev,
-      [location]: {
-        ...prev[location],
-        [card.owner]: prev[location][card.owner as 'player1' | 'player2'].filter(c => c.id !== card.id),
-      },
-      [`${card.owner}Base`]: [...prev[`${card.owner}Base` as keyof typeof prev] as Card[], { ...card, location: 'base' }],
-    }))
+    // Regular removal - award gold to opponent if removing a generic unit or hero
+    setGameState(prev => {
+      const isHero = card.cardType === 'hero'
+      const hero = isHero ? card as import('../game/types').Hero : null
+      
+      // When hero is removed, it counts as dying: set health to 0 and add 2-turn cooldown
+      const cardToBase = isHero && hero
+        ? {
+            ...hero,
+            location: 'base' as const,
+            currentHealth: 0, // Dead - will heal to full in base after cooldown
+            slot: undefined,
+          }
+        : { ...card, location: 'base' as const }
+      
+      const updatedDeathCooldowns = isHero && hero
+        ? {
+            ...prev.metadata.deathCooldowns,
+            [card.id]: 2, // Set cooldown counter to 2 (decreases by 1 each turn, prevents deployment for 1 full round)
+          }
+        : prev.metadata.deathCooldowns
+      
+      // Remove runes from the hero when it's removed via X button (counts as death)
+      const runePoolKey = card.owner === 'player1' ? 'player1RunePool' : 'player2RunePool'
+      const updatedRunePool = isHero && hero 
+        ? removeRunesFromHero(hero, prev.metadata[runePoolKey])
+        : prev.metadata[runePoolKey]
+      
+      return {
+        ...prev,
+        [location]: {
+          ...prev[location],
+          [card.owner]: prev[location][card.owner as 'player1' | 'player2'].filter(c => c.id !== card.id),
+        },
+        [`${card.owner}Base`]: [...prev[`${card.owner}Base` as keyof typeof prev] as Card[], cardToBase],
+        metadata: {
+          ...prev.metadata,
+          [runePoolKey]: updatedRunePool,
+          // No card draw for manually removing units/heroes (only combat kills give card draw)
+          deathCooldowns: updatedDeathCooldowns,
+        },
+      }
+    })
   }, [setGameState])
 
   const handleEquipItem = useCallback((hero: Hero, itemCard: ItemCard, battlefieldId: 'battlefieldA' | 'battlefieldB') => {
@@ -508,6 +1110,18 @@ export function useDeployment() {
       // Remove item from hand
       const updatedHand = (prev[`${itemCard.owner}Hand` as keyof typeof prev] as Card[])
         .filter(c => c.id !== itemCard.id)
+      
+      // Apply tower armor if item has tower_armor special effect
+      let updatedMetadata = { ...prev.metadata }
+      if (item.specialEffects?.includes('tower_armor') && item.armor) {
+        const towerArmorKey = battlefieldId === 'battlefieldA'
+          ? (player === 'player1' ? 'towerA_player1_Armor' : 'towerA_player2_Armor')
+          : (player === 'player1' ? 'towerB_player1_Armor' : 'towerB_player2_Armor')
+        updatedMetadata = {
+          ...updatedMetadata,
+          [towerArmorKey]: (updatedMetadata[towerArmorKey as keyof typeof updatedMetadata] as number) + item.armor,
+        }
+      }
       
       // Equipping an item is an action - pass both action AND initiative to opponent
       const otherPlayer = itemCard.owner === 'player1' ? 'player2' : 'player1'

@@ -1,7 +1,56 @@
 # Artibound Design Documentation Index
 
-> **Last Updated:** 2024-12-XX  
+> **Last Updated:** 2025-12-25  
 > **Purpose:** Central index of all design documentation with metadata for tracking relevance and cleanup
+
+---
+
+## 🌟 START HERE: Master Guides (Read These First)
+
+**These three guides contain everything you need to understand and work on Artibound:**
+
+### 1. **[DESIGN_PHILOSOPHY_GUIDE.md](./DESIGN_PHILOSOPHY_GUIDE.md)** ⭐⭐⭐
+**Purpose:** The "why" behind Artibound - core design philosophy, rune death mechanic, PVE focus
+
+**Read this to understand:**
+- What makes Artibound unique (full draft, 2-battlefield, rune death mechanic)
+- The rune system and how it enables multicolor
+- Bouncing philosophy and why it matters
+- Updated color → mana system (3-mana = dual color!)
+- PVE roguelike focus
+
+**~500 lines | Essential reading for anyone working on the game**
+
+---
+
+### 2. **[CARD_CREATION_MASTER_GUIDE.md](./CARD_CREATION_MASTER_GUIDE.md)** ⭐⭐⭐
+**Purpose:** Complete workflow for creating any card in Artibound
+
+**Read this to learn:**
+- Step-by-step card creation process
+- Updated power level → mana → color system
+- Rune cost design philosophy
+- 3-color card design principles
+- Common patterns and examples
+- How to test cards vs bosses
+
+**~600 lines | Use this every time you create a card**
+
+---
+
+### 3. **[ARCHETYPE_DESIGN_GUIDE.md](./ARCHETYPE_DESIGN_GUIDE.md)** ⭐⭐⭐
+**Purpose:** Complete reference for all archetypes and boss matchups
+
+**Read this to understand:**
+- All 8 core archetypes (RW, UB, UBG, GU, RGW, Black-based, 5-color)
+- Each archetype's identity, win condition, and key cards
+- Rune strategy and bouncing frequency per archetype
+- Boss matchups (vs RW Legion boss)
+- Draft strategies for each archetype
+
+**~700 lines | Reference this when drafting or balancing archetypes**
+
+---
 
 ## Document Metadata System
 
@@ -28,20 +77,7 @@ All documentation files should include a metadata header with:
 
 ## Core Design Documents
 
-### **core/MULTICOLOR_DESIGN.md** ⭐
-**Purpose**: Core system design - 3-4 color decks, bouncing mechanics, strategic hero rotation
-**When to reference**: Understanding the fundamental game system, bouncing decisions, multicolor strategy
-**Key concepts**: Bouncing, hero rotation, 2-battlefield structure, color requirements
-
-### **core/CARD_DESIGN_AND_COUNTERPLAY.md**
-**Purpose**: Counterplay mechanics, items, hero abilities, deployment strategy
-**When to reference**: Designing cards with counterplay, understanding skill expression
-**Key concepts**: Counterplay items, hero abilities, secret deployment, initiative
-
-### **core/DRAFT_PHILOSOPHY_AND_DEVELOPMENT_APPROACH.md** ⭐
-**Purpose**: Core philosophy for archetype development and future draft environment
-**When to reference**: Making design decisions, understanding development approach, planning archetypes
-**Key concepts**: Gameplay-first development, archetype power tiers, draft skill expression, build-around design
+*Note: Core design docs have been consolidated into the 3 master guides. See "START HERE" section above.*
 
 ---
 
@@ -74,11 +110,6 @@ All documentation files should include a metadata header with:
 ### **design/ITEMS_AND_BATTLEFIELD_UPGRADES.md**
 **Purpose**: Items and battlefield upgrade systems
 **When to reference**: Designing items, understanding upgrade mechanics
-
-### **design/THREE_COLOR_CARD_DESIGN_PRINCIPLES.md** ⭐
-**Purpose**: Design principles for 3-color cards based on gameplay testing
-**When to reference**: Designing 3-color cards, understanding commitment vs value trade-offs
-**Key concepts**: 3-color cards at 4-5 mana should be reactive, generate card advantage, create multiple bodies, or have cross-lane interaction
 
 ---
 
@@ -162,39 +193,36 @@ All documentation files should include a metadata header with:
 - **Counterplay**: Every strategy should have counterplay options
 
 ### Archetype Design
-- **RW (2 colors)**: Aggro, go-wide, board presence
-- **UB/UBG (2-3 colors)**: Control, removal, card advantage, late game
+- **RW Legion (2 colors)**: Tier 1 - Aggro, go-wide, board presence, consistent baseline deck
+- **UB AOE Damage (2 colors)**: Tier 2-3 - Control, removal, AOE damage, but lacks big finishers. Needs 3-4 colors to reach Tier 1 (access to Exorcism or other finishers)
+- **UB/UBG (3-4 colors)**: Tier 1-2 - Control with finishers, removal, card advantage, late game
 
 ---
 
 ## Quick Reference: Which Doc to Use?
 
+**🌟 I'm new to Artibound - where do I start?**
+→ Read the 3 master guides (see "START HERE" section at top)
+
 **Designing a new card?**
-→ `design/ARTIFACT_CARD_ANALYSIS.md` (power level system)
-→ `core/CARD_DESIGN_AND_COUNTERPLAY.md` (counterplay principles)
-→ `design/RW_UB_CARDS.md` or `design/MULTICOLOR_CARD_EXAMPLES.md` (examples)
+→ **`CARD_CREATION_MASTER_GUIDE.md`** (complete workflow) ⭐
 
-**Designing a 3-color card?**
-→ `design/THREE_COLOR_CARD_DESIGN_PRINCIPLES.md` (commitment vs value principles)
+**Understanding an archetype?**
+→ **`ARCHETYPE_DESIGN_GUIDE.md`** (all archetypes + boss matchups) ⭐
 
-**Understanding Exorcism positioning?**
-→ `analysis/EXORCISM_BOARD_STATES.md`
-
-**Understanding early game decisions?**
-→ `analysis/EARLY_GAME_DECISIONS.md`
+**Understanding the core philosophy?**
+→ **`DESIGN_PHILOSOPHY_GUIDE.md`** (rune death, bouncing, PVE focus) ⭐
 
 **Understanding bouncing?**
-→ `core/MULTICOLOR_DESIGN.md`
+→ **`DESIGN_PHILOSOPHY_GUIDE.md`** (bouncing section)
+
+**Understanding rune system?**
+→ **`DESIGN_PHILOSOPHY_GUIDE.md`** (rune death mechanic)
+→ **`CARD_CREATION_MASTER_GUIDE.md`** (rune artifacts and tension)
 
 **Planning a playtest?**
 → `testing/FAST_TESTING_AND_DESIGN.md` (efficient approach)
 → `testing/TESTING_PLAN.md` (comprehensive scenarios)
-
-**Understanding the core system?**
-→ `core/MULTICOLOR_DESIGN.md`
-
-**Understanding draft philosophy and development approach?**
-→ `core/DRAFT_PHILOSOPHY_AND_DEVELOPMENT_APPROACH.md`
 
 **Understanding technical architecture?**
 → `architecture/ARCHITECTURE.md`
@@ -224,19 +252,19 @@ All documentation files should include a metadata header with:
 
 | Document | Status | Relevance | Category | Last Updated | Notes |
 |----------|--------|-----------|----------|--------------|-------|
+| **DESIGN_PHILOSOPHY_GUIDE.md** | Active | High | Design | 2025-12-25 | ⭐ Master guide - Core philosophy |
+| **CARD_CREATION_MASTER_GUIDE.md** | Active | High | Design | 2025-12-25 | ⭐ Master guide - Card creation |
+| **ARCHETYPE_DESIGN_GUIDE.md** | Active | High | Design | 2025-12-25 | ⭐ Master guide - All archetypes |
 | **architecture/ARCHITECTURE.md** | Active | High | Architecture | 2024-12-XX | Technical architecture |
 | **architecture/DEVELOPMENT.md** | Active | High | Architecture | 2024-12-XX | Living document - update existing sections |
 | **architecture/IMPLEMENTATION_SUMMARY.md** | Active | Medium | Architecture | TBD | Implementation summaries |
-| **core/MULTICOLOR_DESIGN.md** | Active | High | Design | 2024-12-XX | Core system design |
-| **core/CARD_DESIGN_AND_COUNTERPLAY.md** | Active | High | Design | TBD | Counterplay mechanics |
-| **core/DRAFT_PHILOSOPHY_AND_DEVELOPMENT_APPROACH.md** | Active | High | Design | 2025-01-XX | Draft philosophy & development approach |
 | **design/ARTIFACT_CARD_ANALYSIS.md** | Reference | High | Analysis | TBD | Artifact Foundry card analysis |
 | **design/RW_UB_CARDS.md** | Reference | Medium | Design | TBD | Specific RW/UB card designs |
 | **design/MULTICOLOR_CARD_EXAMPLES.md** | Reference | Medium | Design | TBD | Multicolor card examples |
 | **design/CARD_BRAINSTORM.md** | Active | Medium | Design | 2024-12-XX | RW/UBG card brainstorming |
 | **design/BATTLEFIELD_DESIGN.md** | Reference | Medium | Design | TBD | Battlefield design |
 | **design/ITEMS_AND_BATTLEFIELD_UPGRADES.md** | Reference | Medium | Design | TBD | Items and upgrades |
-| **design/THREE_COLOR_CARD_DESIGN_PRINCIPLES.md** | Active | High | Design | 2025-01-XX | 3-color card design principles |
+| **design/RPS_CARD_NEEDS.md** | Active | High | Design | 2025-01-XX | RPS card creation needs |
 | **analysis/EXORCISM_BOARD_STATES.md** | Reference | Medium | Analysis | TBD | Exorcism positioning analysis |
 | **analysis/EARLY_GAME_DECISIONS.md** | Reference | Medium | Analysis | TBD | Early game strategy |
 | **analysis/INTERESTING_GAME_STATES.md** | Active | High | Design | TBD | Game state catalog |
@@ -252,8 +280,27 @@ All documentation files should include a metadata header with:
 - Status: Active = in use, Reference = useful but not maintained, Archived = historical, Deprecated = can delete
 - Relevance: High = core, Medium = useful, Low = candidate for cleanup
 
-### Recently Cleaned Up
-The following low-relevance documents have been removed:
+### Recently Archived (2025-12-25)
+The following documents have been archived to `docs/archived/` after consolidation into master guides:
+
+**From core/ (3 files):**
+- ✅ `MULTICOLOR_DESIGN.md` → Consolidated into DESIGN_PHILOSOPHY_GUIDE
+- ✅ `DRAFT_PHILOSOPHY_AND_DEVELOPMENT_APPROACH.md` → Consolidated into DESIGN_PHILOSOPHY_GUIDE
+- ✅ `CARD_DESIGN_AND_COUNTERPLAY.md` → Consolidated into CARD_CREATION_MASTER_GUIDE
+
+**From design/ (8 files):**
+- ✅ `THREE_COLOR_CARD_DESIGN_PRINCIPLES.md` → Consolidated into CARD_CREATION_MASTER_GUIDE
+- ✅ `RUNE_ARTIFACT_DESIGN.md` → Consolidated into CARD_CREATION_MASTER_GUIDE
+- ✅ `RUNE_TENSION_DESIGN.md` → Consolidated into CARD_CREATION_MASTER_GUIDE
+- ✅ `COLOR_IDENTITY_DESIGN.md` → Consolidated into CARD_CREATION_MASTER_GUIDE
+- ✅ `RPS_ARCHETYPE_SYSTEM.md` → Consolidated into ARCHETYPE_DESIGN_GUIDE
+- ✅ `GU_SPLASH_ARCHETYPES.md` → Consolidated into ARCHETYPE_DESIGN_GUIDE
+- ✅ `RGW_BIG_DUMB_CREATURES.md` → Consolidated into ARCHETYPE_DESIGN_GUIDE
+- ✅ `FIVE_COLOR_ARCHETYPE.md` → Consolidated into ARCHETYPE_DESIGN_GUIDE
+
+**See [`docs/archived/README.md`](./archived/README.md) for details.**
+
+### Previously Cleaned Up
 - ✅ `TURN1_TESTING_CHECKLIST.md` - Redundant with TESTING_PLAN.md
 - ✅ `TURN1_DEPLOYMENT_DESIGN.md` - Covered in other design docs
 - ✅ `EARLY_GAME_PROBLEM_AND_SOLUTIONS.md` - Redundant with EARLY_GAME_DECISIONS.md
