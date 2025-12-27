@@ -1787,6 +1787,7 @@ export function createInitialGameState(): {
     player2ColorsPlayedThisTurn: [],
     player1CardTypesPlayedThisTurn: [],
     player2CardTypesPlayedThisTurn: [],
+    heroCounters: {}, // Track counters on heroes (e.g., WB Life Channeler)
   }
 
   // Spawn initial 1/1 creeps in slot 1 for both players on both battlefields
@@ -2021,6 +2022,7 @@ export function createGameStateFromDraft(
     player2ColorsPlayedThisTurn: [],
     player1CardTypesPlayedThisTurn: [],
     player2CardTypesPlayedThisTurn: [],
+    heroCounters: {}, // Track counters on heroes (e.g., WB Life Channeler)
   }
 
   // Battlefields removed - simplifying game to focus on color system and combat

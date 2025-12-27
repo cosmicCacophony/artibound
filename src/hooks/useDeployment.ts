@@ -249,15 +249,19 @@ export function useDeployment() {
           ...gameState.battlefieldB[selectedCard.owner as 'player1' | 'player2']
         ].filter(c => c.cardType === 'hero') as Hero[]
         
-        // Find any hero with blood magic
+        // Find any hero with blood magic, or check card's built-in Blood Magic
         const bloodMagicHero = playerHeroes.find(h => h.ability?.bloodMagic?.enabled)
+        const cardBloodMagic = cardTemplate.bloodMagic
         
-        if (bloodMagicHero?.ability?.bloodMagic) {
+        // Use card's built-in Blood Magic if available, otherwise check hero
+        const bloodMagicConfig = cardBloodMagic || bloodMagicHero?.ability?.bloodMagic
+        
+        if (bloodMagicConfig) {
           // Check if Blood Magic can substitute
           const bloodMagicResult = getBloodMagicCost(
             cardTemplate,
             playerRunePool,
-            bloodMagicHero.ability.bloodMagic
+            bloodMagicConfig
           )
           
           if (bloodMagicResult.canCast) {
@@ -284,8 +288,8 @@ export function useDeployment() {
               return available === 0
             }) || []
             if (missingRunes.length > 0) {
-              const reason = bloodMagicResult.missingRunes.length > (bloodMagicHero.ability.bloodMagic.maxSubstitutions || Infinity)
-                ? ` (exceeds max ${bloodMagicHero.ability.bloodMagic.maxSubstitutions} substitutions)`
+              const reason = bloodMagicResult.missingRunes.length > (bloodMagicConfig.maxSubstitutions || Infinity)
+                ? ` (exceeds max ${bloodMagicConfig.maxSubstitutions} substitutions)`
                 : ''
               alert(`Missing required runes: ${missingRunes.join(', ')}${reason}`)
             } else {
@@ -489,6 +493,23 @@ export function useDeployment() {
               pendingBloodMagicCost: undefined // Clear the pending cost
             }
             
+            // Track life spent for WB hero (Life Channeler) - increment counters
+            const playerHeroes = [
+              ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
+              ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']
+            ].filter(card => card.cardType === 'hero') as Hero[]
+            
+            const wbHero = playerHeroes.find(h => h.id === 'wb-hero-life-channeler')
+            if (wbHero) {
+              const currentCounters = prev.metadata.heroCounters?.[wbHero.id] || 0
+              const newCounters = currentCounters + lifeCost
+              bloodMagicTowerUpdates.heroCounters = {
+                ...prev.metadata.heroCounters,
+                [wbHero.id]: newCounters
+              }
+              console.log(`Life Channeler: Gained ${lifeCost} counters (total: ${newCounters})`)
+            }
+            
             console.log(`Blood Magic: Paid ${lifeCost} tower life (${costPerTower} per tower) to cast ${cardTemplate.name}`)
           }
         }
@@ -648,6 +669,23 @@ export function useDeployment() {
                     pendingBloodMagicCost: undefined // Clear the pending cost
                   }
                   
+                  // Track life spent for WB hero (Life Channeler) - increment counters
+                  const playerHeroes = [
+                    ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
+                    ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']
+                  ].filter(card => card.cardType === 'hero') as Hero[]
+                  
+                  const wbHero = playerHeroes.find(h => h.id === 'wb-hero-life-channeler')
+                  if (wbHero) {
+                    const currentCounters = prev.metadata.heroCounters?.[wbHero.id] || 0
+                    const newCounters = currentCounters + lifeCost
+                    bloodMagicTowerUpdates.heroCounters = {
+                      ...prev.metadata.heroCounters,
+                      [wbHero.id]: newCounters
+                    }
+                    console.log(`Life Channeler: Gained ${lifeCost} counters (total: ${newCounters})`)
+                  }
+                  
                   console.log(`Blood Magic: Paid ${lifeCost} tower life (${costPerTower} per tower) to cast ${cardTemplate.name}`)
                 }
               }
@@ -768,6 +806,23 @@ export function useDeployment() {
               [towerAKey]: Math.max(0, prev.metadata[towerAKey] - costPerTower),
               [towerBKey]: Math.max(0, prev.metadata[towerBKey] - costPerTower),
               pendingBloodMagicCost: undefined // Clear the pending cost
+            }
+            
+            // Track life spent for WB hero (Life Channeler) - increment counters
+            const playerHeroes = [
+              ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
+              ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']
+            ].filter(card => card.cardType === 'hero') as Hero[]
+            
+            const wbHero = playerHeroes.find(h => h.id === 'wb-hero-life-channeler')
+            if (wbHero) {
+              const currentCounters = prev.metadata.heroCounters?.[wbHero.id] || 0
+              const newCounters = currentCounters + lifeCost
+              bloodMagicTowerUpdates.heroCounters = {
+                ...prev.metadata.heroCounters,
+                [wbHero.id]: newCounters
+              }
+              console.log(`Life Channeler: Gained ${lifeCost} counters (total: ${newCounters})`)
             }
             
             console.log(`Blood Magic: Paid ${lifeCost} tower life (${costPerTower} per tower) to cast ${cardTemplate.name}`)

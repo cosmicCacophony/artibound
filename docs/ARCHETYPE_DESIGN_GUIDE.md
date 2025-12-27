@@ -708,3 +708,4 @@ High-roll archetype enabled by drafting 2-3 any-color artifacts early. Plays bes
 *This guide provides complete archetype information for Artibound. When drafting or designing cards, refer to the archetype you're targeting and understand its identity, win condition, and boss matchups.*
 
 
+

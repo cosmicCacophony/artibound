@@ -290,3 +290,4 @@ Unlike traditional CCGs where color is just a deckbuilding constraint, **in Arti
 **Next Steps:** Extensive playtesting before adding Red/White mechanics
 
 
+

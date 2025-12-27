@@ -155,13 +155,11 @@ export function getAllAvailableRunes(pool: RunePool): RuneColor[] {
  * Cards with consumesRunes: true require runes to be available.
  * Generic cards (consumesRunes: false/undefined) just need hero color in lane.
  * 
- * Now also considers mech cost reduction if card is a mech
  */
-export function canAffordCard(card: BaseCard, mana: number, runePool: RunePool, mechCostReduction: number = 0): boolean {
-  // Check mana cost (with mech reduction if applicable)
+export function canAffordCard(card: BaseCard, mana: number, runePool: RunePool): boolean {
+  // Check mana cost
   if (card.manaCost) {
-    const effectiveCost = Math.max(0, card.manaCost - mechCostReduction)
-    if (effectiveCost > mana) {
+    if (card.manaCost > mana) {
       return false
     }
   }

@@ -100,18 +100,6 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     currentHealth: 3,
     rangedAttack: 2,
   },
-  {
-    id: 'rw-bounce-war-banner-carrier',
-    name: 'War Banner Carrier',
-    description: 'Bounce. 1/3. When a hero is deployed to this lane, you may return target hero to base. Draw a card.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 2,
-    attack: 1,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
   // New Magic-inspired RW cards
   {
     id: 'rw-unit-strategic-scout',
@@ -719,18 +707,6 @@ export const rgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
 export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
   // Generic RG cards
   {
-    id: 'rg-beefy-1',
-    name: 'Wild Beast',
-    description: 'Beefy aggressive unit',
-    cardType: 'generic',
-    colors: ['red', 'green'],
-    manaCost: 4,
-    attack: 5,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-  },
-  {
     id: 'rg-beefy-2',
     name: 'Raging Bear',
     description: 'Big aggressive threat. Costs 5RG.',
@@ -742,30 +718,6 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 6,
     maxHealth: 6,
     currentHealth: 6,
-  },
-  {
-    id: 'rg-ramp-1',
-    name: 'Mana Druid',
-    description: 'Ramps mana',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 3,
-    attack: 2,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  {
-    id: 'rg-finisher-1',
-    name: 'Ancient Titan',
-    description: 'Big finisher',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 8,
-    attack: 8,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
   },
   // RG Dopamine Hit: Multi-Fight Unit
   {
@@ -1092,18 +1044,6 @@ export const rbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
 export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
   // Generic RB cards
   {
-    id: 'rb-draw-1',
-    name: 'Dark Insight',
-    description: 'Draw 2 cards, lose 2 HP',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 3,
-    attack: 2,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
-  {
     id: 'rb-aggro-1',
     name: 'Ruthless Striker',
     description: 'Aggressive killer',
@@ -1307,43 +1247,7 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   // REMOVED: Protective Aura (gw-sig-warden-1) - No longer fits color identity
   // Generic GW cards
   // Saproling removed
-  {
-    id: 'white-unit-positioned-warrior',
-    name: 'Positioned Warrior',
-    description: '2/3. If a hero is in front of this unit, this unit gains +2/+2.',
-    cardType: 'generic',
-    colors: ['white'],
-    manaCost: 2,
-    attack: 2,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  {
-    id: 'gw-token-2',
-    name: 'Elf Scout',
-    description: 'Token unit',
-    cardType: 'generic',
-    colors: ['green', 'white'],
-    manaCost: 3,
-    attack: 2,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
   // Glorious Banner removed - replaced with artifact
-  {
-    id: 'gw-aura-2',
-    name: 'Nature\'s Embrace',
-    description: 'Aura - +0/+2 to all',
-    cardType: 'generic',
-    colors: ['green', 'white'],
-    manaCost: 5,
-    attack: 3,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-  },
   // NEW: Permanent hero buff spells
   {
     id: 'gw-spell-balanced-growth',
@@ -1466,60 +1370,10 @@ export const gbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       }
     }
   },
-  // Blood Magic Hero - Greedy Ritualist (Unlimited)
-  {
-    id: 'gb-hero-greedy-ritualist',
-    name: 'Greedy Ritualist',
-    description: '5/5. Blood Magic (unlimited): Pay tower life for missing runes. B: 2, R/G: 3, U/W: 4 per tower. Glass cannon enabler.',
-    cardType: 'hero',
-    colors: ['green', 'black'],
-    attack: 5,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-    equippedItems: [],
-    ability: {
-      name: 'Greedy Blood Magic',
-      description: 'Passive: Pay tower life for any number of missing runes. B: 2, R/G: 3, U/W: 4 per tower.',
-      manaCost: 0,
-      cooldown: 0,
-      trigger: 'passive',
-      effectType: 'buff_units',
-      effectValue: 0,
-      bloodMagic: {
-        enabled: true,
-        description: 'Pay tower life for unlimited runes (B: 2, R/G: 3, U/W: 4 per tower)'
-      }
-    }
-  },
 ]
 
 export const gbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
   // Generic GB cards
-  {
-    id: 'gb-beefy-1',
-    name: 'Rotting Giant',
-    description: 'Beefy midrange threat',
-    cardType: 'generic',
-    colors: ['green', 'black'],
-    manaCost: 5,
-    attack: 6,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
-  },
-  {
-    id: 'gb-beefy-2',
-    name: 'Death Knight',
-    description: 'Big midrange unit',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 6,
-    attack: 6,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-  },
 ]
 
 // ============================================================================
@@ -1574,67 +1428,6 @@ export const blackMidrangeCards: Omit<GenericUnit, 'location' | 'owner' | 'stack
 
 export const runeFinisherUnits: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
   // Units with activated abilities that consume runes
-  {
-    id: 'rune-finisher-rune-mage',
-    name: 'Rune Mage',
-    description: '3/4. Activated: Spend 2 runes of any color → Deal 3 damage to target unit or tower.',
-    cardType: 'generic',
-    colors: ['blue', 'black'],
-    manaCost: 4,
-    attack: 3,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-  },
-  {
-    id: 'rune-finisher-prismatic-channeler',
-    name: 'Prismatic Channeler',
-    description: '2/5. Activated: Spend 3 runes of any color → Draw 2 cards.',
-    cardType: 'generic',
-    colors: ['blue', 'black', 'green'],
-    manaCost: 4,
-    attack: 2,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-  },
-  {
-    id: 'rune-finisher-void-architect',
-    name: 'Void Architect',
-    description: '4/4. When this enters, if you control 3+ rune generators, draw 3 cards.',
-    cardType: 'generic',
-    colors: ['blue', 'black'],
-    manaCost: 5,
-    attack: 4,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-  },
-  {
-    id: 'rune-finisher-multicolor-titan',
-    name: 'Multicolor Titan',
-    description: '6/6. This has +1/+1 for each different colored rune you control.',
-    cardType: 'generic',
-    rarity: 'uncommon',
-    colors: ['blue', 'black', 'green'],
-    manaCost: 6,
-    attack: 6,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
-  },
-  {
-    id: 'rune-finisher-rune-collector',
-    name: 'Rune Collector',
-    description: '3/3. When you add runes to your pool, draw a card.',
-    cardType: 'generic',
-    colors: ['blue', 'black'],
-    manaCost: 3,
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
 ]
 
 export const gbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
@@ -1931,18 +1724,6 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
 export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
   // UB Control Archetype Units (minimal units - focus on spells)
   {
-    id: 'ub-control-tower-destroyer',
-    name: 'Tower Destroyer',
-    description: '5/7. When you use a hero ability, this can attack towers directly this turn.',
-    cardType: 'generic',
-    colors: ['blue', 'black'],
-    manaCost: 7,
-    attack: 5,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-  },
-  {
     id: 'ub-control-arcane-scholar',
     name: 'Arcane Scholar',
     description: 'Spell. Draw 2 cards. 3UB.',
@@ -1956,110 +1737,7 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     },
   },
   // Green cards added to UB deck (UBG)
-  {
-    id: 'ubg-ramp-1',
-    name: 'Verdant Growth',
-    description: '3/4. When this enters, gain +1 max mana.',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 4,
-    attack: 3,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-  },
-  {
-    id: 'ubg-ramp-2',
-    name: 'Nature\'s Embrace',
-    description: '2/5. Adjacent units gain +0/+1.',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 3,
-    attack: 2,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-    specialEffects: ['adjacent_buff'],
-  },
-  // Ethereal Scholar removed
-  {
-    id: 'ubg-etb-void-walker',
-    name: 'Void Walker',
-    description: '3/4. When this enters, stun target enemy unit for 1 turn.',
-    cardType: 'generic',
-    colors: ['blue', 'black'],
-    manaCost: 4,
-    attack: 3,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-    // Note: ETB effect would need implementation in deployment system
-  },
-  {
-    id: 'ubg-etb-natures-guardian',
-    name: 'Nature\'s Guardian',
-    description: '4/5. When this enters, all your units gain +1/+1 until end of turn.',
-    cardType: 'generic',
-    colors: ['green', 'blue'],
-    manaCost: 5,
-    attack: 4,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-    // Note: ETB effect would need implementation in deployment system
-  },
-  // Bounce Units - Units that can bounce heroes (like Cloud Sprite)
-  {
-    id: 'ubg-bounce-void-shifter',
-    name: 'Void Shifter',
-    description: 'Bounce. 2/2. When a hero is deployed to this lane, you may return target hero to base.',
-    cardType: 'generic',
-    colors: ['blue', 'black'],
-    manaCost: 2,
-    attack: 2,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
-  {
-    id: 'ubg-bounce-ethereal-guardian',
-    name: 'Ethereal Guardian',
-    description: 'Bounce. 1/3. When a hero is deployed to this lane, this gains +0/+2. You may return target hero to base.',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 2,
-    attack: 1,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  {
-    id: 'ubg-bounce-nature-ward',
-    name: 'Nature Ward',
-    description: 'Bounce. 2/4. When a hero is deployed to this lane, gain 2 gold. You may return target hero to base.',
-    cardType: 'generic',
-    colors: ['green', 'black'],
-    manaCost: 3,
-    attack: 2,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-  },
   // Verdant Colossus removed - replaced with Void Cascade AOE spell
-  // Ranged Units - Can attack from base/deploy zone
-  {
-    id: 'ub-unit-arcane-sniper',
-    name: 'Arcane Sniper',
-    description: 'Ranged. 1/3. Can attack from base/deploy zone, dealing 3 damage evenly to both towers.',
-    cardType: 'generic',
-    colors: ['blue', 'black'],
-    manaCost: 3,
-    attack: 1,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-    rangedAttack: 3,
-  },
   // 3+X Unit Cycle
   {
     id: 'blue-unit-arcane-scholar',
@@ -2116,156 +1794,11 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   },
   // More 1-3 mana creeps
   // Blue creeps
-  {
-    id: 'blue-creep-arcane-apprentice',
-    name: 'Arcane Apprentice',
-    description: 'Draw a card when this dies.',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 1,
-    attack: 1,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
-  {
-    id: 'blue-creep-void-shifter',
-    name: 'Void Shifter',
-    description: 'When this enters, return target unit to hand.',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 2,
-    attack: 2,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  {
-    id: 'blue-creep-stun-mage',
-    name: 'Stun Mage',
-    description: 'When this enters, stun target unit.',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 3,
-    attack: 2,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-  },
-  // Black creeps
-  {
-    id: 'black-creep-cursed-spirit',
-    name: 'Cursed Spirit',
-    description: 'When this dies, opponent loses 1 life.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 1,
-    attack: 2,
-    health: 1,
-    maxHealth: 1,
-    currentHealth: 1,
-  },
-  {
-    id: 'black-creep-assassin-initiate',
-    name: 'Assassin Initiate',
-    description: 'When this enters, destroy target unit with 1 or less health.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 2,
-    attack: 2,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
-  {
-    id: 'black-creep-dark-scholar',
-    name: 'Dark Scholar',
-    description: 'When this enters, draw a card, lose 1 life.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 3,
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  // Green creeps
-  {
-    id: 'green-creep-mana-sprout',
-    name: 'Mana Sprout',
-    description: 'When this enters, gain +1 max mana.',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 1,
-    attack: 1,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
-  {
-    id: 'green-creep-nature-warden',
-    name: 'Nature Warden',
-    description: 'When this enters, target unit gains +1/+1.',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 2,
-    attack: 2,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  {
-    id: 'green-creep-druid-initiate',
-    name: 'Druid Initiate',
-    description: 'When this enters, gain +1 max mana.',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 3,
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  // White creeps
-  {
-    id: 'white-creep-divine-helper',
-    name: 'Divine Helper',
-    description: 'When this enters, target unit gains +0/+1.',
-    cardType: 'generic',
-    colors: ['white'],
-    manaCost: 1,
-    attack: 1,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
-  {
-    id: 'white-creep-healing-ward',
-    name: 'Healing Ward',
-    description: 'When this enters, heal target unit for 2.',
-    cardType: 'generic',
-    colors: ['white'],
-    manaCost: 2,
-    attack: 2,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
   // REMOVED: Protective Aura (white-creep-protective-aura) - No longer fits color identity
 ]
 
 // UBG Artifacts - Persistent effects in base (U, G, B, or combinations only)
 export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
-  {
-    id: 'ub-artifact-arcane-focus',
-    name: 'Arcane Focus Artifact',
-    description: 'Artifact. Your spells deal +1 additional damage.',
-    cardType: 'artifact',
-    colors: ['blue', 'black'],
-    manaCost: 5,
-    effectType: 'spell_amplifier',
-    effectValue: 1,
-  },
   {
     id: 'ub-artifact-void-generator',
     name: 'Void Generator Artifact',
@@ -2275,26 +1808,6 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     manaCost: 4,
     effectType: 'rune_generation',
     effectValue: 1, // Generates 1 blue rune per turn
-  },
-  {
-    id: 'ub-artifact-shadow-growth',
-    name: 'Shadow Growth Artifact',
-    description: 'Artifact. When a unit dies, gain +1 max mana.',
-    cardType: 'artifact',
-    colors: ['black', 'green'],
-    manaCost: 4,
-    effectType: 'mana_generation',
-    effectValue: 1, // +1 max mana per unit death
-  },
-  {
-    id: 'ub-artifact-natures-revenge',
-    name: 'Nature\'s Revenge Artifact',
-    description: 'Artifact. When you deal damage to an enemy unit, if it dies, gain +1 max mana.',
-    cardType: 'artifact',
-    colors: ['green'],
-    manaCost: 3,
-    effectType: 'mana_generation',
-    effectValue: 1, // +1 max mana per kill
   },
   {
     id: 'ub-artifact-sacrificial-altar',
@@ -2307,25 +1820,15 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     effectValue: 1, // Generates 1 black rune per turn
   },
   {
-    id: 'ub-artifact-divine-wrath',
-    name: 'Divine Wrath Artifact',
-    description: 'Artifact. Your spells deal +2 additional damage.',
-    cardType: 'artifact',
-    colors: ['blue'],
-    manaCost: 5,
-    effectType: 'spell_amplifier',
-    effectValue: 2,
-  },
-  {
     id: 'ub-artifact-mana-surge',
     name: 'Mana Surge Artifact',
-    description: 'Artifact. Gain +2 max mana.',
+    description: 'Artifact. At the start of your turn, gain +2 temporary mana.',
     cardType: 'artifact',
     colors: ['green'],
-    manaCost: 5,
+    manaCost: 4,
     consumesRunes: true, // Requires G rune
     effectType: 'mana_generation',
-    effectValue: 2, // +2 max mana
+    effectValue: 2, // +2 temporary mana per turn
   },
   // Rune Generators - Single Color
   {
@@ -2427,23 +1930,11 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     description: 'Artifact. At the start of your turn, add 1 rune of any color to your rune pool.',
     cardType: 'artifact',
     colors: [], // Colorless - can generate any color
-    manaCost: 6,
+    manaCost: 5,
     effectType: 'rune_generation',
     effectValue: 1, // Generates 1 rune of any color per turn
   },
   // 3+X Artifact Cycle
-  {
-    id: 'blue-artifact-enhanced-creeps',
-    name: 'Enhanced Creep Generator',
-    description: 'Artifact. Creeps that spawn become 2/3 Mechs instead of 1/1.',
-    cardType: 'artifact',
-    colors: ['blue'],
-    manaCost: 3,
-    consumesRunes: true, // Requires U rune
-    effectType: 'creep_modifier',
-    effectValue: 1, // Modifies creep stats + makes them mechs
-    rarity: 'uncommon',
-  },
   {
     id: 'black-artifact-dark-pact',
     name: 'Dark Pact',
@@ -3307,18 +2798,6 @@ export const rwgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
   },
   // RGW Big Dumb Creatures - Higher floor, lower ceiling
   {
-    id: 'rwg-unit-forest-giant',
-    name: 'Forest Giant',
-    description: 'Big dumb creature.',
-    cardType: 'generic',
-    colors: ['green', 'white'],
-    manaCost: 6,
-    attack: 6,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-  },
-  {
     id: 'rwg-unit-wild-beast',
     name: 'Wild Beast',
     description: 'Big aggressive creature. Costs 6RG.',
@@ -3340,18 +2819,6 @@ export const rwgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
     manaCost: 6,
     consumesRunes: true, // Multicolor 6+ mana should require runes
     attack: 5,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-  },
-  {
-    id: 'rwg-unit-ancient-tree',
-    name: 'Ancient Tree',
-    description: 'Big resilient creature.',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 7,
-    attack: 6,
     health: 7,
     maxHealth: 7,
     currentHealth: 7,
@@ -3661,12 +3128,13 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ubr-spell-exorcism',
     name: 'Exorcism',
-    description: 'Deal 12 total damage distributed to enemy units in front and tower. 0 units: 12 to tower. 1 unit: 6 to unit, 6 to tower. 2 units: 4 to each unit, 4 to tower. 3 units: 3 to each unit, 3 to tower. Costs 8UUUBBBR.',
+    description: 'Deal 12 total damage distributed to enemy units in front and tower. 0 units: 12 to tower. 1 unit: 6 to unit, 6 to tower. 2 units: 4 to each unit, 4 to tower. 3 units: 3 to each unit, 3 to tower. Costs 8UUUBBBR, refunds 8 mana.',
     cardType: 'spell',
     rarity: 'rare',
     colors: ['blue', 'blue', 'blue', 'black', 'black', 'black', 'red'], // PROHIBITIVE: 3U, 3B, 1R
     consumesRunes: true, // This spell requires and consumes UBR runes
     manaCost: 8,
+    refundMana: 8, // Free spell mechanic - refunds mana cost
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for Exorcism damage distribution
       damage: 12, // Total damage, distribution handled by custom logic based on units in front
@@ -3693,19 +3161,188 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   },
 ]
 
+// ============================================================================
+// GBR (Green/Black/Red) - Blood Magic Built-in
+// ============================================================================
+// All GBR cards have built-in Blood Magic - no hero needed!
+
+export const gbrHeroes: Omit<Hero, 'location' | 'owner'>[] = [
+  // GBR heroes can be added here if needed
+]
+
+export const gbrCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+  {
+    id: 'gbr-unit-blood-ritualist',
+    name: 'Blood Ritualist',
+    description: '6/6. Blood Magic (built-in): Pay tower life for missing runes. B: 2, R/G: 3, U/W: 4 per tower. Costs 5GBR.',
+    cardType: 'generic',
+    colors: ['green', 'black', 'red'],
+    manaCost: 5,
+    consumesRunes: true, // Requires GBR runes
+    bloodMagic: {
+      enabled: true,
+      description: 'Pay tower life for missing runes (B: 2, R/G: 3, U/W: 4 per tower)'
+    },
+    attack: 6,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
+  },
+  {
+    id: 'gbr-unit-sacrificial-beast',
+    name: 'Sacrificial Beast',
+    description: '7/5. Blood Magic (built-in). When this enters, deal 3 damage to each tower. Costs 6GBR.',
+    cardType: 'generic',
+    colors: ['green', 'black', 'red'],
+    manaCost: 6,
+    consumesRunes: true, // Requires GBR runes
+    bloodMagic: {
+      enabled: true,
+      description: 'Pay tower life for missing runes (B: 2, R/G: 3, U/W: 4 per tower)'
+    },
+    attack: 7,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+  },
+]
+
+export const gbrSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  {
+    id: 'gbr-spell-blood-ritual',
+    name: 'Blood Ritual',
+    description: 'Deal 8 damage to target unit or hero. Draw 2 cards. Blood Magic (built-in). Costs 5GBR.',
+    cardType: 'spell',
+    colors: ['green', 'black', 'red'],
+    manaCost: 5,
+    consumesRunes: true, // Requires GBR runes
+    bloodMagic: {
+      enabled: true,
+      description: 'Pay tower life for missing runes (B: 2, R/G: 3, U/W: 4 per tower)'
+    },
+    effect: {
+      type: 'targeted_damage',
+      damage: 8,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+  {
+    id: 'gbr-spell-life-drain',
+    name: 'Life Drain',
+    description: 'Deal 5 damage to target. Heal your towers for 5. Blood Magic (built-in). Costs 4GBR.',
+    cardType: 'spell',
+    colors: ['green', 'black', 'red'],
+    manaCost: 4,
+    consumesRunes: true, // Requires GBR runes
+    bloodMagic: {
+      enabled: true,
+      description: 'Pay tower life for missing runes (B: 2, R/G: 3, U/W: 4 per tower)'
+    },
+    effect: {
+      type: 'targeted_damage',
+      damage: 5,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+]
+
+// ============================================================================
+// GBRU (Green/Black/Red/Blue) - 4-Color Blood Magic
+// ============================================================================
+
+export const gbruCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+  {
+    id: 'gbru-unit-prismatic-destroyer',
+    name: 'Prismatic Destroyer',
+    description: '8/8. Blood Magic (built-in). When this enters, destroy all units with 3 or less health. Costs 7GBRU.',
+    cardType: 'generic',
+    colors: ['green', 'black', 'red', 'blue'],
+    manaCost: 7,
+    consumesRunes: true, // Requires GBRU runes
+    bloodMagic: {
+      enabled: true,
+      description: 'Pay tower life for missing runes (B: 2, R/G: 3, U/W: 4 per tower)'
+    },
+    attack: 8,
+    health: 8,
+    maxHealth: 8,
+    currentHealth: 8,
+  },
+]
+
+export const gbruSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  {
+    id: 'gbru-spell-ultimate-destruction',
+    name: 'Ultimate Destruction',
+    description: 'Deal 10 damage to target unit or hero. Draw 3 cards. Blood Magic (built-in). Costs 8GBRU.',
+    cardType: 'spell',
+    colors: ['green', 'black', 'red', 'blue'],
+    manaCost: 8,
+    consumesRunes: true, // Requires GBRU runes
+    bloodMagic: {
+      enabled: true,
+      description: 'Pay tower life for missing runes (B: 2, R/G: 3, U/W: 4 per tower)'
+    },
+    effect: {
+      type: 'targeted_damage',
+      damage: 10,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+]
+
+// ============================================================================
+// GBRW (Green/Black/Red/White) - 4-Color Blood Magic
+// ============================================================================
+
+export const gbrwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+  {
+    id: 'gbrw-unit-divine-ritualist',
+    name: 'Divine Ritualist',
+    description: '7/9. Blood Magic (built-in). When this enters, all your units gain +2/+2 until end of turn. Costs 7GBRW.',
+    cardType: 'generic',
+    colors: ['green', 'black', 'red', 'white'],
+    manaCost: 7,
+    consumesRunes: true, // Requires GBRW runes
+    bloodMagic: {
+      enabled: true,
+      description: 'Pay tower life for missing runes (B: 2, R/G: 3, U/W: 4 per tower)'
+    },
+    attack: 7,
+    health: 9,
+    maxHealth: 9,
+    currentHealth: 9,
+  },
+]
+
+export const gbrwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  {
+    id: 'gbrw-spell-divine-wrath',
+    name: 'Divine Wrath',
+    description: 'Destroy all enemy units. Heal your towers for 10. Blood Magic (built-in). Costs 9GBRW.',
+    cardType: 'spell',
+    colors: ['green', 'black', 'red', 'white'],
+    manaCost: 9,
+    consumesRunes: true, // Requires GBRW runes
+    bloodMagic: {
+      enabled: true,
+      description: 'Pay tower life for missing runes (B: 2, R/G: 3, U/W: 4 per tower)'
+    },
+    effect: {
+      type: 'aoe_damage',
+      damage: 999, // Effectively destroy all
+      affectsUnits: true,
+      affectsHeroes: false,
+      affectsEnemyUnits: true,
+    },
+  },
+]
+
 // Void Apprentice - Spawned by Dark Archmage (not a playable card, only spawned)
-export const voidApprenticeTemplate: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'> = {
-  id: 'ub-spawn-void-apprentice',
-  name: 'Void Apprentice',
-  description: 'Spawned by Dark Archmage. At the start of each turn, deals 2 damage to the nearest enemy unit.',
-  cardType: 'generic',
-  colors: ['blue'],
-  manaCost: 0, // Not playable, only spawned
-  attack: 2,
-  health: 3,
-  maxHealth: 3,
-  currentHealth: 3,
-}
+// Removed from playable cards - only spawned by hero ability
 
 // ============================================================================
 // UW (Blue/White) - Control but Proactive
@@ -3748,18 +3385,6 @@ export const uwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
 
 export const uwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
   // Generic UW cards
-  {
-    id: 'uw-threat-1',
-    name: 'Celestial Guard',
-    description: 'Proactive threat',
-    cardType: 'generic',
-    colors: ['blue', 'white'],
-    manaCost: 5,
-    attack: 5,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
-  },
   // White adjacency units - positional gameplay
   {
     id: 'white-unit-guardian-angel',
@@ -3804,6 +3429,41 @@ export const uwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
 
 export const uwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   // Divine Wrath removed - replaced with artifact
+]
+
+// ============================================================================
+// WB (White/Black) - Life Channeler
+// ============================================================================
+
+export const wbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
+  {
+    id: 'wb-hero-life-channeler',
+    name: 'Life Channeler',
+    description: '3/6. Whenever you spend tower life (Blood Magic), put a counter on this hero. Remove 5 counters: Heal 5 to any tower or unit.',
+    cardType: 'hero',
+    colors: ['white', 'black'],
+    attack: 3,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
+    equippedItems: [],
+    ability: {
+      name: 'Life Transfer',
+      description: 'Remove 5 counters from this hero to heal 5 to any tower or unit.',
+      manaCost: 1,
+      cooldown: 2,
+      effectType: 'heal_target',
+      effectValue: 5,
+    },
+  },
+]
+
+export const wbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+  // WB cards can be added here if needed
+]
+
+export const wbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  // WB spells can be added here if needed
 ]
 
 // ============================================================================
@@ -3880,68 +3540,7 @@ export const comboHeroes: Omit<Hero, 'location' | 'owner'>[] = [
 
 export const comboCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
   // Storm Combo pieces
-  {
-    id: 'combo-unit-ritual-keeper',
-    name: 'Ritual Keeper',
-    description: 'Storm. When you cast a spell that adds runes, deal 1 damage to enemy tower.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 2,
-    attack: 1,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  // Sacrificial Altar removed - replaced with artifact
-  {
-    id: 'combo-unit-gravecrawler',
-    name: 'Gravecrawler',
-    description: 'Aristocrats. When this dies, return it to your hand at the start of next turn.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 1,
-    attack: 2,
-    health: 1,
-    maxHealth: 1,
-    currentHealth: 1,
-  },
-  {
-    id: 'combo-unit-doomed-dissenter',
-    name: 'Doomed Dissenter',
-    description: 'Aristocrats. When this dies, create a 2/2 Zombie token.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 2,
-    attack: 1,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
-  // Bounce Combo pieces
-  {
-    id: 'combo-unit-cloud-sprite',
-    name: 'Cloud Sprite',
-    description: 'Bounce. When a hero is deployed to this lane, this gains +1/+1.',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 1,
-    attack: 1,
-    health: 1,
-    maxHealth: 1,
-    currentHealth: 1,
-  },
-  {
-    id: 'combo-unit-ghostly-flicker',
-    name: 'Ghostly Flicker',
-    description: 'Bounce enabler. When this enters, you may return another unit to hand.',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 3,
-    attack: 2,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
+  // Combo units removed - they don't play into rune mechanics
 ]
 
 // ============================================================================
@@ -3958,23 +3557,6 @@ export const creepStackingCards: Omit<GenericUnit, 'location' | 'owner' | 'stack
 // 5 Mono-Color Rares
 
 export const rareWhiteCards: (Omit<ArtifactCard, 'location' | 'owner'>)[] = [
-  {
-    id: 'rare-white-armory',
-    name: 'Armory of the Divine',
-    cardType: 'artifact',
-    rarity: 'rare',
-    colors: ['white'],
-    manaCost: 6,
-    effectType: 'equipment',
-    effectValue: 0,
-    equipCost: 2,
-    equipmentBonuses: {
-      attack: 2,
-      health: 3,
-      abilities: ['taunt']
-    },
-    description: 'Equipment. Attach to a unit. +2/+3 and Taunt. When equipped unit dies, return this to base. Re-equip for 2 mana.',
-  },
 ]
 
 export const rareBlueHeroes: Omit<Hero, 'location' | 'owner'>[] = [
@@ -4005,25 +3587,6 @@ export const rareBlueHeroes: Omit<Hero, 'location' | 'owner'>[] = [
 ]
 
 export const rareBlackCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
-  {
-    id: 'rare-black-devourer',
-    name: 'Void Devourer',
-    cardType: 'generic',
-    rarity: 'rare',
-    colors: ['black'],
-    manaCost: 5,
-    attack: 3,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-    evolveThreshold: 3,
-    evolveBonus: {
-      attack: 3,
-      health: 3,
-      abilities: ['When this kills a unit, draw a card']
-    },
-    description: '3/4. Evolve 3: If you\'ve played 3 different colors this turn, this becomes 6/7 and gains "When this kills a unit, draw a card".',
-  },
 ]
 
 export const rareRedCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
@@ -4044,23 +3607,6 @@ export const rareRedCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith
 ]
 
 export const rareGreenCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
-  {
-    id: 'rare-green-colossus',
-    name: 'Worldshaper Colossus',
-    cardType: 'generic',
-    rarity: 'rare',
-    colors: ['green'],
-    manaCost: 7,
-    attack: 6,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-    evolveThreshold: 2,
-    evolveBonus: {
-      abilities: ['Can attack the turn it\'s deployed', 'Overrun (excess damage goes to tower)']
-    },
-    description: '6/8. Evolve 2: If you\'ve played 2 different colors this turn, this can attack immediately and gains Overrun.',
-  },
 ]
 
 // 5 Guild Rares
@@ -4169,88 +3715,6 @@ export const rareBRCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith'
   },
 ]
 
-// ============================================================================
-// MECH HEROES (UR + W)
-// ============================================================================
-
-export const mechHeroes: Omit<Hero, 'location' | 'owner'>[] = [
-  {
-    id: 'blue-mech-hero-engineer',
-    name: 'Master Engineer',
-    description: 'Mech synergy hero. Mechs you control get +1/+0.',
-    cardType: 'hero',
-    colors: ['blue'],
-    attack: 4,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,    equippedItems: [],
-    supportEffect: 'Mechs you control get +1/+0',
-    ability: {
-      name: 'Salvage',
-      description: 'Return target mech from your graveyard to your hand. Costs 1U, Cooldown 3.',
-      manaCost: 1,
-      cooldown: 3,
-      effectType: 'custom',
-      runeCost: ['blue'],
-    },
-  },
-  {
-    id: 'red-mech-hero-forgemaster',
-    name: 'Forgemaster',
-    description: 'Mech synergy hero. Mechs you control get +1/+0.',
-    cardType: 'hero',
-    colors: ['red'],
-    attack: 5,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,    equippedItems: [],
-    supportEffect: 'Mechs you control get +1/+0',
-    ability: {
-      name: 'Overload',
-      description: 'Mechs gain +2/+0 until end of turn. Costs 1R, Cooldown 2.',
-      manaCost: 1,
-      cooldown: 2,
-      effectType: 'buff_units',
-      runeCost: ['red'],
-    },
-  },
-  {
-    id: 'white-mech-hero-sentinel-commander',
-    name: 'Sentinel Commander',
-    description: 'Mech synergy hero. Mechs you control get +0/+1.',
-    cardType: 'hero',
-    colors: ['white'],
-    attack: 3,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,    equippedItems: [],
-    supportEffect: 'Mechs you control get +0/+1',
-    ability: {
-      name: 'Deploy Sentinel',
-      description: 'Create a 1/1 Mech token. Costs 1W, Cooldown 2.',
-      manaCost: 1,
-      cooldown: 2,
-      effectType: 'create_unit',
-      runeCost: ['white'],
-      effectValue: 1, // Creates 1 token
-    },
-  },
-]
-
-// ============================================================================
-// MECH TRIBAL (UR + W) - Cross-Archetype Synergy
-// ============================================================================
-// Mechs are a tribal mechanic where mechs give each other bonuses
-// Primary: UR (aggro/tempo), Secondary: White (defensive)
-// Splash: Limited options in other colors
-
-// Forward declarations - actual definitions are below
-export const blueMechs: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = []
-export const redMechs: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = []
-export const whiteMechs: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = []
-export const greenMechs: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = []
-export const blackMechs: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = []
-export const mechSignatureCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = []
 
 // ============================================================================
 // ALL CARDS COMBINED
@@ -4266,11 +3730,11 @@ export const allHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   ...guHeroes,
   ...ubHeroes,
   ...uwHeroes,
+  ...wbHeroes,
   ...rwgHeroes,
   ...ubgHeroes,
+  ...gbrHeroes,
   ...comboHeroes,
-  // Mech heroes
-  ...mechHeroes,
   // Rare heroes
   ...rareBlueHeroes,
   ...rareWUHeroes,
@@ -4286,20 +3750,17 @@ export const allCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
   ...guCards,
   ...ubCards,
   ...uwCards,
+  ...wbCards,
   ...rwgCards,
   ...ubgCards,
+  ...gbrCards,
+  ...gbruCards,
+  ...gbrwCards,
   ...comboCards,
   ...monoRedAggroCards,
   ...blackMidrangeCards,
   ...runeFinisherUnits,
   ...creepStackingCards,
-  // Mech tribal cards
-  ...blueMechs,
-  ...redMechs,
-  ...whiteMechs,
-  ...greenMechs,
-  ...blackMechs,
-  ...mechSignatureCards,
   // Rare cards
   ...rareBlackCards,
   ...rareRedCards,
@@ -4314,46 +3775,12 @@ export const allCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
 
 // ============================================================================
 // VARIABLE RUNE COST SPELLS - Riftbound-style (1R, 2UU, 7UUU, etc.)
-// Mech Support Artifacts
-export const mechArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
-  {
-    id: 'ur-mech-artifact-assembly-line',
-    name: 'Mech Assembly Line',
-    description: 'Saga artifact. Chapter 1: Create a 1/1 Mech token each turn. Chapter 2: Mechs you control get +1/+1 for each mech you control. Chapter 3: All mechs you control gain Cleave +1 and deal 3 damage to their combat target. Destroy after Chapter 3. Costs 4UURR.',
-    cardType: 'artifact',
-    colors: ['blue', 'blue', 'red', 'red'], // 4UURR = 4 generic + 2 blue + 2 red runes
-    manaCost: 4,
-    consumesRunes: true,
-    effectType: 'saga',
-    effectValue: 0,
-    sagaCounters: 0, // Starts at 0, increments each turn
-    sagaEffects: {
-      chapter1: 'Create a 1/1 Mech token each turn',
-      chapter2: 'Mechs you control get +1/+1 for each mech you control',
-      chapter3: 'All mechs you control gain Cleave +1 and deal 3 damage to their combat target',
-    },
-  },
-  {
-    id: 'ur-mech-artifact-power-core',
-    name: 'Power Core',
-    description: 'Artifact. Mechs have +1/+1. 3UR.',
-    cardType: 'artifact',
-    colors: ['blue', 'red', 'red'],
-    manaCost: 3,
-    consumesRunes: true,
-    effectType: 'damage_amplifier', // Repurposed for mech stat buff
-    effectValue: 1,
-  },
-]
-
-// Mech Support Spells
+// ============================================================================
 
 export const allArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   ...rwArtifacts,
   ...rgArtifacts,
   ...ubArtifacts,
-  // Mech artifacts
-  ...mechArtifacts,
   // Rare artifacts (equipment)
   ...rareWhiteCards,
   ...rareRGCards,
@@ -4369,8 +3796,12 @@ export const allSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   ...ubSpells,
   ...freeSpells, // Free spells that refund mana after casting
   ...uwSpells,
+  ...wbSpells,
   ...rwgSpells,
   ...ubgSpells,
+  ...gbrSpells,
+  ...gbruSpells,
+  ...gbrwSpells,
 ]
 
 // ============================================================================
@@ -4487,753 +3918,6 @@ export const genericBattlefields: BattlefieldDefinition[] = [
     staticAbilityId: 'gold-per-turn',
   },
 ]
-
-// Blue Mechs (8 cards) - Tempo/spell synergy  
-blueMechs.push(...[
-  {
-    id: 'blue-mech-aether-scout',
-    name: 'Aether Scout',
-    description: 'Mech. Other mechs you control cost 1 less mana.',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 3,
-    consumesRunes: false,
-    attack: 2,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-    isMech: true,
-    mechSynergy: {
-      costReduction: 1,
-    },
-  },
-  {
-    id: 'blue-mech-arcane-automaton',
-    name: 'Arcane Automaton',
-    description: 'Mech. When you cast a spell, mechs you control get +1/+0 until end of turn.',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 4,
-    consumesRunes: false,
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-    isMech: true,
-    mechSynergy: {
-      attackBonus: 0, // Bonus applied by spell trigger, not permanently
-    },
-  },
-  {
-    id: 'blue-mech-prototype-enforcer',
-    name: 'Prototype Enforcer',
-    description: 'Mech. ETB: Draw a card if you control another mech.',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 5,
-    consumesRunes: true, // Requires U rune
-    attack: 4,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-    isMech: true,
-    mechSynergy: {
-      etbEffect: 'draw_card',
-    },
-  },
-  {
-    id: 'blue-mech-storm-engine',
-    name: 'Storm Engine',
-    description: 'Mech. Other mechs you control have +1/+1. Costs 6UU.',
-    cardType: 'generic',
-    colors: ['blue', 'blue'],
-    manaCost: 6,
-    consumesRunes: true, // Requires UU runes
-    attack: 5,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-    isMech: true,
-    mechSynergy: {
-      attackBonus: 1,
-      healthBonus: 1,
-    },
-  },
-  {
-    id: 'blue-mech-temporal-construct',
-    name: 'Temporal Construct',
-    description: 'Mech. Other mechs you control have +0/+1.',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 4,
-    consumesRunes: false,
-    attack: 3,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-    isMech: true,
-    mechSynergy: {
-      healthBonus: 1,
-    },
-  },
-  {
-    id: 'blue-mech-thought-forged-sentinel',
-    name: 'Thought-Forged Sentinel',
-    description: 'Mech. ETB: If you control another mech, stun target enemy unit. Costs 5U.',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 5,
-    consumesRunes: true, // Requires U rune
-    attack: 3,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-    isMech: true,
-    mechSynergy: {
-      etbEffect: 'stun_unit',
-    },
-  },
-  {
-    id: 'blue-mech-adaptive-drone',
-    name: 'Adaptive Drone',
-    description: 'Mech. 2/3 for 3 mana. Efficient tempo play.',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 3,
-    consumesRunes: false,
-    attack: 2,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-    isMech: true,
-    mechSynergy: {
-      attackBonus: 0, // No bonus, just a solid mech body
-    },
-  },
-  {
-    id: 'blue-mech-voltaic-engineer',
-    name: 'Voltaic Engineer',
-    description: 'Mech. Other mechs you control have +1/+0.',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 4,
-    consumesRunes: false,
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-    isMech: true,
-    mechSynergy: {
-      attackBonus: 1,
-    },
-    rarity: 'common',
-  },
-  // Additional Blue Mechs for prevalence
-  {
-    id: 'blue-mech-cogwork-sentry',
-    name: 'Cogwork Sentry',
-    description: 'Mech. 3/2 for 3 mana. Efficient body.',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 3,
-    consumesRunes: false,
-    attack: 3,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-    isMech: true,
-    mechSynergy: {
-      attackBonus: 0,
-    },
-    rarity: 'common',
-  },
-  {
-    id: 'blue-mech-flux-automaton',
-    name: 'Flux Automaton',
-    description: 'Mech. Other mechs have +0/+1.',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 3,
-    consumesRunes: false,
-    attack: 2,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-    isMech: true,
-    mechSynergy: {
-      healthBonus: 1,
-    },
-    rarity: 'common',
-  },
-  {
-    id: 'blue-mech-chrono-construct',
-    name: 'Chrono Construct',
-    description: 'Mech. 2/4 for 4 mana. Defensive tempo.',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 4,
-    consumesRunes: false,
-    attack: 2,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-    isMech: true,
-    mechSynergy: {
-      healthBonus: 0,
-    },
-    rarity: 'common',
-  },
-  {
-    id: 'blue-mech-rift-walker',
-    name: 'Rift Walker',
-    description: 'Mech. Other mechs cost 1 less (max 1 reduction per turn).',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 5,
-    consumesRunes: true,
-    attack: 3,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-    isMech: true,
-    mechSynergy: {
-      costReduction: 1,
-    },
-    rarity: 'uncommon',
-  },
-])
-
-// Red Mechs (8 cards) - Aggro/direct damage
-redMechs.push(...[
-  {
-    id: 'red-mech-forge-golem',
-    name: 'Forge Golem',
-    description: 'Mech. When this attacks, mechs you control deal 1 damage to enemy tower.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 3,
-    consumesRunes: false,
-    attack: 3,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-    isMech: true,
-    mechSynergy: {
-      etbEffect: 'mech_tower_damage', // Custom effect: mechs deal tower damage
-    },
-  },
-  {
-    id: 'red-mech-assault-construct',
-    name: 'Assault Construct',
-    description: 'Mech. ETB: Deal 2 damage to target if you control another mech.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 4,
-    consumesRunes: false,
-    attack: 4,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-    isMech: true,
-    mechSynergy: {
-      etbEffect: 'deal_damage',
-    },
-  },
-  {
-    id: 'red-mech-siege-titan',
-    name: 'Siege Titan',
-    description: 'Mech. Other mechs you control have Overwhelm. Costs 5R.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 5,
-    consumesRunes: true, // Requires R rune
-    attack: 5,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-    isMech: true,
-    mechSynergy: {
-      grantKeyword: 'overwhelm',
-    },
-  },
-  {
-    id: 'red-mech-blazing-colossus',
-    name: 'Blazing Colossus',
-    description: 'Mech. Mechs you control get +2/+0. Costs 7RR.',
-    cardType: 'generic',
-    colors: ['red', 'red'],
-    manaCost: 7,
-    consumesRunes: true, // Requires RR runes
-    attack: 6,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
-    isMech: true,
-    mechSynergy: {
-      attackBonus: 2,
-    },
-  },
-  {
-    id: 'red-mech-war-construct',
-    name: 'War Construct',
-    description: 'Mech. Other mechs you control have +1/+0.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 4,
-    consumesRunes: false,
-    attack: 4,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-    isMech: true,
-    mechSynergy: {
-      attackBonus: 1,
-    },
-  },
-  {
-    id: 'red-mech-flame-forged-titan',
-    name: 'Flame-Forged Titan',
-    description: 'Mech. 5/5 for 6 mana. Big aggressive body.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 6,
-    consumesRunes: false,
-    attack: 5,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-    isMech: true,
-    mechSynergy: {
-      attackBonus: 0, // No bonus, just a big body
-    },
-  },
-  {
-    id: 'red-mech-molten-juggernaut',
-    name: 'Molten Juggernaut',
-    description: 'Mech. ETB: Deal 1 damage to all enemy units if you control another mech. Costs 5R.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 5,
-    consumesRunes: true, // Requires R rune
-    attack: 4,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-    isMech: true,
-    mechSynergy: {
-      etbEffect: 'aoe_damage',
-    },
-  },
-  {
-    id: 'red-mech-inferno-engine',
-    name: 'Inferno Engine',
-    description: 'Mech. Other mechs you control have +0/+1.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 3,
-    consumesRunes: false,
-    attack: 2,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-    isMech: true,
-    mechSynergy: {
-      healthBonus: 1,
-    },
-    rarity: 'common',
-  },
-  // Additional Red Mechs for prevalence
-  {
-    id: 'red-mech-battle-automaton',
-    name: 'Battle Automaton',
-    description: 'Mech. 4/2 for 3 mana. Aggressive body.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 3,
-    consumesRunes: false,
-    attack: 4,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-    isMech: true,
-    mechSynergy: {
-      attackBonus: 0,
-    },
-    rarity: 'common',
-  },
-  {
-    id: 'red-mech-iron-bruiser',
-    name: 'Iron Bruiser',
-    description: 'Mech. Other mechs have +1/+0.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 4,
-    consumesRunes: false,
-    attack: 3,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-    isMech: true,
-    mechSynergy: {
-      attackBonus: 1,
-    },
-    rarity: 'common',
-  },
-  {
-    id: 'red-mech-furnace-sentinel',
-    name: 'Furnace Sentinel',
-    description: 'Mech. 3/3 for 4 mana. Solid stats.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 4,
-    consumesRunes: false,
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-    isMech: true,
-    mechSynergy: {
-      attackBonus: 0,
-    },
-    rarity: 'common',
-  },
-  {
-    id: 'red-mech-scorched-construct',
-    name: 'Scorched Construct',
-    description: 'Mech. ETB: Deal 1 damage to target if you control another mech.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 3,
-    consumesRunes: false,
-    attack: 2,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-    isMech: true,
-    mechSynergy: {
-      etbEffect: 'deal_damage',
-    },
-    rarity: 'uncommon',
-  },
-])
-
-// White Mechs (6 cards) - Defensive/protective
-whiteMechs.push(...[
-  {
-    id: 'white-mech-guardian-sentinel',
-    name: 'Guardian Sentinel',
-    description: 'Mech. Other mechs you control have Shield. Costs 4W.',
-    cardType: 'generic',
-    colors: ['white'],
-    manaCost: 4,
-    consumesRunes: true, // Requires W rune
-    attack: 2,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-    isMech: true,
-    mechSynergy: {
-      grantKeyword: 'shield',
-    },
-  },
-  {
-    id: 'white-mech-bastion-automaton',
-    name: 'Bastion Automaton',
-    description: 'Mech. ETB: Gain 2 tower armor if you control another mech. Costs 5W.',
-    cardType: 'generic',
-    colors: ['white'],
-    manaCost: 5,
-    consumesRunes: true, // Requires W rune
-    attack: 3,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
-    isMech: true,
-    mechSynergy: {
-      etbEffect: 'gain_armor',
-    },
-  },
-  {
-    id: 'white-mech-aegis-protector',
-    name: 'Aegis Protector',
-    description: 'Mech. Mechs you control get +0/+2. Costs 6W.',
-    cardType: 'generic',
-    colors: ['white'],
-    manaCost: 6,
-    consumesRunes: true, // Requires W rune
-    attack: 4,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-    isMech: true,
-    mechSynergy: {
-      healthBonus: 2,
-    },
-  },
-  {
-    id: 'white-mech-fortress-titan',
-    name: 'Fortress Titan',
-    description: 'Mech. Other mechs you control have Taunt and +1/+1. Costs 7WW.',
-    cardType: 'generic',
-    colors: ['white', 'white'],
-    manaCost: 7,
-    consumesRunes: true, // Requires WW runes
-    attack: 5,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-    isMech: true,
-    mechSynergy: {
-      attackBonus: 1,
-      healthBonus: 1,
-      grantKeyword: 'taunt',
-    },
-  },
-  {
-    id: 'white-mech-steel-warden',
-    name: 'Steel Warden',
-    description: 'Mech. Other mechs you control have +0/+1.',
-    cardType: 'generic',
-    colors: ['white'],
-    manaCost: 4,
-    consumesRunes: false,
-    attack: 3,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-    isMech: true,
-    mechSynergy: {
-      healthBonus: 1,
-    },
-  },
-  {
-    id: 'white-mech-radiant-defender',
-    name: 'Radiant Defender',
-    description: 'Mech. 3/6 for 5 mana. Solid defensive body.',
-    cardType: 'generic',
-    colors: ['white'],
-    manaCost: 5,
-    consumesRunes: false,
-    attack: 3,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
-    isMech: true,
-    mechSynergy: {
-      healthBonus: 0, // No bonus, just a defensive body
-    },
-    rarity: 'common',
-  },
-  // Additional White Mechs for prevalence
-  {
-    id: 'white-mech-sanctum-guardian',
-    name: 'Sanctum Guardian',
-    description: 'Mech. 2/4 for 3 mana. Defensive.',
-    cardType: 'generic',
-    colors: ['white'],
-    manaCost: 3,
-    consumesRunes: false,
-    attack: 2,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-    isMech: true,
-    mechSynergy: {
-      healthBonus: 0,
-    },
-    rarity: 'common',
-  },
-  {
-    id: 'white-mech-light-bearer',
-    name: 'Light Bearer',
-    description: 'Mech. Other mechs have +0/+1.',
-    cardType: 'generic',
-    colors: ['white'],
-    manaCost: 4,
-    consumesRunes: false,
-    attack: 2,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-    isMech: true,
-    mechSynergy: {
-      healthBonus: 1,
-    },
-    rarity: 'common',
-  },
-  {
-    id: 'white-mech-divine-automaton',
-    name: 'Divine Automaton',
-    description: 'Mech. 3/5 for 5 mana. Solid defender.',
-    cardType: 'generic',
-    colors: ['white'],
-    manaCost: 5,
-    consumesRunes: false,
-    attack: 3,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-    isMech: true,
-    mechSynergy: {
-      healthBonus: 0,
-    },
-    rarity: 'common',
-  },
-])
-
-// Splash Mechs (2 per color - Green and Black)
-greenMechs.push(...[
-  {
-    id: 'green-mech-nature-forged-construct',
-    name: 'Nature-Forged Construct',
-    description: 'Mech. ETB: Add one G rune to your pool if you control another mech. Costs 4G.',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 4,
-    consumesRunes: true, // Requires G rune
-    attack: 3,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-    isMech: true,
-    mechSynergy: {
-      etbEffect: 'add_rune',
-    },
-  },
-  {
-    id: 'green-mech-verdant-titan',
-    name: 'Verdant Titan',
-    description: 'Mech. 4/5 for 5 mana. Efficient green body.',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 5,
-    consumesRunes: false,
-    attack: 4,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-    isMech: true,
-    mechSynergy: {
-      healthBonus: 0, // No bonus, just efficient stats
-    },
-    rarity: 'common',
-  },
-  // Additional Green Mechs for prevalence
-  {
-    id: 'green-mech-bramble-construct',
-    name: 'Bramble Construct',
-    description: 'Mech. 3/5 for 5 mana. Solid green body.',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 5,
-    consumesRunes: false,
-    attack: 3,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-    isMech: true,
-    mechSynergy: {
-      healthBonus: 0,
-    },
-    rarity: 'common',
-  },
-  {
-    id: 'green-mech-growth-engine',
-    name: 'Growth Engine',
-    description: 'Mech. Other mechs have +0/+1.',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 4,
-    consumesRunes: false,
-    attack: 2,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-    isMech: true,
-    mechSynergy: {
-      healthBonus: 1,
-    },
-    rarity: 'uncommon',
-  },
-])
-
-blackMechs.push(...[
-  {
-    id: 'black-mech-void-construct',
-    name: 'Void Construct',
-    description: 'Mech. ETB: Destroy target unit with 2 or less health if you control another mech. Costs 5B.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 5,
-    consumesRunes: true, // Requires B rune
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-    isMech: true,
-    mechSynergy: {
-      etbEffect: 'destroy_unit',
-    },
-  },
-  {
-    id: 'black-mech-corrupted-automaton',
-    name: 'Corrupted Automaton',
-    description: 'Mech. 3/4 for 4 mana. Solid black mech.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 4,
-    consumesRunes: false,
-    attack: 3,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-    isMech: true,
-    mechSynergy: {
-      attackBonus: 0, // No bonus, just a mech body
-    },
-    rarity: 'common',
-  },
-  // Additional Black Mechs for prevalence
-  {
-    id: 'black-mech-shadow-automaton',
-    name: 'Shadow Automaton',
-    description: 'Mech. 3/3 for 4 mana. Solid black body.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 4,
-    consumesRunes: false,
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-    isMech: true,
-    mechSynergy: {
-      attackBonus: 0,
-    },
-    rarity: 'common',
-  },
-  {
-    id: 'black-mech-death-engine',
-    name: 'Death Engine',
-    description: 'Mech. Other mechs have +1/+0.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 5,
-    consumesRunes: false,
-    attack: 4,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-    isMech: true,
-    mechSynergy: {
-      attackBonus: 1,
-    },
-    rarity: 'uncommon',
-  },
-])
-
-// Mech Signature Cards
-// Mech signature cards removed
 
 export const allBattlefields: BattlefieldDefinition[] = [
   ...archetypeBattlefields,

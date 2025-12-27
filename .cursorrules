@@ -78,6 +78,14 @@ A two-player hero card game with:
 4. **Consider performance** - React best practices, avoid unnecessary re-renders
 5. **Visual polish** - UI should be clean and intuitive
 
+### Card Data Persistence (CRITICAL)
+**NEVER make card changes via localStorage overrides. Always edit `src/game/comprehensiveCardData.ts` directly.**
+
+- **Source of Truth**: `src/game/comprehensiveCardData.ts` is the single source of truth for all card data
+- **Why**: Changes made via localStorage (card editor) are temporary and can be cleared, while changes to the source file persist across sessions
+- **When editing cards**: Always modify the card definitions in `comprehensiveCardData.ts` directly
+- **Note**: The `cardStorage.ts` system exists for runtime testing/editing, but session changes should be saved to the source file, not localStorage
+
 ### Game Design Principles to Apply
 - **Meaningful choices** - Players should have interesting decisions
 - **Risk/reward** - Resource management (mana, cards) creates tension

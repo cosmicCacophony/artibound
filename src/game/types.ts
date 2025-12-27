@@ -60,6 +60,7 @@ export interface BaseCard {
   manaCost?: number // Cost to play this card (uses mana)
   colors?: Color[] // Colors required to cast in lane with matching hero color
   consumesRunes?: boolean // If true, casting this card consumes runes from the pool
+  bloodMagic?: BloodMagicConfig // Built-in Blood Magic for GBR/GBR+ cards
 }
 
 export interface Item {
@@ -191,6 +192,8 @@ export interface GameMetadata {
   player2CardTypesPlayedThisTurn: CardType[]
   // Blood Magic: Pending tower damage from blood magic usage (applied during deployment)
   pendingBloodMagicCost?: number
+  // Hero counters: Track counters on specific heroes (e.g., WB hero life-spent counters)
+  heroCounters?: Record<string, number> // Format: heroId -> counter count
 }
 
 // Hero Ability Types
@@ -322,16 +325,6 @@ export interface GenericUnit extends BaseCard {
     abilities?: string[]
   }
   isEvolved?: boolean // Has this unit evolved this turn?
-  // Mech tribal mechanics
-  isMech?: boolean // Mech tribal tag
-  mechSynergy?: {
-    // Bonus this mech provides to other mechs
-    attackBonus?: number // +N attack to all other mechs
-    healthBonus?: number // +N health to all other mechs
-    grantKeyword?: string // Grant keyword (e.g., 'shield', 'overwhelm', 'taunt')
-    costReduction?: number // Reduce mech costs by N
-    etbEffect?: string // Special ETB effect when played with other mechs (e.g., 'draw_card', 'deal_damage', 'gain_armor')
-  }
 }
 
 // Spell Effect Types

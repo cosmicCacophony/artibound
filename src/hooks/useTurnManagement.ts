@@ -547,7 +547,7 @@ export function useTurnManagement() {
       
       // REMOVED: Auto-spawn creep system (Core Game Redesign - Phase 1)
       // Creeps no longer spawn automatically each turn - board stays cleaner, heroes are primary threats
-      // Keep Void Apprentice spawning (mech-specific ability)
+      // Keep Void Apprentice spawning
       const battlefieldAWithCreeps = updatedBattlefieldA // No longer spawning creeps
       const battlefieldBWithCreeps = updatedBattlefieldB // No longer spawning creeps
       
@@ -580,67 +580,6 @@ export function useTurnManagement() {
               ? { ...card, sagaCounters: newCounter } as import('../game/types').ArtifactCard
               : card
           )
-          
-          // Process Chapter 1: Create 1/1 Mech token each turn on both battlefields
-          if (newCounter >= 1) {
-            // Create token on battlefield A
-            let emptySlotA: number | null = null
-            for (let slot = 1; slot <= 5; slot++) {
-              const slotOccupied = updatedBattlefieldA[player].some(c => c.slot === slot)
-              if (!slotOccupied) {
-                emptySlotA = slot
-                break
-              }
-            }
-            if (emptySlotA !== null) {
-              const mechTokenA: import('../game/types').GenericUnit = {
-                id: `mech-token-${player}-battlefieldA-${newTurn}-${Date.now()}`,
-                name: 'Mech Token',
-                description: '1/1 Mech token created by Mech Assembly Line',
-                cardType: 'generic',
-                colors: ['blue', 'red'],
-                manaCost: 0,
-                attack: 1,
-                health: 1,
-                maxHealth: 1,
-                currentHealth: 1,
-                location: 'battlefieldA',
-                owner: player,
-                slot: emptySlotA,
-                isMech: true,
-              }
-              updatedBattlefieldA[player] = [...updatedBattlefieldA[player], mechTokenA]
-            }
-            
-            // Create token on battlefield B
-            let emptySlotB: number | null = null
-            for (let slot = 1; slot <= 5; slot++) {
-              const slotOccupied = updatedBattlefieldB[player].some(c => c.slot === slot)
-              if (!slotOccupied) {
-                emptySlotB = slot
-                break
-              }
-            }
-            if (emptySlotB !== null) {
-              const mechTokenB: import('../game/types').GenericUnit = {
-                id: `mech-token-${player}-battlefieldB-${newTurn}-${Date.now()}-b`,
-                name: 'Mech Token',
-                description: '1/1 Mech token created by Mech Assembly Line',
-                cardType: 'generic',
-                colors: ['blue', 'red'],
-                manaCost: 0,
-                attack: 1,
-                health: 1,
-                maxHealth: 1,
-                currentHealth: 1,
-                location: 'battlefieldB',
-                owner: player,
-                slot: emptySlotB,
-                isMech: true,
-              }
-              updatedBattlefieldB[player] = [...updatedBattlefieldB[player], mechTokenB]
-            }
-          }
           
           // Destroy artifact after Chapter 3
           if (newCounter >= 3) {

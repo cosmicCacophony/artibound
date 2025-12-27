@@ -784,3 +784,4 @@ When creating a card, ask:
 *This guide provides the complete workflow for creating cards in Artibound. When in doubt, refer to the design philosophy and test against the boss.*
 
 
+

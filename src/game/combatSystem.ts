@@ -1,5 +1,5 @@
 import { Card, AttackTarget, AttackTargetType, Battlefield, PlayerId, GameMetadata, GameState, GenericUnit } from './types'
-import { getAttackPowerWithMechBonus, getSagaCombatDamageBonus, isMech } from './mechSystem'
+import { getSagaCombatDamageBonus } from './sagaSystem'
 
 /**
  * Combat System - Handles all combat-related logic
@@ -124,16 +124,15 @@ export function resolveAttack(
       // If stunned, deal 0 damage; otherwise calculate normally
       if (isStunned) {
         attackPower = 0
-      } else if (isMech(attacker) && gameState) {
-        // Use mech bonus calculation with saga bonuses
-        attackPower = getAttackPowerWithMechBonus(attacker, battlefield, attacker.owner, gameState)
+      } else {
+        attackPower = getAttackPower(attacker, targetIsHero)
         if (targetIsHero && attacker.cardType === 'hero' && 'bonusVsHeroes' in attacker && attacker.bonusVsHeroes) {
           attackPower += attacker.bonusVsHeroes
         }
         // Apply Chapter 3 saga bonus: +3 damage to combat target
-        attackPower += getSagaCombatDamageBonus(gameState, attacker.owner)
-      } else {
-        attackPower = getAttackPower(attacker, targetIsHero)
+        if (gameState) {
+          attackPower += getSagaCombatDamageBonus(gameState, attacker.owner)
+        }
       }
       
       // Calculate effective health (currentHealth + temporaryHP)
@@ -188,13 +187,12 @@ export function resolveAttack(
       // If stunned, deal 0 damage; otherwise calculate normally
       if (isStunned) {
         attackPower = 0
-      } else if (isMech(attacker) && gameState) {
-        // Use mech bonus calculation with saga bonuses
-        attackPower = getAttackPowerWithMechBonus(attacker, battlefield, attacker.owner, gameState)
-        // Apply Chapter 3 saga bonus: +3 damage to combat target (towers count as combat targets)
-        attackPower += getSagaCombatDamageBonus(gameState, attacker.owner)
       } else {
         attackPower = getAttackPower(attacker, false) // No hero bonus vs towers
+        // Apply Chapter 3 saga bonus: +3 damage to combat target (towers count as combat targets)
+        if (gameState) {
+          attackPower += getSagaCombatDamageBonus(gameState, attacker.owner)
+        }
       }
       
       // Apply tower armor (reduce damage by armor amount)
@@ -211,11 +209,11 @@ export function resolveAttack(
       // Tower already dead - all damage goes to nexus (will be handled in combat resolution)
       if (isStunned) {
         attackPower = 0
-      } else if (isMech(attacker) && gameState) {
-        attackPower = getAttackPowerWithMechBonus(attacker, battlefield, attacker.owner, gameState)
-        attackPower += getSagaCombatDamageBonus(gameState, attacker.owner)
       } else {
         attackPower = getAttackPower(attacker, false)
+        if (gameState) {
+          attackPower += getSagaCombatDamageBonus(gameState, attacker.owner)
+        }
       }
       damageDealt = 0 // No damage to tower (it's already dead)
     }
@@ -417,33 +415,29 @@ export function resolveSimultaneousCombat(
     // Calculate damage amounts (check for stun)
     const p1IsStunned = p1Unit && p1Unit.cardType === 'hero' && stunnedHeroes && stunnedHeroes[p1Unit.id]
     const p2IsStunned = p2Unit && p2Unit.cardType === 'hero' && stunnedHeroes && stunnedHeroes[p2Unit.id]
-    // Calculate attack power (use mech bonuses if applicable)
+    // Calculate attack power
     let p1AttackPower = 0
     if (p1Unit && !p1IsStunned) {
       const targetIsHero = p1Target?.type === 'unit' && p1Target.targetId ? 
         currentBattlefield.player2.find(u => u.id === p1Target.targetId)?.cardType === 'hero' : false
-      if (isMech(p1Unit) && gameState) {
-        p1AttackPower = getAttackPowerWithMechBonus(p1Unit, currentBattlefield, p1Unit.owner, gameState)
-        if (targetIsHero && p1Unit.cardType === 'hero' && 'bonusVsHeroes' in p1Unit && p1Unit.bonusVsHeroes) {
-          p1AttackPower += p1Unit.bonusVsHeroes
-        }
+      p1AttackPower = getAttackPower(p1Unit, targetIsHero)
+      if (targetIsHero && p1Unit.cardType === 'hero' && 'bonusVsHeroes' in p1Unit && p1Unit.bonusVsHeroes) {
+        p1AttackPower += p1Unit.bonusVsHeroes
+      }
+      if (gameState) {
         p1AttackPower += getSagaCombatDamageBonus(gameState, p1Unit.owner)
-      } else {
-        p1AttackPower = getAttackPower(p1Unit, targetIsHero)
       }
     }
     let p2AttackPower = 0
     if (p2Unit && !p2IsStunned) {
       const targetIsHero = p2Target?.type === 'unit' && p2Target.targetId ? 
         currentBattlefield.player1.find(u => u.id === p2Target.targetId)?.cardType === 'hero' : false
-      if (isMech(p2Unit) && gameState) {
-        p2AttackPower = getAttackPowerWithMechBonus(p2Unit, currentBattlefield, p2Unit.owner, gameState)
-        if (targetIsHero && p2Unit.cardType === 'hero' && 'bonusVsHeroes' in p2Unit && p2Unit.bonusVsHeroes) {
-          p2AttackPower += p2Unit.bonusVsHeroes
-        }
+      p2AttackPower = getAttackPower(p2Unit, targetIsHero)
+      if (targetIsHero && p2Unit.cardType === 'hero' && 'bonusVsHeroes' in p2Unit && p2Unit.bonusVsHeroes) {
+        p2AttackPower += p2Unit.bonusVsHeroes
+      }
+      if (gameState) {
         p2AttackPower += getSagaCombatDamageBonus(gameState, p2Unit.owner)
-      } else {
-        p2AttackPower = getAttackPower(p2Unit, targetIsHero)
       }
     }
     
