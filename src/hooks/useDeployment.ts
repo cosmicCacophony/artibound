@@ -2,8 +2,9 @@ import { useCallback } from 'react'
 import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT, Hero, ItemCard, BaseCard, SpellCard } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { tier1Items } from '../game/sampleData'
-import { canAffordCard, consumeRunesForCard, addRunesFromHero, removeRunesFromHero, addTemporaryRunes } from '../game/runeSystem'
+import { canAffordCard, consumeRunesForCard, addRunesFromHero, removeRunesFromHero, addTemporaryRunes, consumeRunesForCardWithTracking } from '../game/runeSystem'
 import { canPlayCardInLane } from '../game/colorSystem'
+import { getAllChromaticPayoffs } from '../game/chromaticSystem'
 
 export function useDeployment() {
   const { gameState, setGameState, selectedCard, selectedCardId, setSelectedCardId, getAvailableSlots } = useGameContext()
@@ -364,7 +365,9 @@ export function useDeployment() {
             updatedMana = updatedMana - cardTemplate.manaCost
           }
           // Consume runes for color requirements (only if consumesRunes: true)
-          updatedRunePool = consumeRunesForCard(cardTemplate, updatedRunePool)
+          // Track which colors were consumed for chromatic payoff triggers
+          const { newPool, consumedColors } = consumeRunesForCardWithTracking(cardTemplate, updatedRunePool)
+          updatedRunePool = newPool
           
           // Handle spell effects that add temporary runes (like Dark Ritual)
           if (cardTemplate.cardType === 'spell' && cardTemplate.effect) {
@@ -378,6 +381,44 @@ export function useDeployment() {
             // Handle mana refund for "free spells" (Urza block inspired)
             if (spellCard.refundMana && spellCard.refundMana > 0) {
               updatedMana = updatedMana + spellCard.refundMana
+            }
+          }
+          
+          // Check for chromatic payoffs (green's rune identity)
+          if (consumedColors.length > 0) {
+            // Get all player's heroes from both battlefields
+            const playerHeroes = [
+              ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
+              ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']
+            ].filter(card => card.cardType === 'hero') as Hero[]
+            
+            const chromaticPayoffs = getAllChromaticPayoffs(playerHeroes, consumedColors)
+            
+            // Apply payoff effects
+            for (const { hero, payoff } of chromaticPayoffs) {
+              switch (payoff.effectType) {
+                case 'mana':
+                  updatedMana += payoff.effectValue
+                  console.log(`Chromatic: ${hero.name} grants ${payoff.effectValue} mana`)
+                  break
+                case 'heal':
+                  // Healing will be applied to the hero in the battlefield state update
+                  console.log(`Chromatic: ${hero.name} heals for ${payoff.effectValue}`)
+                  break
+                case 'buff':
+                  // Buff will be applied to the hero in the battlefield state update
+                  console.log(`Chromatic: ${hero.name} gains +${payoff.effectValue} attack`)
+                  break
+                case 'damage':
+                  console.log(`Chromatic: ${hero.name} deals ${payoff.effectValue} damage`)
+                  break
+                case 'draw':
+                  console.log(`Chromatic: Draw ${payoff.effectValue} cards`)
+                  break
+                case 'rune':
+                  console.log(`Chromatic: Add ${payoff.effectValue} runes`)
+                  break
+              }
             }
           }
         }
@@ -467,7 +508,9 @@ export function useDeployment() {
                   updatedMana = updatedMana - cardTemplate.manaCost
                 }
                 // Consume runes for color requirements (only if consumesRunes: true)
-                updatedRunePool = consumeRunesForCard(cardTemplate, updatedRunePool)
+                // Track which colors were consumed for chromatic payoff triggers
+                const { newPool, consumedColors } = consumeRunesForCardWithTracking(cardTemplate, updatedRunePool)
+                updatedRunePool = newPool
                 
                 // Handle spell effects that add temporary runes (like Dark Ritual)
                 if (cardTemplate.cardType === 'spell' && cardTemplate.effect) {
@@ -481,6 +524,42 @@ export function useDeployment() {
                   // Handle mana refund for "free spells" (Urza block inspired)
                   if (spellCard.refundMana && spellCard.refundMana > 0) {
                     updatedMana = updatedMana + spellCard.refundMana
+                  }
+                }
+                
+                // Check for chromatic payoffs (green's rune identity)
+                if (consumedColors.length > 0) {
+                  // Get all player's heroes from both battlefields
+                  const playerHeroes = [
+                    ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
+                    ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']
+                  ].filter(card => card.cardType === 'hero') as Hero[]
+                  
+                  const chromaticPayoffs = getAllChromaticPayoffs(playerHeroes, consumedColors)
+                  
+                  // Apply payoff effects
+                  for (const { hero, payoff } of chromaticPayoffs) {
+                    switch (payoff.effectType) {
+                      case 'mana':
+                        updatedMana += payoff.effectValue
+                        console.log(`Chromatic: ${hero.name} grants ${payoff.effectValue} mana`)
+                        break
+                      case 'heal':
+                        console.log(`Chromatic: ${hero.name} heals for ${payoff.effectValue}`)
+                        break
+                      case 'buff':
+                        console.log(`Chromatic: ${hero.name} gains +${payoff.effectValue} attack`)
+                        break
+                      case 'damage':
+                        console.log(`Chromatic: ${hero.name} deals ${payoff.effectValue} damage`)
+                        break
+                      case 'draw':
+                        console.log(`Chromatic: Draw ${payoff.effectValue} cards`)
+                        break
+                      case 'rune':
+                        console.log(`Chromatic: Add ${payoff.effectValue} runes`)
+                        break
+                    }
                   }
                 }
               }
@@ -533,7 +612,9 @@ export function useDeployment() {
             updatedMana = updatedMana - cardTemplate.manaCost
           }
           // Consume runes for color requirements (only if consumesRunes: true)
-          updatedRunePool = consumeRunesForCard(cardTemplate, updatedRunePool)
+          // Track which colors were consumed for chromatic payoff triggers
+          const { newPool, consumedColors } = consumeRunesForCardWithTracking(cardTemplate, updatedRunePool)
+          updatedRunePool = newPool
           
           // Handle spell effects that add temporary runes (like Dark Ritual)
           if (cardTemplate.cardType === 'spell' && cardTemplate.effect) {
@@ -547,6 +628,42 @@ export function useDeployment() {
             // Handle mana refund for "free spells" (Urza block inspired)
             if (spellCard.refundMana && spellCard.refundMana > 0) {
               updatedMana = updatedMana + spellCard.refundMana
+            }
+          }
+          
+          // Check for chromatic payoffs (green's rune identity)
+          if (consumedColors.length > 0) {
+            // Get all player's heroes from both battlefields
+            const playerHeroes = [
+              ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
+              ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']
+            ].filter(card => card.cardType === 'hero') as Hero[]
+            
+            const chromaticPayoffs = getAllChromaticPayoffs(playerHeroes, consumedColors)
+            
+            // Apply payoff effects
+            for (const { hero, payoff } of chromaticPayoffs) {
+              switch (payoff.effectType) {
+                case 'mana':
+                  updatedMana += payoff.effectValue
+                  console.log(`Chromatic: ${hero.name} grants ${payoff.effectValue} mana`)
+                  break
+                case 'heal':
+                  console.log(`Chromatic: ${hero.name} heals for ${payoff.effectValue}`)
+                  break
+                case 'buff':
+                  console.log(`Chromatic: ${hero.name} gains +${payoff.effectValue} attack`)
+                  break
+                case 'damage':
+                  console.log(`Chromatic: ${hero.name} deals ${payoff.effectValue} damage`)
+                  break
+                case 'draw':
+                  console.log(`Chromatic: Draw ${payoff.effectValue} cards`)
+                  break
+                case 'rune':
+                  console.log(`Chromatic: Add ${payoff.effectValue} runes`)
+                  break
+              }
             }
           }
         }

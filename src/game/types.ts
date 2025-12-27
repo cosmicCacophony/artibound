@@ -212,6 +212,15 @@ export type HeroAbilityTrigger =
   | 'passive'
   | 'activated' // Manual activation with mana cost
 
+// Chromatic Payoff System - Green's rune identity
+export interface ChromaticPayoff {
+  triggerColors: RuneColor[] // Which colors trigger the payoff (colors this hero doesn't produce)
+  effectType: 'damage' | 'heal' | 'buff' | 'draw' | 'mana' | 'rune'
+  effectValue: number // Magnitude of the bonus
+  perRuneSpent?: boolean // If true, triggers once per rune spent (default: false = once per spell)
+  description: string // Display text for the payoff
+}
+
 export interface HeroAbility {
   name: string
   description: string
@@ -226,6 +235,8 @@ export interface HeroAbility {
   manaRestore?: number // Restore N mana when you cast a spell
   spellCostReduction?: number // Your spells cost N less
   spellDamageBonus?: number // Your spells deal +N damage
+  // Chromatic Payoff field - Green's unique rune identity
+  chromaticPayoff?: ChromaticPayoff // Triggers when player spends off-color runes
   // For tracking cooldown: Record<heroId, turnLastUsed>
   // Stored in GameMetadata.heroAbilityCooldowns
 }

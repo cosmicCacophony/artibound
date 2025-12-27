@@ -653,6 +653,35 @@ export const rgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       effectValue: 3, // Can hit up to 3 units
     },
   },
+  // Chromatic Payoff Hero - Green's rune identity
+  {
+    id: 'rg-hero-chromatic-brawler',
+    name: 'Chromatic Brawler',
+    description: '4/6. Gains +2 attack when you cast spells with U or B runes.',
+    cardType: 'hero',
+    colors: ['red', 'green'],
+    attack: 4,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
+    equippedItems: [],
+    ability: {
+      name: 'Elemental Fury',
+      description: 'Passive: When you spend U or B runes, this hero gains +2 attack this turn.',
+      manaCost: 0,
+      cooldown: 0,
+      trigger: 'passive',
+      effectType: 'buff_units',
+      effectValue: 0,
+      chromaticPayoff: {
+        triggerColors: ['blue', 'black'],
+        effectType: 'buff',
+        effectValue: 2,
+        perRuneSpent: false,
+        description: 'Gains +2 attack when you spend U or B runes'
+      }
+    }
+  },
 ]
 
 export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
@@ -1082,6 +1111,35 @@ export const gwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       effectValue: 3, // +3 attack to neighbors
     },
   },
+  // Chromatic Payoff Hero - Green's rune identity
+  {
+    id: 'gw-hero-chromatic-healer',
+    name: 'Chromatic Healer',
+    description: '3/7. Heals 2 when you cast spells with R or B runes.',
+    cardType: 'hero',
+    colors: ['green', 'white'],
+    attack: 3,
+    health: 7,
+    maxHealth: 7,
+    currentHealth: 7,
+    equippedItems: [],
+    ability: {
+      name: 'Prismatic Mending',
+      description: 'Passive: When you spend R or B runes, heal this hero for 2.',
+      manaCost: 0,
+      cooldown: 0,
+      trigger: 'passive',
+      effectType: 'heal_self',
+      effectValue: 0,
+      chromaticPayoff: {
+        triggerColors: ['red', 'black'],
+        effectType: 'heal',
+        effectValue: 2,
+        perRuneSpent: false,
+        description: 'Heals 2 when you spend R or B runes'
+      }
+    }
+  },
 ]
 
 export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
@@ -1217,6 +1275,35 @@ export const gbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     currentHealth: 7,
     supportEffect: 'Kill spells cost -1',    equippedItems: [],
     bonusVsHeroes: 4, // Assassin: deals double damage to heroes (4 base attack = 8 vs heroes)
+  },
+  // Chromatic Payoff Hero - Green's rune identity
+  {
+    id: 'gb-hero-chromatic-destroyer',
+    name: 'Chromatic Destroyer',
+    description: '5/5. Deals 1 damage to a random enemy per U or W rune spent.',
+    cardType: 'hero',
+    colors: ['green', 'black'],
+    attack: 5,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+    equippedItems: [],
+    ability: {
+      name: 'Prismatic Destruction',
+      description: 'Passive: Deal 1 damage to random enemy per U or W rune spent.',
+      manaCost: 0,
+      cooldown: 0,
+      trigger: 'passive',
+      effectType: 'damage_random',
+      effectValue: 0,
+      chromaticPayoff: {
+        triggerColors: ['blue', 'white'],
+        effectType: 'damage',
+        effectValue: 1,
+        perRuneSpent: true, // Triggers per rune!
+        description: 'Deal 1 damage per U/W rune spent'
+      }
+    }
   },
 ]
 
@@ -1437,6 +1524,35 @@ export const guHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 7,
     currentHealth: 7,
     supportEffect: 'You can play cards of any color',    equippedItems: [],
+  },
+  // Chromatic Payoff Hero - Green's rune identity
+  {
+    id: 'gu-hero-chromatic-sage',
+    name: 'Chromatic Sage',
+    description: '2/6. Gain 1 mana when you cast spells with R or W runes.',
+    cardType: 'hero',
+    colors: ['green', 'blue'],
+    attack: 2,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
+    equippedItems: [],
+    ability: {
+      name: 'Prismatic Abundance',
+      description: 'Passive: When you spend R or W runes, gain 1 mana.',
+      manaCost: 0,
+      cooldown: 0,
+      trigger: 'passive',
+      effectType: 'mana_gain',
+      effectValue: 0,
+      chromaticPayoff: {
+        triggerColors: ['red', 'white'],
+        effectType: 'mana',
+        effectValue: 1,
+        perRuneSpent: false,
+        description: 'Gain 1 mana when spending R or W runes'
+      }
+    }
   },
 ]
 

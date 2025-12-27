@@ -262,6 +262,62 @@ export function consumeRunesForCard(card: BaseCard, runePool: RunePool): RunePoo
 }
 
 /**
+ * Consume runes and return which colors were consumed
+ * Returns array of colors that were actually consumed from the pool
+ * 
+ * This is used for chromatic payoff triggers - tracking which rune colors were spent
+ */
+export function consumeRunesForCardWithTracking(
+  card: BaseCard, 
+  runePool: RunePool
+): { newPool: RunePool; consumedColors: RuneColor[] } {
+  // Only consume if card has consumesRunes: true
+  if (!card.consumesRunes) {
+    return { newPool: runePool, consumedColors: [] }
+  }
+  
+  if (!card.colors || card.colors.length === 0) {
+    return { newPool: runePool, consumedColors: [] } // No color requirements, no runes consumed
+  }
+  
+  // Safety check: ensure arrays are always arrays
+  const safeTemporaryRunes = Array.isArray(runePool.temporaryRunes) ? runePool.temporaryRunes : []
+  const safePermanentRunes = Array.isArray(runePool.runes) ? runePool.runes : []
+  
+  const newTemporaryRunes = [...safeTemporaryRunes]
+  const newPermanentRunes = [...safePermanentRunes]
+  const consumedColors: RuneColor[] = []
+  
+  // Track each color as we consume it
+  for (const requiredColor of card.colors) {
+    const runeColor = requiredColor as RuneColor
+    
+    // Try temporary runes first
+    const tempIndex = newTemporaryRunes.indexOf(runeColor)
+    if (tempIndex !== -1) {
+      newTemporaryRunes.splice(tempIndex, 1)
+      consumedColors.push(runeColor)
+      continue
+    }
+    
+    // Then permanent runes
+    const permIndex = newPermanentRunes.indexOf(runeColor)
+    if (permIndex !== -1) {
+      newPermanentRunes.splice(permIndex, 1)
+      consumedColors.push(runeColor)
+    }
+  }
+  
+  return {
+    newPool: {
+      runes: newPermanentRunes,
+      temporaryRunes: newTemporaryRunes,
+    },
+    consumedColors
+  }
+}
+
+/**
  * Consume specific runes (for hero abilities with rune costs)
  * Consumes temporary runes first, then permanent runes
  */
