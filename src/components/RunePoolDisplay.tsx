@@ -146,6 +146,14 @@ export function RunePoolDisplay({ runePool, seals = [], playerName, player }: Ru
 
   const totalCount = runePool.runes.length + (runePool.temporaryRunes?.length || 0)
 
+  const handleAddRune = (color: Color) => {
+    handleAdjustRune(color, 1, false)
+  }
+
+  const handleRemoveRune = (color: Color, isTemporary: boolean) => {
+    handleAdjustRune(color, -1, isTemporary)
+  }
+
   return (
     <div style={{ 
       padding: '8px', 
@@ -165,24 +173,95 @@ export function RunePoolDisplay({ runePool, seals = [], playerName, player }: Ru
         </div>
       )}
       
-      {/* Permanent Runes by Color */}
+      {/* Color Symbols Row - Always show all 5 colors */}
       <div style={{ 
         display: 'flex', 
-        flexDirection: 'column',
         gap: '4px',
-        marginBottom: (runePool.temporaryRunes?.length || 0) > 0 ? '8px' : '8px',
+        marginBottom: '8px',
+        flexWrap: 'wrap',
       }}>
         {allColors.map(color => {
-          const count = permanentRunesByColor[color]
-          if (count === 0 && temporaryRunesByColor[color] === 0) return null
-          
           const colorStyle = colorDisplay[color]
+          const count = permanentRunesByColor[color]
           const tempCount = temporaryRunesByColor[color]
+          const totalCount = count + tempCount
           
           return (
-            <div key={color} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              {/* Color Symbol with Count */}
+            <div
+              key={color}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleAddRune(color)
+              }}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '4px',
+                backgroundColor: colorStyle.bg,
+                color: colorStyle.text,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                border: `2px solid ${colorStyle.bg}`,
+                cursor: 'pointer',
+                transition: 'transform 0.1s',
+                position: 'relative',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.1)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)'
+              }}
+              title={`Click to add ${color} rune${totalCount > 0 ? ` (you have ${totalCount})` : ''}`}
+            >
+              {colorAbbreviation[color]}
+              {totalCount > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-4px',
+                  right: '-4px',
+                  backgroundColor: '#333',
+                  color: '#fff',
+                  borderRadius: '50%',
+                  width: '16px',
+                  height: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '10px',
+                  border: '1px solid #666',
+                }}>
+                  {totalCount}
+                </span>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Existing Runes - Clickable to remove */}
+      {(runePool.runes.length > 0 || (runePool.temporaryRunes?.length || 0) > 0) && (
+        <div style={{ 
+          display: 'flex', 
+          flexWrap: 'wrap',
+          gap: '4px',
+          marginBottom: '8px',
+          paddingTop: '8px',
+          borderTop: '1px solid #333',
+        }}>
+          {/* Permanent Runes */}
+          {runePool.runes.map((rune, index) => {
+            const colorStyle = colorDisplay[rune]
+            return (
               <div
+                key={`permanent-${rune}-${index}`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleRemoveRune(rune, false)
+                }}
                 style={{
                   width: '32px',
                   height: '32px',
@@ -195,118 +274,66 @@ export function RunePoolDisplay({ runePool, seals = [], playerName, player }: Ru
                   fontSize: '14px',
                   fontWeight: 'bold',
                   border: `2px solid ${colorStyle.bg}`,
-                  position: 'relative',
+                  cursor: 'pointer',
+                  transition: 'transform 0.1s',
                 }}
-                title={`${color} rune${count > 0 ? ' (permanent)' : ''}${tempCount > 0 ? ' + temporary' : ''}`}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.1)'
+                  e.currentTarget.style.opacity = '0.8'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)'
+                  e.currentTarget.style.opacity = '1'
+                }}
+                title={`Click to remove ${rune} rune`}
               >
-                {colorAbbreviation[color]}
-                {count > 0 && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '-6px',
-                    right: '-6px',
-                    backgroundColor: '#333',
-                    color: '#fff',
-                    borderRadius: '50%',
-                    width: '16px',
-                    height: '16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '10px',
-                    border: '1px solid #666',
-                  }}>
-                    {count}
-                  </span>
-                )}
+                {colorAbbreviation[rune]}
               </div>
-              
-              {/* Temporary indicator if any */}
-              {tempCount > 0 && (
-                <div
-                  style={{
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '4px',
-                    backgroundColor: colorStyle.bg,
-                    color: colorStyle.text,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    border: `2px dashed #ffd700`,
-                    boxShadow: '0 0 4px #ffd700',
-                    position: 'relative',
-                  }}
-                  title={`${tempCount} temporary ${color} rune(s)`}
-                >
-                  {colorAbbreviation[color]}
-                  <span style={{
-                    position: 'absolute',
-                    top: '-6px',
-                    right: '-6px',
-                    backgroundColor: '#ffd700',
-                    color: '#000',
-                    borderRadius: '50%',
-                    width: '14px',
-                    height: '14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '9px',
-                    border: '1px solid #333',
-                  }}>
-                    {tempCount}
-                  </span>
-                </div>
-              )}
-              
-              {/* Adjustment Buttons */}
-              <div style={{ display: 'flex', gap: '2px', marginLeft: 'auto' }}>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleAdjustRune(color, -1, false)
-                  }}
-                  style={{
-                    padding: '2px 6px',
-                    backgroundColor: '#f44336',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '10px',
-                    fontWeight: 'bold',
-                  }}
-                  title={`Remove 1 permanent ${color} rune`}
-                >
-                  -
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleAdjustRune(color, 1, false)
-                  }}
-                  style={{
-                    padding: '2px 6px',
-                    backgroundColor: '#4caf50',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '10px',
-                    fontWeight: 'bold',
-                  }}
-                  title={`Add 1 permanent ${color} rune`}
-                >
-                  +
-                </button>
+            )
+          })}
+          
+          {/* Temporary Runes */}
+          {runePool.temporaryRunes?.map((rune, index) => {
+            const colorStyle = colorDisplay[rune]
+            return (
+              <div
+                key={`temp-${rune}-${index}`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleRemoveRune(rune, true)
+                }}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '4px',
+                  backgroundColor: colorStyle.bg,
+                  color: colorStyle.text,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  border: `2px dashed #ffd700`,
+                  boxShadow: '0 0 4px #ffd700',
+                  cursor: 'pointer',
+                  transition: 'transform 0.1s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.1)'
+                  e.currentTarget.style.opacity = '0.8'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)'
+                  e.currentTarget.style.opacity = '1'
+                }}
+                title={`Click to remove temporary ${rune} rune`}
+              >
+                {colorAbbreviation[rune]}
               </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Seals */}
       {seals.length > 0 && (

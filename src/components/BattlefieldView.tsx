@@ -475,9 +475,6 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                     battlefieldB: resultB.updatedBattlefield,
                     player1Base: newP1BaseB,
                     player2Base: newP2BaseB,
-                    // Add drawn cards to hands
-                    player1Hand: [...(prev.player1Hand || []), ...allCardsToDraw.player1],
-                    player2Hand: [...(prev.player2Hand || []), ...allCardsToDraw.player2],
                     metadata: {
                       ...prev.metadata,
                       towerA_player1_HP: resultA.updatedTowerHP.towerA_player1,

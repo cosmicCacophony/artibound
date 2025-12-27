@@ -2116,6 +2116,76 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     },
     initiative: true,
   },
+  // Blue Tempo Spells - Bounce + Draw (Repulse-style)
+  {
+    id: 'blue-spell-repulse',
+    name: 'Repulse',
+    description: 'Return target unit to its owner\'s hand. Draw a card. Costs 3U, refunds 3 mana.',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 3,
+    consumesRunes: true, // Requires U rune
+    refundMana: 3, // Free spell mechanic
+    effect: {
+      type: 'return_to_base',
+      damage: 0,
+      drawCount: 1,
+      affectsUnits: true,
+    },
+    initiative: true,
+  },
+  {
+    id: 'blue-spell-double-repulse',
+    name: 'Double Repulse',
+    description: 'Return up to 2 target units to their owners\' hands. Draw a card. Costs 5UU, refunds 5 mana.',
+    cardType: 'spell',
+    colors: ['blue', 'blue'],
+    manaCost: 5,
+    consumesRunes: true, // Requires UU runes
+    refundMana: 5, // Free spell mechanic
+    effect: {
+      type: 'return_to_base',
+      damage: 0,
+      drawCount: 1,
+      maxTargets: 2, // Can target up to 2 units
+      affectsUnits: true,
+    },
+    initiative: true,
+  },
+  {
+    id: 'blue-spell-temporal-shift',
+    name: 'Temporal Shift',
+    description: 'Return target unit to its owner\'s hand. Draw a card. Costs 2U, refunds 2 mana.',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 2,
+    consumesRunes: true, // Requires U rune
+    refundMana: 2, // Free spell mechanic
+    effect: {
+      type: 'return_to_base',
+      damage: 0,
+      drawCount: 1,
+      affectsUnits: true,
+    },
+    initiative: true,
+  },
+  {
+    id: 'blue-spell-arcane-repulsion',
+    name: 'Arcane Repulsion',
+    description: 'Return target unit to its owner\'s hand. Draw 2 cards. Costs 4U, refunds 4 mana.',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 4,
+    consumesRunes: true, // Requires U rune
+    refundMana: 4, // Free spell mechanic
+    effect: {
+      type: 'return_to_base',
+      damage: 0,
+      drawCount: 2,
+      affectsUnits: true,
+    },
+    initiative: true,
+  },
   {
     id: 'green-spell-3g-ramp',
     name: 'Wild Growth',
@@ -3300,6 +3370,159 @@ export const gbrwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
 // Removed from playable cards - only spawned by hero ability
 
 // ============================================================================
+// WUB (White/Blue/Black) - Esper Control/Value
+// ============================================================================
+
+export const wubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  {
+    id: 'wub-spell-esper-command',
+    name: 'Esper Command',
+    description: 'Destroy target unit. Draw 2 cards. Costs 4WUB, refunds 4 mana.',
+    cardType: 'spell',
+    colors: ['white', 'blue', 'black'],
+    manaCost: 4,
+    consumesRunes: true, // Requires WUB runes
+    refundMana: 4, // Free spell mechanic
+    effect: {
+      type: 'targeted_damage',
+      damage: 999, // High damage to ensure kill
+      drawCount: 2,
+      affectsUnits: true,
+      affectsHeroes: false,
+    },
+    initiative: true,
+  },
+  {
+    id: 'wub-spell-soul-extraction',
+    name: 'Soul Extraction',
+    description: 'Deal 4 damage to target unit or hero. Draw a card. Costs 3WUB, refunds 3 mana.',
+    cardType: 'spell',
+    colors: ['white', 'blue', 'black'],
+    manaCost: 3,
+    consumesRunes: true, // Requires WUB runes
+    refundMana: 3, // Free spell mechanic
+    effect: {
+      type: 'targeted_damage',
+      damage: 4,
+      drawCount: 1,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+    initiative: true,
+  },
+  {
+    id: 'wub-spell-divine-judgment',
+    name: 'Divine Judgment',
+    description: 'Destroy target unit or hero. Draw 2 cards. Gain 3 life. Costs 5WUB, refunds 5 mana.',
+    cardType: 'spell',
+    colors: ['white', 'blue', 'black'],
+    manaCost: 5,
+    consumesRunes: true, // Requires WUB runes
+    refundMana: 5, // Free spell mechanic
+    effect: {
+      type: 'targeted_damage',
+      damage: 999, // High damage to ensure kill
+      drawCount: 2,
+      healAmount: 3,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+    initiative: true,
+  },
+  {
+    id: 'wub-spell-void-purge',
+    name: 'Void Purge',
+    description: 'Return target unit to its owner\'s hand. Draw a card. Costs 2WUB, refunds 2 mana.',
+    cardType: 'spell',
+    colors: ['white', 'blue', 'black'],
+    manaCost: 2,
+    consumesRunes: true, // Requires WUB runes
+    refundMana: 2, // Free spell mechanic
+    effect: {
+      type: 'return_to_base',
+      damage: 0,
+      drawCount: 1,
+      affectsUnits: true,
+    },
+    initiative: true,
+  },
+]
+
+// ============================================================================
+// WGU (White/Green/Blue) - Bant Control/Value
+// ============================================================================
+
+export const wguSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  {
+    id: 'wgu-spell-bant-growth',
+    name: 'Bant Growth',
+    description: 'Gain +1 max mana. Target unit gains +2/+2 and protection from spells this turn. Draw a card. Costs 3WGU, refunds 3 mana.',
+    cardType: 'spell',
+    colors: ['white', 'green', 'blue'],
+    manaCost: 3,
+    consumesRunes: true, // Requires WGU runes
+    refundMana: 3, // Free spell mechanic
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for ramp + buff + protection
+      damage: 0,
+      drawCount: 1,
+      affectsUnits: true,
+    },
+    initiative: true,
+  },
+  {
+    id: 'wgu-spell-natures-shield',
+    name: 'Nature\'s Shield',
+    description: 'Target unit gains +0/+3 and protection from spells this turn. Draw a card. Costs 2WGU, refunds 2 mana.',
+    cardType: 'spell',
+    colors: ['white', 'green', 'blue'],
+    manaCost: 2,
+    consumesRunes: true, // Requires WGU runes
+    refundMana: 2, // Free spell mechanic
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for buff + protection
+      damage: 0,
+      drawCount: 1,
+      affectsUnits: true,
+    },
+    initiative: true,
+  },
+  {
+    id: 'wgu-spell-primal-ramp',
+    name: 'Primal Ramp',
+    description: 'Gain +2 max mana. All your units gain +1/+1 until end of turn. Costs 4WGU, refunds 4 mana.',
+    cardType: 'spell',
+    colors: ['white', 'green', 'blue'],
+    manaCost: 4,
+    consumesRunes: true, // Requires WGU runes
+    refundMana: 4, // Free spell mechanic
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for ramp + team buff
+      damage: 0,
+      affectsUnits: true,
+    },
+    initiative: true,
+  },
+  {
+    id: 'wgu-spell-guardians-blessing',
+    name: 'Guardian\'s Blessing',
+    description: 'Target unit gains +2/+2 permanently. Draw a card. Costs 3WGU, refunds 3 mana.',
+    cardType: 'spell',
+    colors: ['white', 'green', 'blue'],
+    manaCost: 3,
+    consumesRunes: true, // Requires WGU runes
+    refundMana: 3, // Free spell mechanic
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for permanent buff
+      damage: 0,
+      drawCount: 1,
+      affectsUnits: true,
+    },
+    initiative: true,
+  },
+]
+
+// ============================================================================
 // UW (Blue/White) - Control but Proactive
 // ============================================================================
 
@@ -3757,6 +3980,8 @@ export const allSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   ...gbrSpells,
   ...gbruSpells,
   ...gbrwSpells,
+  ...wubSpells, // WUB (White/Blue/Black) - Esper Control/Value
+  ...wguSpells, // WGU (White/Green/Blue) - Bant Control/Value
 ]
 
 // ============================================================================
