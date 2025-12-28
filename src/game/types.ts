@@ -208,6 +208,7 @@ export type HeroAbilityEffectType =
   | 'move_cross_battlefield' // Move hero across battlefields
   | 'rune_to_damage' // Spend runes to deal tower damage (combo payoff)
   | 'sacrifice_unit' // Sacrifice a unit for effect
+  | 'shadowfiend_ability' // Shadowfiend: deal 1 damage per counter to random enemy unit
   | 'custom' // Custom effect
 
 export type HeroAbilityTrigger = 
@@ -410,6 +411,7 @@ export interface ArtifactCard extends BaseCard {
   owner: PlayerId
   effectType: ArtifactEffectType
   effectValue: number // Value for the effect (e.g., +1 attack, +1 mana, etc.)
+  tempManaGeneration?: number // For rune_generation artifacts: amount of temporary mana generated per turn
   // Equipment-specific fields
   attachedToUnitId?: string // ID of unit this equipment is attached to (undefined if in base)
   equipCost?: number // Mana cost to re-equip after unit dies

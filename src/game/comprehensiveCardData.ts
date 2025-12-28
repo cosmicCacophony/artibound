@@ -33,13 +33,36 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   {
     id: 'red-hero-cleaver',
     name: 'Cleave Warrior',
-    description: '3/5. Cleave (damages adjacent units when attacking). Red\'s answer to stacked creeps. Especially aggressive hero.',
+    description: '3/4. Cleave (damages adjacent units when attacking). Red\'s answer to stacked creeps. Especially aggressive hero.',
     cardType: 'hero',
     colors: ['red'],
     attack: 3,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,    equippedItems: [],
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,    equippedItems: [],
+  },
+  // Strong Mono-Red Hero
+  {
+    id: 'red-hero-fury-champion',
+    name: 'Fury Champion',
+    description: '6/6. Powerful mono-red hero with signature spell and strong ability.',
+    cardType: 'hero',
+    colors: ['red'],
+    attack: 6,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
+    supportEffect: 'Allies gain +2 attack',
+    signatureCardId: 'red-sig-fury-strike',
+    equippedItems: [],
+    ability: {
+      name: 'Berserker Rage',
+      description: 'This hero gains +3 attack this turn.',
+      manaCost: 2,
+      cooldown: 2,
+      effectType: 'buff_units',
+      effectValue: 3,
+    },
   },
 ]
 
@@ -49,28 +72,28 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'red-unit-cleaving-warrior',
     name: 'Cleaving Warrior',
-    description: '3/3. Cleave (damages adjacent units when attacking).',
+    description: '2/2. Cleave (damages adjacent units when attacking).',
     cardType: 'generic',
     colors: ['red'],
     manaCost: 3,
     consumesRunes: true, // Requires R rune
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
+    attack: 2,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
   },
   {
     id: 'red-unit-cleaving-berserker',
     name: 'Cleaving Berserker',
-    description: '4/3. Cleave (damages adjacent units when attacking).',
+    description: '3/2. Cleave (damages adjacent units when attacking).',
     cardType: 'generic',
     colors: ['red'],
     manaCost: 4,
     consumesRunes: true, // Requires R rune
-    attack: 4,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
+    attack: 3,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
   },
   // Vanguard Banner removed - replaced with red artifact
   // Legion Tribal Units (RW archetype) - Removed boring +1/+1 counter cards
@@ -154,17 +177,30 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     currentHealth: 5,
   },
   {
-    id: 'rw-unit-cleaving-champion',
-    name: 'Cleaving Champion',
-    description: '4/4. Cleave (damages adjacent units when attacking). Costs 5 (4RWR).',
+    id: 'rw-unit-legion-vanguard',
+    name: 'Legion Vanguard',
+    description: '4/4. Legion. When this enters, create a 2/2 Legion token. All Legion units gain +1/+1 until end of turn.',
     cardType: 'generic',
-    colors: ['red', 'red', 'white'], // Requires 2 red + 1 white runes (RWR)
-    manaCost: 5,
-    consumesRunes: true, // Requires RWR runes
+    colors: ['red', 'white'],
+    manaCost: 4,
+    consumesRunes: true,
     attack: 4,
     health: 4,
     maxHealth: 4,
     currentHealth: 4,
+  },
+  {
+    id: 'rw-unit-cleaving-champion',
+    name: 'Cleaving Champion',
+    description: '3/3. Cleave (damages adjacent units when attacking). Costs 5 (4RWR).',
+    cardType: 'generic',
+    colors: ['red', 'red', 'white'], // Requires 2 red + 1 white runes (RWR)
+    manaCost: 5,
+    consumesRunes: true, // Requires RWR runes
+    attack: 3,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
   },
 ]
 
@@ -286,12 +322,13 @@ export const rwArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-artifact-vanguard-generator',
     name: 'Vanguard Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary red rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary red rune and 1 temporary mana to your mana pool.',
     cardType: 'artifact',
     colors: ['red'],
     manaCost: 4,
     effectType: 'rune_generation',
     effectValue: 1, // Generates 1 temporary red rune per turn
+    tempManaGeneration: 1, // Also generates 1 temporary mana
   },
   {
     id: 'rw-artifact-unbreakable-column',
@@ -307,34 +344,37 @@ export const rwArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-artifact-white-generator',
     name: 'Divine Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary white rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary white rune and 1 temporary mana to your mana pool.',
     cardType: 'artifact',
     colors: ['white'],
     manaCost: 4,
     effectType: 'rune_generation',
     effectValue: 1, // Generates 1 temporary white rune per turn
+    tempManaGeneration: 1, // Also generates 1 temporary mana
   },
   // Rune Generators - Dual Color
   {
     id: 'rw-artifact-dual-generator',
     name: 'Legion Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary red rune and 1 temporary white rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary red rune, 1 temporary white rune, and 1 temporary mana to your mana pool.',
     cardType: 'artifact',
     colors: ['red', 'white'],
     manaCost: 4,
     effectType: 'rune_generation',
     effectValue: 2, // Generates 2 temporary runes (1R + 1W) per turn
+    tempManaGeneration: 1, // Also generates 1 temporary mana
   },
   // Rune Generators - Flexible Either/Or
   {
     id: 'rw-artifact-flexible-generator',
     name: 'Adaptive Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary red rune or 1 temporary white rune to your rune pool (your choice).',
+    description: 'Artifact. At the start of your turn, add 1 temporary red rune or 1 temporary white rune (your choice) and 1 temporary mana to your mana pool.',
     cardType: 'artifact',
     colors: ['red', 'white'],
     manaCost: 4,
     effectType: 'rune_generation',
     effectValue: 1, // Generates 1 temporary rune (choice of R or W) per turn
+    tempManaGeneration: 1, // Also generates 1 temporary mana
   },
   // 3+X Artifact Cycle
   {
@@ -388,6 +428,24 @@ export const rgArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
 ]
 
 export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  // Mono-Red Signature Spell
+  {
+    id: 'red-sig-fury-strike',
+    name: 'Fury Strike',
+    description: 'Deal 4 damage to target unit or hero. Costs 3R, refunds 3 mana.',
+    cardType: 'spell',
+    colors: ['red'],
+    manaCost: 3,
+    consumesRunes: true, // Requires R rune
+    refundMana: 3, // Free spell mechanic
+    effect: {
+      type: 'targeted_damage',
+      damage: 4,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+    initiative: true,
+  },
   // RW Combat Spells - Removed War Cry and Path of Valor
   {
     id: 'rw-spell-rally-legion',
@@ -396,6 +454,33 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red', 'white'],
     manaCost: 4,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect
+      damage: 0,
+    },
+  },
+  // Additional RW Legion Synergy Spells
+  {
+    id: 'rw-spell-legion-formation',
+    name: 'Legion Formation',
+    description: 'All Legion units gain +1/+1 permanently. Draw a card for each Legion unit you control.',
+    cardType: 'spell',
+    colors: ['red', 'white'],
+    manaCost: 5,
+    consumesRunes: true,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect
+      damage: 0,
+    },
+  },
+  {
+    id: 'rw-spell-legion-charge',
+    name: 'Legion Charge',
+    description: 'All Legion units gain +3 attack this turn. They can attack immediately.',
+    cardType: 'spell',
+    colors: ['red', 'white'],
+    manaCost: 4,
+    consumesRunes: true,
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect
       damage: 0,
@@ -605,6 +690,40 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       affectsHeroes: true,
     },
   },
+  {
+    id: 'red-spell-battle-rage',
+    name: 'Battle Rage',
+    description: 'Target hero becomes immune to damage this turn and fights an adjacent enemy unit. Costs 3R, refunds 3 mana.',
+    cardType: 'spell',
+    colors: ['red'],
+    manaCost: 3,
+    consumesRunes: true, // Requires R rune
+    refundMana: 3, // Free spell mechanic
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for immunity + forced fight
+      damage: 0,
+      affectsUnits: false,
+      affectsHeroes: true,
+    },
+    initiative: true,
+  },
+  {
+    id: 'red-spell-double-edged-sword',
+    name: 'Double-Edged Sword',
+    description: 'Target unit gains +6 attack but takes +6 additional damage when damaged this turn. Costs 1R, refunds 1 mana.',
+    cardType: 'spell',
+    colors: ['red'],
+    manaCost: 1,
+    consumesRunes: true, // Requires R rune
+    refundMana: 1, // Free spell mechanic
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for buff + vulnerability
+      damage: 0,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+    initiative: true,
+  },
 ]
 
 // ============================================================================
@@ -612,57 +731,17 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
 // ============================================================================
 
 export const rgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
-  {
-    id: 'rg-hero-brawler',
-    name: 'Wild Brawler',
-    description: 'Fights with nature',
-    cardType: 'hero',
-    colors: ['red', 'green'],
-    attack: 4,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-    supportEffect: 'Can fight enemy units',    equippedItems: [],
-    ability: {
-      name: 'Wild Fight',
-      description: 'Fight target unit. If it dies, gain +1 max mana.',
-      manaCost: 1,
-      cooldown: 2,
-      effectType: 'damage_target', // Placeholder - would need custom effect for fight
-      effectValue: 4,
-    },
-  },
-  {
-    id: 'rg-hero-ramp',
-    name: 'Nature Warrior',
-    description: 'Ramps into big threats',
-    cardType: 'hero',
-    colors: ['green'],
-    attack: 4,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-    supportEffect: 'Gain +1 max mana',    equippedItems: [],
-    ability: {
-      name: 'Nature\'s Gift',
-      description: 'Gain +1 max mana. Draw a card.',
-      manaCost: 1,
-      cooldown: 2,
-      effectType: 'draw_card',
-      effectValue: 1,
-    },
-  },
   // RG Dopamine Hit: Activated Fight Hero
   {
     id: 'rg-hero-axe-warrior',
     name: 'Axe Warrior',
-    description: '3/10. Activated (1 mana): Fight all enemy units in front of this hero and adjacent to it. (Normally buff first since only 3 attack)',
+    description: '4/10. Activated (1 mana): Fight all enemy units in front of this hero and adjacent to it. (Normally buff first since only 4 attack)',
     cardType: 'hero',
     colors: ['red', 'green'],
-    attack: 3,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
+    attack: 4,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
     supportEffect: 'Can fight enemy units',    equippedItems: [],
     ability: {
       name: 'Battle Rage',
@@ -796,26 +875,6 @@ export const ruHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     currentHealth: 7,
     supportEffect: 'Spells deal +1 damage',    equippedItems: [],
   },
-  {
-    id: 'ru-hero-sorcerer',
-    name: 'Battle Sorcerer',
-    description: 'Spell-focused hero',
-    cardType: 'hero',
-    colors: ['blue'],
-    attack: 4,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
-    supportEffect: 'Draw card when casting spell',    equippedItems: [],
-    ability: {
-      name: 'Arcane Bolt',
-      description: 'Deal 2 damage to target unit. Draw a card.',
-      manaCost: 1,
-      cooldown: 2,
-      effectType: 'damage_target',
-      effectValue: 2,
-    },
-  },
 ]
 
 export const ruCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
@@ -910,19 +969,6 @@ export const rbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       effectType: 'sacrifice_unit',
       effectValue: 3,
     },
-  },
-  {
-    id: 'rb-hero-assassin',
-    name: 'Shadow Assassin',
-    description: 'Trades HP for advantage',
-    cardType: 'hero',
-    colors: ['black'],
-    attack: 4,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-    supportEffect: 'Gain gold when units die',    equippedItems: [],
-    bonusVsHeroes: 4, // Assassin: deals double damage to heroes (4 base attack = 8 vs heroes)
   },
   // Black Dopamine Hit: Cross-Lane Assassin Hero
   {
@@ -1025,6 +1071,52 @@ export const rbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       }
     }
   },
+  // Strong Mono-Black Hero
+  {
+    id: 'black-hero-shadow-lord',
+    name: 'Shadow Lord',
+    description: '4/7. Powerful mono-black hero with signature spell and strong ability.',
+    cardType: 'hero',
+    colors: ['black'],
+    attack: 4,
+    health: 7,
+    maxHealth: 7,
+    currentHealth: 7,
+    supportEffect: 'When enemy units die, draw a card',
+    signatureCardId: 'black-sig-shadow-strike',
+    equippedItems: [],
+    ability: {
+      name: 'Soul Drain',
+      description: 'Deal 3 damage to target unit or hero. Gain 3 life.',
+      manaCost: 2,
+      cooldown: 2,
+      effectType: 'damage_target',
+      effectValue: 3,
+    },
+  },
+  // Shadowfiend - Scaling Black Hero
+  {
+    id: 'black-hero-shadowfiend',
+    name: 'Shadowfiend',
+    description: '2/6. Whenever an adjacent unit dies, this hero gains +1/+1 counter. When this hero dies, it loses half its counters (rounded down).',
+    cardType: 'hero',
+    colors: ['black'],
+    attack: 2,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
+    supportEffect: 'Gains +1/+1 counters from adjacent deaths',
+    equippedItems: [],
+    ability: {
+      name: 'Necro Mastery',
+      description: 'Deal 1 damage to a random enemy unit for each +1/+1 counter on this hero. Costs 2B.',
+      manaCost: 2,
+      cooldown: 2,
+      effectType: 'shadowfiend_ability', // Custom effect
+      effectValue: 1, // 1 damage per counter
+      runeCost: ['black'],
+    },
+  },
 ]
 
 export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
@@ -1041,9 +1133,93 @@ export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 3,
     currentHealth: 3,
   },
+  // New BR units for aggressive strategies
+  {
+    id: 'rb-unit-blood-warrior',
+    name: 'Blood Warrior',
+    description: '4/3. Whenever this deals combat damage, opponent loses 1 life. Costs 4RB.',
+    cardType: 'generic',
+    colors: ['red', 'black'],
+    manaCost: 4,
+    consumesRunes: true,
+    attack: 4,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+  },
+  {
+    id: 'rb-unit-pain-dealer',
+    name: 'Pain Dealer',
+    description: '3/3. When this enters, opponent loses 2 life. Costs 3RB.',
+    cardType: 'generic',
+    colors: ['red', 'black'],
+    manaCost: 3,
+    consumesRunes: true,
+    attack: 3,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+  },
+  {
+    id: 'rb-unit-sacrifice-fiend',
+    name: 'Sacrifice Fiend',
+    description: '5/4. When this enters, you may sacrifice a unit. If you do, deal 3 damage to any target. Costs 5RB.',
+    cardType: 'generic',
+    colors: ['red', 'black'],
+    manaCost: 5,
+    consumesRunes: true,
+    attack: 5,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+  },
+  {
+    id: 'rb-unit-tower-saboteur',
+    name: 'Tower Saboteur',
+    description: '2/2. When this enters, target tower loses 1 armor. Costs 2RB.',
+    cardType: 'generic',
+    colors: ['red', 'black'],
+    manaCost: 2,
+    consumesRunes: true,
+    attack: 2,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+  },
+  {
+    id: 'rb-unit-vampiric-assaulter',
+    name: 'Vampiric Assaulter',
+    description: '4/2. Whenever this attacks a tower, you gain 2 life. Costs 4RB.',
+    cardType: 'generic',
+    colors: ['red', 'black'],
+    manaCost: 4,
+    consumesRunes: true,
+    attack: 4,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+  },
 ]
 
 export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  // Mono-Black Signature Spell
+  {
+    id: 'black-sig-shadow-strike',
+    name: 'Shadow Strike',
+    description: 'Destroy target unit with 4 or less health. Costs 3B, refunds 3 mana.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 3,
+    consumesRunes: true, // Requires B rune
+    refundMana: 3, // Free spell mechanic
+    effect: {
+      type: 'targeted_damage',
+      damage: 999, // High damage to ensure kill of units with 4 or less health
+      affectsUnits: true,
+      affectsHeroes: false,
+    },
+    initiative: true,
+  },
   {
     id: 'rb-kill-1',
     name: 'Murder',
@@ -1137,6 +1313,69 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       affectsHeroes: true,
     },
   },
+  // New BR spells for tower damage, life drain, and debuffs
+  {
+    id: 'rb-spell-tower-assault',
+    name: 'Tower Assault',
+    description: 'Deal 3 damage to target tower. Costs 3RB, refunds 3 mana.',
+    cardType: 'spell',
+    colors: ['red', 'black'],
+    manaCost: 3,
+    consumesRunes: true,
+    refundMana: 3,
+    effect: {
+      type: 'targeted_damage',
+      damage: 3,
+      affectsUnits: false,
+      affectsHeroes: false,
+    },
+    initiative: true,
+  },
+  {
+    id: 'rb-spell-life-drain',
+    name: 'Life Drain',
+    description: 'Pay 3 life, draw 2 cards. Costs 2RB, refunds 2 mana.',
+    cardType: 'spell',
+    colors: ['red', 'black'],
+    manaCost: 2,
+    consumesRunes: true,
+    refundMana: 2,
+    effect: {
+      type: 'targeted_damage',
+      damage: 0,
+    },
+    initiative: true,
+  },
+  {
+    id: 'rb-spell-tower-decay',
+    name: 'Tower Decay',
+    description: 'Target tower loses 2 armor permanently. Costs 2RB, refunds 2 mana.',
+    cardType: 'spell',
+    colors: ['red', 'black'],
+    manaCost: 2,
+    consumesRunes: true,
+    refundMana: 2,
+    effect: {
+      type: 'targeted_damage',
+      damage: 0,
+    },
+    initiative: true,
+  },
+  {
+    id: 'rb-spell-suffering-curse',
+    name: 'Suffering Curse',
+    description: 'Target unit gets -3/-3 until end of turn. Costs 2RB, refunds 2 mana.',
+    cardType: 'spell',
+    colors: ['red', 'black'],
+    manaCost: 2,
+    consumesRunes: true,
+    refundMana: 2,
+    effect: {
+      type: 'targeted_damage',
+      damage: 0,
+    },
+    initiative: true,
+  },
 ]
 
 // ============================================================================
@@ -1178,24 +1417,27 @@ export const gwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     signatureCardId: undefined,
     equippedItems: [],
   },
+  // Strong Mono-White Hero
   {
-    id: 'gw-hero-protector',
-    name: 'Divine Protector',
-    description: 'Allies within range 2 gain +2 regeneration (heal at end of combat before lethal)',
+    id: 'white-hero-divine-champion',
+    name: 'Divine Champion',
+    description: '4/8. Powerful mono-white hero with signature spell and strong ability.',
     cardType: 'hero',
     colors: ['white'],
-    attack: 2,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
-    supportEffect: 'Allies within range 2 gain +2 regeneration',    equippedItems: [],
+    attack: 4,
+    health: 8,
+    maxHealth: 8,
+    currentHealth: 8,
+    supportEffect: 'Allies gain +1/+1',
+    signatureCardId: 'white-sig-divine-protection',
+    equippedItems: [],
     ability: {
-      name: 'Divine Shield',
-      description: 'Neighbors gain +3 attack this combat phase',
-      manaCost: 1,
-      cooldown: 1,
-      effectType: 'buff_units',
-      effectValue: 3, // +3 attack to neighbors
+      name: 'Divine Blessing',
+      description: 'Heal 5 to any target.',
+      manaCost: 2,
+      cooldown: 2,
+      effectType: 'heal',
+      effectValue: 5,
     },
   },
   // Chromatic Payoff Hero - Green's rune identity
@@ -1300,7 +1542,7 @@ export const gbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     description: 'Midrange threat',
     cardType: 'hero',
     colors: ['green', 'black'],
-    attack: 4,
+    attack: 3,
     health: 7,
     maxHealth: 7,
     currentHealth: 7,
@@ -1334,7 +1576,7 @@ export const gbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     description: '5/5. Deals 1 damage to a random enemy per U or W rune spent.',
     cardType: 'hero',
     colors: ['green', 'black'],
-    attack: 5,
+    attack: 4,
     health: 5,
     maxHealth: 5,
     currentHealth: 5,
@@ -1454,30 +1696,28 @@ export const guHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     currentHealth: 4,
     supportEffect: 'Adjacent enemies get -1 attack each turn (stacks up to 3 times)',    equippedItems: [],
   },
+  // Strong Mono-Blue Hero
   {
-    id: 'gu-hero-archmage',
-    name: 'Nature Archmage',
-    description: 'Big spell finisher',
+    id: 'blue-hero-arcane-master',
+    name: 'Arcane Master',
+    description: '3/7. Powerful mono-blue hero with signature spell and strong ability.',
     cardType: 'hero',
     colors: ['blue'],
-    attack: 4,
+    attack: 3,
     health: 7,
     maxHealth: 7,
     currentHealth: 7,
-    supportEffect: 'Spells cost -1',    equippedItems: [],
-  },
-  // Special: Green hero that allows 3-color play
-  {
-    id: 'gu-hero-chromat',
-    name: 'Chromatic Sage',
-    description: 'Allows playing any color card',
-    cardType: 'hero',
-    colors: ['green'],
-    attack: 4,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-    supportEffect: 'You can play cards of any color',    equippedItems: [],
+    supportEffect: 'Draw an extra card each turn',
+    signatureCardId: 'blue-sig-arcane-mastery',
+    equippedItems: [],
+    ability: {
+      name: 'Time Warp',
+      description: 'Return target unit to its owner\'s hand.',
+      manaCost: 1,
+      cooldown: 2,
+      effectType: 'return_to_base',
+      effectValue: 0,
+    },
   },
   // Chromatic Payoff Hero - Green's rune identity
   {
@@ -1528,6 +1768,23 @@ export const guCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
 ]
 
 export const guSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  // Mono-Green Signature Spell
+  {
+    id: 'green-sig-natures-growth',
+    name: 'Nature\'s Growth',
+    description: 'Gain +1 max mana. Target unit gains +3/+3. Costs 2G, refunds 2 mana.',
+    cardType: 'spell',
+    colors: ['green'],
+    manaCost: 2,
+    consumesRunes: true, // Requires G rune
+    refundMana: 2, // Free spell mechanic
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for mana gain + buff
+      damage: 0,
+      affectsUnits: true,
+    },
+    initiative: true,
+  },
   // Mana Surge removed - replaced with green artifact
   // Green Dopamine Hit: Combat Protection
   {
@@ -1586,30 +1843,8 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 7,
     maxHealth: 7,
     currentHealth: 7,
-    supportEffect: 'Spawns Void Apprentice each turn', // Removed "Draw extra card each turn"    equippedItems: [],
-  },
-  {
-    id: 'ub-hero-necromancer',
-    name: 'Void Necromancer',
-    description: 'Combo payoff. Converts black runes into tower damage.',
-    cardType: 'hero',
-    colors: ['black'],
-    attack: 3,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-    supportEffect: 'Gain gold when units die',    equippedItems: [],
-    bonusVsHeroes: 4, // Assassin: deals double damage to heroes (4 base attack = 8 vs heroes)
-    ability: {
-      name: 'Soul Burn',
-      description: 'Spend B runes: Deal 1 damage to enemy tower per rune spent. No cooldown.',
-      manaCost: 0,
-      cooldown: 0, // No cooldown - can be used repeatedly
-      effectType: 'rune_to_damage',
-      effectValue: 1, // 1 damage per rune
-      runeCost: ['black'], // Spends 1+ black runes
+      supportEffect: 'Spawns Void Apprentice each turn', // Removed "Draw extra card each turn"    equippedItems: [],
     },
-  },
   {
     id: 'ub-hero-nature-guardian',
     name: 'Nature Guardian',
@@ -1717,15 +1952,15 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'green-unit-cleaving-beast',
     name: 'Cleaving Beast',
-    description: '3/4. Cleave (damages adjacent units when attacking).',
+    description: '2/3. Cleave (damages adjacent units when attacking).',
     cardType: 'generic',
     colors: ['green'],
     manaCost: 3,
     consumesRunes: true, // Requires G rune
-    attack: 3,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
+    attack: 2,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
   },
   {
     id: 'black-unit-necromancer-apprentice',
@@ -1763,22 +1998,24 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-artifact-void-generator',
     name: 'Void Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary blue rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary blue rune and 1 temporary mana to your mana pool.',
     cardType: 'artifact',
     colors: ['blue'],
     manaCost: 4,
     effectType: 'rune_generation',
     effectValue: 1, // Generates 1 temporary blue rune per turn
+    tempManaGeneration: 1, // Also generates 1 temporary mana
   },
   {
     id: 'ub-artifact-sacrificial-altar',
     name: 'Sacrificial Altar Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary black rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary black rune and 1 temporary mana to your mana pool.',
     cardType: 'artifact',
     colors: ['black'],
     manaCost: 4,
     effectType: 'rune_generation',
     effectValue: 1, // Generates 1 temporary black rune per turn
+    tempManaGeneration: 1, // Also generates 1 temporary mana
   },
   {
     id: 'ub-artifact-mana-surge',
@@ -1795,95 +2032,104 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-artifact-green-generator',
     name: 'Nature Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary green rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary green rune and 1 temporary mana to your mana pool.',
     cardType: 'artifact',
     colors: ['green'],
     manaCost: 4,
     effectType: 'rune_generation',
     effectValue: 1, // Generates 1 temporary green rune per turn
+    tempManaGeneration: 1, // Also generates 1 temporary mana
   },
   // Rune Generators - Dual Color
   {
     id: 'ub-artifact-ub-dual-generator',
     name: 'Void Shadow Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary blue rune and 1 temporary black rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary blue rune, 1 temporary black rune, and 1 temporary mana to your mana pool.',
     cardType: 'artifact',
     colors: ['blue', 'black'],
     manaCost: 4,
     effectType: 'rune_generation',
     effectValue: 2, // Generates 2 temporary runes (1U + 1B) per turn
+    tempManaGeneration: 1, // Also generates 1 temporary mana
   },
   {
     id: 'ub-artifact-gu-dual-generator',
     name: 'Nature Arcane Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary green rune and 1 temporary blue rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary green rune, 1 temporary blue rune, and 1 temporary mana to your mana pool.',
     cardType: 'artifact',
     colors: ['green', 'blue'],
     manaCost: 4,
     effectType: 'rune_generation',
     effectValue: 2, // Generates 2 temporary runes (1G + 1U) per turn
+    tempManaGeneration: 1, // Also generates 1 temporary mana
   },
   {
     id: 'ub-artifact-bg-dual-generator',
     name: 'Shadow Growth Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary black rune and 1 temporary green rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary black rune, 1 temporary green rune, and 1 temporary mana to your mana pool.',
     cardType: 'artifact',
     colors: ['black', 'green'],
     manaCost: 4,
     effectType: 'rune_generation',
     effectValue: 2, // Generates 2 temporary runes (1B + 1G) per turn
+    tempManaGeneration: 1, // Also generates 1 temporary mana
   },
   {
     id: 'ub-artifact-rb-dual-generator',
     name: 'Blood Fire Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary red rune and 1 temporary black rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary red rune, 1 temporary black rune, and 1 temporary mana to your mana pool.',
     cardType: 'artifact',
     colors: ['red', 'black'],
     manaCost: 4,
     effectType: 'rune_generation',
     effectValue: 2, // Generates 2 temporary runes (1R + 1B) per turn
+    tempManaGeneration: 1, // Also generates 1 temporary mana
   },
   {
     id: 'ub-artifact-gw-dual-generator',
     name: 'Nature Light Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary green rune and 1 temporary white rune to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary green rune, 1 temporary white rune, and 1 temporary mana to your mana pool.',
     cardType: 'artifact',
     colors: ['green', 'white'],
     manaCost: 4,
     effectType: 'rune_generation',
     effectValue: 2, // Generates 2 temporary runes (1G + 1W) per turn
+    tempManaGeneration: 1, // Also generates 1 temporary mana
   },
   // Rune Generators - Flexible Either/Or
   {
     id: 'ub-artifact-ub-flexible-generator',
     name: 'Adaptive Void Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary blue rune or 1 temporary black rune to your rune pool (your choice).',
+    description: 'Artifact. At the start of your turn, add 1 temporary blue rune or 1 temporary black rune (your choice) and 1 temporary mana to your mana pool.',
     cardType: 'artifact',
     colors: ['blue', 'black'],
     manaCost: 4,
     effectType: 'rune_generation',
     effectValue: 1, // Generates 1 temporary rune (choice of U or B) per turn
+    tempManaGeneration: 1, // Also generates 1 temporary mana
   },
   // Rune Generators - Any Color (Premium)
   {
     id: 'ub-artifact-prismatic-generator',
     name: 'Prismatic Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary rune of any color to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary rune of any color and 1 temporary mana to your mana pool.',
     cardType: 'artifact',
     colors: [], // Colorless - can generate any color
     manaCost: 4,
     effectType: 'rune_generation',
     effectValue: 1, // Generates 1 temporary rune of any color per turn
+    tempManaGeneration: 1, // Also generates 1 temporary mana
   },
   {
     id: 'ub-artifact-universal-mana-rock',
     name: 'Universal Mana Rock Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary rune of any color to your rune pool.',
+    description: 'Artifact. At the start of your turn, add 1 temporary rune of any color and 1 temporary mana to your mana pool.',
     cardType: 'artifact',
     colors: [], // Colorless - can generate any color
     manaCost: 4,
     effectType: 'rune_generation',
     effectValue: 1, // Generates 1 temporary rune of any color per turn
+    tempManaGeneration: 1, // Also generates 1 temporary mana
   },
   // 3+X Artifact Cycle
   {
@@ -1914,6 +2160,23 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
 // All artifacts must be RW (R, W, RW) or UBG (U, G, B, or combinations)
 
 export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  // Mono-Blue Signature Spell
+  {
+    id: 'blue-sig-arcane-mastery',
+    name: 'Arcane Mastery',
+    description: 'Draw 2 cards. Costs 2U, refunds 2 mana.',
+    cardType: 'spell',
+    colors: ['blue'],
+    manaCost: 2,
+    consumesRunes: true, // Requires U rune
+    refundMana: 2, // Free spell mechanic
+    effect: {
+      type: 'draw_and_heal',
+      drawCount: 2,
+      healAmount: 0,
+    },
+    initiative: true,
+  },
   // Blue positioning spell - Cunning Plan-like
   {
     id: 'blue-spell-cunning-plan',
@@ -2035,21 +2298,6 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     effect: {
       type: 'return_to_base', // Returns card to base
       damage: 0,
-    },
-    initiative: true, // Quickcast - enables double spelling
-  },
-  {
-    id: 'spell-premium-removal',
-    name: 'Void Strike',
-    description: 'Destroy target unit.',
-    cardType: 'spell',
-    colors: ['black', 'blue'],
-    manaCost: 2,
-    consumesRunes: true, // Requires U and B runes
-    effect: {
-      type: 'targeted_damage',
-      damage: 999, // High damage to ensure kill
-      affectsUnits: true,
     },
     initiative: true, // Quickcast - enables double spelling
   },
@@ -2703,59 +2951,7 @@ export const freeSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
 // ============================================================================
 
 export const rwgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
-  {
-    id: 'rwg-hero-wild-commander',
-    name: 'Wild Commander',
-    description: 'Combines RW aggression with Green growth',
-    cardType: 'hero',
-    colors: ['red', 'white'],
-    attack: 3,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
-    supportEffect: 'Allies gain +1/+1. If you control heroes of 3+ different colors, allies gain +2/+2 instead.',    equippedItems: [],
-    ability: {
-      name: 'Primal Rally',
-      description: 'All your units gain +2/+2 this turn. If you control heroes of 3+ different colors, they gain +3/+3 instead.',
-      manaCost: 1,
-      cooldown: 2,
-      effectType: 'buff_units',
-      effectValue: 2, // Base +2/+2, scales to +3/+3 with 3+ colors
-    },
-  },
-  {
-    id: 'rwg-hero-primal-warlord',
-    name: 'Primal Warlord',
-    description: 'Aggressive growth hero',
-    cardType: 'hero',
-    colors: ['red', 'green'],
-    attack: 4,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-    supportEffect: 'Allies gain +1 attack. When this attacks, put a +1/+1 counter on all your units.',    equippedItems: [],
-    ability: {
-      name: 'Wild Growth',
-      description: 'All your units gain +2/+2 this turn. Put a +1/+1 counter on each of your units.',
-      manaCost: 1,
-      cooldown: 3,
-      effectType: 'buff_units',
-      effectValue: 2,
-    },
-  },
   // Rare Heroes - Double Color Requirements (Draft Dopamine Hits)
-  {
-    id: 'rrg-hero-wild-fury',
-    name: 'Wild Fury',
-    description: 'Rare. Mighty units synergy.',
-    cardType: 'hero',
-    colors: ['red', 'green'],
-    attack: 4,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-    supportEffect: 'When you attack with 3 mighty units (5+ attack), draw a card.',    equippedItems: [],
-  },
   {
     id: 'bbu-hero-void-tyrant',
     name: 'Void Tyrant',
@@ -2849,38 +3045,25 @@ export const rwgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
   {
     id: 'rwg-unit-primal-titan',
     name: 'Primal Titan',
-    description: '7/7. When this enters, all your units gain +2/+2 until end of turn. Costs 7RRGG.',
+    description: '6/6. When this enters, all your units gain +2/+2 until end of turn. Costs 7RRGG.',
     cardType: 'generic',
     colors: ['red', 'red', 'green', 'green'],
     manaCost: 7,
     consumesRunes: true,
-    attack: 7,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
+    attack: 6,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
   },
   {
     id: 'rwg-unit-wild-colossus',
     name: 'Wild Colossus',
-    description: '8/8. Trample. When this attacks, all your units gain +1/+1 until end of turn. Costs 8RRWW.',
+    description: '7/7. Trample. When this attacks, all your units gain +1/+1 until end of turn. Costs 8RRWW.',
     cardType: 'generic',
     colors: ['red', 'red', 'white', 'white'],
     manaCost: 8,
     consumesRunes: true,
-    attack: 8,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-  },
-  {
-    id: 'rwg-unit-convergence-beast',
-    name: 'Convergence Beast',
-    description: '6/6. This has +1/+1 for each different colored rune you control. Costs 6RWG.',
-    cardType: 'generic',
-    colors: ['red', 'white', 'green'],
-    manaCost: 6,
-    consumesRunes: true,
-    attack: 6,
+    attack: 7,
     health: 6,
     maxHealth: 6,
     currentHealth: 6,
@@ -2930,19 +3113,6 @@ export const rwgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   },
   // RGW Finishers - Require multiple colors
   {
-    id: 'rwg-spell-primal-wrath',
-    name: 'Primal Wrath',
-    description: 'All your units gain +4/+4 this turn. Costs 7RRGG.',
-    cardType: 'spell',
-    colors: ['red', 'red', 'green', 'green'],
-    manaCost: 7,
-    consumesRunes: true,
-    effect: {
-      type: 'targeted_damage', // Placeholder - would be team buff
-      damage: 0,
-    },
-  },
-  {
     id: 'rwg-spell-wild-convergence',
     name: 'Wild Convergence',
     description: 'All your units gain +3/+3 and trample this turn. If you control heroes of 3+ different colors, draw a card for each unit you control. Costs 8RRWW.',
@@ -2953,34 +3123,6 @@ export const rwgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     effect: {
       type: 'targeted_damage', // Placeholder - would be team buff + card draw
       damage: 0,
-    },
-  },
-  {
-    id: 'rwg-spell-nature-triumph',
-    name: 'Nature\'s Triumph',
-    description: 'All your units gain +2/+2 until end of turn. Put a +2/+2 counter on each of your units. Costs 6RRGW.',
-    cardType: 'spell',
-    colors: ['red', 'red', 'green', 'white'],
-    manaCost: 6,
-    consumesRunes: true,
-    effect: {
-      type: 'targeted_damage', // Placeholder - would be team buff + permanent counters
-      damage: 0,
-    },
-  },
-  {
-    id: 'rwg-spell-primal-storm',
-    name: 'Primal Storm',
-    description: 'Deal 8 damage to target unit or hero. If you control heroes of 3+ different colors, deal 12 damage instead. Costs 5RWG.',
-    cardType: 'spell',
-    colors: ['red', 'white', 'green'],
-    manaCost: 5,
-    consumesRunes: true,
-    effect: {
-      type: 'targeted_damage',
-      damage: 8, // Scales to 12 with 3+ colors
-      affectsUnits: true,
-      affectsHeroes: true,
     },
   },
   // RGW Buff Finishers - Simple, effective
@@ -2999,19 +3141,6 @@ export const rwgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   },
   // Rare Hero Signature Spells - Powerful finishers for pack synergy moments
   {
-    id: 'rrg-spell-primal-convergence',
-    name: 'Primal Convergence',
-    description: 'All your units gain +4/+4 until end of turn. Put a +2/+2 counter on each of your units. Costs 7RRG.',
-    cardType: 'spell',
-    colors: ['red', 'red', 'green'],
-    manaCost: 7,
-    consumesRunes: true,
-    effect: {
-      type: 'targeted_damage', // Placeholder - would be team buff + counters
-      damage: 0,
-    },
-  },
-  {
     id: 'bbu-spell-void-annihilation',
     name: 'Void Annihilation',
     description: 'Destroy all enemy units. Draw a card for each unit destroyed. Costs 7BBU.',
@@ -3027,18 +3156,22 @@ export const rwgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       affectsEnemyUnits: true,
     },
   },
+  // Mono-White Signature Spell
   {
-    id: 'ggw-spell-nature-triumph',
-    name: 'Nature\'s Triumph',
-    description: 'All your units gain +3/+5 until end of turn. Put a +2/+2 counter on each of your units. Costs 7GGW.',
+    id: 'white-sig-divine-protection',
+    name: 'Divine Protection',
+    description: 'Target unit gains +0/+5 and protection from spells this turn. Costs 2W, refunds 2 mana.',
     cardType: 'spell',
-    colors: ['green', 'green', 'white'],
-    manaCost: 7,
-    consumesRunes: true,
+    colors: ['white'],
+    manaCost: 2,
+    consumesRunes: true, // Requires W rune
+    refundMana: 2, // Free spell mechanic
     effect: {
-      type: 'targeted_damage', // Placeholder - would be team buff + counters
+      type: 'targeted_damage', // Placeholder - would need custom effect for buff + protection
       damage: 0,
+      affectsUnits: true,
     },
+    initiative: true,
   },
   // White Dopamine Hit: Tower Healing & Protection
   {
@@ -3183,6 +3316,76 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       affectsHeroes: true,
       // Note: The "draw a card when it kills" mechanic would need custom implementation
     },
+  },
+  // UBR Big Finisher Spells
+  {
+    id: 'ubr-spell-grixis-devastation',
+    name: 'Grixis Devastation',
+    description: 'Deal 10 damage to target unit or hero. Draw 2 cards. Deal 5 damage to enemy tower. Costs 8UBR, refunds 8 mana.',
+    cardType: 'spell',
+    colors: ['blue', 'black', 'red'],
+    manaCost: 8,
+    consumesRunes: true, // Requires UBR runes
+    refundMana: 8, // Free spell mechanic
+    effect: {
+      type: 'targeted_damage',
+      damage: 10,
+      drawCount: 2,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+    initiative: true,
+  },
+  {
+    id: 'ubr-spell-void-annihilation',
+    name: 'Void Annihilation',
+    description: 'Deal 8 damage to all enemy units. Draw a card for each unit destroyed. Costs 9UBR, refunds 9 mana.',
+    cardType: 'spell',
+    colors: ['blue', 'black', 'red'],
+    manaCost: 9,
+    consumesRunes: true, // Requires UBR runes
+    refundMana: 9, // Free spell mechanic
+    effect: {
+      type: 'aoe_damage',
+      damage: 8,
+      drawCount: 1, // Will draw per unit destroyed (custom implementation needed)
+      affectsUnits: true,
+      affectsHeroes: false,
+    },
+    initiative: true,
+  },
+]
+
+// ============================================================================
+// UBR (Blue/Black/Red) - Grixis Units
+// ============================================================================
+
+export const ubrCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+  {
+    id: 'ubr-unit-grixis-titan',
+    name: 'Grixis Titan',
+    description: '8/6. When this enters, deal 5 damage to all enemy units. When this attacks, deal 3 damage to enemy tower. Costs 8UBR.',
+    cardType: 'generic',
+    colors: ['blue', 'black', 'red'],
+    manaCost: 8,
+    consumesRunes: true, // Requires UBR runes
+    attack: 8,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
+  },
+  {
+    id: 'ubr-unit-void-destroyer',
+    name: 'Void Destroyer',
+    description: '7/7. When this enters, destroy target unit. When this attacks, draw a card and deal 2 damage to enemy tower. Costs 9UBR.',
+    cardType: 'generic',
+    colors: ['blue', 'black', 'red'],
+    manaCost: 9,
+    consumesRunes: true, // Requires UBR runes
+    attack: 7,
+    health: 7,
+    maxHealth: 7,
+    currentHealth: 7,
   },
 ]
 
@@ -3446,6 +3649,78 @@ export const wubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     },
     initiative: true,
   },
+  // WUB Big Finisher Spells
+  {
+    id: 'wub-spell-esper-dominance',
+    name: 'Esper Dominance',
+    description: 'Destroy all enemy units. Draw 3 cards. Gain 5 life. Costs 8WUB, refunds 8 mana.',
+    cardType: 'spell',
+    colors: ['white', 'blue', 'black'],
+    manaCost: 8,
+    consumesRunes: true, // Requires WUB runes
+    refundMana: 8, // Free spell mechanic
+    effect: {
+      type: 'aoe_damage',
+      damage: 999, // Effectively destroy all
+      drawCount: 3,
+      healAmount: 5,
+      affectsUnits: true,
+      affectsHeroes: false,
+    },
+    initiative: true,
+  },
+  {
+    id: 'wub-spell-final-judgment',
+    name: 'Final Judgment',
+    description: 'Destroy target unit or hero. Draw 4 cards. Gain 7 life. Costs 9WUB, refunds 9 mana.',
+    cardType: 'spell',
+    colors: ['white', 'blue', 'black'],
+    manaCost: 9,
+    consumesRunes: true, // Requires WUB runes
+    refundMana: 9, // Free spell mechanic
+    effect: {
+      type: 'targeted_damage',
+      damage: 999, // High damage to ensure kill
+      drawCount: 4,
+      healAmount: 7,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+    initiative: true,
+  },
+]
+
+// ============================================================================
+// WUB (White/Blue/Black) - Esper Units
+// ============================================================================
+
+export const wubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+  {
+    id: 'wub-unit-esper-titan',
+    name: 'Esper Titan',
+    description: '7/7. When this enters, destroy target unit. When this attacks, draw a card. Costs 7WUB.',
+    cardType: 'generic',
+    colors: ['white', 'blue', 'black'],
+    manaCost: 7,
+    consumesRunes: true, // Requires WUB runes
+    attack: 7,
+    health: 7,
+    maxHealth: 7,
+    currentHealth: 7,
+  },
+  {
+    id: 'wub-unit-void-tyrant',
+    name: 'Void Tyrant',
+    description: '8/6. When this enters, destroy all enemy units with 3 or less health. When this attacks, draw 2 cards. Costs 8WUB.',
+    cardType: 'generic',
+    colors: ['white', 'blue', 'black'],
+    manaCost: 8,
+    consumesRunes: true, // Requires WUB runes
+    attack: 8,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
+  },
 ]
 
 // ============================================================================
@@ -3520,6 +3795,57 @@ export const wguSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     },
     initiative: true,
   },
+  // GWU Big Finisher Spells
+  {
+    id: 'wgu-spell-bant-ascendancy',
+    name: 'Bant Ascendancy',
+    description: 'Gain +2 max mana. All your units gain +3/+3 and protection from spells until end of turn. Draw 3 cards. Costs 8WGU, refunds 8 mana.',
+    cardType: 'spell',
+    colors: ['white', 'green', 'blue'],
+    manaCost: 8,
+    consumesRunes: true, // Requires WGU runes
+    refundMana: 8, // Free spell mechanic
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for ramp + team buff + protection + draw
+      damage: 0,
+      drawCount: 3,
+      affectsUnits: true,
+    },
+    initiative: true,
+  },
+]
+
+// ============================================================================
+// WGU (White/Green/Blue) - Bant Units
+// ============================================================================
+
+export const wguCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+  {
+    id: 'wgu-unit-primal-titan',
+    name: 'Primal Titan',
+    description: '8/8. Trample. Protection from spells. When this attacks, all your units gain +2/+2 until end of turn. Costs 8WGU.',
+    cardType: 'generic',
+    colors: ['white', 'green', 'blue'],
+    manaCost: 8,
+    consumesRunes: true, // Requires WGU runes
+    attack: 8,
+    health: 8,
+    maxHealth: 8,
+    currentHealth: 8,
+  },
+  {
+    id: 'wgu-unit-guardian-colossus',
+    name: 'Guardian Colossus',
+    description: '7/10. Protection from spells. When this enters, gain +2 max mana. All your units gain +1/+1 permanently. Costs 9WGU.',
+    cardType: 'generic',
+    colors: ['white', 'green', 'blue'],
+    manaCost: 9,
+    consumesRunes: true, // Requires WGU runes
+    attack: 7,
+    health: 10,
+    maxHealth: 10,
+    currentHealth: 10,
+  },
 ]
 
 // ============================================================================
@@ -3533,31 +3859,11 @@ export const uwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     description: 'Proactive control',
     cardType: 'hero',
     colors: ['blue', 'white'],
-    attack: 4,
+    attack: 3,
     health: 7,
     maxHealth: 7,
     currentHealth: 7,
     supportEffect: 'Allies gain +1/+1',    equippedItems: [],
-  },
-  {
-    id: 'uw-hero-mage',
-    name: 'Divine Mage',
-    description: 'Mobile control hero',
-    cardType: 'hero',
-    colors: ['blue'],
-    attack: 3,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-    supportEffect: 'Can move and reposition units',    equippedItems: [],
-    ability: {
-      name: 'Arcane Reposition',
-      description: 'Move up to 4 units to different slots. Deal 2 damage to units adjacent to moved units.',
-      manaCost: 1,
-      cooldown: 2,
-      effectType: 'custom',
-      effectValue: 4, // Up to 4 units
-    },
   },
 ]
 
@@ -3670,46 +3976,6 @@ export const comboHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       runeCost: ['black', 'black', 'black'],
     },
   },
-  // Aristocrats Combo: Blood Artist - triggers on death
-  {
-    id: 'combo-hero-blood-artist',
-    name: 'Blood Artist',
-    description: 'Aristocrats. Whenever any unit dies, deals 1 damage to enemy tower.',
-    cardType: 'hero',
-    colors: ['black'],
-    attack: 2,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,    equippedItems: [],
-    ability: {
-      name: 'Blood Tithe',
-      description: 'Sacrifice a unit you control: Deal 2 damage to enemy tower and gain 1 gold.',
-      manaCost: 0,
-      cooldown: 0,
-      effectType: 'sacrifice_unit',
-      effectValue: 2,
-    },
-  },
-  // Bounce Combo: Echo Mage - benefits from redeployment
-  {
-    id: 'combo-hero-echo-mage',
-    name: 'Echo Mage',
-    description: 'Bounce. When this hero is deployed, deal 1 damage to enemy tower. Synergizes with bounce effects.',
-    cardType: 'hero',
-    colors: ['blue'],
-    attack: 2,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,    equippedItems: [],
-    ability: {
-      name: 'Echo Strike',
-      description: 'Return this hero to your hand. Next time you deploy it, it deals double damage.',
-      manaCost: 1,
-      cooldown: 1,
-      effectType: 'move_hero',
-      effectValue: 0,
-    },
-  },
 ]
 
 // ============================================================================
@@ -3776,11 +4042,11 @@ export const rareRedCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith
     colors: ['red'],
     manaCost: 8,
     consumesRunes: true,
-    attack: 7,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-    description: '7/5, Cleave. When deployed: Deal 3 damage to all enemy units. When this attacks a tower: Deal 2 damage to the enemy nexus.',
+    attack: 6,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    description: '6/4, Cleave. When deployed: Deal 3 damage to all enemy units. When this attacks a tower: Deal 2 damage to the enemy nexus.',
   },
 ]
 
@@ -3885,11 +4151,11 @@ export const rareBRCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith'
     colors: ['black', 'red'],
     manaCost: 7,
     consumesRunes: true,
-    attack: 6,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-    description: '6/4, Cleave. When deployed: Deal 2 damage to all units and all towers. Aggressive control finisher for BR.',
+    attack: 5,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    description: '5/3, Cleave. When deployed: Deal 2 damage to all units and all towers. Aggressive control finisher for BR.',
   },
 ]
 
@@ -3934,6 +4200,9 @@ export const allCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
   ...gbrCards,
   ...gbruCards,
   ...gbrwCards,
+  ...wguCards, // WGU (White/Green/Blue) - Bant Units
+  ...wubCards, // WUB (White/Blue/Black) - Esper Units
+  ...ubrCards, // UBR (Blue/Black/Red) - Grixis Units
   ...comboCards,
   ...monoRedAggroCards,
   ...blackMidrangeCards,

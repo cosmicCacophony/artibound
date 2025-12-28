@@ -78,6 +78,40 @@ A two-player hero card game with:
 4. **Consider performance** - React best practices, avoid unnecessary re-renders
 5. **Visual polish** - UI should be clean and intuitive
 
+### Draft Card Pool Limit (CRITICAL)
+**The total number of cards available in draft must not exceed 300 cards (excluding heroes).**
+
+- **Limit**: Maximum 300 cards total across all archetypes (units + spells + artifacts)
+- **Why**: Maintains draft variety while preventing overwhelming card pools
+- **How to verify**: Count all cards in `comprehensiveCardData.ts` excluding hero arrays
+- **When adding cards**: If at or near 300, remove cards from other archetypes first
+- **Note**: This limit applies to the draft pool, not individual archetype counts
+
+### Code Removal Safety (CRITICAL)
+**When removing objects (heroes, cards, units, etc.), ensure you remove the ENTIRE object including all nested properties.**
+
+- **Common Error**: Leaving orphaned property blocks after removing objects (e.g., `effectValue: 4,`, `runeCost: ['black'],`, `ability: { ... }`)
+- **Why it happens**: When removing objects with nested structures (abilities, effects, etc.), partial removal leaves orphaned properties that cause syntax errors: `Expected "]" but found ":"`
+- **How to prevent**:
+  1. **Always remove complete objects** - Include opening `{` and closing `}` with all nested properties
+  2. **Check for nested structures** - Objects may contain `ability`, `effect`, `equipmentBonuses`, `bloodMagic`, etc.
+  3. **Verify closing braces match** - Ensure array/object structure remains valid after removal
+  4. **Read context before removing** - Check what comes before and after the object to ensure clean removal
+  5. **Test after removal** - Run linter/build to catch orphaned properties immediately
+- **Example**: When removing a hero with an ability, remove:
+  ```typescript
+  {
+    id: 'hero-id',
+    name: 'Hero Name',
+    // ... all properties ...
+    ability: {
+      name: 'Ability Name',
+      // ... all ability properties ...
+    },
+  },
+  ```
+  NOT just the top-level properties, leaving `ability: { ... }` behind.
+
 ### Card Data Persistence (CRITICAL)
 **NEVER make card changes via localStorage overrides. Always edit `src/game/comprehensiveCardData.ts` directly.**
 
