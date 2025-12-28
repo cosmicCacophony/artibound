@@ -1440,6 +1440,51 @@ export const gwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       effectValue: 5,
     },
   },
+  // White Hero: Mobile Stunner
+  {
+    id: 'white-hero-mobile-stunner',
+    name: 'Mobile Stunner',
+    description: '3/6. Activated: Move 4 paces and stun all adjacent enemy heroes.',
+    cardType: 'hero',
+    colors: ['white'],
+    attack: 3,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
+    supportEffect: 'Can move and stun enemies',
+    equippedItems: [],
+    ability: {
+      name: 'Stunning Charge',
+      description: 'Move this hero 4 paces and stun all adjacent enemy heroes.',
+      manaCost: 2,
+      cooldown: 2,
+      effectType: 'move_hero',
+      effectValue: 4, // Move 4 paces
+    },
+  },
+  // White Hero: Deployment Stunner
+  {
+    id: 'white-hero-deployment-stunner',
+    name: 'Deployment Stunner',
+    description: '3/7. When deployed, stuns the enemy unit blocking it.',
+    cardType: 'hero',
+    colors: ['white'],
+    attack: 3,
+    health: 7,
+    maxHealth: 7,
+    currentHealth: 7,
+    supportEffect: 'Stuns blocking enemy on deployment',
+    equippedItems: [],
+    ability: {
+      name: 'Deployment Strike',
+      description: 'When this hero is deployed, stun the enemy unit in front of it.',
+      manaCost: 0,
+      cooldown: 0,
+      trigger: 'on_deploy',
+      effectType: 'custom', // Custom: stuns blocking enemy on deployment
+      effectValue: 1,
+    },
+  },
   // Chromatic Payoff Hero - Green's rune identity
   {
     id: 'gw-hero-chromatic-healer',
@@ -3913,6 +3958,86 @@ export const uwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
 
 export const uwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   // Divine Wrath removed - replaced with artifact
+  // White Stun Spell
+  {
+    id: 'white-spell-stun',
+    name: 'Stun',
+    description: 'Stun target enemy unit or hero. Costs 2W.',
+    cardType: 'spell',
+    colors: ['white'],
+    manaCost: 2,
+    consumesRunes: true,
+    effect: {
+      type: 'stun',
+      stunDuration: 1,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+    initiative: true,
+  },
+  // White/Blue Stun Spell (2 turns)
+  {
+    id: 'wgu-spell-prolonged-stun',
+    name: 'Prolonged Stun',
+    description: 'Stun target enemy unit or hero for 2 turns. Costs 3WU.',
+    cardType: 'spell',
+    colors: ['white', 'blue'],
+    manaCost: 3,
+    consumesRunes: true,
+    effect: {
+      type: 'stun',
+      stunDuration: 2,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+    initiative: true,
+  },
+  // Blue/White Tower Heal + Draw
+  {
+    id: 'uw-spell-divine-restoration',
+    name: 'Divine Restoration',
+    description: 'Heal target tower for 6 and draw 3 cards. Costs 5UW.',
+    cardType: 'spell',
+    colors: ['blue', 'white'],
+    manaCost: 5,
+    consumesRunes: true,
+    effect: {
+      type: 'draw_and_heal',
+      damage: 0, // Placeholder - would need custom effect for tower heal
+      drawCount: 3,
+    },
+    initiative: true,
+  },
+  // Blue/White Move + Stun
+  {
+    id: 'uw-spell-reposition-stun',
+    name: 'Reposition and Stun',
+    description: 'Move target enemy unit to an empty slot within range 4 and stun all adjacent units. Costs 1UW.',
+    cardType: 'spell',
+    colors: ['blue', 'white'],
+    manaCost: 1,
+    consumesRunes: true,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for move + stun adjacent
+      damage: 0,
+    },
+    initiative: true,
+  },
+  // Blue/White/White Mass Bounce
+  {
+    id: 'uww-spell-selective-bounce',
+    name: 'Selective Bounce',
+    description: 'Each player chooses 1 unit to keep, then bounce all other units to their owner\'s hand. Costs 6UWW.',
+    cardType: 'spell',
+    colors: ['blue', 'white', 'white'],
+    manaCost: 6,
+    consumesRunes: true,
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for selective bounce
+      damage: 0,
+    },
+    initiative: true,
+  },
 ]
 
 // ============================================================================
