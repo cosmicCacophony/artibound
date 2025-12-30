@@ -378,6 +378,8 @@ export interface SpellCard extends BaseCard {
   description: string // Flavor text describing the spell
   initiative?: boolean // Does this spell give initiative (like Artifact)?
   refundMana?: number // Mana to refund after casting (for "free spell" mechanic inspired by Urza block)
+  // Additional costs (Black sacrifice theme)
+  discardCost?: number // Discard N random cards from hand as additional cost (e.g., Murder requires discarding 1 card)
 }
 
 export interface ItemCard extends BaseCard {
@@ -534,7 +536,7 @@ export interface GameState {
 }
 
 export const BATTLEFIELD_SLOT_LIMIT = 5
-export const TOWER_HP = 20
+export const TOWER_HP = 30
 export const NEXUS_HP = 30
 export const STARTING_GOLD = 5
 

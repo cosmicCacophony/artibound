@@ -45,7 +45,7 @@ You are an expert AI assistant with:
 
 ### Game Concept
 A two-player hero card game with:
-- 2 battlefields (A and B), each with 20 HP towers
+- 2 battlefields (A and B), each with 30 HP towers
 - Turn structure: Play Phase → Combat A → Adjustments → Combat B
 - Mana system: Start with 3 mana, gain +1 per turn (cap at 10)
 - Cards cost 3-9 mana
@@ -126,6 +126,15 @@ A two-player hero card game with:
 - **Clear feedback** - Visual feedback for all actions
 - **Balanced progression** - Early, mid, late game considerations
 - **Player agency** - Multiple viable strategies
+
+### Design Patterns: Color Identity Mechanics
+
+**Black Sacrifice Theme - Discard Costs:**
+- **Pattern**: Black spells can require discarding cards as an additional cost (beyond mana and runes)
+- **Example**: Murder (4B) requires discarding 1 random card from hand as additional cost
+- **Implementation**: Use `discardCost?: number` field on `SpellCard` to specify how many random cards to discard
+- **Design Rationale**: Fits Black's sacrifice identity - powerful effects at the cost of resources. Creates interesting deck-building decisions (do you run Murder if you're low on cards?)
+- **Future Applications**: Consider adding discard costs to other powerful Black spells, or cards that benefit from having fewer cards in hand
 
 ### Code Quality Standards
 - Functions should be focused and single-purpose
