@@ -98,6 +98,21 @@ A two-player hero card game with:
   3. **Verify closing braces match** - Ensure array/object structure remains valid after removal
   4. **Read context before removing** - Check what comes before and after the object to ensure clean removal
   5. **Test after removal** - Run linter/build to catch orphaned properties immediately
+
+### Smart Quote Prevention (CRITICAL)
+**NEVER use smart quotes (curly quotes) in code. Always use straight quotes/apostrophes.**
+
+- **Common Error**: Smart quotes from word processors (`'` `'` `"` `"`) cause syntax errors: `Expected "}" but found "ve"`
+- **Why it happens**: Copying text from Word, Google Docs, or other rich text editors introduces Unicode smart quotes instead of ASCII straight quotes
+- **How to prevent**:
+  1. **Always use straight quotes** - Use `'` (U+0027) and `"` (U+0022), never `'` `'` `"` `"`
+  2. **Check pasted text** - When pasting descriptions from external sources, manually verify all quotes are straight
+  3. **Common replacements**:
+     - `you've` → `you have` or `you\'ve` (with straight apostrophe)
+     - `don't` → `don\'t` (with straight apostrophe)
+     - Smart quotes in strings → Replace with straight quotes
+  4. **Before committing**: Run `npm run lint` or check for smart quotes with: `grep -n "[''""]" src/game/comprehensiveCardData.ts`
+  5. **Editor settings**: Configure your editor to use straight quotes (VS Code: `"editor.smartQuotes": false`)
 - **Example**: When removing a hero with an ability, remove:
   ```typescript
   {

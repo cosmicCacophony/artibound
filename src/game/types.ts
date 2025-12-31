@@ -412,6 +412,9 @@ export type ArtifactEffectType =
   | 'token_generation' // Spawns tokens each turn
   | 'equipment' // Can be attached to units
   | 'saga' // Saga-like artifact with multiple chapters
+  | 'archetype_tracker' // Tracks archetype-specific conditions (stuns, mighty units, etc.)
+  | 'spell_book' // Blue spell book artifact with modal choices
+  | 'scry_artifact' // Artifact that provides scry effect each turn
 
 export interface ArtifactCard extends BaseCard {
   cardType: 'artifact'

@@ -14,6 +14,7 @@
     "find-card-files": "tsx scripts/find-card-files.ts",
     "parse-card-data": "tsx scripts/parse-card-data.ts",
     "verify": "bash scripts/verify-changes.sh",
+    "check-quotes": "bash scripts/check-smart-quotes.sh",
     "clean-cache": "rm -rf node_modules/.vite dist",
     "dev:clean": "npm run clean-cache && npm run dev"
   },

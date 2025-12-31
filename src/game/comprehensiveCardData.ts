@@ -310,16 +310,14 @@ export const rwArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-artifact-divine-aura',
     name: 'Divine Aura Artifact',
-    description: 'Equipment. Target unit gets +0/+2 and 2 regen.',
+    description: 'Equipment. Target unit gets 3 regen.',
     cardType: 'artifact',
     colors: ['white'],
     manaCost: 3,
-    effectType: 'defensive_buff',
-    effectValue: 2, // +2 health and 2 regen
+    effectType: 'equipment',
+    effectValue: 0,
     equipmentBonuses: {
-      health: 2,
-      maxHealth: 2,
-      abilities: ['regen'],
+      abilities: ['regen_3'],
     },
   },
   {
@@ -744,30 +742,30 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'rg-unit-battle-tyrant',
     name: 'Battle Tyrant',
-    description: '6/7. When this enters, it fights all enemy units in front of it and adjacent to it. (Can wipe 3 units if lucky) Costs 6RG.',
+    description: '5/5. When this enters, it fights all enemy units in front of it and adjacent to it. (Can wipe 3 units if lucky) Costs 6RG.',
     cardType: 'generic',
     colors: ['red', 'green'],
     manaCost: 6,
     consumesRunes: true, // Requires RG runes - high dopamine hit card
-    attack: 6,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
+    attack: 5,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
     specialEffects: ['multi_fight'], // Custom effect: fights front + adjacent on enter
   },
   // NEW: RG Mighty Units (5+ power) Synergy
   {
     id: 'rg-mighty-chieftain',
     name: 'Mighty Chieftain',
-    description: '5/6. If you control a unit with 5+ attack, this gains +2/+0 and can attack twice. 5RG.',
+    description: '5/5. If you control a unit with 5+ attack, this gains +2/+0 and can attack twice. 5RG.',
     cardType: 'generic',
     colors: ['red', 'red', 'green'],
     manaCost: 5,
     consumesRunes: true,
     attack: 5,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
   },
   {
     id: 'rg-mighty-warlord',
@@ -1498,29 +1496,15 @@ export const gwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 7,
     maxHealth: 7,
     currentHealth: 7,
-    supportEffect: 'Allies gain +0/+2',    equippedItems: [],
+    supportEffect: 'Grants barrier to allies',    equippedItems: [],
     ability: {
       name: 'Nature\'s Protection',
-      description: 'Target unit gains +0/+4 this turn. If this hero is in front of it, it also gains +2/+0.',
+      description: 'Give target unit barrier this turn. If this hero is in front of it, it also gains +2/+0.',
       manaCost: 1,
       cooldown: 2,
-      effectType: 'buff_units',
-      effectValue: 4,
+      effectType: 'custom', // Custom: grants barrier
+      effectValue: 1,
     },
-  },
-  {
-    id: 'white-hero-divine-guardian',
-    name: 'Divine Guardian',
-    description: '3/9. All your units gain +0/+2.',
-    cardType: 'hero',
-    colors: ['white'],
-    attack: 3,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-    supportEffect: 'All your units gain +0/+2',
-    signatureCardId: undefined,
-    equippedItems: [],
   },
   // GW Mighty Champion (GWR pivot)
   {
@@ -1777,19 +1761,6 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     effect: {
       type: 'targeted_damage',
       damage: 0, // Placeholder - permanent +4/+0 buff
-    },
-  },
-  {
-    id: 'gw-spell-defensive-blessing',
-    name: 'Defensive Blessing',
-    description: 'Spell. Target hero gains +0/+4 permanently. 4GW.',
-    cardType: 'spell',
-    colors: ['green', 'green', 'white'],
-    manaCost: 4,
-    consumesRunes: true,
-    effect: {
-      type: 'targeted_damage',
-      damage: 0, // Placeholder - permanent +0/+4 buff
     },
   },
   {
@@ -2652,6 +2623,17 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     effectValue: 4, // 4 damage to enemy tower when hero sacrificed
   },
   {
+    id: 'ubr-artifact-damage-tap',
+    name: 'Void Strike Artifact',
+    description: 'Artifact. Pay 1 mana: Deal 5 damage to any unit. Costs 6URB.',
+    cardType: 'artifact',
+    colors: ['blue', 'black', 'red'],
+    manaCost: 6,
+    consumesRunes: true,
+    effectType: 'custom',
+    effectValue: 5, // Deal 5 damage when tapped for 1 mana
+  },
+  {
     id: 'green-spell-natures-blessing',
     name: 'Nature\'s Blessing',
     description: 'Target creature gets +2/+2 and 2 regen. Costs 3G.',
@@ -2664,6 +2646,85 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
       damage: 0,
     },
     initiative: true,
+  },
+]
+
+// ============================================================================
+// MONO-COLOR ARCHETYPE ARTIFACTS - 3 Mana Archetype Trackers
+// ============================================================================
+
+export const archetypeArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
+  // White Archetype Artifact - Stun Tracker
+  {
+    id: 'white-artifact-stun-tracker',
+    name: 'Stun Master\'s Tome',
+      description: 'Artifact. Tracks stuns you have caused. When you have stunned 5 units, draw 3 cards and all your units gain barrier this turn. Costs 3W.',
+    cardType: 'artifact',
+    colors: ['white'],
+    manaCost: 3,
+    consumesRunes: true,
+    effectType: 'archetype_tracker',
+    effectValue: 5, // Triggers at 5 stuns
+  },
+  // Green Archetype Artifact - Mighty Tracker
+  {
+    id: 'green-artifact-mighty-tracker',
+    name: 'Mighty Champion\'s Banner',
+    description: 'Artifact. Tracks mighty units (5+ power) you control. When you control 3 mighty units, all your mighty units gain +2/+2 permanently. Costs 3G.',
+    cardType: 'artifact',
+    colors: ['green'],
+    manaCost: 3,
+    consumesRunes: true,
+    effectType: 'archetype_tracker',
+    effectValue: 3, // Triggers at 3 mighty units
+  },
+  // Red Archetype Artifact - Tower Damage Tracker
+  {
+    id: 'red-artifact-tower-damage-tracker',
+    name: 'Siege Master\'s Log',
+    description: 'Artifact. Tracks different sources of damage to enemy tower. When you have dealt damage to tower from 6 different sources, deal 10 damage to enemy tower. Costs 3R.',
+    cardType: 'artifact',
+    colors: ['red'],
+    manaCost: 3,
+    consumesRunes: true,
+    effectType: 'archetype_tracker',
+    effectValue: 6, // Triggers at 6 different damage sources
+  },
+  // Black Archetype Artifact - Multi-Spell Tracker
+  {
+    id: 'black-artifact-spell-velocity-tracker',
+    name: 'Spell Slinger\'s Grimoire',
+    description: 'Artifact. Tracks spells cast in a turn. When you cast 3 spells in a single turn, draw 2 cards and deal 3 damage to enemy tower. Costs 3B.',
+    cardType: 'artifact',
+    colors: ['black'],
+    manaCost: 3,
+    consumesRunes: true,
+    effectType: 'archetype_tracker',
+    effectValue: 3, // Triggers at 3 spells in a turn
+  },
+  // Blue Archetype Artifact - Spell Book
+  {
+    id: 'blue-artifact-spell-book',
+    name: 'Arcane Spellbook',
+    description: 'Artifact. When you play this, choose one: Stun 2 target units (pay BU runes), or deal 4 damage to all enemy units (pay UB runes). Then, create a Scrying Lens artifact that lets you look at the top card of your library each turn and choose to keep it or exile it. Costs 3U.',
+    cardType: 'artifact',
+    colors: ['blue'],
+    manaCost: 3,
+    consumesRunes: true,
+    effectType: 'spell_book',
+    effectValue: 0, // Modal choice - requires BU or UB runes for the chosen effect
+  },
+  // Blue Scrying Artifact (created by Spell Book)
+  {
+    id: 'blue-artifact-scrying-lens',
+    name: 'Scrying Lens',
+    description: 'Artifact. At the start of your turn, look at the top card of your library. You may put it on top or exile it. Costs 0.',
+    cardType: 'artifact',
+    colors: ['blue'],
+    manaCost: 0,
+    consumesRunes: false,
+    effectType: 'scry_artifact',
+    effectValue: 1, // Scry 1 each turn
   },
 ]
 
@@ -3006,19 +3067,6 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     initiative: true,
   },
   // Removed: Battle Rage (temporary buff removed)
-  {
-    id: 'white-spell-combat-trick',
-    name: 'Divine Favor',
-    description: 'Before combat: Target unit gains +0/+3 this turn.',
-    cardType: 'spell',
-    colors: ['white'],
-    manaCost: 1,
-    effect: {
-      type: 'targeted_damage', // Placeholder
-      damage: 0,
-    },
-    initiative: true,
-  },
   {
     id: 'blue-spell-position-swap',
     name: 'Tactical Swap',
@@ -3480,50 +3528,50 @@ export const rwgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
     colors: ['red', 'green'],
     manaCost: 6,
     consumesRunes: true, // Multicolor 6+ mana should require runes
-    attack: 7,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
+    attack: 5,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
   },
   // RGW Finisher Units - Require multiple colors
   {
     id: 'rwg-unit-primal-titan',
     name: 'Primal Titan',
-    description: '6/6. When this enters, all your units gain +2/+2 until end of turn. Costs 7RRGG.',
+    description: '5/5. When this enters, all your units gain +2/+2 until end of turn. Costs 7RRGG.',
     cardType: 'generic',
     colors: ['red', 'red', 'green', 'green'],
     manaCost: 7,
     consumesRunes: true,
-    attack: 6,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
+    attack: 5,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
   },
   {
     id: 'rwg-unit-wild-colossus',
     name: 'Wild Colossus',
-    description: '7/7. Trample. When this attacks, all your units gain +1/+1 until end of turn. Costs 8RRWW.',
+    description: '5/5. Trample. When this attacks, all your units gain +1/+1 until end of turn. Costs 8RRWW.',
     cardType: 'generic',
     colors: ['red', 'red', 'white', 'white'],
     manaCost: 8,
     consumesRunes: true,
-    attack: 7,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
+    attack: 5,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
   },
   {
     id: 'rwg-unit-nature-warlord',
     name: 'Nature Warlord',
-    description: '5/7. When this enters, if you control heroes of 3+ different colors, all your units gain +3/+3 until end of turn. Costs 5RRGW.',
+    description: '5/5. When this enters, if you control heroes of 3+ different colors, all your units gain +3/+3 until end of turn. Costs 5RRGW.',
     cardType: 'generic',
     colors: ['red', 'red', 'green', 'white'],
     manaCost: 5,
     consumesRunes: true,
     attack: 5,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
   },
 ]
 
@@ -3601,22 +3649,6 @@ export const rwgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     },
   },
   // Mono-White Signature Spell
-  {
-    id: 'white-sig-divine-protection',
-    name: 'Divine Protection',
-    description: 'Target unit gains +0/+5 and protection from spells this turn. Costs 2W, refunds 2 mana.',
-    cardType: 'spell',
-    colors: ['white'],
-    manaCost: 2,
-    consumesRunes: true, // Requires W rune
-    refundMana: 2, // Free spell mechanic
-    effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect for buff + protection
-      damage: 0,
-      affectsUnits: true,
-    },
-    initiative: true,
-  },
   // White Dopamine Hit: Tower Healing & Protection
   {
     id: 'white-spell-divine-protection',
@@ -3796,28 +3828,15 @@ export const ubrCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
   {
     id: 'ubr-unit-grixis-titan',
     name: 'Grixis Titan',
-    description: '8/6. When this enters, deal 5 damage to all enemy units. When this attacks, deal 3 damage to enemy tower. Costs 8UBR.',
+    description: '4/4. When this enters, deal 5 damage to all enemy units. When this attacks, deal 3 damage to enemy tower. Costs 7UBR.',
     cardType: 'generic',
     colors: ['blue', 'black', 'red'],
-    manaCost: 8,
+    manaCost: 7,
     consumesRunes: true, // Requires UBR runes
-    attack: 8,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
-  },
-  {
-    id: 'ubr-unit-void-destroyer',
-    name: 'Void Destroyer',
-    description: '7/7. When this enters, destroy target unit. When this attacks, draw a card and deal 2 damage to enemy tower. Costs 9UBR.',
-    cardType: 'generic',
-    colors: ['blue', 'black', 'red'],
-    manaCost: 9,
-    consumesRunes: true, // Requires UBR runes
-    attack: 7,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
+    attack: 4,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
   },
 ]
 
@@ -4130,28 +4149,16 @@ export const wubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
   {
     id: 'wub-unit-esper-titan',
     name: 'Esper Titan',
-    description: '7/7. When this enters, destroy target unit. When this attacks, draw a card. Costs 7WUB.',
+    description: '4/4. Lifelink. Barrier. When this attacks, draw a card. Costs 7WUB.',
     cardType: 'generic',
     colors: ['white', 'blue', 'black'],
     manaCost: 7,
     consumesRunes: true, // Requires WUB runes
-    attack: 7,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-  },
-  {
-    id: 'wub-unit-void-tyrant',
-    name: 'Void Tyrant',
-    description: '8/6. When this enters, destroy all enemy units with 3 or less health. When this attacks, draw 2 cards. Costs 8WUB.',
-    cardType: 'generic',
-    colors: ['white', 'blue', 'black'],
-    manaCost: 8,
-    consumesRunes: true, // Requires WUB runes
-    attack: 8,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
+    attack: 4,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    specialEffects: ['lifelink', 'barrier'],
   },
 ]
 
@@ -4171,23 +4178,6 @@ export const wguSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     refundMana: 3, // Free spell mechanic
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for ramp + buff + protection
-      damage: 0,
-      drawCount: 1,
-      affectsUnits: true,
-    },
-    initiative: true,
-  },
-  {
-    id: 'wgu-spell-natures-shield',
-    name: 'Nature\'s Shield',
-    description: 'Target unit gains +0/+3 and protection from spells this turn. Draw a card. Costs 2WGU, refunds 2 mana.',
-    cardType: 'spell',
-    colors: ['white', 'green', 'blue'],
-    manaCost: 2,
-    consumesRunes: true, // Requires WGU runes
-    refundMana: 2, // Free spell mechanic
-    effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect for buff + protection
       damage: 0,
       drawCount: 1,
       affectsUnits: true,
@@ -4319,28 +4309,15 @@ export const wguCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
   {
     id: 'wgu-unit-primal-titan',
     name: 'Primal Titan',
-    description: '8/8. Trample. Protection from spells. When this attacks, all your units gain +2/+2 until end of turn. Costs 8WGU.',
+    description: '5/5. When this enters, stun 2 target units. Costs 7UGW.',
     cardType: 'generic',
-    colors: ['white', 'green', 'blue'],
-    manaCost: 8,
-    consumesRunes: true, // Requires WGU runes
-    attack: 8,
-    health: 8,
-    maxHealth: 8,
-    currentHealth: 8,
-  },
-  {
-    id: 'wgu-unit-guardian-colossus',
-    name: 'Guardian Colossus',
-    description: '7/10. Protection from spells. When this enters, gain +2 max mana. All your units gain +1/+1 permanently. Costs 9WGU.',
-    cardType: 'generic',
-    colors: ['white', 'green', 'blue'],
-    manaCost: 9,
-    consumesRunes: true, // Requires WGU runes
-    attack: 7,
-    health: 10,
-    maxHealth: 10,
-    currentHealth: 10,
+    colors: ['blue', 'green', 'white'],
+    manaCost: 7,
+    consumesRunes: true, // Requires UGW runes
+    attack: 5,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
   },
   {
     id: 'uww-unit-regenerative-guardian',
@@ -4389,19 +4366,6 @@ export const uwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
 export const uwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
   // Generic UW cards
   // White adjacency units - positional gameplay
-  {
-    id: 'white-unit-guardian-angel',
-    name: 'Guardian Angel',
-    description: 'Adjacent allies gain +0/+2. Costs 3W.',
-    cardType: 'generic',
-    colors: ['white'],
-    manaCost: 3,
-    consumesRunes: true, // Requires W rune
-    attack: 2,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-  },
   {
     id: 'white-unit-holy-sentinel',
     name: 'Holy Sentinel',
@@ -4843,6 +4807,7 @@ export const allArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   ...rwArtifacts,
   ...rgArtifacts,
   ...ubArtifacts,
+  ...archetypeArtifacts, // Mono-color archetype tracking artifacts
   // Rare artifacts (equipment)
   ...rareWhiteCards,
   ...rareRGCards,
@@ -4915,8 +4880,8 @@ export const archetypeBattlefields: BattlefieldDefinition[] = [
     name: 'Sanctuary',
     description: 'GW battlefield - protection',
     colors: ['green', 'white'],
-    staticAbility: 'Your units gain +0/+1',
-    staticAbilityId: 'unit-health-buff',
+    staticAbility: 'Your units gain 1 regen',
+    staticAbilityId: 'unit-regen-buff',
   },
   // GB - Midrange
   {
@@ -4951,8 +4916,8 @@ export const archetypeBattlefields: BattlefieldDefinition[] = [
     name: 'Temple Grounds',
     description: 'UW battlefield - proactive control',
     colors: ['blue', 'white'],
-    staticAbility: 'Units gain +0/+1 when played',
-    staticAbilityId: 'unit-health-buff',
+    staticAbility: 'Units gain barrier when played',
+    staticAbilityId: 'unit-barrier-buff',
   },
 ]
 
