@@ -5,6 +5,7 @@ import { allCards, allSpells, allArtifacts, allBattlefields, allHeroes } from '.
 import { ubHeroes } from '../game/comprehensiveCardData'
 import { boss1ValiantLegion } from '../game/bossData'
 import { heroMatchesArchetype, cardMatchesArchetype } from '../game/archetypeUtils'
+import { saveDraft, getPreviousDraft } from '../game/draftStorage'
 
 interface GameContextType {
   // Game State
@@ -374,34 +375,48 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [initializeGameFromDraft])
 
   const initializeDraftGame = useCallback((player1Selection: FinalDraftSelection) => {
-    // Use boss Legion deck for player2 (opponent) - Legion cards are AI-only
-    const boss = boss1ValiantLegion
+    // Save the current draft to localStorage (this will shift previous drafts)
+    // After saving: current draft is at index 0, previous draft (if exists) is at index 1
+    saveDraft(player1Selection)
     
-    // Filter out undefined heroes and create hero instances
-    const player2Heroes: Hero[] = boss.heroes
-      .filter((hero): hero is Omit<Hero, 'location' | 'owner'> => hero !== undefined)
-      .map((hero, i) => ({
-        ...hero,
-        id: `${hero.id}-player2-${Date.now()}-${i}`,
-        owner: 'player2' as const,
-        location: 'base' as const,
-      })) as Hero[]
+    // Get the previous draft (the one that was saved before this one, now at index 1)
+    const previousDraft = getPreviousDraft()
     
-    // Filter out undefined cards and combine boss cards (units + spells + artifacts)
-    const player2Cards: BaseCard[] = [
-      ...boss.units.filter((card): card is BaseCard => card !== undefined && card !== null),
-      ...boss.spells.filter((card): card is BaseCard => card !== undefined && card !== null),
-      ...boss.artifacts.filter((card): card is BaseCard => card !== undefined && card !== null),
-    ]
+    let player2Selection: FinalDraftSelection
     
-    // Create final selection for player2 (battlefield will be ignored, but required by type)
-    const player2Selection: FinalDraftSelection = {
-      heroes: player2Heroes,
-      cards: player2Cards,
-      battlefield: allBattlefields[0], // Placeholder, will be replaced by hardcoded ones
+    if (previousDraft) {
+      // Use the previous draft as player2's deck (play against your last draft)
+      player2Selection = previousDraft
+    } else {
+      // Fall back to boss Legion deck if no previous draft exists
+      const boss = boss1ValiantLegion
+      
+      // Filter out undefined heroes and create hero instances
+      const player2Heroes: Hero[] = boss.heroes
+        .filter((hero): hero is Omit<Hero, 'location' | 'owner'> => hero !== undefined)
+        .map((hero, i) => ({
+          ...hero,
+          id: `${hero.id}-player2-${Date.now()}-${i}`,
+          owner: 'player2' as const,
+          location: 'base' as const,
+        })) as Hero[]
+      
+      // Filter out undefined cards and combine boss cards (units + spells + artifacts)
+      const player2Cards: BaseCard[] = [
+        ...boss.units.filter((card): card is BaseCard => card !== undefined && card !== null),
+        ...boss.spells.filter((card): card is BaseCard => card !== undefined && card !== null),
+        ...boss.artifacts.filter((card): card is BaseCard => card !== undefined && card !== null),
+      ]
+      
+      // Create final selection for player2 (battlefield will be ignored, but required by type)
+      player2Selection = {
+        heroes: player2Heroes,
+        cards: player2Cards,
+        battlefield: allBattlefields[0], // Placeholder, will be replaced by hardcoded ones
+      }
     }
     
-    // Initialize game from player1's draft vs player2's boss Legion deck
+    // Initialize game from player1's draft vs player2's deck (previous draft or RW Legion)
     initializeGameFromDraft(player1Selection, player2Selection)
   }, [initializeGameFromDraft])
 

@@ -256,6 +256,20 @@ export const monoRedAggroCards: Omit<GenericUnit, 'location' | 'owner' | 'stacke
   // Low-cost aggressive units (1-3 mana) - Reduced for clarity
   // Removed: Goblin Scout, Fire Striker, Battle Hound (weak red creeps)
   {
+    id: 'red-unit-artifact-sacrificer',
+    name: 'Artifact Forger',
+    description: '3/3. Sacrifice an artifact: Create a 5/1 token. Costs 3R.',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 3,
+    consumesRunes: true,
+    attack: 3,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    specialEffects: ['artifact_sacrifice'], // Custom: sacrifice artifact to create token
+  },
+  {
     id: 'red-aggro-raging-warrior',
     name: 'Raging Warrior',
     description: '4/2. Aggressive threat. 3R.',
@@ -941,57 +955,6 @@ export const rbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     },
   },
   // Blood Magic Heroes (Black's Rune Identity)
-  {
-    id: 'rb-hero-blood-mage',
-    name: 'Blood Mage',
-    description: '4/6. Blood Magic: Pay tower life instead of missing runes (B: 2 life/tower, R/G: 3 life/tower, U/W: 4 life/tower).',
-    cardType: 'hero',
-    colors: ['red', 'black'],
-    attack: 4,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
-    equippedItems: [],
-    ability: {
-      name: 'Blood Magic',
-      description: 'Passive: Pay tower life instead of missing runes. B: 2 life/tower, R/G: 3 life/tower, U/W: 4 life/tower.',
-      manaCost: 0,
-      cooldown: 0,
-      trigger: 'passive',
-      effectType: 'buff_units',
-      effectValue: 0,
-      bloodMagic: {
-        enabled: true,
-        description: 'Pay tower life for missing runes (B: 2, R/G: 3, U/W: 4 per tower)'
-      }
-    }
-  },
-  {
-    id: 'rb-hero-blood-adept',
-    name: 'Blood Magic Adept',
-    description: '3/7. Blood Magic with cost reduction. Pay 1 less life per rune (B: 1, R/G: 2, U/W: 3 per tower).',
-    cardType: 'hero',
-    colors: ['red', 'black'],
-    attack: 3,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-    equippedItems: [],
-    ability: {
-      name: 'Efficient Blood Magic',
-      description: 'Passive: Pay reduced tower life for missing runes. B: 1 life/tower, R/G: 2 life/tower, U/W: 3 life/tower.',
-      manaCost: 0,
-      cooldown: 0,
-      trigger: 'passive',
-      effectType: 'buff_units',
-      effectValue: 0,
-      bloodMagic: {
-        enabled: true,
-        costReduction: 1,
-        description: 'Pay reduced tower life for missing runes (B: 1, R/G: 2, U/W: 3 per tower)'
-      }
-    }
-  },
   // Mono-Black Blood Magic Hero - Dark Ritualist (Black runes only, very cheap)
   {
     id: 'black-hero-dark-ritualist',
@@ -1623,23 +1586,23 @@ export const gwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   {
     id: 'white-hero-divine-champion',
     name: 'Divine Champion',
-    description: '4/8. Powerful mono-white hero with signature spell and strong ability.',
+    description: '4/8. Activated: Swap positions with target unit and give it barrier.',
     cardType: 'hero',
     colors: ['white'],
     attack: 4,
     health: 8,
     maxHealth: 8,
     currentHealth: 8,
-    supportEffect: 'Allies gain +1/+1',
+    supportEffect: 'Can swap positions and grant barrier',
     signatureCardId: 'white-sig-divine-protection',
     equippedItems: [],
     ability: {
-      name: 'Divine Blessing',
-      description: 'Heal 5 to any target.',
+      name: 'Divine Swap',
+      description: 'Swap positions with target unit and give it barrier.',
       manaCost: 2,
       cooldown: 2,
-      effectType: 'heal',
-      effectValue: 5,
+      effectType: 'custom', // Custom: swap positions and grant barrier
+      effectValue: 0,
     },
   },
   // White Hero: Mobile Stunner
@@ -1688,34 +1651,6 @@ export const gwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     },
   },
   // Chromatic Payoff Hero - Green's rune identity
-  {
-    id: 'gw-hero-chromatic-healer',
-    name: 'Chromatic Healer',
-    description: '3/7. If you have a spell that costs 8 or more in your hand, reduce it by 1 at end of turn.',
-    cardType: 'hero',
-    colors: ['green', 'white'],
-    attack: 3,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-    equippedItems: [],
-    ability: {
-      name: 'Spell Cost Reduction',
-      description: 'If you have a spell that costs 8 or more in your hand, reduce it by 1 at end of turn.',
-      manaCost: 0,
-      cooldown: 0,
-      trigger: 'passive',
-      effectType: 'heal_self',
-      effectValue: 0,
-      chromaticPayoff: {
-        triggerColors: ['red', 'black'],
-        effectType: 'heal',
-        effectValue: 2,
-        perRuneSpent: false,
-        description: 'Heals 2 when you spend R or B runes'
-      }
-    }
-  },
 ]
 
 export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
@@ -2014,6 +1949,20 @@ export const gbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
 // ============================================================================
 
 export const blackMidrangeCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+  {
+    id: 'black-unit-token-sacrificer',
+    name: 'Token Ritualist',
+    description: '2/3. Sacrifice a token: Create a free spell in hand that deals 4 damage to any target. Costs 3B.',
+    cardType: 'generic',
+    colors: ['black'],
+    manaCost: 3,
+    consumesRunes: true,
+    attack: 2,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    specialEffects: ['token_sacrifice'], // Custom: sacrifice token to create free spell
+  },
   // Value units (3-5 mana)
   {
     id: 'black-midrange-insightful-scholar',
@@ -2060,18 +2009,6 @@ export const gbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
 // ============================================================================
 
 export const guHeroes: Omit<Hero, 'location' | 'owner'>[] = [
-  {
-    id: 'gu-hero-druid',
-    name: 'Mana Druid',
-    description: 'Ramps into big spells',
-    cardType: 'hero',
-    colors: ['green', 'blue'],
-    attack: 2,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-    supportEffect: 'Adjacent enemies get -1 attack each turn (stacks up to 3 times)',    equippedItems: [],
-  },
   // Strong Mono-Blue Hero
   {
     id: 'blue-hero-arcane-master',
@@ -2257,28 +2194,6 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       effectType: 'steal_unit',
       effectValue: 0,
       startsOnCooldown: true, // Starts on cooldown at game start
-    },
-  },
-  {
-    id: 'ub-hero-druid',
-    name: 'Verdant Archmage',
-    description: '2/7. At end of turn, look at the top 3 cards of library, you may move one to the front and 1 to bottom.',
-    cardType: 'hero',
-    colors: ['green', 'blue'],
-    attack: 2,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-    supportEffect: 'Manipulates library order',
-    equippedItems: [],
-    ability: {
-      name: 'Library Manipulation',
-      description: 'At end of turn, look at the top 3 cards of library, you may move one to the front and 1 to bottom.',
-      manaCost: 0,
-      cooldown: 0,
-      trigger: 'passive',
-      effectType: 'custom',
-      effectValue: 0,
     },
   },
   // Blood Magic Hero - Desperate Necromancer (Limited substitutions)
