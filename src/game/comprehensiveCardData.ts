@@ -415,11 +415,11 @@ export const rgArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   {
     id: 'rg-artifact-cleave-aura',
     name: 'Cleave Aura Artifact',
-    description: 'Artifact. Target unit or hero gains Cleave (damages adjacent units when attacking) during your turn. Costs 3RG.',
+    description: 'Artifact. Target unit or hero gains Cleave (damages adjacent units when attacking) during your turn. Costs 3R.',
     cardType: 'artifact',
-    colors: ['red', 'green'],
+    colors: ['red'],
     manaCost: 3,
-    consumesRunes: true, // Requires RG runes
+    consumesRunes: true, // Requires R rune
     effectType: 'damage_amplifier', // Placeholder - would need custom effect for granting cleave
     effectValue: 0, // Cleave is a special effect, not a stat boost
   },
@@ -756,11 +756,11 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'rg-unit-battle-tyrant',
     name: 'Battle Tyrant',
-    description: '5/5. When this enters, it fights all enemy units in front of it and adjacent to it. (Can wipe 3 units if lucky) Costs 6RG.',
+    description: '5/5. When this enters, it fights all enemy units in front of it and adjacent to it. (Can wipe 3 units if lucky) Costs 6G.',
     cardType: 'generic',
-    colors: ['red', 'green'],
+    colors: ['green'],
     manaCost: 6,
-    consumesRunes: true, // Requires RG runes - high dopamine hit card
+    consumesRunes: true, // Requires G rune - high dopamine hit card
     attack: 5,
     health: 5,
     maxHealth: 5,
@@ -771,9 +771,9 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'rg-mighty-chieftain',
     name: 'Mighty Chieftain',
-    description: '5/5. If you control a unit with 5+ attack, this gains +2/+0 and can attack twice. 5RG.',
+    description: '5/5. If you control a unit with 5+ attack, this gains +2/+0 and can attack twice. 5G.',
     cardType: 'generic',
-    colors: ['red', 'red', 'green'],
+    colors: ['green'],
     manaCost: 5,
     consumesRunes: true,
     attack: 5,
@@ -784,9 +784,9 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'rg-mighty-warlord',
     name: 'Warlord of the Wilds',
-    description: '4/5. When you play a unit with 5+ attack, draw a card. 4RG.',
+    description: '4/5. When you play a unit with 5+ attack, draw a card. 4G.',
     cardType: 'generic',
-    colors: ['red', 'red', 'green'],
+    colors: ['green'],
     manaCost: 4,
     consumesRunes: true,
     attack: 4,
@@ -797,9 +797,9 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'rg-mighty-herald',
     name: 'Herald of Giants',
-    description: '3/4. Units with 5+ attack you play cost 1 less. 3RG.',
+    description: '3/4. Units with 5+ attack you play cost 1 less. 3R.',
     cardType: 'generic',
-    colors: ['red', 'green', 'green'],
+    colors: ['red'],
     manaCost: 3,
     consumesRunes: true,
     attack: 3,
@@ -865,7 +865,7 @@ export const ruSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     name: 'Lightning Bolt',
     description: 'Deal 4 damage',
     cardType: 'spell',
-    colors: ['red', 'blue'],
+    colors: ['red'],
     manaCost: 2,
     consumesRunes: true, // Not generic - consumes runes
     effect: {
@@ -895,7 +895,7 @@ export const ruSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     name: 'Meteor',
     description: 'Deal 6 damage to all units',
     cardType: 'spell',
-    colors: ['red', 'blue'],
+    colors: ['red'],
     consumesRunes: true, // Powerful AOE damage
     manaCost: 6,
     effect: {
@@ -1058,9 +1058,9 @@ export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'rb-unit-blood-warrior',
     name: 'Blood Warrior',
-    description: '4/3. When this enters, all towers take 1 damage. Costs 4RB.',
+    description: '4/3. When this enters, all towers take 1 damage. Costs 4R.',
     cardType: 'generic',
-    colors: ['red', 'black'],
+    colors: ['red'],
     manaCost: 4,
     consumesRunes: true,
     attack: 4,
@@ -1071,9 +1071,9 @@ export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'rb-unit-pain-dealer',
     name: 'Pain Dealer',
-    description: '3/3. If you have dealt noncombat damage to the tower this round, this becomes a 5/5. Costs 3RB.',
+    description: '3/3. If you have dealt noncombat damage to the tower this round, this becomes a 5/5. Costs 3B.',
     cardType: 'generic',
-    colors: ['red', 'black'],
+    colors: ['black'],
     manaCost: 3,
     consumesRunes: true,
     attack: 3,
@@ -1084,9 +1084,9 @@ export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'rb-unit-sacrifice-fiend',
     name: 'Sacrifice Fiend',
-    description: '5/4. When this enters, you may sacrifice a unit. If you do, deal 3 damage to any target. Costs 5RB.',
+    description: '5/4. When this enters, you may sacrifice a unit. If you do, deal 3 damage to any target. Costs 5B.',
     cardType: 'generic',
-    colors: ['red', 'black'],
+    colors: ['black'],
     manaCost: 5,
     consumesRunes: true,
     attack: 5,
@@ -1097,9 +1097,9 @@ export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'rb-unit-tower-saboteur',
     name: 'Tower Saboteur',
-    description: '2/2. When this enters, target tower loses 1 armor. Costs 2RB.',
+    description: '2/2. When this enters, target tower loses 1 armor. Costs 2R.',
     cardType: 'generic',
-    colors: ['red', 'black'],
+    colors: ['red'],
     manaCost: 2,
     consumesRunes: true,
     attack: 2,
@@ -1110,9 +1110,9 @@ export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'rb-unit-vampiric-assaulter',
     name: 'Vampiric Assaulter',
-    description: '4/2. Whenever this attacks a tower, you gain 2 life. Costs 4RB.',
+    description: '4/2. Whenever this attacks a tower, you gain 2 life. Costs 4B.',
     cardType: 'generic',
-    colors: ['red', 'black'],
+    colors: ['black'],
     manaCost: 4,
     consumesRunes: true,
     attack: 4,
@@ -1124,9 +1124,9 @@ export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'rb-unit-spell-fencer',
     name: 'Spell Fencer',
-    description: '2/3. Whenever you cast a spell, this unit gets +1/+0 this turn. Costs 2RB.',
+    description: '2/3. Whenever you cast a spell, this unit gets +1/+0 this turn. Costs 2R.',
     cardType: 'generic',
-    colors: ['red', 'black'],
+    colors: ['red'],
     manaCost: 2,
     consumesRunes: true,
     attack: 2,
@@ -1240,11 +1240,11 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rb-spell-dual-elimination',
     name: 'Dual Elimination',
-    description: 'Deal 5 damage to up to 2 different targets. Costs 4RB.',
+    description: 'Deal 5 damage to up to 2 different targets. Costs 4R.',
     cardType: 'spell',
-    colors: ['red', 'black'],
+    colors: ['red'],
     manaCost: 4,
-    consumesRunes: true, // Requires RB runes
+    consumesRunes: true, // Requires R rune
     effect: {
       type: 'multi_target_damage',
       damage: 5,
@@ -1257,30 +1257,15 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rb-spell-ruthless-strike',
     name: 'Ruthless Strike',
-    description: 'Deal 1 damage to tower and draw one card. Costs 1RB, but costs no runes.',
+    description: 'Deal 1 damage to tower and draw one card. Costs 1R, but costs no runes.',
     cardType: 'spell',
-    colors: ['red', 'black'],
+    colors: ['red'],
     manaCost: 1,
     consumesRunes: false, // Costs no runes
     effect: {
       type: 'targeted_damage',
       damage: 1,
       drawCount: 1,
-    },
-    initiative: true,
-  },
-  {
-    id: 'br-spell-chaos-demolisher',
-    name: 'Chaos Demolisher',
-    description: 'Deal 2 damage to a unit, then randomly bounce to adjacent units and repeat this 7 times. Costs 7BR.',
-    cardType: 'spell',
-    colors: ['black', 'red'],
-    manaCost: 7,
-    consumesRunes: true,
-    effect: {
-      type: 'aoe_damage_repeat',
-      damage: 2,
-      repeatCount: 7,
     },
     initiative: true,
   },
@@ -1303,9 +1288,9 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rb-spell-double-strike',
     name: 'Double Strike',
-    description: 'Deal 3 damage to target. Draw a card if this is your 2nd+ spell this turn. Costs 2RB.',
+    description: 'Deal 3 damage to target. Draw a card if this is your 2nd+ spell this turn. Costs 2B.',
     cardType: 'spell',
-    colors: ['red', 'black'],
+    colors: ['black'],
     manaCost: 2,
     consumesRunes: true,
     effect: {
@@ -1366,26 +1351,11 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     initiative: true,
   },
   {
-    id: 'br-spell-chaos-demolisher',
-    name: 'Chaos Demolisher',
-    description: 'Deal 2 damage to a unit, then randomly bounce to adjacent units and repeat this 7 times. Costs 7BR.',
-    cardType: 'spell',
-    colors: ['black', 'red'],
-    manaCost: 7,
-    consumesRunes: true,
-    effect: {
-      type: 'aoe_damage_repeat',
-      damage: 2,
-      repeatCount: 7,
-    },
-    initiative: true,
-  },
-  {
     id: 'rb-spell-tower-assault',
     name: 'Tower Assault',
-    description: 'Deal 3 damage to target tower. Costs 3RB, refunds 3 mana.',
+    description: 'Deal 3 damage to target tower. Costs 3R, refunds 3 mana.',
     cardType: 'spell',
-    colors: ['red', 'black'],
+    colors: ['red'],
     manaCost: 3,
     consumesRunes: true,
     refundMana: 3,
@@ -1661,9 +1631,9 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'gw-unit-target-grower',
     name: 'Target Grower',
-    description: '3/3. Whenever you target this, it gets +1/+1 permanently. Costs 3WG.',
+    description: '3/3. Whenever you target this, it gets +1/+1 permanently. Costs 3G.',
     cardType: 'generic',
-    colors: ['white', 'green'],
+    colors: ['green'],
     manaCost: 3,
     consumesRunes: true,
     attack: 3,
@@ -1675,9 +1645,9 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'gw-spell-balanced-growth',
     name: 'Balanced Growth',
-    description: 'Target hero gains +2/+2 permanently and gains a 1 cost activated ability to move to an adjacent slot. 3GW.',
+    description: 'Target hero gains +2/+2 permanently and gains a 1 cost activated ability to move to an adjacent slot. 3G.',
     cardType: 'spell',
-    colors: ['green', 'green', 'white'],
+    colors: ['green'],
     manaCost: 3,
     consumesRunes: true,
     effect: {
@@ -1688,9 +1658,9 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'gw-spell-offensive-blessing',
     name: 'Offensive Blessing',
-    description: 'Spell. Target hero gains +4/+0 permanently. 4GW.',
+    description: 'Spell. Target hero gains +4/+0 permanently. 4G.',
     cardType: 'spell',
-    colors: ['green', 'green', 'white'],
+    colors: ['green'],
     manaCost: 4,
     consumesRunes: true,
     effect: {
@@ -1715,9 +1685,9 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'gw-unit-mighty-warrior',
     name: 'Mighty Warrior',
-    description: '5/5. When this enters, other creatures you control get +1/+1 this turn. Costs 5GW.',
+    description: '5/5. When this enters, other creatures you control get +1/+1 this turn. Costs 5G.',
     cardType: 'generic',
-    colors: ['green', 'white'],
+    colors: ['green'],
     manaCost: 5,
     consumesRunes: true,
     attack: 5,
@@ -1740,9 +1710,9 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'gw-unit-barrier-titan',
     name: 'Barrier Titan',
-    description: '4/6. Your creatures with 5+ power have barrier. Costs 5GW.',
+    description: '4/6. Your creatures with 5+ power have barrier. Costs 5W.',
     cardType: 'generic',
-    colors: ['green', 'white'],
+    colors: ['white'],
     manaCost: 5,
     consumesRunes: true,
     attack: 4,
@@ -1766,9 +1736,9 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'gw-unit-barrier-sentinel',
     name: 'Barrier Sentinel',
-    description: '3/3 with Barrier. Costs 3GW.',
+    description: '3/3 with Barrier. Costs 3W.',
     cardType: 'generic',
-    colors: ['green', 'white'],
+    colors: ['white'],
     manaCost: 3,
     consumesRunes: true,
     attack: 3,
@@ -1793,9 +1763,9 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'gw-unit-combat-barrier',
     name: 'Combat Barrier',
-    description: '4/4. When this blocks or is blocked, give it barrier. Costs 4GW.',
+    description: '4/4. When this blocks or is blocked, give it barrier. Costs 4W.',
     cardType: 'generic',
-    colors: ['green', 'white'],
+    colors: ['white'],
     manaCost: 4,
     consumesRunes: true,
     attack: 4,
@@ -2300,9 +2270,9 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'ub-unit-clue-investigator',
     name: 'Clue Investigator',
-    description: '1/2. When this enters, create a clue token. Whenever you draw an extra card each turn, this gets +3/+0. Costs 3UB.',
+    description: '1/2. When this enters, create a clue token. Whenever you draw an extra card each turn, this gets +3/+0. Costs 3U.',
     cardType: 'generic',
-    colors: ['blue', 'black'],
+    colors: ['blue'],
     manaCost: 3,
     consumesRunes: true,
     attack: 1,
@@ -2314,9 +2284,9 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'ub-unit-spell-stunner',
     name: 'Spell Stunner',
-    description: '2/3. Whenever you cast your 2nd spell each turn, stun target unit. Costs 3UB.',
+    description: '2/3. Whenever you cast your 2nd spell each turn, stun target unit. Costs 3U.',
     cardType: 'generic',
-    colors: ['blue', 'black'],
+    colors: ['blue'],
     manaCost: 3,
     consumesRunes: true,
     attack: 2,
@@ -2327,9 +2297,9 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'ub-unit-multi-spell-stunner',
     name: 'Multi-Spell Stunner',
-    description: '3/4. When this enters, if you have cast 2+ spells this turn, stun target unit. Costs 4UB.',
+    description: '3/4. When this enters, if you have cast 2+ spells this turn, stun target unit. Costs 4B.',
     cardType: 'generic',
-    colors: ['blue', 'black'],
+    colors: ['black'],
     manaCost: 4,
     consumesRunes: true,
     attack: 3,
@@ -2353,9 +2323,9 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'ub-unit-spell-cascade',
     name: 'Spell Cascade',
-    description: '4/5. Whenever you cast 2+ spells in one turn, stun a random enemy unit. Costs 5UB.',
+    description: '4/5. Whenever you cast 2+ spells in one turn, stun a random enemy unit. Costs 5B.',
     cardType: 'generic',
-    colors: ['blue', 'black'],
+    colors: ['black'],
     manaCost: 5,
     consumesRunes: true,
     attack: 4,
@@ -2682,11 +2652,11 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-spell-void-cascade',
     name: 'Void Cascade',
-    description: 'Deal 5 damage to all enemy units. Costs 5UUB.',
+    description: 'Deal 5 damage to all enemy units. Costs 5UU.',
     cardType: 'spell',
-    colors: ['blue', 'black'], // Requires UUB runes (2 blue, 1 black)
+    colors: ['blue', 'blue'], // Requires UU runes
     manaCost: 5,
-    consumesRunes: true, // Not generic - consumes UUB runes
+    consumesRunes: true, // Not generic - consumes UU runes
     effect: {
       type: 'aoe_damage',
       damage: 5,
@@ -2699,9 +2669,9 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-spell-premium-removal',
     name: 'Void Bolt',
-    description: 'Deal 7 damage to target unit or hero. Costs 4UB.',
+    description: 'Deal 7 damage to target unit or hero. Costs 4B.',
     cardType: 'spell',
-    colors: ['blue', 'black'],
+    colors: ['black'],
     manaCost: 4,
     consumesRunes: true,
     effect: {
@@ -2730,9 +2700,9 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-spell-conditional-removal',
     name: 'Dark Bolt',
-    description: 'Deal 5 damage to target unit. If it dies, draw a card. Costs 3UB.',
+    description: 'Deal 5 damage to target unit. If it dies, draw a card. Costs 3B.',
     cardType: 'spell',
-    colors: ['blue', 'black'],
+    colors: ['black'],
     manaCost: 3,
     consumesRunes: true,
     effect: {
@@ -2745,9 +2715,9 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-spell-midrange-aoe',
     name: 'Shadow Wave',
-    description: 'Deal 4 damage to all enemy units. Costs 5UB.',
+    description: 'Deal 4 damage to all enemy units. Costs 5U.',
     cardType: 'spell',
-    colors: ['blue', 'black'],
+    colors: ['blue'],
     manaCost: 5,
     consumesRunes: true,
     effect: {
@@ -4154,9 +4124,9 @@ export const wguSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-spell-curse-and-refund',
     name: 'Curse Trap',
-    description: 'Stun target unit and curse it (opponent pays 3 mana to remove). Refund 3 mana, draw a card. Costs 3UB.',
+    description: 'Stun target unit and curse it (opponent pays 3 mana to remove). Refund 3 mana, draw a card. Costs 3U.',
     cardType: 'spell',
-    colors: ['blue', 'black'],
+    colors: ['blue'],
     manaCost: 3,
     consumesRunes: true,
     refundMana: 3,
@@ -4186,9 +4156,9 @@ export const wguSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ub-spell-curse-and-draw',
     name: 'Cursed Binding',
-    description: 'Curse target unit (opponent pays 4 to remove). If you have cast 2+ spells this turn, draw 2 cards. Costs 4UB.',
+    description: 'Curse target unit (opponent pays 4 to remove). If you have cast 2+ spells this turn, draw 2 cards. Costs 4B.',
     cardType: 'spell',
-    colors: ['blue', 'black'],
+    colors: ['black'],
     manaCost: 4,
     consumesRunes: true,
     effect: {
