@@ -842,6 +842,11 @@ export function createCardFromTemplate(
   owner: 'player1' | 'player2',
   location: 'hand' | 'base' | 'battlefieldA' | 'battlefieldB' = 'hand'
 ): Card {
+  // Safety check: template must be defined
+  if (!template || !template.id) {
+    throw new Error(`Cannot create card from undefined template. Owner: ${owner}, Location: ${location}`)
+  }
+  
   const base = {
     id: `${template.id}-${owner}-${Date.now()}-${Math.random()}`,
     name: template.name,
