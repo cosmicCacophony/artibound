@@ -76,7 +76,7 @@ export interface Item {
   // Special abilities (for future implementation)
   hasActivatedAbility?: boolean
   activatedAbilityDescription?: string
-  specialEffects?: string[] // e.g., ['cleave', 'siege', 'regeneration', 'taunt', 'retaliate', 'tower_armor', 'create_unit', 'refresh_cooldowns']
+  specialEffects?: string[] // e.g., ['cleave', 'siege', 'regeneration', 'taunt', 'retaliate', 'tower_armor', 'create_unit', 'refresh_cooldowns', 'barrier']
 }
 
 export type BattlefieldId = 'battlefieldA' | 'battlefieldB'
@@ -175,6 +175,12 @@ export interface GameMetadata {
   // Stunned heroes: Record of hero ID -> boolean (stunned heroes don't deal combat damage, only receive it)
   // Using Record instead of Set for JSON serialization
   stunnedHeroes: Record<string, boolean>
+  // Barrier state: Track which units have barrier (damage immunity for one turn)
+  // Record<cardId, expirationTurn> - barrier expires at the specified turn
+  barrierUnits: Record<string, number>
+  // Cursed units: Track which units are cursed (stunned until opponent pays mana to remove)
+  // Record<cardId, manaCost> - the mana cost to remove the curse
+  cursedUnits: Record<string, number>
   // Turn 1 deployment state: Track turn 1 deployment phase (Artifact-style counter-deployment)
   // 'p1_lane1' -> Player 1 deploys hero to lane 1 (battlefieldA)
   // 'p2_lane1' -> Player 2 can counter-deploy to lane 1 (battlefieldA)
@@ -421,7 +427,7 @@ export interface ArtifactCard extends BaseCard {
     attack?: number
     health?: number
     maxHealth?: number
-    abilities?: string[] // e.g., ['cleave', 'taunt', 'flying']
+    abilities?: string[] // e.g., ['cleave', 'taunt', 'flying', 'barrier']
   }
   // Saga-specific fields
   sagaCounters?: number // Current chapter number (1, 2, or 3). Artifact is destroyed when it reaches 3

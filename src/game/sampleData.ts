@@ -1773,6 +1773,8 @@ export function createInitialGameState(): {
     player1Passed: false, // Track if player 1 has passed this turn
     player2Passed: false, // Track if player 2 has passed this turn
     stunnedHeroes: {}, // Track stunned heroes (don't deal combat damage, only receive it)
+    barrierUnits: {}, // Track units with barrier (damage immunity for one turn)
+    cursedUnits: {}, // Track cursed units (stunned until opponent pays to remove)
     turn1DeploymentPhase: 'p1_lane1', // Turn 1 deployment phase: p1_lane1 -> p2_lane1 -> p2_lane2 -> p1_lane2 -> complete
     // Rune system
     player1RunePool: player1InitialRunePool,
@@ -2009,6 +2011,8 @@ export function createGameStateFromDraft(
     player2Passed: false, // Track if player 2 has passed this turn
     turn1DeploymentPhase: 'p1_lane1', // Turn 1 deployment: Player 1 deploys to lane 1 first
     stunnedHeroes: {}, // Track stunned heroes (don't deal combat damage, only receive it)
+    barrierUnits: {}, // Track units with barrier (damage immunity for one turn)
+    cursedUnits: {}, // Track cursed units (stunned until opponent pays to remove)
     // Rune system - start with empty pools, runes added when heroes deploy
     player1RunePool: player1InitialRunePool,
     player2RunePool: player2InitialRunePool,

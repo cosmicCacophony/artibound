@@ -136,6 +136,54 @@ A two-player hero card game with:
 - **Design Rationale**: Fits Black's sacrifice identity - powerful effects at the cost of resources. Creates interesting deck-building decisions (do you run Murder if you're low on cards?)
 - **Future Applications**: Consider adding discard costs to other powerful Black spells, or cards that benefit from having fewer cards in hand
 
+**Barrier Keyword - Damage Immunity:**
+- **Mechanic**: Units with barrier are immune to all damage for one turn
+- **Implementation**: Use `specialEffects: ['barrier']` on units or grant via spells/abilities
+- **Tracking**: `barrierUnits: Record<string, number>` in `GameMetadata` tracks card ID to expiration turn
+- **Design Rationale**: Creates combat puzzles and protects key units. Temporary effect prevents permanent invulnerability
+- **Applications**: Defense-oriented units, protection spells, synergy with stun/control strategies
+
+**Curse Mechanic - Tempo Control:**
+- **Mechanic**: Cursed units are stunned until opponent pays mana to remove the curse
+- **Implementation**: `cursedUnits: Record<string, number>` in `GameMetadata` tracks card ID to removal cost
+- **Design Rationale**: Creates tempo advantage without permanent lockdown. Opponent chooses when to pay the cost
+- **Applications**: Blue/Black control cards, tempo spells, synergy with double-spell triggers
+- **Inspiration**: Morgana from Legends of Runeterra
+
+### Archetype Identities
+
+**BR (Black-Red) - Aggressive Spells-Matter:**
+- **Identity**: Fastest, most aggressive deck. Wins through spell velocity and direct damage
+- **Core Strategy**: Cheap creatures (1-4 mana) that synergize with spells, high spell volume (1-3 mana)
+- **Key Mechanics**: Spell triggers (cast spell → effect), direct tower damage, card draw from spells
+- **Pivot Options**: BRU (free spells + late game), BRG (mighty creatures + removal)
+- **Example Cards**: Spell Slinger (+2/+0 when casting spells), Pyromancer Prodigy (spells deal 1 to tower)
+
+**GW (Green-White) - Combat Control with Two Paths:**
+- **GWR Path (Mighty)**: 5+ power creatures, equipment, fight spells
+  - Focus on big creatures and combat buffs
+  - Synergy with "creatures with 5+ power" triggers
+- **GWU Path (Stun/Barrier Control)**: Stun/barrier mechanics, 5+ cost spell payoffs
+  - Focus on controlling combat through stun and barrier
+  - Inspired by Yasuo/Shen/Lux from Legends of Runeterra
+  - Synergy with casting expensive spells
+- **Key Mechanics**: Barrier (damage immunity), stun effects, creature size matters
+- **Example Cards**: Mighty Champion (+1/+1 to 5+ power creatures), Barrier Guardian (grants barrier)
+
+**UB (Blue-Black) - Tempo Control via Stun/Curse:**
+- **Identity**: Control deck that uses stun and curse to create tempo advantage
+- **Core Strategy**: Stun synergies, curse mechanic, double-spell triggers
+- **Key Mechanics**: Curse (stun until paid), stun effects, spell velocity rewards
+- **Pivot Options**: Can branch into UBR (free spells), UBG (ramp + control)
+- **Example Cards**: Curse Weaver (curses on deploy), Spell Stunner (2nd spell stuns)
+
+**Design Philosophy:**
+- **Single-Color Heroes**: Define archetypes more strongly
+- **Multi-Color Heroes**: Provide rune benefits and enable pivots
+- **Rune Requirements**: ~75% of cards should play into rune mechanics
+- **Draft Flexibility**: Allow players to pivot between related archetypes (BR → BRU, GW → GWR)
+
+
 ### Code Quality Standards
 - Functions should be focused and single-purpose
 - Components should be reusable where possible
