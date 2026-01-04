@@ -87,9 +87,9 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     const cardInSlot = battlefield[player].find(c => c.slot === slotNum)
     const isSelected = selectedCard && selectedCard.id === cardInSlot?.id
     
-    // Get dragged card if any
+    // Get dragged card if any - also check battlefields in case card is being moved
     const draggedCard = draggedCardId ? 
-      [...gameState.player1Hand, ...gameState.player2Hand, ...gameState.player1Base, ...gameState.player2Base, ...gameState.player1DeployZone, ...gameState.player2DeployZone].find(c => c.id === draggedCardId) :
+      [...gameState.player1Hand, ...gameState.player2Hand, ...gameState.player1Base, ...gameState.player2Base, ...gameState.player1DeployZone, ...gameState.player2DeployZone, ...gameState.battlefieldA.player1, ...gameState.battlefieldA.player2, ...gameState.battlefieldB.player1, ...gameState.battlefieldB.player2].find(c => c.id === draggedCardId) :
       null
     
     // Check if we can move here - prioritize dragged card if dragging, otherwise selected card
@@ -117,23 +117,30 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     const playerColor = player === 'player1' ? '#f44336' : '#4a90e2'
     const playerBgColor = player === 'player1' ? '#ffebee' : '#e3f2fd'
     // Check if this specific slot is being dragged over - highlight if dragging and over this slot
-    const isDragOver = draggedCardId && 
-                       dragOverSlot?.player === player && 
-                       dragOverSlot?.slotNum === slotNum &&
-                       draggedCard?.owner === player
+    // Also check dataTransfer as fallback since draggedCardId might not be set in context yet
+    const isDragOver = dragOverSlot?.player === player && dragOverSlot?.slotNum === slotNum
 
     const handleDrop = (e: React.DragEvent) => {
       e.preventDefault()
       e.stopPropagation()
       
+      console.log(`[BattlefieldView] handleDrop - Slot ${slotNum}, Player ${player}`)
+      console.log(`[BattlefieldView] handleDrop - draggedCardId from context:`, draggedCardId)
+      console.log(`[BattlefieldView] handleDrop - dataTransfer types:`, Array.from(e.dataTransfer.types))
+      
       // Try both formats
       let cardId = e.dataTransfer.getData('cardId')
+      console.log(`[BattlefieldView] handleDrop - cardId from 'cardId':`, cardId)
       if (!cardId) {
         cardId = e.dataTransfer.getData('text/plain')
+        console.log(`[BattlefieldView] handleDrop - cardId from 'text/plain':`, cardId)
       }
       if (!cardId) {
+        console.log(`[BattlefieldView] handleDrop - ERROR: No cardId found in dataTransfer!`)
         return
       }
+      
+      console.log(`[BattlefieldView] handleDrop - Found cardId:`, cardId)
       
       // Find the card being dropped
       const allCards = [
@@ -150,7 +157,12 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       ]
       const droppedCard = allCards.find(c => c.id === cardId)
       
-      if (!droppedCard) return
+      console.log(`[BattlefieldView] handleDrop - droppedCard found:`, droppedCard?.name, 'owner:', droppedCard?.owner, 'expected player:', player)
+      
+      if (!droppedCard) {
+        console.log(`[BattlefieldView] handleDrop - ERROR: droppedCard not found!`)
+        return
+      }
       
       // Check if equipping item to hero
       if (droppedCard.cardType === 'item' && cardInSlot && cardInSlot.cardType === 'hero' && droppedCard.owner === player && cardInSlot.owner === player) {
@@ -159,35 +171,179 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
         return
       }
       
-      // Use the same deployment logic as clicking - set selected card and call handleDeploy
+      // Use the same deployment logic as clicking - but do it directly since we have the card
       if (droppedCard.owner === player) {
-        // Set the card as selected first
+        console.log(`[BattlefieldView] handleDrop - Card owner matches, proceeding with deployment`)
+        console.log(`[BattlefieldView] handleDrop - droppedCard.location:`, droppedCard.location, 'battlefieldId:', battlefieldId)
+        console.log(`[BattlefieldView] handleDrop - droppedCard.cardType:`, droppedCard.cardType, 'currentPhase:', metadata.currentPhase)
+        
+        setDraggedCardId(null)
+        
+        // For heroes, ALWAYS handle deployment directly - we have the card, no need to wait for context
+        if (droppedCard.cardType === 'hero') {
+          console.log(`[BattlefieldView] handleDrop - Taking direct deployment path for hero (phase: ${metadata.currentPhase})`)
+          
+          const isDeployPhase = metadata.currentPhase === 'deploy'
+          const isPlayPhase = metadata.currentPhase === 'play'
+          
+          // Phase validation
+          if (!isDeployPhase && !isPlayPhase) {
+            alert(`Cannot deploy during ${metadata.currentPhase} phase!`)
+            return
+          }
+          
+          // Check if hero is on cooldown (only for deploy phase from base/deployZone)
+          if (isDeployPhase && (droppedCard.location === 'base' || droppedCard.location === 'deployZone')) {
+            const cooldownCounter = metadata.deathCooldowns[droppedCard.id]
+            if (cooldownCounter !== undefined && cooldownCounter > 0) {
+              alert(`Hero is on cooldown! ${cooldownCounter} turn${cooldownCounter !== 1 ? 's' : ''} remaining.`)
+              return
+            }
+          }
+          
+          console.log(`[BattlefieldView] handleDrop - Directly deploying hero (phase: ${metadata.currentPhase})`)
+          
+          // Directly update game state for hero deployment
+          setGameState(prev => {
+            const battlefieldKey = battlefieldId as 'battlefieldA' | 'battlefieldB'
+            const playerKey = player
+            const battlefield = prev[battlefieldKey][playerKey]
+            
+            // Check if there's an existing hero in this slot
+            const existingHeroInSlot = battlefield.find(c => c.slot === slotNum && c.cardType === 'hero') as Hero | undefined
+            
+            // Remove deploying hero from wherever it is (hand, base, deploy zone, or other battlefield)
+            const newHand = (prev[`${playerKey}Hand` as keyof typeof prev] as Card[])
+              .filter(c => c.id !== droppedCard.id)
+            const newBase = (prev[`${playerKey}Base` as keyof typeof prev] as Card[])
+              .filter(c => c.id !== droppedCard.id)
+            const newDeployZone = (prev[`${playerKey}DeployZone` as keyof typeof prev] as Card[])
+              .filter(c => c.id !== droppedCard.id)
+            
+            // Also remove from other battlefield if it's there
+            const otherBattlefieldKey = battlefieldKey === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
+            const otherBattlefield = prev[otherBattlefieldKey][playerKey].filter(c => c.id !== droppedCard.id)
+            
+            // If there's an existing hero, bounce it to base with 1 cooldown
+            let updatedBase = newBase
+            let updatedCooldowns = { ...prev.metadata.deathCooldowns }
+            
+            if (existingHeroInSlot) {
+              const bouncedHero = {
+                ...existingHeroInSlot,
+                location: 'base' as const,
+                slot: undefined,
+              }
+              updatedBase = [...updatedBase, bouncedHero]
+              updatedCooldowns[existingHeroInSlot.id] = 1
+            }
+            
+            // Add runes from the deploying hero
+            const heroColors = (droppedCard as Hero).colors || []
+            const currentRunePool = prev.metadata[`${playerKey}RunePool` as keyof typeof prev.metadata] as any
+            const updatedRunePool = {
+              runes: [...currentRunePool.runes, ...heroColors],
+            }
+            
+            // Remove existing hero from battlefield if bounced
+            const updatedBattlefield = battlefield
+              .filter(c => c.id !== droppedCard.id && (existingHeroInSlot ? c.id !== existingHeroInSlot.id : true))
+            
+            // Add the deploying hero to the battlefield
+            const deployedHero = {
+              ...droppedCard,
+              location: battlefieldKey,
+              slot: slotNum,
+            } as Hero
+            
+            return {
+              ...prev,
+              [battlefieldKey]: {
+                ...prev[battlefieldKey],
+                [playerKey]: [...updatedBattlefield, deployedHero].sort((a, b) => (a.slot || 0) - (b.slot || 0)),
+              },
+              [`${playerKey}Hand`]: newHand,
+              [`${playerKey}Base`]: updatedBase,
+              [`${playerKey}DeployZone`]: newDeployZone,
+              [otherBattlefieldKey]: {
+                ...prev[otherBattlefieldKey],
+                [playerKey]: otherBattlefield,
+              },
+              metadata: {
+                ...prev.metadata,
+                [`${playerKey}RunePool`]: updatedRunePool,
+                deathCooldowns: updatedCooldowns,
+                [`${playerKey}HeroesDeployedThisTurn`]: ((prev.metadata[`${playerKey}HeroesDeployedThisTurn` as keyof typeof prev.metadata] as number) || 0) + 1,
+              },
+            }
+          })
+          
+          setSelectedCardId(null)
+          return
+        }
+        
+        // For other cases (play phase, or non-hero cards), we still need to use handleDeploy
+        // But first ensure selectedCard is set by setting selectedCardId and waiting
         setSelectedCardId(cardId)
         setDraggedCardId(null)
         
-        // Use requestAnimationFrame to ensure state update happens before deployment
-        requestAnimationFrame(() => {
-          // Check if moving within same battlefield (slot change) or deploying to new location
+        // Force a re-render by using a callback that checks if selectedCard is available
+        // We'll use a ref-like approach with multiple attempts
+        let attempts = 0
+        const tryDeploy = () => {
+          attempts++
+          // Check if we can access selectedCard now - but we can't from closure
+          // Instead, just try calling handleDeploy - if it fails silently, we'll retry
+          console.log(`[BattlefieldView] handleDrop - Attempt ${attempts} to deploy`)
+          
+          // Actually, let's just set selectedCardId and immediately call handleDeploy
+          // If it fails, we'll see in the logs
           if (droppedCard.location === battlefieldId) {
             handleChangeSlot(droppedCard, slotNum, battlefieldId)
           } else {
             handleDeploy(battlefieldId, slotNum)
           }
-        })
+          
+          // If we've tried a few times and it's still not working, give up
+          if (attempts < 3) {
+            setTimeout(tryDeploy, 50)
+          }
+        }
+        
+        // Start trying immediately
+        setTimeout(tryDeploy, 50)
+      } else {
+        console.log(`[BattlefieldView] handleDrop - ERROR: Card owner doesn't match! droppedCard.owner:`, droppedCard.owner, 'expected:', player)
       }
     }
 
     const handleDragOver = (e: React.DragEvent) => {
       e.preventDefault() // Always prevent default to allow drop
       e.stopPropagation()
-      // If we're dragging a card that belongs to this player, highlight the slot
+      
+      // Note: dataTransfer.getData() can't be read during dragover (browser security)
+      // We must rely on draggedCardId from context
+      console.log(`[BattlefieldView] handleDragOver - Slot ${slotNum}, Player ${player}, draggedCardId:`, draggedCardId, 'draggedCard:', draggedCard?.name, 'owner:', draggedCard?.owner, 'dragOverSlot:', dragOverSlot)
+      
+      // If we have a dragged card that belongs to this player, allow drop
       if (draggedCardId && draggedCard?.owner === player) {
         e.dataTransfer.dropEffect = 'move'
         // Always update drag over state when dragging over this slot
         if (dragOverSlot?.player !== player || dragOverSlot?.slotNum !== slotNum) {
+          console.log(`[BattlefieldView] handleDragOver - Setting dragOverSlot to ${player}, ${slotNum}`)
           setDragOverSlot({ player, slotNum })
         }
+      } else if (draggedCardId) {
+        // We're dragging something, but it doesn't belong to this player
+        console.log(`[BattlefieldView] handleDragOver - Card doesn't belong to this player`)
+        e.dataTransfer.dropEffect = 'none'
+        // Clear drag over if it was set
+        if (dragOverSlot?.player === player && dragOverSlot?.slotNum === slotNum) {
+          setDragOverSlot(null)
+        }
       } else {
+        // No drag in progress, but allow the event to continue (might be from another component)
+        console.log(`[BattlefieldView] handleDragOver - No draggedCardId in context`)
         e.dataTransfer.dropEffect = 'none'
       }
     }
@@ -195,9 +351,27 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     const handleDragEnter = (e: React.DragEvent) => {
       e.preventDefault()
       e.stopPropagation()
-      // Set drag over state when entering this slot (if card belongs to this player)
+      
+      // Note: dataTransfer.getData() can't be read during dragenter (browser security)
+      // We must rely on draggedCardId from context
+      // However, if draggedCardId isn't set yet (async state update), check if dataTransfer has the types
+      // If it has 'cardId' or 'text/plain' types, we know a card is being dragged
+      const hasCardData = e.dataTransfer.types.includes('cardId') || e.dataTransfer.types.includes('text/plain')
+      console.log(`[BattlefieldView] handleDragEnter - Slot ${slotNum}, Player ${player}, draggedCardId:`, draggedCardId, 'draggedCard:', draggedCard?.name, 'hasCardData:', hasCardData, 'types:', Array.from(e.dataTransfer.types))
+      
+      // Set drag over state if:
+      // 1. We have draggedCardId in context AND it belongs to this player, OR
+      // 2. We detect card data in dataTransfer (will validate on drop)
       if (draggedCardId && draggedCard?.owner === player) {
+        console.log(`[BattlefieldView] handleDragEnter - Setting dragOverSlot (context has draggedCardId)`)
         setDragOverSlot({ player, slotNum })
+      } else if (hasCardData && !draggedCardId) {
+        // Card is being dragged but context hasn't updated yet - set drag over optimistically
+        // Will be validated on drop
+        console.log(`[BattlefieldView] handleDragEnter - Setting dragOverSlot (optimistic, context not updated yet)`)
+        setDragOverSlot({ player, slotNum })
+      } else {
+        console.log(`[BattlefieldView] handleDragEnter - NOT setting dragOverSlot`)
       }
     }
     
@@ -241,11 +415,15 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
           width: '100%',
           boxSizing: 'border-box',
           boxShadow: isDragOver ? `0 0 10px ${playerColor}40` : 'none',
+          display: 'flex',
+          flexDirection: 'column',
         }}
         onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
           handleDrop(e)
           // Clear drag over state when dropping
           setDragOverSlot(null)
@@ -271,32 +449,73 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
           }
         }}
       >
-        <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>Slot {slotNum}</div>
-        {cardInSlot ? (
-          <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left', pointerEvents: 'auto' }}>
-            <HeroCard
-              card={cardInSlot}
-              onClick={(e) => handleCardClick(cardInSlot.id, e)}
-              isSelected={isSelected}
-              showStats={true}
-              onRemove={() => handleRemoveFromBattlefield(cardInSlot, battlefieldId)}
-              onDecreaseHealth={() => handleDecreaseHealth(cardInSlot)}
-              onIncreaseHealth={() => handleIncreaseHealth(cardInSlot)}
-              onDecreaseAttack={() => handleDecreaseAttack(cardInSlot)}
-              onIncreaseAttack={() => handleIncreaseAttack(cardInSlot)}
-              showCombatControls={true}
-              isDead={!!metadata.deathCooldowns[cardInSlot.id]}
-              isStunned={cardInSlot.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[cardInSlot.id])}
-              onToggleStun={cardInSlot.cardType === 'hero' ? () => handleToggleStun(cardInSlot) : undefined}
-              onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, cardInSlot.owner)}
-              onEditAbility={cardInSlot.cardType === 'hero' ? (heroId) => setEditingHeroId(heroId) : undefined}
-            />
-          </div>
-        ) : (
-          <div style={{ fontSize: '10px', color: '#ccc', textAlign: 'center', paddingTop: '20px', pointerEvents: 'none' }}>
-            {canEquipItem ? 'Equip Item' : canMoveHere ? 'Drop here' : 'Empty'}
-          </div>
-        )}
+        <div 
+          style={{ 
+            fontSize: '10px', 
+            color: '#666', 
+            marginBottom: '2px',
+            pointerEvents: 'none', // Don't block drag events
+            userSelect: 'none',
+          }}
+        >
+          Slot {slotNum}
+        </div>
+        <div 
+          style={{ 
+            width: '100%', 
+            height: '100%',
+            minHeight: '80px',
+            position: 'relative',
+            flex: 1,
+          }}
+          onDragEnter={(e) => {
+            // Forward drag enter to parent - always forward, let parent decide
+            e.preventDefault()
+            e.stopPropagation()
+            handleDragEnter(e)
+          }}
+          onDragOver={(e) => {
+            // Allow drag events to bubble up to parent slot - always forward
+            e.preventDefault()
+            e.stopPropagation()
+            handleDragOver(e)
+          }}
+          onDrop={(e) => {
+            // Forward drop event to parent slot handler
+            // Call parent's handleDrop directly to avoid propagation issues
+            e.preventDefault()
+            e.stopPropagation()
+            console.log(`[BattlefieldView] Inner content div onDrop - forwarding to parent`)
+            handleDrop(e)
+            setDragOverSlot(null)
+          }}
+        >
+          {cardInSlot ? (
+            <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
+              <HeroCard
+                card={cardInSlot}
+                onClick={(e) => handleCardClick(cardInSlot.id, e)}
+                isSelected={isSelected}
+                showStats={true}
+                onRemove={() => handleRemoveFromBattlefield(cardInSlot, battlefieldId)}
+                onDecreaseHealth={() => handleDecreaseHealth(cardInSlot)}
+                onIncreaseHealth={() => handleIncreaseHealth(cardInSlot)}
+                onDecreaseAttack={() => handleDecreaseAttack(cardInSlot)}
+                onIncreaseAttack={() => handleIncreaseAttack(cardInSlot)}
+                showCombatControls={true}
+                isDead={!!metadata.deathCooldowns[cardInSlot.id]}
+                isStunned={cardInSlot.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[cardInSlot.id])}
+                onToggleStun={cardInSlot.cardType === 'hero' ? () => handleToggleStun(cardInSlot) : undefined}
+                onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, cardInSlot.owner)}
+                onEditAbility={cardInSlot.cardType === 'hero' ? (heroId) => setEditingHeroId(heroId) : undefined}
+              />
+            </div>
+          ) : (
+            <div style={{ fontSize: '10px', color: '#ccc', textAlign: 'center', paddingTop: '20px', pointerEvents: 'none' }}>
+              {canEquipItem ? 'Equip Item' : canMoveHere ? 'Drop here' : 'Empty'}
+            </div>
+          )}
+        </div>
       </div>
     )
   }

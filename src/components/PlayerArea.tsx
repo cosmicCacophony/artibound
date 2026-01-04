@@ -201,11 +201,13 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                     return
                   }
                   e.stopPropagation()
+                  console.log('[PlayerArea] onDragStart - Setting draggedCardId:', card.id, card.name)
                   setDraggedCardId(card.id)
                   e.dataTransfer.effectAllowed = 'move'
                   // Set data in both formats
                   e.dataTransfer.setData('text/plain', card.id)
                   e.dataTransfer.setData('cardId', card.id)
+                  console.log('[PlayerArea] onDragStart - dataTransfer types:', Array.from(e.dataTransfer.types))
                 }}
                 onDragEnd={(e) => {
                   setDraggedCardId(null)
@@ -312,11 +314,13 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                     return
                   }
                   e.stopPropagation()
+                  console.log('[PlayerArea] onDragStart - Setting draggedCardId:', card.id, card.name)
                   setDraggedCardId(card.id)
                   e.dataTransfer.effectAllowed = 'move'
                   // Set data in both formats
                   e.dataTransfer.setData('text/plain', card.id)
                   e.dataTransfer.setData('cardId', card.id)
+                  console.log('[PlayerArea] onDragStart - dataTransfer types:', Array.from(e.dataTransfer.types))
                 }}
                 onDragEnd={(e) => {
                   setDraggedCardId(null)
