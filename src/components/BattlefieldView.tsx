@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Hero, HeroAbility } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { useDeployment } from '../hooks/useDeployment'
@@ -19,7 +19,9 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     gameState, 
     selectedCard, 
     selectedCardId, 
-    setSelectedCardId, 
+    setSelectedCardId,
+    draggedCardId,
+    setDraggedCardId,
     metadata,
     getAvailableSlots,
     setGameState,
@@ -31,7 +33,16 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     setPlayer2SidebarCards,
   } = useGameContext()
   const [editingHeroId, setEditingHeroId] = useState<string | null>(null)
+  // Track which slot is currently being dragged over (player + slotNum)
+  const [dragOverSlot, setDragOverSlot] = useState<{ player: 'player1' | 'player2', slotNum: number } | null>(null)
   const { handleDeploy, handleChangeSlot, handleRemoveFromBattlefield, handleEquipItem } = useDeployment()
+  
+  // Clear drag over state when drag ends
+  useEffect(() => {
+    if (!draggedCardId) {
+      setDragOverSlot(null)
+    }
+  }, [draggedCardId])
   const { handleDecreaseHealth, handleIncreaseHealth, handleDecreaseAttack, handleIncreaseAttack } = useCombat()
   const { handleAbilityClick } = useHeroAbilities()
   const { handleToggleStun, handleSpawnCreep } = useTurnManagement()
@@ -75,30 +86,169 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
   const renderSlot = (slotNum: number, player: 'player1' | 'player2') => {
     const cardInSlot = battlefield[player].find(c => c.slot === slotNum)
     const isSelected = selectedCard && selectedCard.id === cardInSlot?.id
-    const canMoveHere = selectedCard && selectedCard.owner === player && 
-      (selectedCard.location === battlefieldId || selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB' || selectedCard.location === 'hand' || selectedCard.location === 'base' || selectedCard.location === 'deployZone')
+    
+    // Get dragged card if any
+    const draggedCard = draggedCardId ? 
+      [...gameState.player1Hand, ...gameState.player2Hand, ...gameState.player1Base, ...gameState.player2Base, ...gameState.player1DeployZone, ...gameState.player2DeployZone].find(c => c.id === draggedCardId) :
+      null
+    
+    // Check if we can move here - prioritize dragged card if dragging, otherwise selected card
+    const canMoveHere = draggedCardId && draggedCard
+      ? (draggedCard.owner === player && 
+          (draggedCard.location === 'hand' || draggedCard.location === 'base' || draggedCard.location === 'deployZone' || 
+           draggedCard.location === battlefieldId || draggedCard.location === 'battlefieldA' || draggedCard.location === 'battlefieldB'))
+      : (selectedCard && selectedCard.owner === player && 
+          (selectedCard.location === battlefieldId || selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB' || selectedCard.location === 'hand' || selectedCard.location === 'base' || selectedCard.location === 'deployZone'))
     
     // Check if we can equip an item to a hero
-    const canEquipItem = selectedCard && 
+    const canEquipItem = (selectedCard && 
       selectedCard.cardType === 'item' && 
       selectedCard.owner === player &&
       cardInSlot && 
       cardInSlot.cardType === 'hero' &&
-      cardInSlot.owner === player
+      cardInSlot.owner === player) ||
+      (draggedCard &&
+        draggedCard.cardType === 'item' &&
+        draggedCard.owner === player &&
+        cardInSlot &&
+        cardInSlot.cardType === 'hero' &&
+        cardInSlot.owner === player)
     
     const playerColor = player === 'player1' ? '#f44336' : '#4a90e2'
     const playerBgColor = player === 'player1' ? '#ffebee' : '#e3f2fd'
+    // Check if this specific slot is being dragged over - highlight if dragging and over this slot
+    const isDragOver = draggedCardId && 
+                       dragOverSlot?.player === player && 
+                       dragOverSlot?.slotNum === slotNum &&
+                       draggedCard?.owner === player
+
+    const handleDrop = (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      
+      // Try both formats
+      let cardId = e.dataTransfer.getData('cardId')
+      if (!cardId) {
+        cardId = e.dataTransfer.getData('text/plain')
+      }
+      if (!cardId) {
+        return
+      }
+      
+      // Find the card being dropped
+      const allCards = [
+        ...gameState.player1Hand,
+        ...gameState.player2Hand,
+        ...gameState.player1Base,
+        ...gameState.player2Base,
+        ...gameState.player1DeployZone,
+        ...gameState.player2DeployZone,
+        ...gameState.battlefieldA.player1,
+        ...gameState.battlefieldA.player2,
+        ...gameState.battlefieldB.player1,
+        ...gameState.battlefieldB.player2,
+      ]
+      const droppedCard = allCards.find(c => c.id === cardId)
+      
+      if (!droppedCard) return
+      
+      // Check if equipping item to hero
+      if (droppedCard.cardType === 'item' && cardInSlot && cardInSlot.cardType === 'hero' && droppedCard.owner === player && cardInSlot.owner === player) {
+        handleEquipItem(cardInSlot as Hero, droppedCard as import('../game/types').ItemCard, battlefieldId)
+        setDraggedCardId(null)
+        return
+      }
+      
+      // Use the same deployment logic as clicking - set selected card and call handleDeploy
+      if (droppedCard.owner === player) {
+        // Set the card as selected first
+        setSelectedCardId(cardId)
+        setDraggedCardId(null)
+        
+        // Use requestAnimationFrame to ensure state update happens before deployment
+        requestAnimationFrame(() => {
+          // Check if moving within same battlefield (slot change) or deploying to new location
+          if (droppedCard.location === battlefieldId) {
+            handleChangeSlot(droppedCard, slotNum, battlefieldId)
+          } else {
+            handleDeploy(battlefieldId, slotNum)
+          }
+        })
+      }
+    }
+
+    const handleDragOver = (e: React.DragEvent) => {
+      e.preventDefault() // Always prevent default to allow drop
+      e.stopPropagation()
+      // If we're dragging a card that belongs to this player, highlight the slot
+      if (draggedCardId && draggedCard?.owner === player) {
+        e.dataTransfer.dropEffect = 'move'
+        // Always update drag over state when dragging over this slot
+        if (dragOverSlot?.player !== player || dragOverSlot?.slotNum !== slotNum) {
+          setDragOverSlot({ player, slotNum })
+        }
+      } else {
+        e.dataTransfer.dropEffect = 'none'
+      }
+    }
+    
+    const handleDragEnter = (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      // Set drag over state when entering this slot (if card belongs to this player)
+      if (draggedCardId && draggedCard?.owner === player) {
+        setDragOverSlot({ player, slotNum })
+      }
+    }
+    
+    const handleDragLeave = (e: React.DragEvent) => {
+      // Only clear if we're actually leaving the slot element (not just moving to a child)
+      const currentTarget = e.currentTarget as HTMLElement
+      const relatedTarget = e.relatedTarget as HTMLElement | null
+      
+      // Check if relatedTarget is outside the current target
+      // If it's null or not a descendant, we're leaving
+      if (!relatedTarget || !currentTarget.contains(relatedTarget)) {
+        // Use requestAnimationFrame to check after DOM updates
+        requestAnimationFrame(() => {
+          // Verify mouse is actually outside the slot bounds
+          const rect = currentTarget.getBoundingClientRect()
+          // Use the last known mouse position from the event
+          const x = e.clientX || 0
+          const y = e.clientY || 0
+          
+          // Only clear if mouse is truly outside
+          if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+            if (dragOverSlot?.player === player && dragOverSlot?.slotNum === slotNum) {
+              setDragOverSlot(null)
+            }
+          }
+        })
+      }
+    }
 
     return (
       <div
         key={slotNum}
         style={{
           minHeight: '100px',
-          border: (canMoveHere || canEquipItem) ? `2px dashed ${playerColor}` : '1px solid #ddd',
+          border: isDragOver ? `3px solid ${playerColor}` : (canMoveHere || canEquipItem) ? `2px dashed ${playerColor}` : '1px solid #ddd',
           borderRadius: '4px',
           padding: '4px',
-          backgroundColor: (canMoveHere || canEquipItem) ? playerBgColor : '#f9f9f9',
+          backgroundColor: isDragOver ? playerBgColor : (canMoveHere || canEquipItem) ? '#f0f0f0' : '#f9f9f9',
           position: 'relative',
+          transition: 'all 0.2s',
+          width: '100%',
+          boxSizing: 'border-box',
+          boxShadow: isDragOver ? `0 0 10px ${playerColor}40` : 'none',
+        }}
+        onDragEnter={handleDragEnter}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => {
+          handleDrop(e)
+          // Clear drag over state when dropping
+          setDragOverSlot(null)
         }}
         onClick={() => {
           // Check if equipping item to hero
@@ -123,7 +273,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       >
         <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>Slot {slotNum}</div>
         {cardInSlot ? (
-          <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
+          <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left', pointerEvents: 'auto' }}>
             <HeroCard
               card={cardInSlot}
               onClick={(e) => handleCardClick(cardInSlot.id, e)}
@@ -143,7 +293,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
             />
           </div>
         ) : (
-          <div style={{ fontSize: '10px', color: '#ccc', textAlign: 'center', paddingTop: '20px' }}>
+          <div style={{ fontSize: '10px', color: '#ccc', textAlign: 'center', paddingTop: '20px', pointerEvents: 'none' }}>
             {canEquipItem ? 'Equip Item' : canMoveHere ? 'Drop here' : 'Empty'}
           </div>
         )}

@@ -15,6 +15,8 @@ interface GameContextType {
   // UI State
   selectedCardId: string | null
   setSelectedCardId: (id: string | null) => void
+  draggedCardId: string | null // Card currently being dragged
+  setDraggedCardId: (id: string | null) => void
   itemShopPlayer: PlayerId | null // Which player's shop is open (null if closed)
   setItemShopPlayer: (player: PlayerId | null) => void
   itemShopItems: ShopItem[]
@@ -88,6 +90,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   })
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
+  const [draggedCardId, setDraggedCardId] = useState<string | null>(null)
   const [itemShopPlayer, setItemShopPlayer] = useState<PlayerId | null>(null)
   const [itemShopItems, setItemShopItems] = useState<ShopItem[]>([])
   
@@ -425,6 +428,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setGameState,
     selectedCardId,
     setSelectedCardId,
+    draggedCardId,
+    setDraggedCardId,
     itemShopPlayer,
     setItemShopPlayer,
     itemShopItems,

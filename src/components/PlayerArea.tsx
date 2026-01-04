@@ -19,7 +19,9 @@ export function PlayerArea({ player }: PlayerAreaProps) {
     setGameState,
     selectedCard, 
     selectedCardId, 
-    setSelectedCardId, 
+    setSelectedCardId,
+    draggedCardId,
+    setDraggedCardId,
     metadata,
     setItemShopPlayer,
     itemShopPlayer,
@@ -189,6 +191,25 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                 isStunned={card.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[card.id])}
                 onToggleStun={card.cardType === 'hero' ? () => handleToggleStun(card) : undefined}
                 onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, card.owner)}
+                draggable={true}
+                isDragging={draggedCardId === card.id}
+                onDragStart={(e) => {
+                  // Allow drag for heroes - validation happens on drop
+                  if (card.cardType !== 'hero') {
+                    console.log('Preventing drag - not a hero', card.cardType)
+                    e.preventDefault()
+                    return
+                  }
+                  e.stopPropagation()
+                  setDraggedCardId(card.id)
+                  e.dataTransfer.effectAllowed = 'move'
+                  // Set data in both formats
+                  e.dataTransfer.setData('text/plain', card.id)
+                  e.dataTransfer.setData('cardId', card.id)
+                }}
+                onDragEnd={(e) => {
+                  setDraggedCardId(null)
+                }}
               />
             ))
           ) : (
@@ -217,6 +238,16 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                 isStunned={card.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[card.id])}
                 onToggleStun={card.cardType === 'hero' ? () => handleToggleStun(card) : undefined}
                 onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, card.owner)}
+                draggable={card.cardType === 'hero' && metadata.currentPhase === 'deploy' && !metadata.deathCooldowns[card.id]}
+                isDragging={draggedCardId === card.id}
+                onDragStart={(e) => {
+                  setDraggedCardId(card.id)
+                  e.dataTransfer.setData('cardId', card.id)
+                  e.dataTransfer.effectAllowed = 'move'
+                }}
+                onDragEnd={() => {
+                  setDraggedCardId(null)
+                }}
               />
             ))
           ) : (
@@ -271,6 +302,25 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                 onTogglePlayed={card.location === 'base' ? () => handleToggleSpellPlayed(card) : undefined}
                 onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, card.owner)}
                 onEditAbility={card.cardType === 'hero' ? (heroId) => setEditingHeroId(heroId) : undefined}
+                draggable={true}
+                isDragging={draggedCardId === card.id}
+                onDragStart={(e) => {
+                  // Allow drag for heroes - validation happens on drop
+                  if (card.cardType !== 'hero') {
+                    console.log('Preventing drag - not a hero', card.cardType)
+                    e.preventDefault()
+                    return
+                  }
+                  e.stopPropagation()
+                  setDraggedCardId(card.id)
+                  e.dataTransfer.effectAllowed = 'move'
+                  // Set data in both formats
+                  e.dataTransfer.setData('text/plain', card.id)
+                  e.dataTransfer.setData('cardId', card.id)
+                }}
+                onDragEnd={(e) => {
+                  setDraggedCardId(null)
+                }}
               />
             ))
           ) : (
