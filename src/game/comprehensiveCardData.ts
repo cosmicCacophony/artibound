@@ -113,32 +113,6 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
 export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
   // Signature units (physical objects that can be units)
   // More Cleave Effects
-  {
-    id: 'red-unit-cleaving-warrior',
-    name: 'Cleaving Warrior',
-    description: '2/2. Cleave (damages adjacent units when attacking).',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 3,
-    consumesRunes: true, // Requires R rune
-    attack: 2,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
-  {
-    id: 'red-unit-cleaving-berserker',
-    name: 'Cleaving Berserker',
-    description: '3/2. Cleave (damages adjacent units when attacking).',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 4,
-    consumesRunes: true, // Requires R rune
-    attack: 3,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
   // Vanguard Banner removed - replaced with red artifact
   // Legion Tribal Units (RW archetype) - Removed boring +1/+1 counter cards
   {
@@ -169,44 +143,6 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   },
   // New Magic-inspired RW cards
   {
-    id: 'rw-unit-strategic-scout',
-    name: 'Strategic Scout',
-    description: '5/5. When this enters, reveal the top 5 cards of your library. You may play a unit with 5 or less mana cost for free. Costs 5RW.',
-    cardType: 'generic',
-    colors: ['red', 'white'],
-    manaCost: 5,
-    consumesRunes: true,
-    attack: 5,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-  },
-  {
-    id: 'rw-unit-tactical-commander',
-    name: 'Tactical Commander',
-    description: '4/2. Bounce. When a hero is deployed to this lane, you may return target hero to base. That hero has rapid deploy and can be redeployed this turn. Costs 4R.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 4,
-    attack: 4,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
-  {
-    id: 'rw-unit-mana-warrior',
-    name: 'Mana Warrior',
-    description: '3/3. You may stun this unit to add 1 mana to your mana pool this turn. Costs 3R.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 3,
-    consumesRunes: true,
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  {
     id: 'rw-unit-legion-general',
     name: 'Legion General',
     description: '5/5. Legion. All Legion units gain +2/+2 attack. Costs 5RW.',
@@ -231,19 +167,6 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 4,
     maxHealth: 4,
     currentHealth: 4,
-  },
-  {
-    id: 'rw-unit-cleaving-champion',
-    name: 'Cleaving Champion',
-    description: '3/3. Cleave (damages adjacent units when attacking). Costs 4RW.',
-    cardType: 'generic',
-    colors: ['red', 'white'],
-    manaCost: 4,
-    consumesRunes: true,
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
   },
 ]
 
@@ -701,6 +624,33 @@ export const rgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
 ]
 
 export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+  // Cleave units moved from RW (cleave is RG identity)
+  {
+    id: 'red-unit-cleaving-warrior',
+    name: 'Cleaving Warrior',
+    description: '2/2. Cleave (damages adjacent units when attacking).',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 3,
+    consumesRunes: true, // Requires R rune
+    attack: 2,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+  },
+  {
+    id: 'red-unit-cleaving-berserker',
+    name: 'Cleaving Berserker',
+    description: '3/2. Cleave (damages adjacent units when attacking).',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 4,
+    consumesRunes: true, // Requires R rune
+    attack: 3,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+  },
   // RG Dopamine Hit: Multi-Fight Unit
   {
     id: 'rg-unit-battle-tyrant',
@@ -1036,66 +986,6 @@ export const rbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
 export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
   // Generic RB cards
   // New BR units for aggressive strategies
-  {
-    id: 'rb-unit-blood-warrior',
-    name: 'Blood Warrior',
-    description: '4/3. When this enters, all towers take 1 damage. Costs 4R.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 4,
-    attack: 4,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  {
-    id: 'rb-unit-pain-dealer',
-    name: 'Pain Dealer',
-    description: '3/3. If you have dealt noncombat damage to the tower this round, this becomes a 5/5. Costs 3B.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 3,
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  {
-    id: 'rb-unit-sacrifice-fiend',
-    name: 'Sacrifice Fiend',
-    description: '5/4. When this enters, you may sacrifice a unit. If you do, deal 3 damage to any target. Costs 5B.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 5,
-    attack: 5,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-  },
-  {
-    id: 'rb-unit-tower-saboteur',
-    name: 'Tower Saboteur',
-    description: '2/2. When this enters, target tower loses 1 armor. Costs 2R.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 2,
-    attack: 2,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
-  {
-    id: 'rb-unit-vampiric-assaulter',
-    name: 'Vampiric Assaulter',
-    description: '4/2. Whenever this attacks a tower, you gain 2 life. Costs 4B.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 4,
-    attack: 4,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
   // New Spell-Synergy BR Units
   {
     id: 'rb-unit-spell-fencer',
@@ -1165,45 +1055,6 @@ export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 3,
     currentHealth: 3,
     specialEffects: ['artifact_sacrifice'], // Custom: sacrifice artifact to create token
-  },
-  {
-    id: 'black-unit-cross-lane-assassin',
-    name: 'Cross Lane Assassin',
-    description: '3/6. Deals double damage to heroes. Costs 4B.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 4,
-    consumesRunes: true,
-    attack: 3,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
-    bonusVsHeroes: 3, // Deals double damage to heroes (3 base attack = 6 vs heroes)
-  },
-  {
-    id: 'rb-unit-storm-attacker',
-    name: 'Storm Attacker',
-    description: '4/3. When you cast your 3rd spell each turn, this unit attacks immediately. Costs 4RB.',
-    cardType: 'generic',
-    colors: ['red', 'black'],
-    manaCost: 4,
-    consumesRunes: true,
-    attack: 4,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  {
-    id: 'red-unit-hasty-striker',
-    name: 'Hasty Striker',
-    description: '3/1. Haste (can attack immediately). Costs 1 less if you cast a spell this turn. Costs 2R.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 2,
-    attack: 3,
-    health: 1,
-    maxHealth: 1,
-    currentHealth: 1,
   },
 ]
 
@@ -1383,67 +1234,6 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 1,
       affectsUnits: true,
       affectsHeroes: true,
-    },
-    initiative: true,
-  },
-  {
-    id: 'rb-spell-tower-assault',
-    name: 'Tower Assault',
-    description: 'Deal 3 damage to target tower. Costs 3R, refunds 3 mana.',
-    cardType: 'spell',
-    colors: ['red'],
-    manaCost: 3,
-    refundMana: 3,
-    effect: {
-      type: 'targeted_damage',
-      damage: 3,
-      affectsUnits: false,
-      affectsHeroes: false,
-    },
-    initiative: true,
-  },
-  {
-    id: 'rb-spell-life-drain',
-    name: 'Life Drain',
-    description: 'Pay 3 life, draw 2 cards. Costs 2RB, refunds 2 mana.',
-    cardType: 'spell',
-    colors: ['red', 'black'],
-    manaCost: 2,
-    consumesRunes: true,
-    refundMana: 2,
-    effect: {
-      type: 'targeted_damage',
-      damage: 0,
-    },
-    initiative: true,
-  },
-  {
-    id: 'rb-spell-tower-decay',
-    name: 'Tower Decay',
-    description: 'Target tower loses 2 armor permanently. Costs 2RB, refunds 2 mana.',
-    cardType: 'spell',
-    colors: ['red', 'black'],
-    manaCost: 2,
-    consumesRunes: true,
-    refundMana: 2,
-    effect: {
-      type: 'targeted_damage',
-      damage: 0,
-    },
-    initiative: true,
-  },
-  {
-    id: 'rb-spell-suffering-curse',
-    name: 'Suffering Curse',
-    description: 'Target unit gets -3/-3 until end of turn. Costs 2RB, refunds 2 mana.',
-    cardType: 'spell',
-    colors: ['red', 'black'],
-    manaCost: 2,
-    consumesRunes: true,
-    refundMana: 2,
-    effect: {
-      type: 'targeted_damage',
-      damage: 0,
     },
     initiative: true,
   },
@@ -1663,19 +1453,6 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   // Generic GW cards
   // Saproling removed
   // Glorious Banner removed - replaced with artifact
-  {
-    id: 'gw-unit-target-grower',
-    name: 'Target Grower',
-    description: '3/3. Whenever you target this, it gets +1/+1 permanently. Costs 3G.',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 3,
-    consumesRunes: true,
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
   // NEW: Permanent hero buff spells
   {
     id: 'gw-spell-balanced-growth',
@@ -1718,31 +1495,6 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   },
   // New Mighty Creatures (5+ power)
   {
-    id: 'gw-unit-mighty-warrior',
-    name: 'Mighty Warrior',
-    description: '5/5. When this enters, other creatures you control get +1/+1 this turn. Costs 5G.',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 5,
-    consumesRunes: true,
-    attack: 5,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-  },
-  {
-    id: 'green-unit-trample-beast',
-    name: 'Trample Beast',
-    description: '6/4. Trample. When this attacks, deal 2 damage to opponent tower. Costs 6G.',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 6,
-    attack: 6,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-  },
-  {
     id: 'gw-unit-barrier-titan',
     name: 'Barrier Titan',
     description: '4/6. Your creatures with 5+ power have barrier. Costs 5W.',
@@ -1754,18 +1506,6 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 6,
     maxHealth: 6,
     currentHealth: 6,
-  },
-  {
-    id: 'green-unit-mighty-charger',
-    name: 'Mighty Charger',
-    description: '7/5. When this attacks, all your creatures with 5+ power get +2/+0. Costs 7G.',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 7,
-    attack: 7,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
   },
   // Stun/Barrier Cards
   {
@@ -2103,32 +1843,6 @@ export const guHeroes: Omit<Hero, 'location' | 'owner'>[] = [
 
 export const guCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
   // REMOVED: Leyline (gu-ramp-2) - No longer fits color identity (was easier)
-  {
-    id: 'gu-finisher-1',
-    name: 'Colossus',
-    description: '5/5. Regen 3. Costs 5G.',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 5,
-    consumesRunes: true,
-    attack: 5,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-  },
-  {
-    id: 'green-unit-token-generator',
-    name: 'Token Generator',
-    description: '4/4. When this enters, create a 2/2 token. Costs 4G.',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 4,
-    consumesRunes: true,
-    attack: 4,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-  },
 ]
 
 export const guSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
@@ -2281,62 +1995,10 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   // Verdant Colossus removed - replaced with Void Cascade AOE spell
   // 3+X Unit Cycle
   // More Cleave Units
-  {
-    id: 'green-unit-cleaving-beast',
-    name: 'Cleaving Beast',
-    description: '2/3. Cleave (damages adjacent units when attacking).',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 3,
-    consumesRunes: true, // Requires G rune
-    attack: 2,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  {
-    id: 'black-unit-necromancer-apprentice',
-    name: 'Necromancer Apprentice',
-    description: '3/3. When this enters, draw a card and lose 1 life.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 3,
-    consumesRunes: true, // Requires B rune
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  {
-    id: 'green-unit-druid-adept',
-    name: 'Druid Adept',
-    description: '2/4. When this enters, gain +1 max mana.',
-    cardType: 'generic',
-    colors: ['green'],
-    manaCost: 3,
-    consumesRunes: true, // Requires G rune
-    attack: 2,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-  },
   // More 1-3 mana creeps
   // Blue creeps
   // REMOVED: Protective Aura (white-creep-protective-aura) - No longer fits color identity
-  // UB Clue Token Cards
-  {
-    id: 'ub-unit-clue-investigator',
-    name: 'Clue Investigator',
-    description: '1/2. When this enters, create a clue token. Whenever you draw an extra card each turn, this gets +3/+0. Costs 3U.',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 3,
-    consumesRunes: true,
-    attack: 1,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
+  // REMOVED: Necromancer Apprentice, Druid Adept, Clue Investigator - Generic effects, don't support archetypes
   // New UB Curse/Stun Cards
   {
     id: 'ub-unit-spell-stunner',
@@ -2435,31 +2097,6 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 4,
     maxHealth: 4,
     currentHealth: 4,
-  },
-  {
-    id: 'blue-unit-stun-grower',
-    name: 'Stun Grower',
-    description: '2/2. Whenever you stun a unit, this gets +1/+1 this turn. Costs 2U.',
-    cardType: 'generic',
-    colors: ['blue'],
-    manaCost: 2,
-    attack: 2,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
-  {
-    id: 'ub-unit-spell-cascade',
-    name: 'Spell Cascade',
-    description: '4/5. Whenever you cast 2+ spells in one turn, stun a random enemy unit. Costs 5B.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 5,
-    consumesRunes: true,
-    attack: 4,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
   },
 ]
 
@@ -3463,19 +3100,6 @@ export const rwgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
     cardType: 'generic',
     colors: ['red', 'red', 'green', 'green'],
     manaCost: 7,
-    consumesRunes: true,
-    attack: 5,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-  },
-  {
-    id: 'rwg-unit-wild-colossus',
-    name: 'Wild Colossus',
-    description: '5/5. Trample. When this attacks, all your units gain +1/+1 until end of turn. Costs 8RW.',
-    cardType: 'generic',
-    colors: ['red', 'white'],
-    manaCost: 8,
     consumesRunes: true,
     attack: 5,
     health: 5,
