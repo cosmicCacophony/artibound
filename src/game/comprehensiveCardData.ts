@@ -2196,15 +2196,15 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   },
   // 3+X Artifact Cycle
   {
-    id: 'black-artifact-dark-pact',
-    name: 'Dark Pact',
-    description: 'Artifact. At the start of your turn, both towers lose 1 HP.',
+    id: 'black-artifact-rune-scroll',
+    name: 'Rune Scroll',
+    description: 'Artifact. At the start of every turn, create a scroll token in base. Pay 2 or either B rune to draw a card and destroy this token. Costs 3B.',
     cardType: 'artifact',
     colors: ['black'],
     manaCost: 3,
     consumesRunes: true,
-    effectType: 'tower_damage',
-    effectValue: 1, // Both towers lose 1 HP
+    effectType: 'token_generation',
+    effectValue: 1, // Creates scroll token each turn
   },
   {
     id: 'black-artifact-rix-altar',
@@ -3393,6 +3393,43 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       drawCount: 1, // Will draw per unit destroyed (custom implementation needed)
       affectsUnits: true,
       affectsHeroes: false,
+    },
+    initiative: true,
+  },
+  // UBR Card Advantage Spells - AOE + Draw (balanced for control)
+  {
+    id: 'ubr-spell-grixis-wave',
+    name: 'Grixis Wave',
+    description: 'Deal 3 damage to all enemy units. Draw 2 cards. Costs 6UBR.',
+    cardType: 'spell',
+    colors: ['blue', 'black', 'red'],
+    manaCost: 6,
+    consumesRunes: true, // Requires UBR runes
+    effect: {
+      type: 'aoe_damage',
+      damage: 3,
+      drawCount: 2,
+      affectsUnits: true,
+      affectsHeroes: true,
+      affectsEnemyUnits: true,
+    },
+    initiative: true,
+  },
+  {
+    id: 'ubr-spell-void-blast',
+    name: 'Void Blast',
+    description: 'Deal 4 damage to all enemy units. Draw 1 card. Costs 5UBR.',
+    cardType: 'spell',
+    colors: ['blue', 'black', 'red'],
+    manaCost: 5,
+    consumesRunes: true, // Requires UBR runes
+    effect: {
+      type: 'aoe_damage',
+      damage: 4,
+      drawCount: 1,
+      affectsUnits: true,
+      affectsHeroes: true,
+      affectsEnemyUnits: true,
     },
     initiative: true,
   },

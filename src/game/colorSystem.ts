@@ -54,11 +54,21 @@ export function validateDeckColors(heroes: Hero[]): { valid: boolean; colors: Co
 /**
  * Check if a card can be played in a specific lane
  * A card can be played if there's a hero of each required color in that lane
+ * 
+ * EXCEPTION: Spells with consumesRunes: true only need runes, not heroes in lane
+ * (Option 4: Runes only for spells - allows flexible spell casting with runes)
  */
 export function canPlayCardInLane(card: BaseCard, laneHeroes: Hero[]): boolean {
   // Colorless cards can always be played
   if (!card.colors || card.colors.length === 0) {
     return true
+  }
+  
+  // OPTION 4: Spells with consumesRunes: true only need runes, not heroes in lane
+  // This allows flexible spell casting - if you have the runes, you can cast the spell
+  // Units and generic cards still require heroes in lane for strategic positioning
+  if (card.cardType === 'spell' && (card as any).consumesRunes === true) {
+    return true // Spells with rune requirements don't need heroes in lane
   }
   
   // Get all colors present in the lane
