@@ -370,17 +370,31 @@ export function useTurnManagement() {
       if (isCurrentlyPlayed) {
         // Unmarking card - just remove the visual indicator
         delete newPlayedSpells[card.id]
+        return {
+          ...prev,
+          metadata: {
+            ...prev.metadata,
+            playedSpells: newPlayedSpells,
+          },
+        }
       } else {
-        // Marking card as played - just add the visual indicator (no mana cost, no initiative change)
+        // Marking card as played - pass action and initiative to opponent
         newPlayedSpells[card.id] = true
-      }
-      
-      return {
-        ...prev,
-        metadata: {
-          ...prev.metadata,
-          playedSpells: newPlayedSpells,
-        },
+        
+        // Pass action and initiative to opponent (same as hero deployment)
+        const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
+        
+        return {
+          ...prev,
+          metadata: {
+            ...prev.metadata,
+            playedSpells: newPlayedSpells,
+            actionPlayer: otherPlayer,
+            initiativePlayer: otherPlayer,
+            player1Passed: false,
+            player2Passed: false,
+          },
+        }
       }
     })
   }, [setGameState])
