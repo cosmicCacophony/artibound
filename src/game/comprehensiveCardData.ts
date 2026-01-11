@@ -759,18 +759,50 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
 ]
 
 export const rgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  // RG Balance: Increased costs and rune requirements
   {
     id: 'rg-fight-1',
     name: 'Fight Spell',
-    description: 'Make unit fight enemy. Target unit deals damage equal to its attack to target enemy unit.',
+    description: 'Make unit fight enemy. Target unit deals damage equal to its attack to target enemy unit. Costs 4RG.',
     cardType: 'spell',
-    colors: ['green'],
-    manaCost: 3,
+    colors: ['red', 'green'],
+    manaCost: 4,
+    consumesRunes: true, // Requires both R and G runes
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for fight mechanic
       damage: 0,
       affectsUnits: true,
       affectsHeroes: true,
+    },
+  },
+  {
+    id: 'rg-spell-mighty-strike',
+    name: 'Mighty Strike',
+    description: 'Target creature with 5+ power deals damage equal to its power to target unit. Costs 5RG.',
+    cardType: 'spell',
+    colors: ['red', 'green'],
+    manaCost: 5,
+    consumesRunes: true, // Requires both R and G runes
+    effect: {
+      type: 'targeted_damage',
+      damage: 0, // Damage equals creature's power
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+  },
+  {
+    id: 'rg-spell-overwhelming-force',
+    name: 'Overwhelming Force',
+    description: 'All your creatures with 5+ power get +2/+2 until end of turn. Costs 6RG.',
+    cardType: 'spell',
+    colors: ['red', 'green'],
+    manaCost: 6,
+    consumesRunes: true, // Requires both R and G runes
+    effect: {
+      type: 'targeted_damage', // Placeholder - would need custom effect for team buff
+      damage: 0,
+      affectsUnits: true,
+      affectsHeroes: false,
     },
   },
 ]
@@ -2217,27 +2249,28 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       }
     }
   },
-  // Morgana-Inspired Curse Hero
+  // Morgana-Inspired Curse Hero (Enhanced)
   {
     id: 'blue-hero-morgana-curser',
     name: 'Curse Weaver',
-    description: '2/6. When deployed: Curse target enemy unit (stuns it, opponent can pay 3 mana to remove curse). Whenever an enemy is cursed, draw a card.',
+    description: '2/6. At start of turn: Create a Curse spell in hand. If enemy has cursed units at end of turn, create another Curse. When deployed: Curse target enemy unit. Draw a card whenever an enemy is cursed.',
     cardType: 'hero',
     colors: ['blue'],
     attack: 2,
     health: 6,
     maxHealth: 6,
     currentHealth: 6,
-    supportEffect: 'Curses enemy on deployment and draws when cursing',
+    supportEffect: 'Creates Curse spells each turn, curses spread if not removed',
     equippedItems: [],
     ability: {
       name: 'Curse Mastery',
-      description: 'When deployed: Curse target enemy unit. Passive: Draw a card whenever an enemy is cursed.',
+      description: 'At start of turn: Create a Curse spell in hand. If enemy has cursed units at end of turn, create another Curse. When deployed: Curse target enemy unit. Passive: Draw a card whenever an enemy is cursed.',
       manaCost: 0,
       cooldown: 0,
-      trigger: 'on_deploy',
-      effectType: 'custom', // Custom: curses on deploy, draws when cursing
-      effectValue: 3, // 3 mana cost to remove curse
+      trigger: 'start_of_turn', // Creates curse spell each turn
+      effectType: 'create_curse_spell', // Creates curse spell card
+      effectValue: 1, // Creates 1 curse spell, spreads if curses not removed
+      spreadEffect: true, // If curses not removed, create more
     },
   },
 ]
@@ -2750,6 +2783,24 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       affectsHeroes: true,
       affectsEnemyUnits: true,
     },
+  },
+  // UB Curse Support Spells
+  {
+    id: 'ub-spell-curse',
+    name: 'Curse',
+    description: 'Curse target unit (opponent pays 3 mana to remove). If a cursed unit is not removed by end of turn, create another Curse spell in hand. Costs 2UB.',
+    cardType: 'spell',
+    colors: ['blue', 'black'],
+    manaCost: 2,
+    consumesRunes: true,
+    effect: {
+      type: 'curse',
+      curseCost: 3, // 3 mana to remove
+      affectsUnits: true,
+      affectsHeroes: false,
+    },
+    specialEffects: ['curse_spread'], // Creates another curse if not removed
+    initiative: true,
   },
   // UB Multispell Support Spells
   {
@@ -3635,6 +3686,38 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       affectsHeroes: false,
     },
   },
+  // UBR Enhanced Curses with -1/-1 Counters
+  {
+    id: 'ubr-spell-grixis-curse',
+    name: 'Grixis Curse',
+    description: 'Curse target unit (opponent pays 4 mana to remove). Cursed unit gets -1/-1. If this kills the unit, draw a card. Costs 3UBR.',
+    cardType: 'spell',
+    colors: ['blue', 'black', 'red'],
+    manaCost: 3,
+    consumesRunes: true,
+    effect: {
+      type: 'curse_with_debuff',
+      curseCost: 4, // Higher cost than default (3)
+      debuffValue: -1, // -1/-1 counter
+      affectsUnits: true,
+      affectsHeroes: false,
+    },
+    initiative: true,
+  },
+  {
+    id: 'ubr-unit-curse-enforcer',
+    name: 'Curse Enforcer',
+    description: '3/4. Cursed units get -2/-2. When a cursed unit dies, deal 2 damage to enemy tower. Costs 4UBR.',
+    cardType: 'generic',
+    colors: ['blue', 'black', 'red'],
+    manaCost: 4,
+    consumesRunes: true,
+    attack: 3,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    specialEffects: ['curse_amplifier', 'curse_death_damage'], // Amplifies curse debuff, deals tower damage on curse death
+  },
   // NEW: 4GUB spell - 6 damage, draw a card when it kills
   {
     id: 'gub-spell-predatory-bolt',
@@ -3721,7 +3804,37 @@ export const gbrHeroes: Omit<Hero, 'location' | 'owner'>[] = [
 ]
 
 export const gbrCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
-  // GRb (Green-Red-Black) - Mighty + Death Triggers
+  // GRb (Green-Red-Black) - Mighty + Death Triggers + Counter Moving
+  {
+    id: 'gbr-unit-counter-mover',
+    name: 'Counter Mover',
+    description: '3/3. Enters with 3 +1/+1 counters. Activated: Move a +1/+1 counter from this to target creature. Costs 3GBR.',
+    cardType: 'generic',
+    colors: ['green', 'black', 'red'],
+    manaCost: 3,
+    consumesRunes: true,
+    attack: 3,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    entersWithCounters: 3, // Enters with 3 +1/+1 counters (becomes 6/6, mighty)
+    specialEffects: ['counter_transfer'], // Can move counters to make other units mighty
+  },
+  {
+    id: 'gbr-unit-undercosted-carrier',
+    name: 'Undercosted Carrier',
+    description: '1/1. Enters with 4 +1/+1 counters. Activated: Move up to 2 +1/+1 counters from this to target creature. Costs 2GB.',
+    cardType: 'generic',
+    colors: ['green', 'black'],
+    manaCost: 2,
+    consumesRunes: true,
+    attack: 1,
+    health: 1,
+    maxHealth: 1,
+    currentHealth: 1,
+    entersWithCounters: 4, // Enters with 4 +1/+1 counters (becomes 5/5, mighty)
+    specialEffects: ['counter_transfer_multiple'], // Can move multiple counters to make units mighty
+  },
   {
     id: 'gbr-unit-mighty-revenant',
     name: 'Mighty Revenant',
