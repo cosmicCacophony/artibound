@@ -252,47 +252,8 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
 // ============================================================================
 
 export const monoRedAggroCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
-  // Low-cost aggressive units (1-3 mana) - Reduced for clarity
-  // Removed: Goblin Scout, Fire Striker, Battle Hound (weak red creeps)
-  {
-    id: 'red-unit-artifact-sacrificer',
-    name: 'Artifact Forger',
-    description: '3/3. Sacrifice an artifact: Create a 5/1 token. Costs 3R.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 3,
-    consumesRunes: true,
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-    specialEffects: ['artifact_sacrifice'], // Custom: sacrifice artifact to create token
-  },
-  {
-    id: 'red-aggro-raging-warrior',
-    name: 'Raging Warrior',
-    description: '4/2. Aggressive threat. 3R.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 3,
-    attack: 4,
-    health: 2,
-    maxHealth: 2,
-    currentHealth: 2,
-  },
-  {
-    id: 'red-aggro-tower-raider',
-    name: 'Tower Raider',
-    description: '3/3. When this enters, deal 2 damage to tower. Can attack towers directly. 3R.',
-    cardType: 'generic',
-    colors: ['red'],
-    manaCost: 3,
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-  },
-  // Removed: Goblin Raider, Swift Warrior, Tower Striker, Berserker Charge, Tower Bomber (redundant/weak)
+  // Artifact Forger moved to RB (artifact sacrifice fits RB aggressive)
+  // Raging Warrior and Tower Raider removed (generic, don't fit guilds)
 ]
 
 
@@ -340,42 +301,6 @@ export const rwArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     manaCost: 4,
     effectType: 'damage_amplifier',
     effectValue: 1, // +1 attack, defensive buff handled separately if needed
-  },
-  {
-    id: 'rw-artifact-vanguard-generator',
-    name: 'Vanguard Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary red rune and 1 temporary mana to your mana pool.',
-    cardType: 'artifact',
-    colors: ['red'],
-    manaCost: 4,
-    effectType: 'rune_generation',
-    effectValue: 1, // Generates 1 temporary red rune per turn
-    tempManaGeneration: 1, // Also generates 1 temporary mana
-  },
-  // Rune Generators - Single Color
-  // Rune Generators - Dual Color
-  {
-    id: 'rw-artifact-dual-generator',
-    name: 'Legion Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary red rune, 1 temporary white rune, and 1 temporary mana to your mana pool.',
-    cardType: 'artifact',
-    colors: ['red', 'white'],
-    manaCost: 4,
-    effectType: 'rune_generation',
-    effectValue: 2, // Generates 2 temporary runes (1R + 1W) per turn
-    tempManaGeneration: 1, // Also generates 1 temporary mana
-  },
-  // Rune Generators - Flexible Either/Or
-  {
-    id: 'rw-artifact-flexible-generator',
-    name: 'Adaptive Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary red rune or 1 temporary white rune (your choice) and 1 temporary mana to your mana pool.',
-    cardType: 'artifact',
-    colors: ['red', 'white'],
-    manaCost: 4,
-    effectType: 'rune_generation',
-    effectValue: 1, // Generates 1 temporary rune (choice of R or W) per turn
-    tempManaGeneration: 1, // Also generates 1 temporary mana
   },
   // 3+X Artifact Cycle
   {
@@ -1164,17 +1089,50 @@ export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 2,
     currentHealth: 2,
   },
+  // RB Spell Velocity Units (keep existing, add new)
   {
-    id: 'black-unit-spell-scribe',
-    name: 'Spell Scribe',
-    description: '2/4. When this enters, if you have cast 2+ spells this turn, draw a card. Costs 3B.',
+    id: 'rb-unit-velocity-enforcer',
+    name: 'Velocity Enforcer',
+    description: '3/2. Whenever you cast your 2nd spell each turn, this deals 2 damage to enemy tower. Costs 3RB.',
+    cardType: 'generic',
+    colors: ['red', 'black'],
+    manaCost: 3,
+    consumesRunes: true,
+    attack: 3,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+    specialEffects: ['multispell_tower_damage'], // Deals tower damage on 2nd spell
+  },
+  // Moved from blackMidrangeCards - Token Ritualist (spell velocity support)
+  {
+    id: 'rb-unit-token-ritualist',
+    name: 'Token Ritualist',
+    description: '2/3. Sacrifice a token: Create a free spell in hand that deals 4 damage to any target. Costs 3B.',
     cardType: 'generic',
     colors: ['black'],
     manaCost: 3,
+    consumesRunes: true,
     attack: 2,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    specialEffects: ['token_sacrifice'], // Custom: sacrifice token to create free spell (spell velocity)
+  },
+  // Moved from monoRedAggroCards - Artifact Forger (artifact sacrifice fits RB)
+  {
+    id: 'rb-unit-artifact-forger',
+    name: 'Artifact Forger',
+    description: '3/3. Sacrifice an artifact: Create a 5/1 token. Costs 3R.',
+    cardType: 'generic',
+    colors: ['red'],
+    manaCost: 3,
+    consumesRunes: true,
+    attack: 3,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    specialEffects: ['artifact_sacrifice'], // Custom: sacrifice artifact to create token
   },
   {
     id: 'black-unit-cross-lane-assassin',
@@ -1296,6 +1254,25 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 1,
       drawCount: 1,
     },
+    initiative: true,
+  },
+  // RB Spell Velocity Spells
+  {
+    id: 'rb-spell-spell-storm',
+    name: 'Spell Storm',
+    description: 'Deal 2 damage to target. If this is your 2nd+ spell this turn, refund 2 mana. Costs 2RB.',
+    cardType: 'spell',
+    colors: ['red', 'black'],
+    manaCost: 2,
+    consumesRunes: true,
+    effect: {
+      type: 'targeted_damage',
+      damage: 2,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+    refundMana: 2, // Refunds 2 mana if 2nd+ spell
+    specialEffects: ['multispell_refund'], // Refunds mana on 2nd+ spell
     initiative: true,
   },
   // New BR Spell-Synergy Spells
@@ -1934,10 +1911,91 @@ export const gbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       effectValue: 2,
     }
   },
+  // Counter Master Hero - GB counter-based mighty support
+  {
+    id: 'gb-hero-counter-master',
+    name: 'Counter Master',
+    description: '3/6. Your creatures with +1/+1 counters have +1/+1. Activated: Put a +1/+1 counter on target creature. Costs 1GB.',
+    cardType: 'hero',
+    colors: ['green', 'black'],
+    attack: 3,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
+    equippedItems: [],
+    ability: {
+      name: 'Counter Mastery',
+      description: 'Activated: Put a +1/+1 counter on target creature. Passive: Your creatures with +1/+1 counters have +1/+1.',
+      manaCost: 1,
+      cooldown: 2,
+      effectType: 'add_counter',
+      effectValue: 1,
+    },
+    supportEffect: 'Your creatures with +1/+1 counters have +1/+1',
+  },
 ]
 
 export const gbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
-  // Generic GB cards
+  // GB (Green-Black) - Counter-Based Mighty Support
+  {
+    id: 'gb-unit-counter-bearer',
+    name: 'Counter Bearer',
+    description: '1/1. Enters with 2 +1/+1 counters. When this dies, return it to hand with +1/+1 counter. Costs 3GB.',
+    cardType: 'generic',
+    colors: ['green', 'black'],
+    manaCost: 3,
+    consumesRunes: true,
+    attack: 1,
+    health: 1,
+    maxHealth: 1,
+    currentHealth: 1,
+    entersWithCounters: 2, // Enters with 2 +1/+1 counters (becomes 3/3, supports mighty)
+    specialEffects: ['returns_with_counter'], // Returns to hand with +1/+1 when dies
+  },
+  {
+    id: 'gb-unit-counter-shifter',
+    name: 'Counter Shifter',
+    description: '2/2. Enters with 2 +1/+1 counters. Activated: Move a +1/+1 counter from this to target creature. Costs 4GB.',
+    cardType: 'generic',
+    colors: ['green', 'black'],
+    manaCost: 4,
+    consumesRunes: true,
+    attack: 2,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+    entersWithCounters: 2, // Enters with 2 +1/+1 counters (becomes 4/4, supports mighty)
+    specialEffects: ['counter_transfer'], // Can move counters to other creatures
+  },
+  {
+    id: 'gb-unit-mighty-revenant',
+    name: 'Mighty Revenant',
+    description: '2/2. Enters with 3 +1/+1 counters. When a creature with 5+ power dies, return this to hand with +1/+1 counter. Costs 5GB.',
+    cardType: 'generic',
+    colors: ['green', 'black'],
+    manaCost: 5,
+    consumesRunes: true,
+    attack: 2,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+    entersWithCounters: 3, // Enters with 3 +1/+1 counters (becomes 5/5, supports mighty)
+    specialEffects: ['returns_with_counter_on_mighty_death'], // Returns when mighty unit dies
+  },
+  {
+    id: 'gb-unit-counter-collective',
+    name: 'Counter Collective',
+    description: '3/3. All creatures with +1/+1 counters get +1/+1. When this dies, distribute its +1/+1 counters among your creatures. Costs 4GB.',
+    cardType: 'generic',
+    colors: ['green', 'black'],
+    manaCost: 4,
+    consumesRunes: true,
+    attack: 3,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    specialEffects: ['counter_anthem', 'distribute_counters_on_death'], // Buffs creatures with counters, distributes on death
+  },
 ]
 
 // ============================================================================
@@ -1945,47 +2003,8 @@ export const gbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
 // ============================================================================
 
 export const blackMidrangeCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
-  {
-    id: 'black-unit-token-sacrificer',
-    name: 'Token Ritualist',
-    description: '2/3. Sacrifice a token: Create a free spell in hand that deals 4 damage to any target. Costs 3B.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 3,
-    consumesRunes: true,
-    attack: 2,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-    specialEffects: ['token_sacrifice'], // Custom: sacrifice token to create free spell
-  },
-  // Value units (3-5 mana)
-  {
-    id: 'black-midrange-insightful-scholar',
-    name: 'Insightful Scholar',
-    description: '2/2. When this enters, draw a card. Costs 3B.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 3,
-    attack: 2,
-    health: 2,
-    maxHealth: 4,
-    currentHealth: 4,
-  },
-  {
-    id: 'black-midrange-knowledge-seeker',
-    name: 'Knowledge Seeker',
-    description: 'When this attacks, draw a card. As an additional cost to play, discard a random card from your hand. Costs 5BB.',
-    cardType: 'generic',
-    colors: ['black'],
-    manaCost: 5,
-    consumesRunes: true,
-    discardCost: 1, // Discard 1 random card as additional cost
-    attack: 5,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
-  },
+  // Token Ritualist moved to RB (spell velocity support)
+  // Insightful Scholar and Knowledge Seeker removed (generic, don't fit guilds)
 ]
 
 // ============================================================================
@@ -1993,11 +2012,24 @@ export const blackMidrangeCards: Omit<GenericUnit, 'location' | 'owner' | 'stack
 // ============================================================================
 
 
-export const runeFinisherUnits: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
-  // Units with activated abilities that consume runes
-]
 
 export const gbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  // GB Counter Support Spells
+  {
+    id: 'gb-spell-counter-growth',
+    name: 'Counter Growth',
+    description: 'Put two +1/+1 counters on target creature. If it has 5+ power, draw a card. Costs 3GB.',
+    cardType: 'spell',
+    colors: ['green', 'black'],
+    manaCost: 3,
+    consumesRunes: true,
+    effect: {
+      type: 'add_counters',
+      damage: 0,
+      effectValue: 2, // Adds 2 +1/+1 counters
+    },
+    initiative: true,
+  },
 ]
 
 // ============================================================================
@@ -2286,6 +2318,78 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 3,
     currentHealth: 3,
   },
+  // UB Multispell Support Units
+  {
+    id: 'ub-unit-spell-scribe',
+    name: 'Spell Scribe',
+    description: '2/3. When you cast your 2nd spell each turn, draw a card. Costs 3UB.',
+    cardType: 'generic',
+    colors: ['blue', 'black'],
+    manaCost: 3,
+    consumesRunes: true,
+    attack: 2,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    specialEffects: ['multispell_draw'], // Draws on 2nd spell
+  },
+  {
+    id: 'ub-unit-multispell-enabler',
+    name: 'Multispell Enabler',
+    description: '3/4. Spells you cast cost 1 less if you have cast 2+ spells this turn. Costs 4UB.',
+    cardType: 'generic',
+    colors: ['blue', 'black'],
+    manaCost: 4,
+    consumesRunes: true,
+    attack: 3,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    specialEffects: ['multispell_cost_reduction'], // Reduces spell costs after 2nd spell
+  },
+  // UB Infinite Combo Pieces
+  {
+    id: 'ub-unit-combo-drawer',
+    name: 'Combo Drawer',
+    description: '2/2. When you cast a spell from the top of your library, draw a card. Costs 3UB.',
+    cardType: 'generic',
+    colors: ['blue', 'black'],
+    manaCost: 3,
+    consumesRunes: true,
+    attack: 2,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+    specialEffects: ['draw_on_top_cast'], // Infinite combo piece 2
+  },
+  {
+    id: 'ub-unit-artifact-untapper',
+    name: 'Artifact Untapper',
+    description: '2/3. When you cast a spell, untap target artifact. Costs 3UB.',
+    cardType: 'generic',
+    colors: ['blue', 'black'],
+    manaCost: 3,
+    consumesRunes: true,
+    attack: 2,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    specialEffects: ['untap_artifact'], // Infinite combo piece 3
+  },
+  {
+    id: 'ub-unit-combo-finisher',
+    name: 'Combo Finisher',
+    description: '4/4. When you cast 10+ spells in a turn, you win the game. Costs 5UB.',
+    cardType: 'generic',
+    colors: ['blue', 'black'],
+    manaCost: 5,
+    consumesRunes: true,
+    attack: 4,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    specialEffects: ['combo_win_condition'], // Infinite combo piece 4
+  },
   {
     id: 'ub-unit-multi-spell-stunner',
     name: 'Multi-Spell Stunner',
@@ -2328,6 +2432,19 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
 
 // UBG Artifacts - Persistent effects in base (U, G, B, or combinations only)
 export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
+  // UB Infinite Combo Pieces
+  {
+    id: 'ub-artifact-top-of-library',
+    name: 'Sensei\'s Divining Top',
+    description: 'Artifact. Pay 1 mana: Look at the top card of your library. You may cast it if it\'s a spell. Costs 2UB.',
+    cardType: 'artifact',
+    colors: ['blue', 'black'],
+    manaCost: 2,
+    consumesRunes: true,
+    effectType: 'custom',
+    effectValue: 0,
+    specialEffects: ['look_at_top_card'], // Infinite combo piece 1
+  },
   {
     id: 'ub-artifact-clue-generator',
     name: 'Clue Generator Artifact',
@@ -2339,135 +2456,67 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     effectType: 'token_generation',
     effectValue: 1, // Creates clue token each turn
   },
+  // Rune Generators - 2 Mana Single Color (Mox/Seal style)
   {
-    id: 'ub-artifact-void-generator',
-    name: 'Void Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary blue rune and 1 temporary mana to your mana pool.',
+    id: 'artifact-red-seal',
+    name: 'Red Seal',
+    description: 'Artifact. At the start of your turn, add 1 temporary red rune to your mana pool. Costs 2.',
+    cardType: 'artifact',
+    colors: ['red'],
+    manaCost: 2,
+    // No rune requirement - helps you get runes
+    effectType: 'rune_generation',
+    effectValue: 1, // Generates 1 temporary red rune per turn
+  },
+  {
+    id: 'artifact-blue-seal',
+    name: 'Blue Seal',
+    description: 'Artifact. At the start of your turn, add 1 temporary blue rune to your mana pool. Costs 2.',
     cardType: 'artifact',
     colors: ['blue'],
-    manaCost: 4,
+    manaCost: 2,
+    // No rune requirement - helps you get runes
     effectType: 'rune_generation',
     effectValue: 1, // Generates 1 temporary blue rune per turn
-    tempManaGeneration: 1, // Also generates 1 temporary mana
   },
   {
-    id: 'ub-artifact-sacrificial-altar',
-    name: 'Sacrificial Altar Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary black rune and 1 temporary mana to your mana pool.',
+    id: 'artifact-black-seal',
+    name: 'Black Seal',
+    description: 'Artifact. At the start of your turn, add 1 temporary black rune to your mana pool. Costs 2.',
     cardType: 'artifact',
     colors: ['black'],
-    manaCost: 4,
+    manaCost: 2,
+    // No rune requirement - helps you get runes
     effectType: 'rune_generation',
     effectValue: 1, // Generates 1 temporary black rune per turn
-    tempManaGeneration: 1, // Also generates 1 temporary mana
   },
   {
-    id: 'ub-artifact-mana-surge',
-    name: 'Mana Surge Artifact',
-    description: 'Artifact. At the start of your turn, gain +2 temporary mana.',
+    id: 'artifact-green-seal',
+    name: 'Green Seal',
+    description: 'Artifact. At the start of your turn, add 1 temporary green rune to your mana pool. Costs 2.',
     cardType: 'artifact',
     colors: ['green'],
-    manaCost: 4,
-    consumesRunes: true, // Requires G rune
-    effectType: 'mana_generation',
-    effectValue: 2, // +2 temporary mana per turn
-  },
-  // Rune Generators - Single Color
-  {
-    id: 'ub-artifact-green-generator',
-    name: 'Nature Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary green rune and 1 temporary mana to your mana pool.',
-    cardType: 'artifact',
-    colors: ['green'],
-    manaCost: 4,
+    manaCost: 2,
+    // No rune requirement - helps you get runes
     effectType: 'rune_generation',
     effectValue: 1, // Generates 1 temporary green rune per turn
-    tempManaGeneration: 1, // Also generates 1 temporary mana
   },
-  // Rune Generators - Dual Color
   {
-    id: 'ub-artifact-ub-dual-generator',
-    name: 'Void Shadow Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary blue rune, 1 temporary black rune, and 1 temporary mana to your mana pool.',
+    id: 'artifact-white-seal',
+    name: 'White Seal',
+    description: 'Artifact. At the start of your turn, add 1 temporary white rune to your mana pool. Costs 2.',
     cardType: 'artifact',
-    colors: ['blue', 'black'],
-    manaCost: 4,
+    colors: ['white'],
+    manaCost: 2,
+    // No rune requirement - helps you get runes
     effectType: 'rune_generation',
-    effectValue: 2, // Generates 2 temporary runes (1U + 1B) per turn
-    tempManaGeneration: 1, // Also generates 1 temporary mana
+    effectValue: 1, // Generates 1 temporary white rune per turn
   },
+  // Rune Generators - 4 Mana Any Color (Premium)
   {
-    id: 'ub-artifact-gu-dual-generator',
-    name: 'Nature Arcane Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary green rune, 1 temporary blue rune, and 1 temporary mana to your mana pool.',
-    cardType: 'artifact',
-    colors: ['green', 'blue'],
-    manaCost: 4,
-    effectType: 'rune_generation',
-    effectValue: 2, // Generates 2 temporary runes (1G + 1U) per turn
-    tempManaGeneration: 1, // Also generates 1 temporary mana
-  },
-  {
-    id: 'ub-artifact-bg-dual-generator',
-    name: 'Shadow Growth Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary black rune, 1 temporary green rune, and 1 temporary mana to your mana pool.',
-    cardType: 'artifact',
-    colors: ['black', 'green'],
-    manaCost: 4,
-    effectType: 'rune_generation',
-    effectValue: 2, // Generates 2 temporary runes (1B + 1G) per turn
-    tempManaGeneration: 1, // Also generates 1 temporary mana
-  },
-  {
-    id: 'ub-artifact-rb-dual-generator',
-    name: 'Blood Fire Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary red rune, 1 temporary black rune, and 1 temporary mana to your mana pool.',
-    cardType: 'artifact',
-    colors: ['red', 'black'],
-    manaCost: 4,
-    effectType: 'rune_generation',
-    effectValue: 2, // Generates 2 temporary runes (1R + 1B) per turn
-    tempManaGeneration: 1, // Also generates 1 temporary mana
-  },
-  {
-    id: 'ub-artifact-gw-dual-generator',
-    name: 'Nature Light Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary green rune, 1 temporary white rune, and 1 temporary mana to your mana pool.',
-    cardType: 'artifact',
-    colors: ['green', 'white'],
-    manaCost: 4,
-    effectType: 'rune_generation',
-    effectValue: 2, // Generates 2 temporary runes (1G + 1W) per turn
-    tempManaGeneration: 1, // Also generates 1 temporary mana
-  },
-  // Rune Generators - Flexible Either/Or
-  {
-    id: 'ub-artifact-ub-flexible-generator',
-    name: 'Adaptive Void Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary blue rune or 1 temporary black rune (your choice) and 1 temporary mana to your mana pool.',
-    cardType: 'artifact',
-    colors: ['blue', 'black'],
-    manaCost: 4,
-    effectType: 'rune_generation',
-    effectValue: 1, // Generates 1 temporary rune (choice of U or B) per turn
-    tempManaGeneration: 1, // Also generates 1 temporary mana
-  },
-  // Rune Generators - Any Color (Premium)
-  {
-    id: 'ub-artifact-prismatic-generator',
-    name: 'Prismatic Generator Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary rune of any color and 1 temporary mana to your mana pool.',
-    cardType: 'artifact',
-    colors: [], // Colorless - can generate any color
-    manaCost: 4,
-    effectType: 'rune_generation',
-    effectValue: 1, // Generates 1 temporary rune of any color per turn
-    tempManaGeneration: 1, // Also generates 1 temporary mana
-  },
-  {
-    id: 'ub-artifact-universal-mana-rock',
-    name: 'Universal Mana Rock Artifact',
-    description: 'Artifact. At the start of your turn, add 1 temporary rune of any color and 1 temporary mana to your mana pool.',
+    id: 'artifact-prismatic-generator',
+    name: 'Prismatic Generator',
+    description: 'Artifact. At the start of your turn, add 1 temporary rune of any color and 1 temporary mana to your mana pool. Costs 4.',
     cardType: 'artifact',
     colors: [], // Colorless - can generate any color
     manaCost: 4,
@@ -2701,6 +2750,40 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       affectsHeroes: true,
       affectsEnemyUnits: true,
     },
+  },
+  // UB Multispell Support Spells
+  {
+    id: 'ub-spell-dismember',
+    name: 'Dismember',
+    description: 'Destroy target unit with 4 or less health. You may pay 4 life instead of paying UB runes. Costs 1UB.',
+    cardType: 'spell',
+    colors: ['blue', 'black'],
+    manaCost: 1,
+    consumesRunes: true,
+    effect: {
+      type: 'targeted_damage',
+      damage: 999, // Effectively destroy
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+    lifeCost: 4, // Can pay 4 life instead of runes
+    initiative: true,
+  },
+  {
+    id: 'ub-spell-spell-cascade',
+    name: 'Spell Cascade',
+    description: 'Deal 4 damage to target. Look at top 3 cards, you may cast a spell from among them without paying its mana cost. Costs 6UB.',
+    cardType: 'spell',
+    colors: ['blue', 'black'],
+    manaCost: 6,
+    consumesRunes: true,
+    effect: {
+      type: 'targeted_damage',
+      damage: 4,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
+    specialEffects: ['cascade'], // Look at top 3, cast spell for free
   },
   // Low-Cost Dual-Color Spells (Double Spelling Enablers)
   {
@@ -3638,6 +3721,36 @@ export const gbrHeroes: Omit<Hero, 'location' | 'owner'>[] = [
 ]
 
 export const gbrCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+  // GRb (Green-Red-Black) - Mighty + Death Triggers
+  {
+    id: 'gbr-unit-mighty-revenant',
+    name: 'Mighty Revenant',
+    description: '4/4. When this dies, return it to hand with a +1/+1 counter. If you control a creature with 5+ power, return it with 2 +1/+1 counters instead. Costs 5GRB.',
+    cardType: 'generic',
+    colors: ['green', 'red', 'black'],
+    manaCost: 5,
+    consumesRunes: true,
+    attack: 4,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    specialEffects: ['returns_with_counter', 'mighty_bonus_counter'], // Returns with counter, bonus if mighty present
+  },
+  {
+    id: 'gbr-unit-death-counter',
+    name: 'Death Counter',
+    description: '2/2. Enters with 2 +1/+1 counters. When a creature with 5+ power dies, put a +1/+1 counter on this. Costs 3GB.',
+    cardType: 'generic',
+    colors: ['green', 'black'],
+    manaCost: 3,
+    consumesRunes: true,
+    attack: 2,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
+    entersWithCounters: 2, // Enters with 2 +1/+1 counters (becomes 4/4, supports mighty)
+    specialEffects: ['gains_counter_on_mighty_death'], // Gains counter when mighty unit dies
+  },
   {
     id: 'gbr-unit-blood-ritualist',
     name: 'Blood Ritualist',
@@ -3934,6 +4047,35 @@ export const wubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
 // ============================================================================
 
 export const wubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+  // UWb (White-Blue-Black) - Stun/Barrier Control
+  {
+    id: 'wub-unit-stun-barrier-titan',
+    name: 'Stun Barrier Titan',
+    description: '5/7. Activated: Choose one - Stun target unit, or give target unit barrier. Costs 2WUB. Costs 7WUB to play.',
+    cardType: 'generic',
+    colors: ['white', 'blue', 'black'],
+    manaCost: 7,
+    consumesRunes: true,
+    attack: 5,
+    health: 7,
+    maxHealth: 7,
+    currentHealth: 7,
+    specialEffects: ['stun_or_barrier'], // Can stun or grant barrier
+  },
+  {
+    id: 'wub-unit-curse-enforcer',
+    name: 'Curse Enforcer',
+    description: '3/4. When you curse a unit, draw a card. Cursed units you control have barrier. Costs 4UB.',
+    cardType: 'generic',
+    colors: ['blue', 'black'],
+    manaCost: 4,
+    consumesRunes: true,
+    attack: 3,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    specialEffects: ['curse_draw', 'cursed_barrier'], // Draws on curse, gives barrier to cursed units
+  },
   {
     id: 'wub-unit-esper-titan',
     name: 'Esper Titan',
@@ -4316,11 +4458,56 @@ export const wbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
 ]
 
 export const wbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
-  // WB cards can be added here if needed
+  // WB (White-Black) - Life Channeler
+  {
+    id: 'wb-unit-life-channeler',
+    name: 'Life Channeler',
+    description: '3/4. When you lose life, draw a card. Costs 4WB.',
+    cardType: 'generic',
+    colors: ['white', 'black'],
+    manaCost: 4,
+    consumesRunes: true,
+    attack: 3,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    specialEffects: ['life_loss_draw'], // Draws when you lose life
+  },
+  {
+    id: 'wb-unit-life-converter',
+    name: 'Life Converter',
+    description: '2/3. Pay 2 life: Put a +1/+1 counter on target creature. Costs 3WB.',
+    cardType: 'generic',
+    colors: ['white', 'black'],
+    manaCost: 3,
+    consumesRunes: true,
+    attack: 2,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    specialEffects: ['life_to_counters'], // Converts life to counters
+  },
 ]
 
 export const wbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
-  // WB spells can be added here if needed
+  // WB Life-Based Removal
+  {
+    id: 'wb-spell-life-drain',
+    name: 'Life Drain',
+    description: 'Destroy target unit with 3 or less health. You gain life equal to its health. Costs 3WB.',
+    cardType: 'spell',
+    colors: ['white', 'black'],
+    manaCost: 3,
+    consumesRunes: true,
+    effect: {
+      type: 'targeted_damage',
+      damage: 999, // Effectively destroy
+      affectsUnits: true,
+      affectsHeroes: false,
+    },
+    specialEffects: ['life_gain_on_kill'], // Gains life equal to killed unit's health
+    initiative: true,
+  },
 ]
 
 // ============================================================================
@@ -4357,17 +4544,12 @@ export const comboHeroes: Omit<Hero, 'location' | 'owner'>[] = [
 // COMBO UNITS - Enablers for the combo archetypes
 // ============================================================================
 
-export const comboCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
-  // Storm Combo pieces
-  // Combo units removed - they don't play into rune mechanics
-]
 
 // ============================================================================
 // CREEP-STACKING INCENTIVE CARDS - REMOVED
 // All 0/X creatures removed - no longer relevant without auto-spawning creeps
 // ============================================================================
 
-export const creepStackingCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = []
 
 // ============================================================================
 // RARE CARDS - Guild System Showcase
@@ -4564,11 +4746,8 @@ export const allCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
   ...wguCards, // WGU (White/Green/Blue) - Bant Units
   ...wubCards, // WUB (White/Blue/Black) - Esper Units
   ...ubrCards, // UBR (Blue/Black/Red) - Grixis Units
-  ...comboCards,
   ...monoRedAggroCards,
   ...blackMidrangeCards,
-  ...runeFinisherUnits,
-  ...creepStackingCards,
   // Rare cards
   ...rareBlackCards,
   ...rareRedCards,
