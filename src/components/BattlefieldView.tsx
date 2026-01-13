@@ -240,6 +240,9 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
   const [editingHeroId, setEditingHeroId] = useState<string | null>(null)
   // Track which slot is currently being dragged over (player + slotNum)
   const [dragOverSlot, setDragOverSlot] = useState<{ player: 'player1' | 'player2', slotNum: number } | null>(null)
+  // Track hovered card in battlefield for full details popup
+  const [hoveredBattlefieldCard, setHoveredBattlefieldCard] = useState<string | null>(null)
+  const [hoveredBattlefieldPosition, setHoveredBattlefieldPosition] = useState<{ x: number, y: number } | null>(null)
   const { handleDeploy, handleChangeSlot, handleRemoveFromBattlefield, handleEquipItem } = useDeployment()
   
   // Clear drag over state when drag ends
@@ -264,8 +267,8 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
   
   const towerP1HP = battlefieldId === 'battlefieldA' ? metadata.towerA_player1_HP : metadata.towerB_player1_HP
   const towerP2HP = battlefieldId === 'battlefieldA' ? metadata.towerA_player2_HP : metadata.towerB_player2_HP
-  const borderColor = battlefieldId === 'battlefieldA' ? '#4a90e2' : '#ff9800'
-  const bgColor = battlefieldId === 'battlefieldA' ? '#e3f2fd' : '#fff3e0'
+  const borderColor = battlefieldId === 'battlefieldA' ? '#4169e1' : '#daa520'
+  const bgColor = battlefieldId === 'battlefieldA' ? '#e6f2ff' : '#fff8dc'
   const battlefieldName = battlefieldId === 'battlefieldA' ? 'A' : 'B'
 
   const handleCardClick = (cardId: string, e?: React.MouseEvent) => {
@@ -319,8 +322,8 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
         cardInSlot.cardType === 'hero' &&
         cardInSlot.owner === player)
     
-    const playerColor = player === 'player1' ? '#f44336' : '#4a90e2'
-    const playerBgColor = player === 'player1' ? '#ffebee' : '#e3f2fd'
+    const playerColor = player === 'player1' ? '#c41e3a' : '#1e90ff'
+    const playerBgColor = player === 'player1' ? '#ffe4e1' : '#e0f6ff'
     // Check if this specific slot is being dragged over - highlight if dragging and over this slot
     // Also check dataTransfer as fallback since draggedCardId might not be set in context yet
     const isDragOver = dragOverSlot?.player === player && dragOverSlot?.slotNum === slotNum
@@ -729,16 +732,16 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       <div
         key={slotNum}
         style={{
-          minHeight: '100px',
-          border: isDragOver ? `3px solid ${playerColor}` : (canMoveHere || canEquipItem) ? `2px dashed ${playerColor}` : '1px solid #ddd',
-          borderRadius: '4px',
-          padding: '4px',
-          backgroundColor: isDragOver ? playerBgColor : (canMoveHere || canEquipItem) ? '#f0f0f0' : '#f9f9f9',
+          minHeight: '50px',
+          border: isDragOver ? `1px solid ${playerColor}` : (canMoveHere || canEquipItem) ? `1px dashed ${playerColor}` : '1px solid #d3d3d3',
+          borderRadius: '2px',
+          padding: '2px',
+          backgroundColor: isDragOver ? playerBgColor : (canMoveHere || canEquipItem) ? '#f5f5dc' : '#fafafa',
           position: 'relative',
           transition: 'all 0.2s',
           width: '100%',
           boxSizing: 'border-box',
-          boxShadow: isDragOver ? `0 0 10px ${playerColor}40` : 'none',
+          boxShadow: isDragOver ? `0 0 4px ${playerColor}60` : '0 1px 1px rgba(0,0,0,0.05)',
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -815,28 +818,91 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
           }}
         >
           {cardInSlot ? (
-            <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
-              <HeroCard
-                card={cardInSlot}
-                onClick={(e) => handleCardClick(cardInSlot.id, e)}
-                isSelected={isSelected}
-                showStats={true}
-                onRemove={() => handleRemoveFromBattlefield(cardInSlot, battlefieldId)}
-                onDecreaseHealth={() => handleDecreaseHealth(cardInSlot)}
-                onIncreaseHealth={() => handleIncreaseHealth(cardInSlot)}
-                onDecreaseAttack={() => handleDecreaseAttack(cardInSlot)}
-                onIncreaseAttack={() => handleIncreaseAttack(cardInSlot)}
-                showCombatControls={true}
-                isDead={!!metadata.deathCooldowns[cardInSlot.id]}
-                isStunned={cardInSlot.cardType === 'hero' ? Boolean(metadata.stunnedHeroes?.[cardInSlot.id]) : undefined}
-                onToggleStun={cardInSlot.cardType === 'hero' ? () => handleToggleStun(cardInSlot) : undefined}
-                onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, cardInSlot.owner)}
-                onEditAbility={cardInSlot.cardType === 'hero' ? (heroId) => setEditingHeroId(heroId) : undefined}
-              />
+            <div
+              style={{
+                padding: '2px',
+                border: `1px solid ${isSelected ? '#ffd700' : (cardInSlot.cardType === 'hero' ? ((cardInSlot as Hero).colors?.[0] === 'red' ? '#c41e3a' : (cardInSlot as Hero).colors?.[0] === 'blue' ? '#0078d4' : (cardInSlot as Hero).colors?.[0] === 'green' ? '#228b22' : (cardInSlot as Hero).colors?.[0] === 'black' ? '#2d2d2d' : (cardInSlot as Hero).colors?.[0] === 'white' ? '#f0e68c' : '#8b7355') : '#8b7355')}`,
+                borderRadius: '2px',
+                backgroundColor: isSelected ? '#fffacd' : '#f5f5dc',
+                cursor: 'pointer',
+                fontSize: '8px',
+                minHeight: '40px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                boxShadow: isSelected ? '0 1px 2px rgba(255, 215, 0, 0.4)' : '0 1px 1px rgba(0,0,0,0.05)',
+                position: 'relative',
+              }}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleCardClick(cardInSlot.id, e)
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault()
+                // Right-click for quick actions - could show menu or toggle stun
+                if (cardInSlot.cardType === 'hero' && handleToggleStun) {
+                  handleToggleStun(cardInSlot)
+                }
+              }}
+              onMouseEnter={(e) => {
+                setHoveredBattlefieldCard(cardInSlot.id)
+                setHoveredBattlefieldPosition({ x: e.clientX, y: e.clientY })
+              }}
+              onMouseMove={(e) => {
+                setHoveredBattlefieldPosition({ x: e.clientX, y: e.clientY })
+              }}
+              onMouseLeave={() => {
+                setHoveredBattlefieldCard(null)
+                setHoveredBattlefieldPosition(null)
+              }}
+            >
+              <div style={{ fontWeight: 'bold', fontSize: '7px', marginBottom: '1px', color: '#2d2d2d', textAlign: 'center', lineHeight: '1' }}>
+                {cardInSlot.name}
+              </div>
+              {cardInSlot.cardType === 'hero' && (cardInSlot as Hero).colors && (cardInSlot as Hero).colors!.length > 0 && (
+                <div style={{ display: 'flex', gap: '1px', marginBottom: '1px', justifyContent: 'center' }}>
+                  {(cardInSlot as Hero).colors!.map((color, i) => {
+                    const COLOR_MAP: Record<string, string> = {
+                      red: '#c41e3a',
+                      blue: '#0078d4',
+                      white: '#f0e68c',
+                      black: '#2d2d2d',
+                      green: '#228b22',
+                    }
+                    return (
+                      <div
+                        key={i}
+                        style={{
+                          width: '6px',
+                          height: '6px',
+                          borderRadius: '50%',
+                          backgroundColor: COLOR_MAP[color],
+                          border: '1px solid rgba(0,0,0,0.3)',
+                        }}
+                        title={color}
+                      />
+                    )
+                  })}
+                </div>
+              )}
+              {'attack' in cardInSlot && 'health' in cardInSlot && (
+                <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#8b0000', textAlign: 'center', lineHeight: '1' }}>
+                  {cardInSlot.attack}/{cardInSlot.health}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: '2px', marginTop: '1px', fontSize: '7px', justifyContent: 'center' }}>
+                {!!metadata.deathCooldowns[cardInSlot.id] && (
+                  <span style={{ color: '#8b0000' }}>⏱{metadata.deathCooldowns[cardInSlot.id]}</span>
+                )}
+                {cardInSlot.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[cardInSlot.id]) && (
+                  <span style={{ color: '#4b0082' }}>⚡</span>
+                )}
+              </div>
             </div>
           ) : (
-            <div style={{ fontSize: '10px', color: '#ccc', textAlign: 'center', paddingTop: '20px', pointerEvents: 'none' }}>
-              {canEquipItem ? 'Equip Item' : canMoveHere ? 'Drop here' : 'Empty'}
+            <div style={{ fontSize: '7px', color: '#999', textAlign: 'center', paddingTop: '8px', pointerEvents: 'none', fontStyle: 'italic' }}>
+              {canEquipItem ? 'Equip' : canMoveHere ? 'Drop' : ''}
             </div>
           )}
         </div>
@@ -907,19 +973,20 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       <div
         style={{
         border: `2px solid ${borderColor}`,
-        borderRadius: '6px',
-        padding: '12px',
+        borderRadius: '2px',
+        padding: '2px',
         backgroundColor: bgColor,
-        minHeight: '400px',
+        minHeight: 0,
         height: '100%',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0' }}>
         <div style={{ flex: 1 }}>
-          <h3 style={{ marginTop: 0, marginBottom: 0, fontSize: '14px' }}>
+          <h3 style={{ marginTop: 0, marginBottom: 0, fontSize: '11px' }}>
             Battlefield {battlefieldName}
-            <span style={{ fontSize: '11px', fontWeight: 'normal', marginLeft: '6px', color: '#666' }}>
-              ({getAvailableSlots(allCards)} slots)
+            <span style={{ fontSize: '9px', fontWeight: 'normal', marginLeft: '4px', color: '#666' }}>
+              ({getAvailableSlots(allCards)})
             </span>
           </h3>
         </div>
@@ -1108,21 +1175,52 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       )}
       
       {/* Player 2 side */}
-      <div style={{ marginBottom: '8px' }}>
-        <h4 style={{ fontSize: '11px', marginBottom: '4px', color: '#666' }}>Player 2</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', marginBottom: '4px' }}>
+      <div style={{ marginBottom: '1px' }}>
+        <h4 style={{ fontSize: '8px', marginBottom: '0', color: '#666' }}>P2</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1px', marginBottom: '1px' }}>
           {[1, 2, 3, 4, 5].map(slotNum => renderSlot(slotNum, 'player2'))}
         </div>
       </div>
 
       {/* Player 1 side */}
       <div>
-        <h4 style={{ fontSize: '11px', marginBottom: '4px', color: '#666' }}>Player 1</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px' }}>
+        <h4 style={{ fontSize: '8px', marginBottom: '0', color: '#666' }}>P1</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1px' }}>
           {[1, 2, 3, 4, 5].map(slotNum => renderSlot(slotNum, 'player1'))}
         </div>
       </div>
 
+      {/* Hover popup for battlefield cards */}
+      {hoveredBattlefieldCard && hoveredBattlefieldPosition && (() => {
+        const allBattlefieldCards = [...battlefield.player1, ...battlefield.player2]
+        const card = allBattlefieldCards.find(c => c.id === hoveredBattlefieldCard)
+        if (!card) return null
+        return (
+          <div
+            style={{
+              position: 'fixed',
+              left: `${Math.min(hoveredBattlefieldPosition.x + 20, window.innerWidth - 320)}px`,
+              top: `${Math.min(hoveredBattlefieldPosition.y + 20, window.innerHeight - 400)}px`,
+              zIndex: 2000,
+              pointerEvents: 'none',
+            }}
+          >
+            <HeroCard
+              card={card}
+              onClick={() => {}}
+              isSelected={false}
+              showStats={true}
+              isDead={!!metadata.deathCooldowns[card.id]}
+              cooldownCounter={metadata.deathCooldowns[card.id]}
+              isPlayed={false}
+              onTogglePlayed={() => {}}
+              isStunned={card.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[card.id])}
+              onToggleStun={undefined}
+              onAbilityClick={() => {}}
+            />
+          </div>
+        )
+      })()}
     </div>
     </>
   )

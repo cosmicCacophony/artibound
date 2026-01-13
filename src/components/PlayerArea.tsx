@@ -29,6 +29,7 @@ export function PlayerArea({ player }: PlayerAreaProps) {
   const [editingHeroId, setEditingHeroId] = useState<string | null>(null)
   const [hoveredBaseCard, setHoveredBaseCard] = useState<string | null>(null)
   const [hoveredHandCard, setHoveredHandCard] = useState<string | null>(null)
+  const [hoverPosition, setHoverPosition] = useState<{ x: number, y: number } | null>(null)
   const { handleDeploy } = useDeployment()
   const { handleToggleSpellPlayed, handleToggleStun } = useTurnManagement()
   const { generateItemShop } = useItemShop()
@@ -42,10 +43,10 @@ export function PlayerArea({ player }: PlayerAreaProps) {
   const playerGold = player === 'player1' ? metadata.player1Gold : metadata.player2Gold
   const playerNexusHP = player === 'player1' ? metadata.player1NexusHP : metadata.player2NexusHP
 
-  const playerColor = player === 'player1' ? '#f44336' : '#2196f3'
-  const playerBgColor = player === 'player1' ? '#ffebee' : '#e3f2fd'
-  const playerTitleColor = player === 'player1' ? '#c62828' : '#1976d2'
-  const playerManaColor = player === 'player1' ? '#c62828' : '#1976d2'
+  const playerColor = player === 'player1' ? '#c41e3a' : '#1e90ff'
+  const playerBgColor = player === 'player1' ? '#ffe4e1' : '#e0f6ff'
+  const playerTitleColor = player === 'player1' ? '#8b0000' : '#0066cc'
+  const playerManaColor = player === 'player1' ? '#8b0000' : '#0066cc'
 
   const handleCardClick = (cardId: string, e?: React.MouseEvent) => {
     if (e) {
@@ -58,42 +59,41 @@ export function PlayerArea({ player }: PlayerAreaProps) {
     <div
       style={{
         border: `1px solid ${playerColor}`,
-        borderRadius: '4px',
-        padding: '6px',
-        marginBottom: player === 'player2' ? '6px' : 0,
-        backgroundColor: playerBgColor,
+        borderRadius: '2px',
+        padding: '1px 2px',
+        marginBottom: '0',
+        backgroundColor: 'transparent',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-        <h2 style={{ marginTop: 0, marginBottom: 0, color: playerTitleColor, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
-          Player {player === 'player1' ? '1' : '2'}
-          {metadata.actionPlayer === player && (
-            <span style={{ fontSize: '12px' }} title="Has Action">🎯</span>
-          )}
-          {metadata.initiativePlayer === player && (
-            <span style={{ fontSize: '12px', opacity: metadata.actionPlayer === player ? 0.6 : 1 }} title="Has Initiative (will act first next turn)">⚡</span>
-          )}
-        </h2>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', fontSize: '12px' }}>
-          {/* Rune Pool Display */}
-          <RunePoolDisplay 
-            runePool={player === 'player1' ? metadata.player1RunePool : metadata.player2RunePool}
-            playerName={player === 'player1' ? 'Player 1' : 'Player 2'}
-            player={player}
-            seals={player === 'player1' ? (metadata.player1Seals || []) : (metadata.player2Seals || [])}
-          />
-          
-          {/* Legacy Mana Display (for backward compatibility) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div style={{ fontSize: '13px', fontWeight: 'bold', color: playerManaColor }}>
-              Mana: {playerMana}/{playerMaxMana}
-              {playerMana > playerMaxMana && (
-                <span style={{ color: '#4caf50', marginLeft: '4px' }} title="Current mana exceeds max (from effects like +1 mana per turn)">
-                  (+{playerMana - playerMaxMana})
-                </span>
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+      {/* For Player 1, put resources at bottom; for Player 2, keep at top */}
+      {player === 'player2' && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0', flexWrap: 'wrap', gap: '2px' }}>
+          <h2 style={{ marginTop: 0, marginBottom: 0, color: playerTitleColor, display: 'flex', alignItems: 'center', gap: '2px', fontSize: '10px' }}>
+            P2
+            {metadata.actionPlayer === player && (
+              <span style={{ fontSize: '9px' }} title="Has Action">🎯</span>
+            )}
+            {metadata.initiativePlayer === player && (
+              <span style={{ fontSize: '9px', opacity: metadata.actionPlayer === player ? 0.6 : 1 }} title="Has Initiative">⚡</span>
+            )}
+          </h2>
+          <div style={{ display: 'flex', gap: '2px', alignItems: 'center', flexWrap: 'wrap', fontSize: '8px' }}>
+            {/* Rune Pool Display */}
+            <RunePoolDisplay 
+              runePool={metadata.player2RunePool}
+              playerName="Player 2"
+              player="player2"
+              seals={metadata.player2Seals || []}
+            />
+            
+            {/* Legacy Mana Display */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 'bold', color: playerManaColor }}>
+                💎 {playerMana}/{playerMaxMana}
+                {playerMana > playerMaxMana && (
+                  <span style={{ color: '#4caf50', marginLeft: '2px' }}>(+{playerMana - playerMaxMana})</span>
+                )}
+              </div>
               <button
                 onClick={(e) => {
                   e.stopPropagation()
@@ -106,16 +106,15 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                   }))
                 }}
                 style={{
-                  padding: '4px 8px',
+                  padding: '2px 4px',
                   backgroundColor: '#f44336',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '4px',
+                  borderRadius: '2px',
                   cursor: 'pointer',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
+                  fontSize: '9px',
                 }}
-                title="Decrease mana by 1"
+                title="Decrease mana"
               >
                 -1
               </button>
@@ -131,51 +130,61 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                   }))
                 }}
                 style={{
-                  padding: '4px 8px',
+                  padding: '2px 4px',
                   backgroundColor: '#4caf50',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '4px',
+                  borderRadius: '2px',
                   cursor: 'pointer',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
+                  fontSize: '9px',
                 }}
-                title="Increase mana by 1 (for effects like +1 mana per turn)"
+                title="Increase mana"
               >
                 +1
               </button>
             </div>
+            <div style={{ fontSize: '10px', fontWeight: 'bold' }}>💰 {playerGold}</div>
+            <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#d32f2f' }}>❤️ {playerNexusHP}</div>
+            <button
+              onClick={() => {
+                generateItemShop(player)
+                setItemShopPlayer(player)
+              }}
+              style={{
+                padding: '3px 6px',
+                backgroundColor: itemShopPlayer === player ? '#f9a825' : '#ffc107',
+                color: 'white',
+                border: 'none',
+                borderRadius: '3px',
+                cursor: 'pointer',
+                fontSize: '9px',
+                fontWeight: 'bold',
+              }}
+            >
+              Shop
+            </button>
           </div>
-          <div style={{ fontSize: '13px', fontWeight: 'bold' }}>
-            Gold: {playerGold}
-          </div>
-          <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#d32f2f' }}>
-            Nexus: {playerNexusHP} HP
-          </div>
-          <button
-            onClick={() => {
-              generateItemShop(player)
-              setItemShopPlayer(player)
-            }}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: itemShopPlayer === player ? '#f9a825' : '#ffc107',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: 'bold',
-            }}
-          >
-            {itemShopPlayer === player ? 'Shop (Open)' : 'Item Shop'}
-          </button>
         </div>
-      </div>
+      )}
+      
+      {/* Player name and cards - always at top for P2, before resources for P1 */}
+      {player === 'player1' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', marginBottom: '0' }}>
+          <h2 style={{ marginTop: 0, marginBottom: 0, color: playerTitleColor, display: 'flex', alignItems: 'center', gap: '2px', fontSize: '10px' }}>
+            P1
+            {metadata.actionPlayer === player && (
+              <span style={{ fontSize: '9px' }} title="Has Action">🎯</span>
+            )}
+            {metadata.initiativePlayer === player && (
+              <span style={{ fontSize: '9px', opacity: metadata.actionPlayer === player ? 0.6 : 1 }} title="Has Initiative">⚡</span>
+            )}
+          </h2>
+        </div>
+      )}
       
       {/* Deploy Zone - Compact with hover */}
-      <div style={{ marginBottom: '4px', padding: '4px 6px', backgroundColor: '#f5f5f5', borderRadius: '4px', fontSize: '10px' }}>
-        <strong style={{ color: playerTitleColor, fontSize: '10px' }}>Deploy ({playerDeployZone.length}):</strong>{' '}
+      <div style={{ marginBottom: '0', padding: '1px 2px', backgroundColor: '#f5f5f5', borderRadius: '1px', fontSize: '8px' }}>
+        <strong style={{ color: playerTitleColor, fontSize: '7px' }}>D({playerDeployZone.length}):</strong>{' '}
         {playerDeployZone.length > 0 ? (
           <span style={{ display: 'inline-flex', gap: '4px', flexWrap: 'wrap' }}>
             {playerDeployZone.map((card) => {
@@ -253,16 +262,15 @@ export function PlayerArea({ player }: PlayerAreaProps) {
           <span style={{ color: '#999' }}>Empty</span>
         )}
       </div>
-      {hoveredHandCard && (() => {
+      {hoveredHandCard && hoverPosition && (() => {
         const card = playerDeployZone.find(c => c.id === hoveredHandCard) || playerHand.find(c => c.id === hoveredHandCard)
         if (!card) return null
         return (
           <div
             style={{
               position: 'fixed',
-              left: '50%',
-              top: '50%',
-              transform: 'translate(-50%, -50%)',
+              left: `${Math.min(hoverPosition.x + 20, window.innerWidth - 320)}px`,
+              top: `${Math.min(hoverPosition.y + 20, window.innerHeight - 400)}px`,
               zIndex: 2000,
               pointerEvents: 'none',
             }}
@@ -284,38 +292,55 @@ export function PlayerArea({ player }: PlayerAreaProps) {
         )
       })()}
 
-      {/* Base - Heroes on cooldown and artifacts */}
-      <div style={{ marginBottom: '4px', border: '1px solid #999', borderRadius: '4px', padding: '4px', backgroundColor: '#e8e8e8' }}>
-        <h3 style={{ marginTop: 0, marginBottom: '4px', color: '#666', fontSize: '10px' }}>Base ({playerBase.length})</h3>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+      {/* Base - Compact like hand cards */}
+      <div style={{ marginBottom: '0', border: '1px solid #999', borderRadius: '1px', padding: '1px 2px', backgroundColor: '#e8e8e8' }}>
+        <h3 style={{ marginTop: 0, marginBottom: '0', color: '#666', fontSize: '7px' }}>Base({playerBase.length})</h3>
+        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
           {playerBase.length > 0 ? (
-            playerBase.map(card => (
-              <div
-                key={card.id}
-                style={{
-                  position: 'relative',
-                  transform: 'scale(0.4)',
-                  transformOrigin: 'top left',
-                  marginRight: '-60%',
-                  marginBottom: '-60%',
-                }}
-                onMouseEnter={() => setHoveredBaseCard(card.id)}
-                onMouseLeave={() => setHoveredBaseCard(null)}
-              >
-                <HeroCard
-                  card={card}
+            playerBase.map(card => {
+              const hero = card.cardType === 'hero' ? card as Hero : null
+              const colors = hero?.colors || []
+              const COLOR_MAP: Record<string, string> = {
+                red: '#c41e3a',
+                blue: '#0078d4',
+                white: '#f0e68c',
+                black: '#2d2d2d',
+                green: '#228b22',
+              }
+              const manaCost = 'manaCost' in card ? card.manaCost : undefined
+              const attack = 'attack' in card ? card.attack : undefined
+              const health = 'health' in card ? card.health : undefined
+              
+              return (
+                <div
+                  key={card.id}
+                  style={{
+                    position: 'relative',
+                    border: `1px solid ${selectedCardId === card.id ? playerColor : '#ddd'}`,
+                    borderRadius: '2px',
+                    padding: '2px 4px',
+                    backgroundColor: selectedCardId === card.id ? playerBgColor : '#f5f5f5',
+                    cursor: 'pointer',
+                    fontSize: '9px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '3px',
+                    minWidth: '60px',
+                    maxWidth: '150px',
+                  }}
                   onClick={(e) => handleCardClick(card.id, e)}
-                  isSelected={selectedCardId === card.id}
-                  showStats={true}
-                  isDead={!!metadata.deathCooldowns[card.id]}
-                  cooldownCounter={metadata.deathCooldowns[card.id]}
-                  isPlayed={!!metadata.playedSpells[card.id]}
-                  onTogglePlayed={() => handleToggleSpellPlayed(card)}
-                  isStunned={card.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[card.id])}
-                  onToggleStun={card.cardType === 'hero' ? () => handleToggleStun(card) : undefined}
-                  onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, card.owner)}
+                  onMouseEnter={(e) => {
+                    setHoveredBaseCard(card.id)
+                    setHoverPosition({ x: e.clientX, y: e.clientY })
+                  }}
+                  onMouseMove={(e) => {
+                    setHoverPosition({ x: e.clientX, y: e.clientY })
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredBaseCard(null)
+                    setHoverPosition(null)
+                  }}
                   draggable={card.cardType === 'hero' && metadata.currentPhase === 'deploy' && !metadata.deathCooldowns[card.id]}
-                  isDragging={draggedCardId === card.id}
                   onDragStart={(e) => {
                     setDraggedCardId(card.id)
                     e.dataTransfer.setData('cardId', card.id)
@@ -324,23 +349,50 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                   onDragEnd={() => {
                     setDraggedCardId(null)
                   }}
-                />
-              </div>
-            ))
+                >
+                  <div style={{ fontWeight: 'bold', fontSize: '8px', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.name}</div>
+                  {colors.length > 0 && (
+                    <div style={{ display: 'flex', gap: '1px', flexShrink: 0 }}>
+                      {colors.map((color, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            width: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            backgroundColor: COLOR_MAP[color],
+                            border: '1px solid rgba(0,0,0,0.2)',
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  {manaCost !== undefined && (
+                    <div style={{ fontSize: '8px', color: '#1976d2', fontWeight: 'bold', flexShrink: 0 }}>
+                      {manaCost}
+                    </div>
+                  )}
+                  {attack !== undefined && health !== undefined && (
+                    <div style={{ fontSize: '8px', flexShrink: 0 }}>
+                      {attack}/{health}
+                    </div>
+                  )}
+                </div>
+              )
+            })
           ) : (
-            <p style={{ color: '#999', fontSize: '12px' }}>Empty</p>
+            <p style={{ color: '#999', fontSize: '11px' }}>Empty</p>
           )}
         </div>
-        {hoveredBaseCard && (() => {
+        {hoveredBaseCard && hoverPosition && (() => {
           const card = playerBase.find(c => c.id === hoveredBaseCard)
           if (!card) return null
           return (
             <div
               style={{
                 position: 'fixed',
-                left: '50%',
-                top: '50%',
-                transform: 'translate(-50%, -50%)',
+                left: `${Math.min(hoverPosition.x + 20, window.innerWidth - 320)}px`,
+                top: `${Math.min(hoverPosition.y + 20, window.innerHeight - 400)}px`,
                 zIndex: 2000,
                 pointerEvents: 'none',
               }}
@@ -361,28 +413,11 @@ export function PlayerArea({ player }: PlayerAreaProps) {
             </div>
           )
         })()}
-        {selectedCard && selectedCard.owner === player && (
-          <button
-            onClick={() => handleDeploy('base')}
-            style={{
-              marginTop: '10px',
-              padding: '6px 12px',
-              backgroundColor: '#4a90e2',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px',
-            }}
-          >
-            Move {selectedCard.name} to Base
-          </button>
-        )}
       </div>
 
       {/* Hand - Compact with hover */}
-      <div style={{ marginTop: '4px' }}>
-        <h3 style={{ marginTop: 0, marginBottom: '2px', fontSize: '10px' }}>Hand ({playerHand.length})</h3>
+      <div style={{ marginTop: '0', marginBottom: '0' }}>
+        <h3 style={{ marginTop: 0, marginBottom: '0', fontSize: '7px' }}>H({playerHand.length})</h3>
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
           {playerHand.length > 0 ? (
             playerHand.map(card => {
@@ -404,20 +439,30 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                   key={card.id}
                   style={{
                     position: 'relative',
-                    border: `2px solid ${selectedCardId === card.id ? playerColor : '#ddd'}`,
-                    borderRadius: '4px',
-                    padding: '4px 8px',
+                    border: `1px solid ${selectedCardId === card.id ? playerColor : '#ddd'}`,
+                    borderRadius: '2px',
+                    padding: '2px 4px',
                     backgroundColor: selectedCardId === card.id ? playerBgColor : '#f5f5f5',
                     cursor: 'pointer',
-                    fontSize: '11px',
+                    fontSize: '9px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px',
-                    minWidth: '80px',
+                    gap: '3px',
+                    minWidth: '60px',
+                    maxWidth: '120px',
                   }}
                   onClick={(e) => handleCardClick(card.id, e)}
-                  onMouseEnter={() => setHoveredHandCard(card.id)}
-                  onMouseLeave={() => setHoveredHandCard(null)}
+                  onMouseEnter={(e) => {
+                    setHoveredHandCard(card.id)
+                    setHoverPosition({ x: e.clientX, y: e.clientY })
+                  }}
+                  onMouseMove={(e) => {
+                    setHoverPosition({ x: e.clientX, y: e.clientY })
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredHandCard(null)
+                    setHoverPosition(null)
+                  }}
                   draggable={true}
                   onDragStart={(e) => {
                     if (card.cardType !== 'hero') {
@@ -434,7 +479,7 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                     setDraggedCardId(null)
                   }}
                 >
-                  <div style={{ fontWeight: 'bold', fontSize: '10px' }}>{card.name}</div>
+                  <div style={{ fontWeight: 'bold', fontSize: '10px', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.name}</div>
                   {colors.length > 0 && (
                     <div style={{ display: 'flex', gap: '2px' }}>
                       {colors.map((color, i) => (
@@ -452,12 +497,12 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                     </div>
                   )}
                   {manaCost !== undefined && (
-                    <div style={{ fontSize: '10px', color: '#1976d2', fontWeight: 'bold' }}>
+                    <div style={{ fontSize: '8px', color: '#1976d2', fontWeight: 'bold', flexShrink: 0 }}>
                       {manaCost}
                     </div>
                   )}
                   {attack !== undefined && health !== undefined && (
-                    <div style={{ fontSize: '10px' }}>
+                    <div style={{ fontSize: '8px', flexShrink: 0 }}>
                       {attack}/{health}
                     </div>
                   )}
@@ -468,16 +513,15 @@ export function PlayerArea({ player }: PlayerAreaProps) {
             <p style={{ color: '#999', fontSize: '11px' }}>Empty</p>
           )}
         </div>
-        {hoveredHandCard && (() => {
+        {hoveredHandCard && hoverPosition && (() => {
           const card = playerHand.find(c => c.id === hoveredHandCard)
           if (!card) return null
           return (
             <div
               style={{
                 position: 'fixed',
-                left: '50%',
-                top: '50%',
-                transform: 'translate(-50%, -50%)',
+                left: `${Math.min(hoverPosition.x + 20, window.innerWidth - 320)}px`,
+                top: `${Math.min(hoverPosition.y + 20, window.innerHeight - 400)}px`,
                 zIndex: 2000,
                 pointerEvents: 'none',
               }}
@@ -499,6 +543,97 @@ export function PlayerArea({ player }: PlayerAreaProps) {
           )
         })()}
       </div>
+      
+      {/* Player 1 Resources at Bottom */}
+      {player === 'player1' && (
+        <div style={{ display: 'flex', gap: '2px', alignItems: 'center', flexWrap: 'wrap', fontSize: '8px', marginTop: '0', paddingTop: '0', borderTop: '1px solid #ddd' }}>
+          {/* Rune Pool Display */}
+          <RunePoolDisplay 
+            runePool={metadata.player1RunePool}
+            playerName="Player 1"
+            player="player1"
+            seals={metadata.player1Seals || []}
+          />
+          
+          {/* Legacy Mana Display */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+            <div style={{ fontSize: '10px', fontWeight: 'bold', color: playerManaColor }}>
+              💎 {playerMana}/{playerMaxMana}
+              {playerMana > playerMaxMana && (
+                <span style={{ color: '#4caf50', marginLeft: '2px' }}>(+{playerMana - playerMaxMana})</span>
+              )}
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setGameState(prev => ({
+                  ...prev,
+                  metadata: {
+                    ...prev.metadata,
+                    player1Mana: Math.max(0, prev.metadata.player1Mana - 1),
+                  },
+                }))
+              }}
+              style={{
+                padding: '2px 4px',
+                backgroundColor: '#f44336',
+                color: 'white',
+                border: 'none',
+                borderRadius: '2px',
+                cursor: 'pointer',
+                fontSize: '9px',
+              }}
+              title="Decrease mana"
+            >
+              -1
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setGameState(prev => ({
+                  ...prev,
+                  metadata: {
+                    ...prev.metadata,
+                    player1Mana: prev.metadata.player1Mana + 1,
+                  },
+                }))
+              }}
+              style={{
+                padding: '2px 4px',
+                backgroundColor: '#4caf50',
+                color: 'white',
+                border: 'none',
+                borderRadius: '2px',
+                cursor: 'pointer',
+                fontSize: '9px',
+              }}
+              title="Increase mana"
+            >
+              +1
+            </button>
+          </div>
+          <div style={{ fontSize: '10px', fontWeight: 'bold' }}>💰 {playerGold}</div>
+          <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#d32f2f' }}>❤️ {playerNexusHP}</div>
+          <button
+            onClick={() => {
+              generateItemShop('player1')
+              setItemShopPlayer('player1')
+            }}
+            style={{
+              padding: '3px 6px',
+              backgroundColor: itemShopPlayer === 'player1' ? '#f9a825' : '#ffc107',
+              color: 'white',
+              border: 'none',
+              borderRadius: '3px',
+              cursor: 'pointer',
+              fontSize: '9px',
+              fontWeight: 'bold',
+            }}
+          >
+            Shop
+          </button>
+        </div>
+      )}
 
       {editingHeroId && (() => {
         const editingHero = [

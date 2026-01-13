@@ -18,7 +18,7 @@ export function Board() {
   return (
     <div style={{ display: 'flex', fontFamily: 'Arial, sans-serif', height: '100vh', overflow: 'hidden' }}>
       {/* Main Board */}
-      <div style={{ flex: 1, padding: '10px', overflowY: 'auto', position: 'relative', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, padding: '0', overflowY: 'hidden', position: 'relative', minWidth: 0, display: 'flex', flexDirection: 'column', height: '100vh' }}>
         <GameHeader />
 
         <ItemShopModal />
@@ -37,29 +37,26 @@ export function Board() {
           onClick={() => setShowCardLibrary(!showCardLibrary)}
           style={{
             position: 'fixed',
-            top: '20px',
-            right: '20px',
+            top: '4px',
+            right: '4px',
             zIndex: 1000,
-            padding: '12px 16px',
+            padding: '4px 6px',
             backgroundColor: showCardLibrary ? '#4a90e2' : '#2196f3',
             color: 'white',
             border: 'none',
-            borderRadius: '8px',
+            borderRadius: '2px',
             cursor: 'pointer',
-            fontSize: '14px',
+            fontSize: '9px',
             fontWeight: 'bold',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
           }}
           title="Toggle Card Library"
         >
-          📚 Library
+          📚
         </button>
 
-        {/* Player 2 Area (Top) - Compact */}
-        <div style={{ flexShrink: 0, marginBottom: '8px' }}>
+        {/* Player 2 Area (Top) - Zero spacing */}
+        <div style={{ flexShrink: 0, marginBottom: '0' }}>
           <PlayerArea player="player2" />
         </div>
 
@@ -68,24 +65,23 @@ export function Board() {
           style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            gap: '10px',
-            marginBottom: '8px',
-            flex: '1 1 auto',
-            minHeight: '500px',
+            gap: '2px',
+            marginBottom: '0',
+            minHeight: 0,
             overflowY: 'auto',
             alignContent: 'start',
           }}
         >
-          <div style={{ minHeight: '400px' }}>
+          <div style={{ minHeight: 0 }}>
             <BattlefieldView battlefieldId="battlefieldA" />
           </div>
-          <div style={{ minHeight: '400px' }}>
+          <div style={{ minHeight: 0 }}>
             <BattlefieldView battlefieldId="battlefieldB" />
           </div>
         </div>
 
-        {/* Player 1 Area (Bottom) - Compact */}
-        <div style={{ flexShrink: 0 }}>
+        {/* Player 1 Area (Bottom) - Zero spacing */}
+        <div style={{ flexShrink: 0, marginTop: '0' }}>
           <PlayerArea player="player1" />
         </div>
       </div>
