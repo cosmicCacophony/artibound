@@ -7,7 +7,7 @@ import { CardEditorModal } from './CardEditorModal'
 
 export function CardLibraryView() {
   const { showCardLibrary, setShowCardLibrary, archivedCards } = useGameContext()
-  const { getAllCards, updateCard, deleteCard, restoreArchivedCard, getCardsByType } = useCardManagement()
+  const { updateCard, deleteCard, restoreArchivedCard, getCardsByType } = useCardManagement()
   
   const [selectedType, setSelectedType] = useState<CardType | 'all'>('all')
   const [hoveredCard, setHoveredCard] = useState<BaseCard | null>(null)
@@ -17,7 +17,6 @@ export function CardLibraryView() {
 
   if (!showCardLibrary) return null
 
-  const allCards = getAllCards()
   const filteredCards = getCardsByType(selectedType)
   const cardTypes: (CardType | 'all')[] = ['all', 'hero', 'signature', 'hybrid', 'generic', 'spell']
 
@@ -57,22 +56,24 @@ export function CardLibraryView() {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          backgroundColor: 'rgba(0, 0, 0, 0.3)',
           zIndex: 1500,
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'flex-start',
           justifyContent: 'center',
+          paddingTop: '80px',
         }}
         onClick={() => setShowCardLibrary(false)}
       >
         <div
           style={{
-            backgroundColor: '#fff',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(10px)',
             borderRadius: '8px',
-            padding: '24px',
+            padding: '20px',
             maxWidth: '90vw',
-            maxHeight: '90vh',
-            width: '1200px',
+            maxHeight: '80vh',
+            width: '800px',
             display: 'flex',
             flexDirection: 'column',
             boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
@@ -140,15 +141,14 @@ export function CardLibraryView() {
             </button>
           </div>
 
-          {/* Cards Grid */}
+          {/* Cards List - Compact */}
           <div
             style={{
               flex: 1,
               overflowY: 'auto',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-              gap: '16px',
-              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px',
             }}
           >
             {(showArchived ? archivedCards : filteredCards).map((card, index) => {
@@ -166,43 +166,11 @@ export function CardLibraryView() {
                   black: '#424242',
                   green: '#388e3c',
                 }
-                const COLOR_LIGHT_MAP: Record<string, string> = {
-                  red: '#ffebee',
-                  blue: '#e3f2fd',
-                  white: '#ffffff',
-                  black: '#fafafa',
-                  green: '#e8f5e9',
-                }
                 
                 if (!card.colors || card.colors.length === 0) {
-                  return {
-                    borderColor: '#757575',
-                    borderWidth: '2px',
-                    backgroundColor: '#fafafa',
-                    background: undefined,
-                  }
-                } else if (card.colors.length === 1) {
-                  return {
-                    borderColor: COLOR_MAP[card.colors[0]],
-                    borderWidth: '3px',
-                    backgroundColor: COLOR_LIGHT_MAP[card.colors[0]],
-                    background: undefined,
-                  }
-                } else if (card.colors.length === 2) {
-                  return {
-                    borderColor: COLOR_MAP[card.colors[0]],
-                    borderWidth: '3px',
-                    backgroundColor: undefined,
-                    background: `linear-gradient(to right, ${COLOR_LIGHT_MAP[card.colors[0]]} 50%, ${COLOR_LIGHT_MAP[card.colors[1]]} 50%)`,
-                  }
+                  return { borderColor: '#757575' }
                 } else {
-                  // 3+ colors - use first color with indicator
-                  return {
-                    borderColor: COLOR_MAP[card.colors[0]],
-                    borderWidth: '3px',
-                    backgroundColor: COLOR_LIGHT_MAP[card.colors[0]],
-                    background: undefined,
-                  }
+                  return { borderColor: COLOR_MAP[card.colors[0]] }
                 }
               }
               
@@ -212,55 +180,65 @@ export function CardLibraryView() {
                 <div
                   key={showArchived ? `${card.id}_${index}` : card.id}
                   style={{
-                    border: `${colorStyles.borderWidth} solid ${colorStyles.borderColor}`,
-                    borderRadius: '8px',
-                    padding: '12px',
+                    borderLeft: `4px solid ${colorStyles.borderColor}`,
+                    borderRadius: '4px',
+                    padding: '8px 12px',
                     cursor: 'pointer',
-                    backgroundColor: colorStyles.backgroundColor,
-                    background: colorStyles.background,
+                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
                     transition: 'all 0.2s',
-                    position: 'relative',
-                    boxShadow: showArchived ? '0 2px 4px rgba(0,0,0,0.1)' : '0 2px 8px rgba(0,0,0,0.1)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    fontSize: '13px',
                   }}
                   onMouseEnter={(e) => handleCardHover(card, e)}
                   onMouseLeave={handleCardLeave}
                   onMouseMove={(e) => setHoverPosition({ x: e.clientX, y: e.clientY })}
                   onClick={() => showArchived ? restoreArchivedCard(card) : handleCardClick(card)}
                 >
-                  {/* Color indicator bar at top */}
-                  {card.colors && card.colors.length > 0 && (
-                    <div style={{ 
-                      display: 'flex', 
-                      height: '4px', 
-                      marginBottom: '8px',
-                      borderRadius: '2px',
-                      overflow: 'hidden',
-                    }}>
-                      {card.colors.map((color, idx) => {
-                        const COLOR_MAP: Record<string, string> = {
-                          red: '#d32f2f',
-                          blue: '#1976d2',
-                          white: '#f5f5f5',
-                          black: '#424242',
-                          green: '#388e3c',
-                        }
-                        return (
-                          <div
-                            key={idx}
-                            style={{
-                              flex: 1,
-                              backgroundColor: COLOR_MAP[color],
-                              borderRight: idx < card.colors!.length - 1 ? '1px solid rgba(255,255,255,0.3)' : 'none',
-                            }}
-                            title={color}
-                          />
-                        )
-                      })}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                    <div style={{ fontWeight: 'bold', minWidth: '150px' }}>{card.name}</div>
+                    <div style={{ fontSize: '11px', color: '#666', textTransform: 'uppercase' }}>
+                      {card.cardType}
                     </div>
-                  )}
-                  
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{card.name}</div>
+                    {card.colors && card.colors.length > 0 && (
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        {card.colors.map((color, idx) => {
+                          const COLOR_MAP: Record<string, string> = {
+                            red: '#d32f2f',
+                            blue: '#1976d2',
+                            white: '#f5f5f5',
+                            black: '#424242',
+                            green: '#388e3c',
+                          }
+                          return (
+                            <div
+                              key={idx}
+                              style={{
+                                width: '12px',
+                                height: '12px',
+                                borderRadius: '50%',
+                                backgroundColor: COLOR_MAP[color],
+                                border: '1px solid rgba(0,0,0,0.2)',
+                              }}
+                              title={color}
+                            />
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    {card.manaCost !== undefined && (
+                      <div style={{ fontSize: '12px', color: '#1976d2', fontWeight: 'bold', minWidth: '40px' }}>
+                        💎 {card.manaCost}
+                      </div>
+                    )}
+                    {hasStats && attack !== null && health !== null && (
+                      <div style={{ fontSize: '12px', fontWeight: 'bold', minWidth: '60px' }}>
+                        ⚔️{attack} ❤️{health}
+                      </div>
+                    )}
                     {!showArchived && (
                       <button
                         onClick={(e) => {
@@ -272,13 +250,14 @@ export function CardLibraryView() {
                           color: 'white',
                           border: 'none',
                           borderRadius: '4px',
-                          width: '24px',
-                          height: '24px',
+                          width: '20px',
+                          height: '20px',
                           cursor: 'pointer',
                           fontSize: '12px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
+                          padding: 0,
                         }}
                         title="Delete card"
                       >
@@ -286,29 +265,6 @@ export function CardLibraryView() {
                       </button>
                     )}
                   </div>
-                  <div style={{ fontSize: '11px', color: '#666', textTransform: 'uppercase', marginBottom: '4px' }}>
-                    {card.cardType}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#888', marginBottom: '8px' }}>
-                    {card.description.substring(0, 60)}{card.description.length > 60 ? '...' : ''}
-                  </div>
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '8px' }}>
-                    {card.manaCost !== undefined && (
-                      <div style={{ fontSize: '12px', color: '#1976d2', fontWeight: 'bold' }}>
-                        💎 {card.manaCost}
-                      </div>
-                    )}
-                    {hasStats && attack !== null && health !== null && (
-                      <div style={{ fontSize: '12px', fontWeight: 'bold' }}>
-                        ⚔️ {attack} ❤️ {health}
-                      </div>
-                    )}
-                  </div>
-                  {showArchived && (
-                    <div style={{ fontSize: '10px', color: '#ff9800', marginTop: '8px', fontStyle: 'italic' }}>
-                      Click to restore
-                    </div>
-                  )}
                 </div>
               )
             })}

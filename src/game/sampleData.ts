@@ -1639,7 +1639,7 @@ export const blueSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
 function createHeroFromTestDeck(
   template: Omit<Hero, 'location' | 'owner'>,
   owner: 'player1' | 'player2',
-  location: 'hand' | 'base' = 'base'
+  location: 'hand' | 'base' | 'deployZone' = 'base'
 ): Hero {
   return {
     ...template,
@@ -1749,7 +1749,7 @@ export function createInitialGameState(): {
   const metadata: GameMetadata = {
     currentTurn: 1,
     activePlayer: 'player1',
-    currentPhase: 'play', // Both players can deploy during play phase on turn 1
+    currentPhase: 'deploy', // Game starts in deploy phase
     player1Gold: STARTING_GOLD,
     player2Gold: STARTING_GOLD,
     player1Mana: 3, // Starting mana
@@ -1990,7 +1990,7 @@ export function createGameStateFromDraft(
   const metadata: GameMetadata = {
     currentTurn: 1,
     activePlayer: 'player1',
-    currentPhase: 'play',
+    currentPhase: 'deploy', // Game starts in deploy phase
     player1Gold: STARTING_GOLD,
     player2Gold: STARTING_GOLD,
     player1Mana: 3, // Starting mana

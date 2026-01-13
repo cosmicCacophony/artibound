@@ -3,32 +3,22 @@ import { GameHeader } from './GameHeader'
 import { PlayerArea } from './PlayerArea'
 import { BattlefieldView } from './BattlefieldView'
 import { ItemShopModal } from './ItemShopModal'
-import { CardLibrarySidebar } from './CardLibrarySidebar'
 import { CardLibraryView } from './CardLibraryView'
 import { CombatSummaryModal } from './CombatSummaryModal'
 
 export function Board() {
   const { 
-    player1SidebarCards, 
-    setPlayer1SidebarCards, 
-    player2SidebarCards, 
-    setPlayer2SidebarCards,
     showCombatSummary,
     setShowCombatSummary,
     combatSummaryData,
   } = useGameContext()
   
-  return (
-    <div style={{ display: 'flex', fontFamily: 'Arial, sans-serif', height: '100vh' }}>
-      {/* Left Sidebar - Player 1 */}
-      <CardLibrarySidebar 
-        player="player1" 
-        cards={player1SidebarCards} 
-        setCards={setPlayer1SidebarCards} 
-      />
+  const { showCardLibrary, setShowCardLibrary } = useGameContext()
 
+  return (
+    <div style={{ display: 'flex', fontFamily: 'Arial, sans-serif', height: '100vh', overflow: 'hidden' }}>
       {/* Main Board */}
-      <div style={{ flex: 1, padding: '15px', overflowY: 'auto', position: 'relative', minWidth: 0 }}>
+      <div style={{ flex: 1, padding: '10px', overflowY: 'auto', position: 'relative', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
         <GameHeader />
 
         <ItemShopModal />
@@ -42,32 +32,63 @@ export function Board() {
           />
         )}
 
-        {/* Player 2 Area (Top) */}
-        <PlayerArea player="player2" />
+        {/* Floating Library Button */}
+        <button
+          onClick={() => setShowCardLibrary(!showCardLibrary)}
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            zIndex: 1000,
+            padding: '12px 16px',
+            backgroundColor: showCardLibrary ? '#4a90e2' : '#2196f3',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+          title="Toggle Card Library"
+        >
+          📚 Library
+        </button>
 
-        {/* Battlefields (Middle) */}
+        {/* Player 2 Area (Top) - Compact */}
+        <div style={{ flexShrink: 0, marginBottom: '8px' }}>
+          <PlayerArea player="player2" />
+        </div>
+
+        {/* Battlefields (Middle) - Main Focus */}
         <div
           style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            gap: '15px',
-            marginBottom: '15px',
+            gap: '10px',
+            marginBottom: '8px',
+            flex: '1 1 auto',
+            minHeight: '500px',
+            overflowY: 'auto',
+            alignContent: 'start',
           }}
         >
-          <BattlefieldView battlefieldId="battlefieldA" />
-          <BattlefieldView battlefieldId="battlefieldB" />
+          <div style={{ minHeight: '400px' }}>
+            <BattlefieldView battlefieldId="battlefieldA" />
+          </div>
+          <div style={{ minHeight: '400px' }}>
+            <BattlefieldView battlefieldId="battlefieldB" />
+          </div>
         </div>
 
-        {/* Player 1 Area (Bottom) */}
-        <PlayerArea player="player1" />
+        {/* Player 1 Area (Bottom) - Compact */}
+        <div style={{ flexShrink: 0 }}>
+          <PlayerArea player="player1" />
+        </div>
       </div>
-
-      {/* Right Sidebar - Player 2 */}
-      <CardLibrarySidebar 
-        player="player2" 
-        cards={player2SidebarCards} 
-        setCards={setPlayer2SidebarCards} 
-      />
     </div>
   )
 }

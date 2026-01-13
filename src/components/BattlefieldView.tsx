@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Card, Hero, HeroAbility } from '../game/types'
+import { Card, Hero, HeroAbility, GameMetadata, GameState } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { useDeployment } from '../hooks/useDeployment'
 import { useCombat } from '../hooks/useCombat'
@@ -8,10 +8,219 @@ import { useTurnManagement } from '../hooks/useTurnManagement'
 import { HeroCard } from './HeroCard'
 import { HeroAbilityEditor } from './HeroAbilityEditor'
 import { resolveSimultaneousCombat } from '../game/combatSystem'
-import { createCardFromTemplate } from '../game/sampleData'
 
 interface BattlefieldViewProps {
   battlefieldId: 'battlefieldA' | 'battlefieldB'
+}
+
+// Icon menu for tower health
+function TowerHealthMenu({ towerP1HP, towerP2HP, battlefieldName, onTowerDamage }: {
+  towerP1HP: number
+  towerP2HP: number
+  battlefieldName: string
+  onTowerDamage: (amount: number, player: 'player1' | 'player2') => void
+}) {
+  const [showMenu, setShowMenu] = useState(false)
+  const [menuPosition, setMenuPosition] = useState<{ x: number, y: number } | null>(null)
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        onClick={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect()
+          setMenuPosition({ x: rect.right, y: rect.top })
+          setShowMenu(!showMenu)
+        }}
+        style={{
+          padding: '4px 8px',
+          backgroundColor: '#666',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          fontSize: '11px',
+        }}
+        title="Tower Health"
+      >
+        🏰 {towerP1HP}/{towerP2HP}
+      </button>
+      {showMenu && menuPosition && (
+        <>
+          <div
+            style={{
+              position: 'fixed',
+              left: 0,
+              top: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 1000,
+            }}
+            onClick={() => setShowMenu(false)}
+          />
+          <div
+            style={{
+              position: 'fixed',
+              left: `${menuPosition.x}px`,
+              top: `${menuPosition.y}px`,
+              backgroundColor: 'white',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              padding: '8px',
+              zIndex: 1001,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              minWidth: '150px',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ marginBottom: '8px', fontWeight: 'bold', fontSize: '12px' }}>Tower Health - {battlefieldName}</div>
+            <div style={{ marginBottom: '6px' }}>
+              <div style={{ fontSize: '11px', marginBottom: '4px' }}>P1 Tower: {towerP1HP} HP</div>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <button onClick={() => { onTowerDamage(-1, 'player1'); setShowMenu(false) }} style={{ padding: '2px 6px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '2px', cursor: 'pointer', fontSize: '10px' }}>-1</button>
+                <button onClick={() => { onTowerDamage(1, 'player1'); setShowMenu(false) }} style={{ padding: '2px 6px', backgroundColor: '#4caf50', color: 'white', border: 'none', borderRadius: '2px', cursor: 'pointer', fontSize: '10px' }}>+1</button>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '11px', marginBottom: '4px' }}>P2 Tower: {towerP2HP} HP</div>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <button onClick={() => { onTowerDamage(-1, 'player2'); setShowMenu(false) }} style={{ padding: '2px 6px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '2px', cursor: 'pointer', fontSize: '10px' }}>-1</button>
+                <button onClick={() => { onTowerDamage(1, 'player2'); setShowMenu(false) }} style={{ padding: '2px 6px', backgroundColor: '#4caf50', color: 'white', border: 'none', borderRadius: '2px', cursor: 'pointer', fontSize: '10px' }}>+1</button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// Icon menu for creep spawning
+function CreepSpawnMenu({ battlefieldId, metadata, onSpawnCreep }: {
+  battlefieldId: 'battlefieldA' | 'battlefieldB'
+  metadata: GameMetadata
+  onSpawnCreep: (battlefieldId: 'battlefieldA' | 'battlefieldB', player: 'player1' | 'player2') => void
+}) {
+  const [showMenu, setShowMenu] = useState(false)
+  const currentActionPlayer = metadata.actionPlayer || metadata.activePlayer
+  const isPlayer1Turn = currentActionPlayer === 'player1'
+  const isPlayer2Turn = currentActionPlayer === 'player2'
+
+  return (
+    <div style={{ position: 'relative', marginBottom: '4px' }}>
+      <button
+        onClick={() => {
+          setShowMenu(!showMenu)
+        }}
+        style={{
+          padding: '2px 6px',
+          backgroundColor: '#9c27b0',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          fontSize: '10px',
+        }}
+        title="Spawn Creeps"
+      >
+        👾
+      </button>
+      {showMenu && (
+        <>
+          <div
+            style={{
+              position: 'fixed',
+              left: 0,
+              top: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 1000,
+            }}
+            onClick={() => setShowMenu(false)}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              backgroundColor: 'white',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              padding: '6px',
+              zIndex: 1001,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              marginTop: '4px',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => { onSpawnCreep(battlefieldId, 'player1'); setShowMenu(false) }}
+              disabled={!isPlayer1Turn}
+              style={{
+                padding: '4px 8px',
+                backgroundColor: isPlayer1Turn ? '#4caf50' : '#ccc',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: isPlayer1Turn ? 'pointer' : 'not-allowed',
+                fontSize: '11px',
+                marginRight: '4px',
+                opacity: isPlayer1Turn ? 1 : 0.6,
+              }}
+            >
+              Spawn P1 Creep
+            </button>
+            <button
+              onClick={() => { onSpawnCreep(battlefieldId, 'player2'); setShowMenu(false) }}
+              disabled={!isPlayer2Turn}
+              style={{
+                padding: '4px 8px',
+                backgroundColor: isPlayer2Turn ? '#f44336' : '#ccc',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: isPlayer2Turn ? 'pointer' : 'not-allowed',
+                fontSize: '11px',
+                opacity: isPlayer2Turn ? 1 : 0.6,
+              }}
+            >
+              Spawn P2 Creep
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// Icon menu for combat resolution
+function CombatMenu({ metadata, onCombat }: {
+  metadata: GameMetadata
+  gameState: GameState
+  onCombat: () => void
+}) {
+  const canCombat = metadata.player1Passed && metadata.player2Passed
+
+  return (
+    <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 10 }}>
+      <button
+        onClick={onCombat}
+        disabled={!canCombat}
+        style={{
+          padding: '6px 10px',
+          backgroundColor: canCombat ? '#4caf50' : '#ccc',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: canCombat ? 'pointer' : 'not-allowed',
+          fontSize: '12px',
+          fontWeight: 'bold',
+        }}
+        title={canCombat ? 'Resolve Combat for Both Battlefields' : 'Both players must pass before combat'}
+      >
+        ⚔️
+      </button>
+    </div>
+  )
 }
 
 export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
@@ -27,10 +236,6 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     setGameState,
     setShowCombatSummary,
     setCombatSummaryData,
-    player1SidebarCards,
-    player2SidebarCards,
-    setPlayer1SidebarCards,
-    setPlayer2SidebarCards,
   } = useGameContext()
   const [editingHeroId, setEditingHeroId] = useState<string | null>(null)
   // Track which slot is currently being dragged over (player + slotNum)
@@ -623,7 +828,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                 onIncreaseAttack={() => handleIncreaseAttack(cardInSlot)}
                 showCombatControls={true}
                 isDead={!!metadata.deathCooldowns[cardInSlot.id]}
-                isStunned={cardInSlot.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[cardInSlot.id])}
+                isStunned={cardInSlot.cardType === 'hero' ? Boolean(metadata.stunnedHeroes?.[cardInSlot.id]) : undefined}
                 onToggleStun={cardInSlot.cardType === 'hero' ? () => handleToggleStun(cardInSlot) : undefined}
                 onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, cardInSlot.owner)}
                 onEditAbility={cardInSlot.cardType === 'hero' ? (heroId) => setEditingHeroId(heroId) : undefined}
@@ -705,145 +910,40 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
         borderRadius: '6px',
         padding: '12px',
         backgroundColor: bgColor,
+        minHeight: '400px',
+        height: '100%',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
         <div style={{ flex: 1 }}>
-          <h3 style={{ marginTop: 0, fontSize: '16px' }}>
+          <h3 style={{ marginTop: 0, marginBottom: 0, fontSize: '14px' }}>
             Battlefield {battlefieldName}
-            <span style={{ fontSize: '12px', fontWeight: 'normal', marginLeft: '8px', color: '#666' }}>
+            <span style={{ fontSize: '11px', fontWeight: 'normal', marginLeft: '6px', color: '#666' }}>
               ({getAvailableSlots(allCards)} slots)
             </span>
           </h3>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a90e2' }}>
-              P2 Tower: {towerP2HP} HP
-            </div>
-            <button
-              onClick={() => handleTowerDamage(-1, 'player2')}
-              style={{
-                padding: '2px 6px',
-                backgroundColor: '#f44336',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '10px',
-              }}
-              title={`Deal 1 damage to P2 Tower ${battlefieldName}`}
-            >
-              -1
-            </button>
-            <button
-              onClick={() => handleTowerDamage(1, 'player2')}
-              style={{
-                padding: '2px 6px',
-                backgroundColor: '#4caf50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '10px',
-              }}
-              title={`Heal 1 HP to P2 Tower ${battlefieldName}`}
-            >
-              +1
-            </button>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#f44336' }}>
-              P1 Tower: {towerP1HP} HP
-            </div>
-            <button
-              onClick={() => handleTowerDamage(-1, 'player1')}
-              style={{
-                padding: '2px 6px',
-                backgroundColor: '#f44336',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '10px',
-              }}
-              title={`Deal 1 damage to P1 Tower ${battlefieldName}`}
-            >
-              -1
-            </button>
-            <button
-              onClick={() => handleTowerDamage(1, 'player1')}
-              style={{
-                padding: '2px 6px',
-                backgroundColor: '#4caf50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '10px',
-              }}
-              title={`Heal 1 HP to P1 Tower ${battlefieldName}`}
-            >
-              +1
-            </button>
-          </div>
-        </div>
-        {/* Manual Creep Spawn Button */}
-        {metadata.currentPhase === 'play' && (
-          <div style={{ marginTop: '8px', display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            {(() => {
-              // Use actionPlayer if available, otherwise fall back to activePlayer
-              const currentActionPlayer = metadata.actionPlayer || metadata.activePlayer
-              const isPlayer1Turn = currentActionPlayer === 'player1'
-              const isPlayer2Turn = currentActionPlayer === 'player2'
-              
-              return (
-                <>
-                  <button
-                    onClick={() => handleSpawnCreep(battlefieldId, 'player1')}
-                    disabled={!isPlayer1Turn}
-                    style={{
-                      padding: '6px 12px',
-                      backgroundColor: isPlayer1Turn ? '#4caf50' : '#ccc',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: isPlayer1Turn ? 'pointer' : 'not-allowed',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      opacity: isPlayer1Turn ? 1 : 0.6,
-                    }}
-                    title="Spawn a 1/1 creep in the first empty slot for Player 1"
-                  >
-                    Spawn P1 Creep
-                  </button>
-                  <button
-                    onClick={() => handleSpawnCreep(battlefieldId, 'player2')}
-                    disabled={!isPlayer2Turn}
-                    style={{
-                      padding: '6px 12px',
-                      backgroundColor: isPlayer2Turn ? '#f44336' : '#ccc',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: isPlayer2Turn ? 'pointer' : 'not-allowed',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      opacity: isPlayer2Turn ? 1 : 0.6,
-                    }}
-                    title="Spawn a 1/1 creep in the first empty slot for Player 2"
-                  >
-                    Spawn P2 Creep
-                  </button>
-                </>
-              )
-            })()}
-          </div>
-        )}
-        {/* Go to Combat Button - Resolves Both Battlefields Simultaneously */}
-        {metadata.currentPhase === 'play' && battlefieldId === 'battlefieldA' && (
-          <button
-            onClick={() => {
+        <TowerHealthMenu 
+          towerP1HP={towerP1HP} 
+          towerP2HP={towerP2HP} 
+          battlefieldName={battlefieldName}
+          onTowerDamage={handleTowerDamage}
+        />
+      </div>
+      {/* Manual Creep Spawn - Icon Menu */}
+      {metadata.currentPhase === 'play' && (
+        <CreepSpawnMenu 
+          battlefieldId={battlefieldId}
+          metadata={metadata}
+          onSpawnCreep={handleSpawnCreep}
+        />
+      )}
+      {/* Go to Combat Button - Icon Menu */}
+      {metadata.currentPhase === 'play' && battlefieldId === 'battlefieldA' && (
+        <CombatMenu
+          metadata={metadata}
+          gameState={gameState}
+          onCombat={() => {
               // Check if both players passed, if so resolve combat for both battlefields
               if (metadata.player1Passed && metadata.player2Passed) {
                 // Resolve simultaneous combat for both battlefields
@@ -1003,31 +1103,13 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
               } else {
                 alert('Both players must pass before going to combat')
               }
-            }}
-            disabled={!(metadata.player1Passed && metadata.player2Passed)}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: (metadata.player1Passed && metadata.player2Passed) ? '#4caf50' : '#ccc',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: (metadata.player1Passed && metadata.player2Passed) ? 'pointer' : 'not-allowed',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              marginLeft: '12px',
-            }}
-            title={(metadata.player1Passed && metadata.player2Passed) 
-              ? 'Resolve Combat for Both Battlefields (units in front attack each other simultaneously)'
-              : 'Both players must pass before combat'}
-          >
-            ⚔️ Resolve Combat (Both Battlefields)
-          </button>
-        )}
-      </div>
+          }}
+        />
+      )}
       
       {/* Player 2 side */}
-      <div style={{ marginBottom: '12px' }}>
-        <h4 style={{ fontSize: '12px', marginBottom: '6px' }}>Player 2</h4>
+      <div style={{ marginBottom: '8px' }}>
+        <h4 style={{ fontSize: '11px', marginBottom: '4px', color: '#666' }}>Player 2</h4>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', marginBottom: '4px' }}>
           {[1, 2, 3, 4, 5].map(slotNum => renderSlot(slotNum, 'player2'))}
         </div>
@@ -1035,34 +1117,12 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
 
       {/* Player 1 side */}
       <div>
-        <h4 style={{ fontSize: '14px', marginBottom: '10px' }}>Player 1</h4>
+        <h4 style={{ fontSize: '11px', marginBottom: '4px', color: '#666' }}>Player 1</h4>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px' }}>
           {[1, 2, 3, 4, 5].map(slotNum => renderSlot(slotNum, 'player1'))}
         </div>
       </div>
 
-      {selectedCard && (
-        <button
-          onClick={() => handleDeploy(battlefieldId)}
-          disabled={selectedCard && selectedCard.cardType !== 'generic' && getAvailableSlots(
-            selectedCard.owner === 'player1' ? battlefield[selectedCard.owner] : battlefield[selectedCard.owner]
-          ) <= 0}
-          style={{
-            marginTop: '10px',
-            padding: '8px 16px',
-            backgroundColor: borderColor,
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            opacity: selectedCard && selectedCard.cardType !== 'generic' && getAvailableSlots(
-              selectedCard.owner === 'player1' ? battlefield[selectedCard.owner] : battlefield[selectedCard.owner]
-            ) <= 0 ? 0.5 : 1,
-          }}
-        >
-          Deploy {selectedCard.name} to Lane {battlefieldName}
-        </button>
-      )}
     </div>
     </>
   )
