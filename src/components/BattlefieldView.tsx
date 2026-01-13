@@ -732,16 +732,16 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       <div
         key={slotNum}
         style={{
-          minHeight: '50px',
-          border: isDragOver ? `1px solid ${playerColor}` : (canMoveHere || canEquipItem) ? `1px dashed ${playerColor}` : '1px solid #d3d3d3',
-          borderRadius: '2px',
-          padding: '2px',
+          minHeight: '60px',
+          border: isDragOver ? `2px solid ${playerColor}` : (canMoveHere || canEquipItem) ? `1px dashed ${playerColor}` : '1px solid #d3d3d3',
+          borderRadius: '3px',
+          padding: '4px',
           backgroundColor: isDragOver ? playerBgColor : (canMoveHere || canEquipItem) ? '#f5f5dc' : '#fafafa',
           position: 'relative',
           transition: 'all 0.2s',
           width: '100%',
           boxSizing: 'border-box',
-          boxShadow: isDragOver ? `0 0 4px ${playerColor}60` : '0 1px 1px rgba(0,0,0,0.05)',
+          boxShadow: isDragOver ? `0 0 6px ${playerColor}60` : '0 1px 2px rgba(0,0,0,0.1)',
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -820,18 +820,18 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
           {cardInSlot ? (
             <div
               style={{
-                padding: '2px',
+                padding: '4px',
                 border: `1px solid ${isSelected ? '#ffd700' : (cardInSlot.cardType === 'hero' ? ((cardInSlot as Hero).colors?.[0] === 'red' ? '#c41e3a' : (cardInSlot as Hero).colors?.[0] === 'blue' ? '#0078d4' : (cardInSlot as Hero).colors?.[0] === 'green' ? '#228b22' : (cardInSlot as Hero).colors?.[0] === 'black' ? '#2d2d2d' : (cardInSlot as Hero).colors?.[0] === 'white' ? '#f0e68c' : '#8b7355') : '#8b7355')}`,
-                borderRadius: '2px',
+                borderRadius: '3px',
                 backgroundColor: isSelected ? '#fffacd' : '#f5f5dc',
                 cursor: 'pointer',
-                fontSize: '8px',
-                minHeight: '40px',
+                fontSize: '9px',
+                minHeight: '50px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
                 alignItems: 'center',
-                boxShadow: isSelected ? '0 1px 2px rgba(255, 215, 0, 0.4)' : '0 1px 1px rgba(0,0,0,0.05)',
+                boxShadow: isSelected ? '0 1px 3px rgba(255, 215, 0, 0.4)' : '0 1px 2px rgba(0,0,0,0.1)',
                 position: 'relative',
               }}
               onClick={(e) => {
@@ -857,11 +857,11 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                 setHoveredBattlefieldPosition(null)
               }}
             >
-              <div style={{ fontWeight: 'bold', fontSize: '7px', marginBottom: '1px', color: '#2d2d2d', textAlign: 'center', lineHeight: '1' }}>
+              <div style={{ fontWeight: 'bold', fontSize: '9px', marginBottom: '2px', color: '#2d2d2d', textAlign: 'center', lineHeight: '1.1' }}>
                 {cardInSlot.name}
               </div>
               {cardInSlot.cardType === 'hero' && (cardInSlot as Hero).colors && (cardInSlot as Hero).colors!.length > 0 && (
-                <div style={{ display: 'flex', gap: '1px', marginBottom: '1px', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', gap: '2px', marginBottom: '2px', justifyContent: 'center' }}>
                   {(cardInSlot as Hero).colors!.map((color, i) => {
                     const COLOR_MAP: Record<string, string> = {
                       red: '#c41e3a',
@@ -874,8 +874,8 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                       <div
                         key={i}
                         style={{
-                          width: '6px',
-                          height: '6px',
+                          width: '8px',
+                          height: '8px',
                           borderRadius: '50%',
                           backgroundColor: COLOR_MAP[color],
                           border: '1px solid rgba(0,0,0,0.3)',
@@ -887,11 +887,11 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                 </div>
               )}
               {'attack' in cardInSlot && 'health' in cardInSlot && (
-                <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#8b0000', textAlign: 'center', lineHeight: '1' }}>
+                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#8b0000', textAlign: 'center', lineHeight: '1.2' }}>
                   {cardInSlot.attack}/{cardInSlot.health}
                 </div>
               )}
-              <div style={{ display: 'flex', gap: '2px', marginTop: '1px', fontSize: '7px', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', gap: '3px', marginTop: '2px', fontSize: '8px', justifyContent: 'center' }}>
                 {!!metadata.deathCooldowns[cardInSlot.id] && (
                   <span style={{ color: '#8b0000' }}>⏱{metadata.deathCooldowns[cardInSlot.id]}</span>
                 )}
@@ -973,10 +973,10 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       <div
         style={{
         border: `2px solid ${borderColor}`,
-        borderRadius: '2px',
-        padding: '2px',
+        borderRadius: '3px',
+        padding: '6px',
         backgroundColor: bgColor,
-        minHeight: 0,
+        minHeight: '300px',
         height: '100%',
         boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
       }}

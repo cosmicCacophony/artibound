@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { PlayerId, Hero } from '../game/types'
+import { PlayerId, Hero, Card } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { RunePoolDisplay } from './RunePoolDisplay'
 import { useDeployment } from '../hooks/useDeployment'
@@ -8,6 +8,7 @@ import { useItemShop } from '../hooks/useItemShop'
 import { useHeroAbilities } from '../hooks/useHeroAbilities'
 import { HeroCard } from './HeroCard'
 import { HeroAbilityEditor } from './HeroAbilityEditor'
+import { createCardFromTemplate } from '../game/sampleData'
 
 interface PlayerAreaProps {
   player: PlayerId
@@ -25,6 +26,10 @@ export function PlayerArea({ player }: PlayerAreaProps) {
     metadata,
     setItemShopPlayer,
     itemShopPlayer,
+    player1SidebarCards,
+    setPlayer1SidebarCards,
+    player2SidebarCards,
+    setPlayer2SidebarCards,
   } = useGameContext()
   const [editingHeroId, setEditingHeroId] = useState<string | null>(null)
   const [hoveredBaseCard, setHoveredBaseCard] = useState<string | null>(null)
@@ -48,11 +53,103 @@ export function PlayerArea({ player }: PlayerAreaProps) {
   const playerTitleColor = player === 'player1' ? '#8b0000' : '#0066cc'
   const playerManaColor = player === 'player1' ? '#8b0000' : '#0066cc'
 
+  const moveCardToBase = (card: Card) => {
+    const isHero = card.cardType === 'hero'
+    const movedToBaseKey = `${player}MovedToBase` as keyof typeof gameState.metadata
+    const hasMovedToBase = gameState.metadata[movedToBaseKey] as boolean
+    
+    // Check hero movement limit
+    if (isHero && hasMovedToBase) {
+      alert('You can only move one hero to base per turn!')
+      return
+    }
+    
+    setGameState(prev => {
+      const cardId = card.id
+      
+      // Remove card from current location
+      const newHand = (prev[`${player}Hand` as keyof typeof prev] as any[])
+        .filter((c: Card) => c.id !== cardId)
+      const newDeployZone = (prev[`${player}DeployZone` as keyof typeof prev] as any[])
+        .filter((c: Card) => c.id !== cardId)
+      const newBase = (prev[`${player}Base` as keyof typeof prev] as any[])
+        .filter((c: Card) => c.id !== cardId)
+      
+      // Remove from battlefields
+      const newBattlefieldA = {
+        ...prev.battlefieldA,
+        [player]: prev.battlefieldA[player as 'player1' | 'player2'].filter(c => c.id !== cardId)
+      }
+      const newBattlefieldB = {
+        ...prev.battlefieldB,
+        [player]: prev.battlefieldB[player as 'player1' | 'player2'].filter(c => c.id !== cardId)
+      }
+      
+      // Heal hero to full health when moving to base
+      const movedCard = isHero && 'maxHealth' in card
+        ? { ...card, location: 'base' as const, currentHealth: (card as any).maxHealth, slot: undefined }
+        : { ...card, location: 'base' as const, slot: undefined }
+      
+      // Update metadata for hero movement tracking
+      const updatedMetadata = { ...prev.metadata }
+      if (isHero) {
+        (updatedMetadata as any)[movedToBaseKey] = true
+      }
+      
+      return {
+        ...prev,
+        [`${player}Hand`]: newHand,
+        [`${player}DeployZone`]: newDeployZone,
+        [`${player}Base`]: [...newBase, movedCard],
+        battlefieldA: newBattlefieldA,
+        battlefieldB: newBattlefieldB,
+        metadata: updatedMetadata,
+      }
+    })
+    
+    setSelectedCardId(card.id)
+  }
+
   const handleCardClick = (cardId: string, e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation()
     }
+    
+    // Double-click to move to base
+    if (e?.detail === 2) {
+      const card = [
+        ...playerHand,
+        ...playerDeployZone,
+        ...gameState.battlefieldA[player as 'player1' | 'player2'],
+        ...gameState.battlefieldB[player as 'player1' | 'player2'],
+      ].find(c => c.id === cardId)
+      
+      if (card && card.owner === player) {
+        moveCardToBase(card)
+        return
+      }
+    }
+    
     setSelectedCardId(selectedCardId === cardId ? null : cardId)
+  }
+
+  const handleDrawCard = () => {
+    const library = player === 'player1' ? player1SidebarCards : player2SidebarCards
+    const setLibrary = player === 'player1' ? setPlayer1SidebarCards : setPlayer2SidebarCards
+    
+    if (library.length === 0) {
+      alert('No cards left in library!')
+      return
+    }
+    
+    const template = library[0]
+    const newCard = createCardFromTemplate(template, player, 'hand')
+    
+    setLibrary(prev => prev.slice(1))
+    setGameState(prev => ({
+      ...prev,
+      [`${player}Hand`]: [...(prev[`${player}Hand` as keyof typeof prev] as any[]), newCard],
+    }))
   }
 
   return (
@@ -146,6 +243,22 @@ export function PlayerArea({ player }: PlayerAreaProps) {
             <div style={{ fontSize: '10px', fontWeight: 'bold' }}>💰 {playerGold}</div>
             <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#d32f2f' }}>❤️ {playerNexusHP}</div>
             <button
+              onClick={handleDrawCard}
+              style={{
+                padding: '3px 6px',
+                backgroundColor: '#9c27b0',
+                color: 'white',
+                border: 'none',
+                borderRadius: '3px',
+                cursor: 'pointer',
+                fontSize: '9px',
+                fontWeight: 'bold',
+              }}
+              title={`Draw from library (${player2SidebarCards.length} remaining)`}
+            >
+              Draw
+            </button>
+            <button
               onClick={() => {
                 generateItemShop(player)
                 setItemShopPlayer(player)
@@ -213,10 +326,6 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                   }}
                   draggable={true}
                   onDragStart={(e) => {
-                    if (card.cardType !== 'hero') {
-                      e.preventDefault()
-                      return
-                    }
                     e.stopPropagation()
                     setDraggedCardId(card.id)
                     e.dataTransfer.effectAllowed = 'move'
@@ -292,12 +401,42 @@ export function PlayerArea({ player }: PlayerAreaProps) {
         )
       })()}
 
-      {/* Base - Compact like hand cards */}
-      <div style={{ marginBottom: '0', border: '1px solid #999', borderRadius: '1px', padding: '1px 2px', backgroundColor: '#e8e8e8' }}>
-        <h3 style={{ marginTop: 0, marginBottom: '0', color: '#666', fontSize: '7px' }}>Base({playerBase.length})</h3>
-        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-          {playerBase.length > 0 ? (
-            playerBase.map(card => {
+      {/* Base - Bigger with drag/drop */}
+      <div 
+        style={{ 
+          marginBottom: '0', 
+          border: '2px dashed #999', 
+          borderRadius: '3px', 
+          padding: '6px', 
+          backgroundColor: '#e8e8e8',
+          minHeight: '60px',
+        }}
+        onDragOver={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          e.dataTransfer.dropEffect = 'move'
+        }}
+        onDrop={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          const cardId = e.dataTransfer.getData('cardId')
+          if (!cardId) return
+          
+          const card = [
+            ...playerHand,
+            ...playerDeployZone,
+            ...gameState.battlefieldA[player as 'player1' | 'player2'],
+            ...gameState.battlefieldB[player as 'player1' | 'player2'],
+          ].find(c => c.id === cardId)
+          
+          if (!card || card.owner !== player) return
+          
+          moveCardToBase(card)
+        }}
+      >
+        <h3 style={{ marginTop: 0, marginBottom: '4px', color: '#666', fontSize: '10px', fontWeight: 'bold' }}>Base ({playerBase.length})</h3>
+        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', minHeight: '40px', alignItems: 'flex-start' }}>
+          {playerBase.map(card => {
               const hero = card.cardType === 'hero' ? card as Hero : null
               const colors = hero?.colors || []
               const COLOR_MAP: Record<string, string> = {
@@ -316,17 +455,17 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                   key={card.id}
                   style={{
                     position: 'relative',
-                    border: `1px solid ${selectedCardId === card.id ? playerColor : '#ddd'}`,
-                    borderRadius: '2px',
-                    padding: '2px 4px',
+                    border: `2px solid ${selectedCardId === card.id ? playerColor : '#ddd'}`,
+                    borderRadius: '3px',
+                    padding: '4px 6px',
                     backgroundColor: selectedCardId === card.id ? playerBgColor : '#f5f5f5',
                     cursor: 'pointer',
-                    fontSize: '9px',
+                    fontSize: '10px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '3px',
-                    minWidth: '60px',
-                    maxWidth: '150px',
+                    gap: '4px',
+                    minWidth: '80px',
+                    maxWidth: '180px',
                   }}
                   onClick={(e) => handleCardClick(card.id, e)}
                   onMouseEnter={(e) => {
@@ -350,15 +489,15 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                     setDraggedCardId(null)
                   }}
                 >
-                  <div style={{ fontWeight: 'bold', fontSize: '8px', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.name}</div>
+                  <div style={{ fontWeight: 'bold', fontSize: '9px', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.name}</div>
                   {colors.length > 0 && (
-                    <div style={{ display: 'flex', gap: '1px', flexShrink: 0 }}>
+                    <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
                       {colors.map((color, i) => (
                         <div
                           key={i}
                           style={{
-                            width: '6px',
-                            height: '6px',
+                            width: '8px',
+                            height: '8px',
                             borderRadius: '50%',
                             backgroundColor: COLOR_MAP[color],
                             border: '1px solid rgba(0,0,0,0.2)',
@@ -368,21 +507,83 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                     </div>
                   )}
                   {manaCost !== undefined && (
-                    <div style={{ fontSize: '8px', color: '#1976d2', fontWeight: 'bold', flexShrink: 0 }}>
+                    <div style={{ fontSize: '9px', color: '#1976d2', fontWeight: 'bold', flexShrink: 0 }}>
                       {manaCost}
                     </div>
                   )}
                   {attack !== undefined && health !== undefined && (
-                    <div style={{ fontSize: '8px', flexShrink: 0 }}>
+                    <div style={{ fontSize: '9px', flexShrink: 0 }}>
                       {attack}/{health}
                     </div>
                   )}
                 </div>
               )
-            })
-          ) : (
-            <p style={{ color: '#999', fontSize: '11px' }}>Empty</p>
-          )}
+            })}
+          {/* Visual slot indicator for next card */}
+          <div
+            style={{
+              border: '2px dashed #999',
+              borderRadius: '3px',
+              padding: '4px 6px',
+              backgroundColor: '#f0f0f0',
+              minWidth: '80px',
+              minHeight: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onDragOver={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              e.dataTransfer.dropEffect = 'move'
+            }}
+            onDrop={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              const cardId = e.dataTransfer.getData('cardId')
+              if (!cardId) return
+              
+              const card = [
+                ...playerHand,
+                ...playerDeployZone,
+                ...gameState.battlefieldA[player as 'player1' | 'player2'],
+                ...gameState.battlefieldB[player as 'player1' | 'player2'],
+              ].find(c => c.id === cardId)
+              
+              if (!card || card.owner !== player) return
+              
+              moveCardToBase(card)
+            }}
+            onClick={(e) => {
+              e.stopPropagation()
+              // If a card is selected, move it to base
+              if (selectedCardId) {
+                const card = [
+                  ...playerHand,
+                  ...playerDeployZone,
+                  ...gameState.battlefieldA[player as 'player1' | 'player2'],
+                  ...gameState.battlefieldB[player as 'player1' | 'player2'],
+                ].find(c => c.id === selectedCardId)
+                
+                if (card && card.owner === player) {
+                  moveCardToBase(card)
+                }
+              }
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = playerColor
+              e.currentTarget.style.backgroundColor = playerBgColor
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#999'
+              e.currentTarget.style.backgroundColor = '#f0f0f0'
+            }}
+            title="Drop or click to move selected card here"
+          >
+            <span style={{ color: '#999', fontSize: '9px', fontStyle: 'italic' }}>+</span>
+          </div>
         </div>
         {hoveredBaseCard && hoverPosition && (() => {
           const card = playerBase.find(c => c.id === hoveredBaseCard)
@@ -465,10 +666,6 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                   }}
                   draggable={true}
                   onDragStart={(e) => {
-                    if (card.cardType !== 'hero') {
-                      e.preventDefault()
-                      return
-                    }
                     e.stopPropagation()
                     setDraggedCardId(card.id)
                     e.dataTransfer.effectAllowed = 'move'
@@ -614,6 +811,22 @@ export function PlayerArea({ player }: PlayerAreaProps) {
           </div>
           <div style={{ fontSize: '10px', fontWeight: 'bold' }}>💰 {playerGold}</div>
           <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#d32f2f' }}>❤️ {playerNexusHP}</div>
+          <button
+            onClick={handleDrawCard}
+            style={{
+              padding: '3px 6px',
+              backgroundColor: '#9c27b0',
+              color: 'white',
+              border: 'none',
+              borderRadius: '3px',
+              cursor: 'pointer',
+              fontSize: '9px',
+              fontWeight: 'bold',
+            }}
+            title={`Draw from library (${player1SidebarCards.length} remaining)`}
+          >
+            Draw
+          </button>
           <button
             onClick={() => {
               generateItemShop('player1')
