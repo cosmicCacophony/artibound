@@ -3,7 +3,9 @@ import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, Battlefi
 import { createInitialGameState, createCardLibrary, createGameStateFromDraft } from '../game/sampleData'
 import { allCards, allSpells, allArtifacts, allBattlefields, allHeroes } from '../game/cardData'
 import { ubHeroes } from '../game/comprehensiveCardData'
+import { boss1ValiantLegion } from '../game/bossData'
 import { heroMatchesArchetype, cardMatchesArchetype } from '../game/archetypeUtils'
+import { saveDraft, getPreviousDraft } from '../game/draftStorage'
 
 interface GameContextType {
   // Game State
@@ -13,6 +15,8 @@ interface GameContextType {
   // UI State
   selectedCardId: string | null
   setSelectedCardId: (id: string | null) => void
+  draggedCardId: string | null // Card currently being dragged
+  setDraggedCardId: (id: string | null) => void
   itemShopPlayer: PlayerId | null // Which player's shop is open (null if closed)
   setItemShopPlayer: (player: PlayerId | null) => void
   itemShopItems: ShopItem[]
@@ -86,6 +90,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   })
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
+  const [draggedCardId, setDraggedCardId] = useState<string | null>(null)
   const [itemShopPlayer, setItemShopPlayer] = useState<PlayerId | null>(null)
   const [itemShopItems, setItemShopItems] = useState<ShopItem[]>([])
   
@@ -181,17 +186,44 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [setGameState, setPlayer1SidebarCards, setPlayer2SidebarCards])
 
   const initializeRandomGame = useCallback(() => {
-    // Assign RW to one player and UBG to the other (randomly)
-    const archetypes: [Archetype, Archetype] = Math.random() > 0.5 
-      ? ['rw-legion', 'ubg-control']
-      : ['ubg-control', 'rw-legion']
-    const player1Archetype = archetypes[0]
-    const player2Archetype = archetypes[1]
+    // Assign archetypes - one player gets UBG, the other gets boss Legion deck (AI-only)
+    const useBossForPlayer2 = Math.random() > 0.5
+    const player1Archetype: Archetype = 'ubg-control'
+    const player2Archetype: Archetype = useBossForPlayer2 ? 'rw-legion' : 'ubg-control'
     
-    // Get heroes matching each player's archetype
+    // Handle player2: If Legion, use boss data (AI-only archetype)
+    let player2Heroes: Hero[]
+    let player2Cards: BaseCard[]
+    
+    if (player2Archetype === 'rw-legion') {
+      // Use boss Legion deck for player2
+      const boss = boss1ValiantLegion
+      
+      // Filter out undefined heroes and create hero instances
+      player2Heroes = boss.heroes
+        .filter((hero): hero is Omit<Hero, 'location' | 'owner'> => hero !== undefined)
+        .map((hero, i) => ({
+          ...hero,
+          id: `${hero.id}-player2-${Date.now()}-${i}`,
+          owner: 'player2' as const,
+          location: 'base' as const,
+        })) as Hero[]
+      
+      // Filter out undefined cards and combine boss cards
+      player2Cards = [
+        ...boss.units.filter((card): card is BaseCard => card !== undefined && card !== null),
+        ...boss.spells.filter((card): card is BaseCard => card !== undefined && card !== null),
+        ...boss.artifacts.filter((card): card is BaseCard => card !== undefined && card !== null),
+      ]
+    } else {
+      // Normal deck building for non-Legion archetypes
+      player2Heroes = []
+      player2Cards = []
+    }
+    
+    // Get heroes matching player1's archetype
     // For UBG, use only ubHeroes to ensure correct lineup (UG, G, B, U)
     let player1HeroPool: Omit<Hero, 'location' | 'owner'>[]
-    let player2HeroPool: Omit<Hero, 'location' | 'owner'>[]
     
     if (player1Archetype === 'ubg-control') {
       player1HeroPool = ubHeroes
@@ -199,16 +231,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
       player1HeroPool = allHeroes.filter(h => heroMatchesArchetype(h, [player1Archetype]))
     }
     
-    if (player2Archetype === 'ubg-control') {
-      player2HeroPool = ubHeroes
-    } else {
-      player2HeroPool = allHeroes.filter(h => heroMatchesArchetype(h, [player2Archetype]))
-    }
-    
-    // Get cards matching each player's archetype (including spells and artifacts)
+    // Get cards matching player1's archetype (including spells and artifacts)
     const allCardsAndSpells: BaseCard[] = [...allCards, ...allSpells, ...allArtifacts]
     const player1CardPool = allCardsAndSpells.filter(c => cardMatchesArchetype(c, [player1Archetype]))
-    const player2CardPool = allCardsAndSpells.filter(c => cardMatchesArchetype(c, [player2Archetype]))
     
     // Get battlefields (allow any for now)
     const player1BattlefieldPool = allBattlefields
@@ -224,107 +249,112 @@ export function GameProvider({ children }: { children: ReactNode }) {
       return copy
     }
     
-    // Shuffle hero pools and select 4 heroes for each player
+    // Build player1 deck (always UBG for now)
     const shuffledPlayer1HeroPool = randomShuffle(player1HeroPool)
-    const shuffledPlayer2HeroPool = randomShuffle(player2HeroPool)
-    
     const player1Heroes: Hero[] = []
-    const player2Heroes: Hero[] = []
     
-    // Fill up to HEROES_REQUIRED, using shuffled order
+    // Fill up to HEROES_REQUIRED for player1
     for (let i = 0; i < HEROES_REQUIRED; i++) {
       const p1Hero = shuffledPlayer1HeroPool[i % shuffledPlayer1HeroPool.length]
-      const p2Hero = shuffledPlayer2HeroPool[i % shuffledPlayer2HeroPool.length]
-      
       player1Heroes.push({
         ...p1Hero,
         id: `${p1Hero.id}-player1-${Date.now()}-${i}`,
       } as Hero)
-      
-      player2Heroes.push({
-        ...p2Hero,
-        id: `${p2Hero.id}-player2-${Date.now()}-${i}`,
-      } as Hero)
     }
     
-    // Select 22 cards for each player (signature cards will be auto-added) = 30 total deck
+    // Build player2 deck if not using boss (i.e., if UBG)
+    if (player2Archetype !== 'rw-legion') {
+      // Normal deck building for player2
+      let player2HeroPool: Omit<Hero, 'location' | 'owner'>[]
+      if (player2Archetype === 'ubg-control') {
+        player2HeroPool = ubHeroes
+      } else {
+        player2HeroPool = allHeroes.filter(h => heroMatchesArchetype(h, [player2Archetype]))
+      }
+      
+      const shuffledPlayer2HeroPool = randomShuffle(player2HeroPool)
+      player2Heroes = []
+      
+      for (let i = 0; i < HEROES_REQUIRED; i++) {
+        const p2Hero = shuffledPlayer2HeroPool[i % shuffledPlayer2HeroPool.length]
+        player2Heroes.push({
+          ...p2Hero,
+          id: `${p2Hero.id}-player2-${Date.now()}-${i}`,
+        } as Hero)
+      }
+      
+      const player2CardPool = allCardsAndSpells.filter(c => cardMatchesArchetype(c, [player2Archetype]))
+      const ubgKeySpellIds = [
+        'ubg-spell-exorcism',
+        'rune-spell-dark-ritual',
+        'rune-spell-seal-of-knowledge',
+        'rune-spell-seal-of-darkness',
+        'rune-spell-high-tide',
+        'vrune-spell-damnation',
+        'vrune-spell-necromantic-rite',
+      ]
+      
+      const keySpellsForP2 = ubgKeySpellIds
+        .map(id => allSpells.find(s => s.id === id))
+        .filter(Boolean)
+        .filter(c => cardMatchesArchetype(c, [player2Archetype])) as BaseCard[]
+      
+      const DRAFTED_CARDS_REQUIRED = 22
+      let player2DraftedCards = [
+        ...keySpellsForP2,
+        ...randomShuffle(player2CardPool.filter(c => !ubgKeySpellIds.includes(c.id)))
+      ].slice(0, DRAFTED_CARDS_REQUIRED)
+      
+      const player2SignatureCards: BaseCard[] = []
+      for (const hero of player2Heroes) {
+        if (hero.signatureCardId) {
+          const sigCard = allCards.find(card => card.id === hero.signatureCardId)
+            || allSpells.find(spell => spell.id === hero.signatureCardId)
+          if (sigCard && cardMatchesArchetype(sigCard, [player2Archetype])) {
+            player2SignatureCards.push(sigCard)
+            player2SignatureCards.push(sigCard)
+          }
+        }
+      }
+      
+      player2Cards = [...player2DraftedCards, ...player2SignatureCards]
+    }
+    
+    // Build player1 deck
     const DRAFTED_CARDS_REQUIRED = 22
-    
-    // Key spells by archetype - only include spells that match player's colors
-    const rwKeySpellIds = [
-      'rune-spell-seal-of-fire', // Seal R
-      'rune-spell-pyretic-ritual', // RR ramp
-      'vrune-spell-flame-javelin', // 3RR damage
-      'vrune-spell-wrath-of-legion', // 5RRW buff
-    ]
-    
     const ubgKeySpellIds = [
-      'ubg-spell-exorcism', // Board wipe UBG
-      'rune-spell-dark-ritual', // Rune ramp BBB
-      'rune-spell-seal-of-knowledge', // Seal U
-      'rune-spell-seal-of-darkness', // Seal B
-      'rune-spell-high-tide', // Blue ramp UU
-      'vrune-spell-damnation', // Board wipe BBB
-      'vrune-spell-necromantic-rite', // 7UUU bomb
+      'ubg-spell-exorcism',
+      'rune-spell-dark-ritual',
+      'rune-spell-seal-of-knowledge',
+      'rune-spell-seal-of-darkness',
+      'rune-spell-high-tide',
+      'vrune-spell-damnation',
+      'vrune-spell-necromantic-rite',
     ]
     
-    // Get key spells for each player based on their ACTUAL archetype (not hardcoded)
-    const keySpellIdsForP1 = player1Archetype === 'rw-legion' ? rwKeySpellIds : ubgKeySpellIds
-    const keySpellIdsForP2 = player2Archetype === 'rw-legion' ? rwKeySpellIds : ubgKeySpellIds
-    
-    const keySpellsForP1 = keySpellIdsForP1
+    const keySpellsForP1 = ubgKeySpellIds
       .map(id => allSpells.find(s => s.id === id))
       .filter(Boolean)
-      .filter(c => cardMatchesArchetype(c, [player1Archetype])) as BaseCard[] // Double-check archetype match
-    const keySpellsForP2 = keySpellIdsForP2
-      .map(id => allSpells.find(s => s.id === id))
-      .filter(Boolean)
-      .filter(c => cardMatchesArchetype(c, [player2Archetype])) as BaseCard[] // Double-check archetype match
+      .filter(c => cardMatchesArchetype(c, [player1Archetype])) as BaseCard[]
     
-    // For player1, include key spells matching their archetype then fill rest from their pool
     let player1DraftedCards = [
       ...keySpellsForP1,
-      ...randomShuffle(player1CardPool.filter(c => !keySpellIdsForP1.includes(c.id)))
+      ...randomShuffle(player1CardPool.filter(c => !ubgKeySpellIds.includes(c.id)))
     ].slice(0, DRAFTED_CARDS_REQUIRED)
     
-    // For player2, include key spells matching their archetype then fill rest from their pool
-    let player2DraftedCards = [
-      ...keySpellsForP2,
-      ...randomShuffle(player2CardPool.filter(c => !keySpellIdsForP2.includes(c.id)))
-    ].slice(0, DRAFTED_CARDS_REQUIRED)
-    
-    // Add 2 copies of each hero's signature card (4 heroes × 2 copies = 8 signature cards)
-    // IMPORTANT: Filter signature cards by archetype to prevent cross-contamination
     const player1SignatureCards: BaseCard[] = []
-    const player2SignatureCards: BaseCard[] = []
-    
     for (const hero of player1Heroes) {
       if (hero.signatureCardId) {
         const sigCard = allCards.find(card => card.id === hero.signatureCardId)
           || allSpells.find(spell => spell.id === hero.signatureCardId)
         if (sigCard && cardMatchesArchetype(sigCard, [player1Archetype])) {
-          // Only add if signature card matches player's archetype
           player1SignatureCards.push(sigCard)
           player1SignatureCards.push(sigCard)
         }
       }
     }
     
-    for (const hero of player2Heroes) {
-      if (hero.signatureCardId) {
-        const sigCard = allCards.find(card => card.id === hero.signatureCardId)
-          || allSpells.find(spell => spell.id === hero.signatureCardId)
-        if (sigCard && cardMatchesArchetype(sigCard, [player2Archetype])) {
-          // Only add if signature card matches player's archetype
-          player2SignatureCards.push(sigCard)
-          player2SignatureCards.push(sigCard)
-        }
-      }
-    }
-    
-    // Combine drafted cards + signature cards (22 + 8 = 30 total)
     const player1Cards = [...player1DraftedCards, ...player1SignatureCards]
-    const player2Cards = [...player2DraftedCards, ...player2SignatureCards]
     
     // Don't pass battlefields - createGameStateFromDraft will assign hardcoded ones based on archetype
     // RW always gets Training Grounds + War Camp
@@ -348,86 +378,48 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [initializeGameFromDraft])
 
   const initializeDraftGame = useCallback((player1Selection: FinalDraftSelection) => {
-    // Create RW deck for player2 (opponent)
-    const player2Archetype: Archetype = 'rw-legion'
+    // Save the current draft to localStorage (this will shift previous drafts)
+    // After saving: current draft is at index 0, previous draft (if exists) is at index 1
+    saveDraft(player1Selection)
     
-    // Get heroes matching RW archetype
-    const player2HeroPool = allHeroes.filter(h => heroMatchesArchetype(h, [player2Archetype]))
+    // Get the previous draft (the one that was saved before this one, now at index 1)
+    const previousDraft = getPreviousDraft()
     
-    // Get cards matching RW archetype (including spells and artifacts)
-    const allCardsAndSpells: BaseCard[] = [...allCards, ...allSpells, ...allArtifacts]
-    const player2CardPool = allCardsAndSpells.filter(c => cardMatchesArchetype(c, [player2Archetype]))
+    let player2Selection: FinalDraftSelection
     
-    // Random shuffle for variety in each game
-    const randomShuffle = <T extends unknown>(arr: T[]): T[] => {
-      const copy = [...arr]
-      for (let i = copy.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copy[i], copy[j]] = [copy[j], copy[i]]
-      }
-      return copy
-    }
-    
-    // Shuffle hero pool and select 4 heroes for player2
-    const shuffledPlayer2HeroPool = randomShuffle(player2HeroPool)
-    const player2Heroes: Hero[] = []
-    
-    // Fill up to HEROES_REQUIRED, using shuffled order
-    for (let i = 0; i < HEROES_REQUIRED; i++) {
-      const p2Hero = shuffledPlayer2HeroPool[i % shuffledPlayer2HeroPool.length]
-      player2Heroes.push({
-        ...p2Hero,
-        id: `${p2Hero.id}-player2-${Date.now()}-${i}`,
-      } as Hero)
-    }
-    
-    // Select 22 cards for player2 (signature cards will be auto-added) = 30 total deck
-    const DRAFTED_CARDS_REQUIRED = 22
-    
-    // Key spells for RW archetype
-    const rwKeySpellIds = [
-      'rune-spell-seal-of-fire', // Seal R
-      'rune-spell-pyretic-ritual', // RR ramp
-      'vrune-spell-flame-javelin', // 3RR damage
-      'vrune-spell-wrath-of-legion', // 5RRW buff
-    ]
-    
-    const keySpellsForP2 = rwKeySpellIds
-      .map(id => allSpells.find(s => s.id === id))
-      .filter(Boolean)
-      .filter(c => cardMatchesArchetype(c, [player2Archetype])) as BaseCard[]
-    
-    // Include key spells then fill rest from pool
-    let player2DraftedCards = [
-      ...keySpellsForP2,
-      ...randomShuffle(player2CardPool.filter(c => !rwKeySpellIds.includes(c.id)))
-    ].slice(0, DRAFTED_CARDS_REQUIRED)
-    
-    // Add 2 copies of each hero's signature card (4 heroes × 2 copies = 8 signature cards)
-    const player2SignatureCards: BaseCard[] = []
-    
-    for (const hero of player2Heroes) {
-      if (hero.signatureCardId) {
-        const sigCard = allCards.find(card => card.id === hero.signatureCardId)
-          || allSpells.find(spell => spell.id === hero.signatureCardId)
-        if (sigCard && cardMatchesArchetype(sigCard, [player2Archetype])) {
-          player2SignatureCards.push(sigCard)
-          player2SignatureCards.push(sigCard)
-        }
+    if (previousDraft) {
+      // Use the previous draft as player2's deck (play against your last draft)
+      player2Selection = previousDraft
+    } else {
+      // Fall back to boss Legion deck if no previous draft exists
+      const boss = boss1ValiantLegion
+      
+      // Filter out undefined heroes and create hero instances
+      const player2Heroes: Hero[] = boss.heroes
+        .filter((hero): hero is Omit<Hero, 'location' | 'owner'> => hero !== undefined)
+        .map((hero, i) => ({
+          ...hero,
+          id: `${hero.id}-player2-${Date.now()}-${i}`,
+          owner: 'player2' as const,
+          location: 'base' as const,
+        })) as Hero[]
+      
+      // Filter out undefined cards and combine boss cards (units + spells + artifacts)
+      const player2Cards: BaseCard[] = [
+        ...boss.units.filter((card): card is BaseCard => card !== undefined && card !== null),
+        ...boss.spells.filter((card): card is BaseCard => card !== undefined && card !== null),
+        ...boss.artifacts.filter((card): card is BaseCard => card !== undefined && card !== null),
+      ]
+      
+      // Create final selection for player2 (battlefield will be ignored, but required by type)
+      player2Selection = {
+        heroes: player2Heroes,
+        cards: player2Cards,
+        battlefield: allBattlefields[0], // Placeholder, will be replaced by hardcoded ones
       }
     }
     
-    // Combine drafted cards + signature cards (22 + 8 = 30 total)
-    const player2Cards = [...player2DraftedCards, ...player2SignatureCards]
-    
-    // Create final selection for player2 (battlefield will be ignored, but required by type)
-    const player2Selection: FinalDraftSelection = {
-      heroes: player2Heroes,
-      cards: player2Cards,
-      battlefield: allBattlefields[0], // Placeholder, will be replaced by hardcoded ones
-    }
-    
-    // Initialize game from player1's draft vs player2's RW deck
+    // Initialize game from player1's draft vs player2's deck (previous draft or RW Legion)
     initializeGameFromDraft(player1Selection, player2Selection)
   }, [initializeGameFromDraft])
 
@@ -436,6 +428,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setGameState,
     selectedCardId,
     setSelectedCardId,
+    draggedCardId,
+    setDraggedCardId,
     itemShopPlayer,
     setItemShopPlayer,
     itemShopItems,

@@ -1,3 +1,4 @@
+import React, { useState } from 'react'
 import { Card, Color } from '../game/types'
 import { tier1Items } from '../game/sampleData'
 
@@ -20,6 +21,10 @@ interface HeroCardProps {
   onToggleStun?: () => void // Toggle stun state for heroes
   onAbilityClick?: (heroId: string, ability: import('../game/types').HeroAbility) => void // Handler for ability clicks
   onEditAbility?: (heroId: string) => void // Handler for editing ability
+  draggable?: boolean // Whether this card can be dragged
+  onDragStart?: (e: React.DragEvent) => void // Handler for drag start
+  onDragEnd?: (e: React.DragEvent) => void // Handler for drag end
+  isDragging?: boolean // Whether this card is currently being dragged
 }
 
 // Color palette mapping
@@ -39,7 +44,7 @@ const COLOR_LIGHT_MAP: Record<Color, string> = {
   green: '#e8f5e9',
 }
 
-export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove, onDecreaseHealth, onIncreaseHealth, onDecreaseAttack, onIncreaseAttack, showCombatControls = false, isDead = false, cooldownCounter, isPlayed = false, onTogglePlayed, isStunned = false, onToggleStun, onAbilityClick, onEditAbility }: HeroCardProps) {
+export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove, onDecreaseHealth, onIncreaseHealth, onDecreaseAttack, onIncreaseAttack, showCombatControls = false, isDead = false, cooldownCounter, isPlayed = false, onTogglePlayed, isStunned = false, onToggleStun, onAbilityClick, onEditAbility, draggable = false, onDragStart, onDragEnd, isDragging = false }: HeroCardProps) {
   // Get card colors
   const cardColors: Color[] = 'colors' in card && card.colors ? card.colors : []
   
@@ -175,14 +180,51 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
     }
   }
 
+  const [wasDragged, setWasDragged] = useState(false)
+  const [dragStartTime, setDragStartTime] = useState(0)
+
   return (
     <div
       onClick={(e) => {
-        if (onClick) {
+        // Don't trigger click if we just finished dragging (within 200ms)
+        const timeSinceDrag = Date.now() - dragStartTime
+        if (wasDragged && timeSinceDrag < 200) {
+          e.preventDefault()
+          e.stopPropagation()
+          setWasDragged(false)
+          return
+        }
+        if (onClick && !wasDragged) {
           onClick(e)
         }
       }}
-      className={`hero-card ${isSelected ? 'selected' : ''} ${isStacked ? 'stacked' : ''}`}
+      draggable={draggable}
+      onDragStart={(e) => {
+        setWasDragged(true)
+        setDragStartTime(Date.now())
+        
+        // Set drag data
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/plain', card.id)
+        e.dataTransfer.setData('cardId', card.id)
+        
+        // Use the element itself as drag image (browser default)
+        // The browser will create a semi-transparent version automatically
+        
+        if (draggable && onDragStart) {
+          onDragStart(e)
+        }
+      }}
+      onDragEnd={(e) => {
+        if (draggable && onDragEnd) {
+          onDragEnd(e)
+        }
+        // Small delay to prevent click from firing after drag
+        setTimeout(() => {
+          setWasDragged(false)
+        }, 100)
+      }}
+      className={`hero-card ${isSelected ? 'selected' : ''} ${isStacked ? 'stacked' : ''} ${isDragging ? 'dragging' : ''}`}
       style={{
         border: isSelected 
           ? `3px solid #4a90e2` 
@@ -192,7 +234,8 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
         margin: '8px',
         background: isSelected ? '#e3f2fd' : isStacked ? '#f5f5f5' : (colorStyles.background || colorStyles.backgroundColor || '#fff'),
         backgroundColor: colorStyles.backgroundColor ? colorStyles.backgroundColor : undefined,
-        cursor: onClick ? 'pointer' : 'default',
+        cursor: draggable ? 'grab' : (onClick ? 'pointer' : 'default'),
+        opacity: isDragging ? 0.5 : 1,
         minWidth: '120px',
         maxWidth: '150px',
         boxShadow: isSelected ? '0 4px 8px rgba(74, 144, 226, 0.4)' : '0 2px 4px rgba(0,0,0,0.1)',

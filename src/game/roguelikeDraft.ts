@@ -7,7 +7,7 @@ import { RoguelikePack, RoguelikeDraftState, ROGUELIKE_HERO_PICK_PACKS } from '.
  * 
  * Generates packs for roguelike mode:
  * - Mixed packs: Pick 2 items from 15 items (most packs)
- *   * Always contains 1 good multicolor hero (not skewed toward player colors)
+ *   * Always contains 1 single-color hero + 1 multicolor hero (not skewed toward player colors)
  * - Hero picks: Pick 1 hero from 5 (packs 5, 10, 15, 18)
  *   * First pick: 5 single-color heroes (one of each color)
  *   * Picks 2-4: 3 single-color heroes (slightly skewed toward player colors)
@@ -220,26 +220,39 @@ function getGoodMulticolorHeroes(count: number): Omit<Hero, 'location' | 'owner'
   return shuffleArray(multiColorHeroes).slice(0, count)
 }
 
+// Helper to get single-color heroes for mixed packs
+function getSingleColorHeroesForPacks(count: number): Omit<Hero, 'location' | 'owner'>[] {
+  // Filter for single-color heroes only
+  const singleColorHeroes = allHeroes.filter(h => h.colors && h.colors.length === 1)
+  
+  // Return random selection from single-color heroes
+  return shuffleArray(singleColorHeroes).slice(0, count)
+}
+
 /**
  * Generate a mixed pack (all other packs)
  * Always generates exactly 15 cards total
  * 
- * Heroes in mixed packs: Only rare, good dual-color heroes (not weaker single-color heroes)
- * Distribution: At least 1 multicolor hero guaranteed per pack
+ * Heroes in mixed packs: 1 single-color hero + 1 multicolor hero (guaranteed)
+ * Distribution: 2 heroes, 4 artifacts, 4 spells, 5 units
  */
 export function generateMixedPack(
   packNumber: number,
   playerColors: Color[]
 ): RoguelikePack {
   // Pack contents: Always 15 cards total
-  // Distribution: 1 multicolor hero (guaranteed), 4 artifacts, 4 spells, 6 units
-  const heroCount = 1  // Changed from 2 to 1, always multicolor
+  // Distribution: 1 single-color hero + 1 multicolor hero, 4 artifacts, 4 spells, 5 units
+  const singleColorHeroCount = 1
+  const multiColorHeroCount = 1
   const artifactCount = 4
   const spellCount = 4
-  const unitCount = 6  // Increased from 5 to 6 to maintain 15 total
+  const unitCount = 5  // Reduced from 6 to 5 to maintain 15 total with 2 heroes
   
-  // Get 1 good multicolor hero (not skewed toward player colors)
-  const heroes = getGoodMulticolorHeroes(heroCount)
+  // Get 1 single-color hero and 1 multicolor hero (not skewed toward player colors)
+  const singleColorHeroes = getSingleColorHeroesForPacks(singleColorHeroCount)
+  const multiColorHeroes = getGoodMulticolorHeroes(multiColorHeroCount)
+  const heroes = [...singleColorHeroes, ...multiColorHeroes]
+  
   const artifacts = getWeightedCards(allArtifacts, playerColors, artifactCount)
   const spells = getWeightedCards(allSpells, playerColors, spellCount)
   const units = getWeightedCards(allCards, playerColors, unitCount)

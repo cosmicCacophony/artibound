@@ -76,7 +76,7 @@ export interface Item {
   // Special abilities (for future implementation)
   hasActivatedAbility?: boolean
   activatedAbilityDescription?: string
-  specialEffects?: string[] // e.g., ['cleave', 'siege', 'regeneration', 'taunt', 'retaliate', 'tower_armor', 'create_unit', 'refresh_cooldowns']
+  specialEffects?: string[] // e.g., ['cleave', 'siege', 'regeneration', 'taunt', 'retaliate', 'tower_armor', 'create_unit', 'refresh_cooldowns', 'barrier']
 }
 
 export type BattlefieldId = 'battlefieldA' | 'battlefieldB'
@@ -175,6 +175,12 @@ export interface GameMetadata {
   // Stunned heroes: Record of hero ID -> boolean (stunned heroes don't deal combat damage, only receive it)
   // Using Record instead of Set for JSON serialization
   stunnedHeroes: Record<string, boolean>
+  // Barrier state: Track which units have barrier (damage immunity for one turn)
+  // Record<cardId, expirationTurn> - barrier expires at the specified turn
+  barrierUnits: Record<string, number>
+  // Cursed units: Track which units are cursed (stunned until opponent pays mana to remove)
+  // Record<cardId, manaCost> - the mana cost to remove the curse
+  cursedUnits: Record<string, number>
   // Turn 1 deployment state: Track turn 1 deployment phase (Artifact-style counter-deployment)
   // 'p1_lane1' -> Player 1 deploys hero to lane 1 (battlefieldA)
   // 'p2_lane1' -> Player 2 can counter-deploy to lane 1 (battlefieldA)
@@ -208,6 +214,7 @@ export type HeroAbilityEffectType =
   | 'move_cross_battlefield' // Move hero across battlefields
   | 'rune_to_damage' // Spend runes to deal tower damage (combo payoff)
   | 'sacrifice_unit' // Sacrifice a unit for effect
+  | 'shadowfiend_ability' // Shadowfiend: deal 1 damage per counter to random enemy unit
   | 'custom' // Custom effect
 
 export type HeroAbilityTrigger = 
@@ -377,6 +384,8 @@ export interface SpellCard extends BaseCard {
   description: string // Flavor text describing the spell
   initiative?: boolean // Does this spell give initiative (like Artifact)?
   refundMana?: number // Mana to refund after casting (for "free spell" mechanic inspired by Urza block)
+  // Additional costs (Black sacrifice theme)
+  discardCost?: number // Discard N random cards from hand as additional cost (e.g., Murder requires discarding 1 card)
 }
 
 export interface ItemCard extends BaseCard {
@@ -403,6 +412,9 @@ export type ArtifactEffectType =
   | 'token_generation' // Spawns tokens each turn
   | 'equipment' // Can be attached to units
   | 'saga' // Saga-like artifact with multiple chapters
+  | 'archetype_tracker' // Tracks archetype-specific conditions (stuns, mighty units, etc.)
+  | 'spell_book' // Blue spell book artifact with modal choices
+  | 'scry_artifact' // Artifact that provides scry effect each turn
 
 export interface ArtifactCard extends BaseCard {
   cardType: 'artifact'
@@ -410,6 +422,7 @@ export interface ArtifactCard extends BaseCard {
   owner: PlayerId
   effectType: ArtifactEffectType
   effectValue: number // Value for the effect (e.g., +1 attack, +1 mana, etc.)
+  tempManaGeneration?: number // For rune_generation artifacts: amount of temporary mana generated per turn
   // Equipment-specific fields
   attachedToUnitId?: string // ID of unit this equipment is attached to (undefined if in base)
   equipCost?: number // Mana cost to re-equip after unit dies
@@ -417,7 +430,7 @@ export interface ArtifactCard extends BaseCard {
     attack?: number
     health?: number
     maxHealth?: number
-    abilities?: string[] // e.g., ['cleave', 'taunt', 'flying']
+    abilities?: string[] // e.g., ['cleave', 'taunt', 'flying', 'barrier']
   }
   // Saga-specific fields
   sagaCounters?: number // Current chapter number (1, 2, or 3). Artifact is destroyed when it reaches 3
@@ -532,7 +545,7 @@ export interface GameState {
 }
 
 export const BATTLEFIELD_SLOT_LIMIT = 5
-export const TOWER_HP = 20
+export const TOWER_HP = 30
 export const NEXUS_HP = 30
 export const STARTING_GOLD = 5
 

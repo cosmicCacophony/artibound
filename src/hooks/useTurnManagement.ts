@@ -370,17 +370,31 @@ export function useTurnManagement() {
       if (isCurrentlyPlayed) {
         // Unmarking card - just remove the visual indicator
         delete newPlayedSpells[card.id]
+        return {
+          ...prev,
+          metadata: {
+            ...prev.metadata,
+            playedSpells: newPlayedSpells,
+          },
+        }
       } else {
-        // Marking card as played - just add the visual indicator (no mana cost, no initiative change)
+        // Marking card as played - pass action and initiative to opponent
         newPlayedSpells[card.id] = true
-      }
-      
-      return {
-        ...prev,
-        metadata: {
-          ...prev.metadata,
-          playedSpells: newPlayedSpells,
-        },
+        
+        // Pass action and initiative to opponent (same as hero deployment)
+        const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
+        
+        return {
+          ...prev,
+          metadata: {
+            ...prev.metadata,
+            playedSpells: newPlayedSpells,
+            actionPlayer: otherPlayer,
+            initiativePlayer: otherPlayer,
+            player1Passed: false,
+            player2Passed: false,
+          },
+        }
       }
     })
   }, [setGameState])
@@ -619,16 +633,18 @@ export function useTurnManagement() {
       // 1. Clear temporary runes from previous turn
       // 2. Generate new temporary runes from seals
       // 3. Generate runes from artifacts in base with rune_generation effect
+      // 4. Generate temporary mana from rune generator artifacts
       const clearAndGenerateRunes = (
         pool: import('../game/types').RunePool, 
         seals: import('../game/types').Seal[],
         playerBase: import('../game/types').Card[]
-      ) => {
+      ): { updatedPool: import('../game/types').RunePool; tempMana: number } => {
         // Generate runes from seals
         const sealRunes = seals.map(seal => seal.color)
         
         // Generate runes from artifacts in base with rune_generation effect
         const artifactRunes: import('../game/types').RuneColor[] = []
+        let tempMana = 0
         const artifacts = playerBase.filter(card => card.cardType === 'artifact') as import('../game/types').ArtifactCard[]
         
         artifacts.forEach(artifact => {
@@ -653,21 +669,29 @@ export function useTurnManagement() {
                 artifactRunes.push(artifact.colors[0] as import('../game/types').RuneColor)
               }
             }
+            
+            // Add temporary mana from generator
+            if (artifact.tempManaGeneration && artifact.tempManaGeneration > 0) {
+              tempMana += artifact.tempManaGeneration
+            }
           }
         })
         
         return {
-          runes: pool.runes, // Permanent runes persist
-          temporaryRunes: [...sealRunes, ...artifactRunes], // Seal and artifact runes replace previous temporary runes
+          updatedPool: {
+            runes: pool.runes, // Permanent runes persist
+            temporaryRunes: [...sealRunes, ...artifactRunes], // Seal and artifact runes replace previous temporary runes
+          },
+          tempMana,
         }
       }
       
-      const updatedP1RunePool = clearAndGenerateRunes(
+      const p1RuneResult = clearAndGenerateRunes(
         prev.metadata.player1RunePool,
         prev.metadata.player1Seals || [],
         prev.player1Base
       )
-      const updatedP2RunePool = clearAndGenerateRunes(
+      const p2RuneResult = clearAndGenerateRunes(
         prev.metadata.player2RunePool,
         prev.metadata.player2Seals || [],
         prev.player2Base
@@ -689,9 +713,9 @@ export function useTurnManagement() {
           currentTurn: newTurn,
           // Start new turn in deploy phase
           currentPhase: 'deploy',
-          // Restore mana to max for both players
-          player1Mana: newPlayer1MaxMana,
-          player2Mana: newPlayer2MaxMana,
+          // Restore mana to max for both players + temporary mana from generators
+          player1Mana: newPlayer1MaxMana + p1RuneResult.tempMana,
+          player2Mana: newPlayer2MaxMana + p2RuneResult.tempMana,
           player1MaxMana: newPlayer1MaxMana,
           player2MaxMana: newPlayer2MaxMana,
           // Both players get 5 gold at the start of each turn
@@ -710,8 +734,8 @@ export function useTurnManagement() {
           player1HeroesDeployedThisTurn: 0,
           player2HeroesDeployedThisTurn: 0,
           // Update rune pools (clear temp, generate from seals)
-          player1RunePool: updatedP1RunePool,
-          player2RunePool: updatedP2RunePool
+          player1RunePool: p1RuneResult.updatedPool,
+          player2RunePool: p2RuneResult.updatedPool
         },
       }
     })

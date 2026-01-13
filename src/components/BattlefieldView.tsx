@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Hero, HeroAbility } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { useDeployment } from '../hooks/useDeployment'
@@ -19,7 +19,9 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     gameState, 
     selectedCard, 
     selectedCardId, 
-    setSelectedCardId, 
+    setSelectedCardId,
+    draggedCardId,
+    setDraggedCardId,
     metadata,
     getAvailableSlots,
     setGameState,
@@ -31,7 +33,16 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     setPlayer2SidebarCards,
   } = useGameContext()
   const [editingHeroId, setEditingHeroId] = useState<string | null>(null)
+  // Track which slot is currently being dragged over (player + slotNum)
+  const [dragOverSlot, setDragOverSlot] = useState<{ player: 'player1' | 'player2', slotNum: number } | null>(null)
   const { handleDeploy, handleChangeSlot, handleRemoveFromBattlefield, handleEquipItem } = useDeployment()
+  
+  // Clear drag over state when drag ends
+  useEffect(() => {
+    if (!draggedCardId) {
+      setDragOverSlot(null)
+    }
+  }, [draggedCardId])
   const { handleDecreaseHealth, handleIncreaseHealth, handleDecreaseAttack, handleIncreaseAttack } = useCombat()
   const { handleAbilityClick } = useHeroAbilities()
   const { handleToggleStun, handleSpawnCreep } = useTurnManagement()
@@ -75,30 +86,465 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
   const renderSlot = (slotNum: number, player: 'player1' | 'player2') => {
     const cardInSlot = battlefield[player].find(c => c.slot === slotNum)
     const isSelected = selectedCard && selectedCard.id === cardInSlot?.id
-    const canMoveHere = selectedCard && selectedCard.owner === player && 
-      (selectedCard.location === battlefieldId || selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB' || selectedCard.location === 'hand' || selectedCard.location === 'base' || selectedCard.location === 'deployZone')
+    
+    // Get dragged card if any - also check battlefields in case card is being moved
+    const draggedCard = draggedCardId ? 
+      [...gameState.player1Hand, ...gameState.player2Hand, ...gameState.player1Base, ...gameState.player2Base, ...gameState.player1DeployZone, ...gameState.player2DeployZone, ...gameState.battlefieldA.player1, ...gameState.battlefieldA.player2, ...gameState.battlefieldB.player1, ...gameState.battlefieldB.player2].find(c => c.id === draggedCardId) :
+      null
+    
+    // Check if we can move here - prioritize dragged card if dragging, otherwise selected card
+    const canMoveHere = draggedCardId && draggedCard
+      ? (draggedCard.owner === player && 
+          (draggedCard.location === 'hand' || draggedCard.location === 'base' || draggedCard.location === 'deployZone' || 
+           draggedCard.location === battlefieldId || draggedCard.location === 'battlefieldA' || draggedCard.location === 'battlefieldB'))
+      : (selectedCard && selectedCard.owner === player && 
+          (selectedCard.location === battlefieldId || selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB' || selectedCard.location === 'hand' || selectedCard.location === 'base' || selectedCard.location === 'deployZone'))
     
     // Check if we can equip an item to a hero
-    const canEquipItem = selectedCard && 
+    const canEquipItem = (selectedCard && 
       selectedCard.cardType === 'item' && 
       selectedCard.owner === player &&
       cardInSlot && 
       cardInSlot.cardType === 'hero' &&
-      cardInSlot.owner === player
+      cardInSlot.owner === player) ||
+      (draggedCard &&
+        draggedCard.cardType === 'item' &&
+        draggedCard.owner === player &&
+        cardInSlot &&
+        cardInSlot.cardType === 'hero' &&
+        cardInSlot.owner === player)
     
     const playerColor = player === 'player1' ? '#f44336' : '#4a90e2'
     const playerBgColor = player === 'player1' ? '#ffebee' : '#e3f2fd'
+    // Check if this specific slot is being dragged over - highlight if dragging and over this slot
+    // Also check dataTransfer as fallback since draggedCardId might not be set in context yet
+    const isDragOver = dragOverSlot?.player === player && dragOverSlot?.slotNum === slotNum
+
+    const handleDrop = (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      
+      console.log(`[BattlefieldView] handleDrop - Slot ${slotNum}, Player ${player}`)
+      console.log(`[BattlefieldView] handleDrop - draggedCardId from context:`, draggedCardId)
+      console.log(`[BattlefieldView] handleDrop - dataTransfer types:`, Array.from(e.dataTransfer.types))
+      
+      // Try both formats
+      let cardId = e.dataTransfer.getData('cardId')
+      console.log(`[BattlefieldView] handleDrop - cardId from 'cardId':`, cardId)
+      if (!cardId) {
+        cardId = e.dataTransfer.getData('text/plain')
+        console.log(`[BattlefieldView] handleDrop - cardId from 'text/plain':`, cardId)
+      }
+      if (!cardId) {
+        console.log(`[BattlefieldView] handleDrop - ERROR: No cardId found in dataTransfer!`)
+        return
+      }
+      
+      console.log(`[BattlefieldView] handleDrop - Found cardId:`, cardId)
+      
+      // Find the card being dropped
+      const allCards = [
+        ...gameState.player1Hand,
+        ...gameState.player2Hand,
+        ...gameState.player1Base,
+        ...gameState.player2Base,
+        ...gameState.player1DeployZone,
+        ...gameState.player2DeployZone,
+        ...gameState.battlefieldA.player1,
+        ...gameState.battlefieldA.player2,
+        ...gameState.battlefieldB.player1,
+        ...gameState.battlefieldB.player2,
+      ]
+      const droppedCard = allCards.find(c => c.id === cardId)
+      
+      console.log(`[BattlefieldView] handleDrop - droppedCard found:`, droppedCard?.name, 'owner:', droppedCard?.owner, 'expected player:', player)
+      
+      if (!droppedCard) {
+        console.log(`[BattlefieldView] handleDrop - ERROR: droppedCard not found!`)
+        return
+      }
+      
+      // Check if equipping item to hero
+      if (droppedCard.cardType === 'item' && cardInSlot && cardInSlot.cardType === 'hero' && droppedCard.owner === player && cardInSlot.owner === player) {
+        handleEquipItem(cardInSlot as Hero, droppedCard as import('../game/types').ItemCard, battlefieldId)
+        setDraggedCardId(null)
+        return
+      }
+      
+      // Use the same deployment logic as clicking - but do it directly since we have the card
+      if (droppedCard.owner === player) {
+        console.log(`[BattlefieldView] handleDrop - Card owner matches, proceeding with deployment`)
+        console.log(`[BattlefieldView] handleDrop - droppedCard.location:`, droppedCard.location, 'battlefieldId:', battlefieldId)
+        console.log(`[BattlefieldView] handleDrop - droppedCard.cardType:`, droppedCard.cardType, 'currentPhase:', metadata.currentPhase)
+        
+        setDraggedCardId(null)
+        
+          // For heroes, ALWAYS handle deployment directly - we have the card, no need to wait for context
+          if (droppedCard.cardType === 'hero') {
+            console.log(`[BattlefieldView] handleDrop - Taking direct deployment path for hero (phase: ${metadata.currentPhase})`)
+            
+            const isDeployPhase = metadata.currentPhase === 'deploy'
+            const isPlayPhase = metadata.currentPhase === 'play'
+            
+            // Phase validation
+            if (!isDeployPhase && !isPlayPhase) {
+              alert(`Cannot deploy during ${metadata.currentPhase} phase!`)
+              return
+            }
+            
+            const battlefieldKey = battlefieldId as 'battlefieldA' | 'battlefieldB'
+            const playerKey = player
+            
+            // Turn 1 deployment sequence validation (same as useDeployment.ts)
+            if (metadata.currentTurn === 1) {
+              const deploymentPhase = metadata.turn1DeploymentPhase || 'p1_lane1'
+              
+              if (deploymentPhase === 'p1_lane1') {
+                // Player 1 deploys hero to lane 1 (battlefieldA)
+                if (playerKey !== 'player1') {
+                  alert('Player 1 must deploy first hero to lane 1 (Battlefield A)')
+                  return
+                }
+                if (battlefieldKey !== 'battlefieldA') {
+                  alert('Player 1 must deploy to lane 1 (Battlefield A) first')
+                  return
+                }
+              } else if (deploymentPhase === 'p2_lane1') {
+                // Player 2 can counter-deploy to lane 1 (battlefieldA) OR pass
+                // If deploying, must be to battlefieldA
+                if (playerKey === 'player2' && battlefieldKey !== 'battlefieldA') {
+                  alert('Player 2 can only counter-deploy to lane 1 (Battlefield A) or pass')
+                  return
+                }
+                // If player 1 tries to deploy (shouldn't happen), block it
+                if (playerKey === 'player1') {
+                  alert('Player 2 can counter-deploy to lane 1 or pass')
+                  return
+                }
+              } else if (deploymentPhase === 'p2_lane2') {
+                // Player 2 deploys hero to lane 2 (battlefieldB)
+                if (playerKey !== 'player2') {
+                  alert('Player 2 must deploy hero to lane 2 (Battlefield B)')
+                  return
+                }
+                if (battlefieldKey !== 'battlefieldB') {
+                  alert('Player 2 must deploy to lane 2 (Battlefield B)')
+                  return
+                }
+              } else if (deploymentPhase === 'p1_lane2') {
+                // Player 1 can counter-deploy to lane 2 (battlefieldB) OR pass
+                // If deploying, must be to battlefieldB
+                if (playerKey === 'player1' && battlefieldKey !== 'battlefieldB') {
+                  alert('Player 1 can only counter-deploy to lane 2 (Battlefield B) or pass')
+                  return
+                }
+                // If player 2 tries to deploy (shouldn't happen), block it
+                if (playerKey === 'player2') {
+                  alert('Player 1 can counter-deploy to lane 2 or pass')
+                  return
+                }
+              } else if (deploymentPhase === 'complete') {
+                // Turn 1 deployment complete - normal action rules apply
+                // Check action
+                if (metadata.actionPlayer !== playerKey) {
+                  alert('It\'s not your turn to act!')
+                  return
+                }
+              }
+            } else {
+              // Normal turn (not turn 1) - check action
+              if (metadata.actionPlayer !== playerKey) {
+                alert('It\'s not your turn to act!')
+                return
+              }
+            }
+            
+            // Check if hero is on cooldown (only for deploy phase from base/deployZone)
+            if (isDeployPhase && (droppedCard.location === 'base' || droppedCard.location === 'deployZone')) {
+              const cooldownCounter = metadata.deathCooldowns[droppedCard.id]
+              if (cooldownCounter !== undefined && cooldownCounter > 0) {
+                alert(`Hero is on cooldown! ${cooldownCounter} turn${cooldownCounter !== 1 ? 's' : ''} remaining.`)
+                return
+              }
+            }
+            
+            console.log(`[BattlefieldView] handleDrop - Directly deploying hero (phase: ${metadata.currentPhase})`)
+            
+            // Directly update game state for hero deployment
+            setGameState(prev => {
+              const battlefield = prev[battlefieldKey][playerKey]
+              
+              // Check if there's an existing hero in this slot
+              const existingHeroInSlot = battlefield.find(c => c.slot === slotNum && c.cardType === 'hero') as Hero | undefined
+              
+              // Remove deploying hero from wherever it is (hand, base, deploy zone, or other battlefield)
+              const newHand = (prev[`${playerKey}Hand` as keyof typeof prev] as Card[])
+                .filter(c => c.id !== droppedCard.id)
+              const newBase = (prev[`${playerKey}Base` as keyof typeof prev] as Card[])
+                .filter(c => c.id !== droppedCard.id)
+              const newDeployZone = (prev[`${playerKey}DeployZone` as keyof typeof prev] as Card[])
+                .filter(c => c.id !== droppedCard.id)
+              
+              // Also remove from other battlefield if it's there
+              const otherBattlefieldKey = battlefieldKey === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
+              const otherBattlefield = prev[otherBattlefieldKey][playerKey].filter(c => c.id !== droppedCard.id)
+              
+              // If there's an existing hero, bounce it to base with 1 cooldown
+              let updatedBase = newBase
+              let updatedCooldowns = { ...prev.metadata.deathCooldowns }
+              
+              if (existingHeroInSlot) {
+                const bouncedHero = {
+                  ...existingHeroInSlot,
+                  location: 'base' as const,
+                  slot: undefined,
+                }
+                updatedBase = [...updatedBase, bouncedHero]
+                updatedCooldowns[existingHeroInSlot.id] = 1
+              }
+              
+              // Add runes from the deploying hero
+              const heroColors = (droppedCard as Hero).colors || []
+              const currentRunePool = prev.metadata[`${playerKey}RunePool` as keyof typeof prev.metadata] as any
+              const updatedRunePool = {
+                runes: [...currentRunePool.runes, ...heroColors],
+              }
+              
+              // Remove existing hero from battlefield if bounced
+              const updatedBattlefield = battlefield
+                .filter(c => c.id !== droppedCard.id && (existingHeroInSlot ? c.id !== existingHeroInSlot.id : true))
+              
+              // Add the deploying hero to the battlefield
+              const deployedHero = {
+                ...droppedCard,
+                location: battlefieldKey,
+                slot: slotNum,
+              } as Hero
+              
+              // Handle turn 1 deployment phase updates (EXACT same logic as useDeployment.ts)
+              let newDeploymentPhase = prev.metadata.turn1DeploymentPhase || 'p1_lane1'
+              let updatedActionPlayer = prev.metadata.actionPlayer
+              let updatedInitiativePlayer = prev.metadata.initiativePlayer
+              
+              if (prev.metadata.currentTurn === 1) {
+                const deploymentPhase = prev.metadata.turn1DeploymentPhase || 'p1_lane1'
+                
+                if (deploymentPhase === 'p1_lane1') {
+                  // Player 1 deploys hero to lane 1 (battlefieldA)
+                  // After deployment, Player 2 can counter-deploy to lane 1
+                  newDeploymentPhase = 'p2_lane1'
+                } else if (deploymentPhase === 'p2_lane1') {
+                  // Player 2 can counter-deploy to lane 1 (battlefieldA) OR pass
+                  // If deploying, move to next phase
+                  if (playerKey === 'player2') {
+                    newDeploymentPhase = 'p2_lane2'
+                  }
+                } else if (deploymentPhase === 'p2_lane2') {
+                  // Player 2 deploys hero to lane 2 (battlefieldB)
+                  // After deployment, Player 1 can counter-deploy to lane 2
+                  newDeploymentPhase = 'p1_lane2'
+                } else if (deploymentPhase === 'p1_lane2') {
+                  // Player 1 can counter-deploy to lane 2 (battlefieldB) OR pass
+                  // If deploying, deployment is complete
+                  if (playerKey === 'player1') {
+                    newDeploymentPhase = 'complete'
+                  }
+                }
+                
+                // When deployment is complete, set action and initiative
+                if (newDeploymentPhase === 'complete') {
+                  updatedActionPlayer = 'player1' // Player 1 gets action after deployment
+                  updatedInitiativePlayer = 'player1' // Player 1 also gets initiative
+                } else {
+                  // During deployment, no action/initiative (players are deploying, not acting)
+                  updatedActionPlayer = null
+                  updatedInitiativePlayer = null
+                }
+              } else {
+                // Normal turn (not turn 1) - pass action/initiative to opponent
+                const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
+                updatedActionPlayer = otherPlayer
+                updatedInitiativePlayer = otherPlayer
+              }
+              
+              return {
+                ...prev,
+                [battlefieldKey]: {
+                  ...prev[battlefieldKey],
+                  [playerKey]: [...updatedBattlefield, deployedHero].sort((a, b) => (a.slot || 0) - (b.slot || 0)),
+                },
+                [`${playerKey}Hand`]: newHand,
+                [`${playerKey}Base`]: updatedBase,
+                [`${playerKey}DeployZone`]: newDeployZone,
+                [otherBattlefieldKey]: {
+                  ...prev[otherBattlefieldKey],
+                  [playerKey]: otherBattlefield,
+                },
+                metadata: {
+                  ...prev.metadata,
+                  [`${playerKey}RunePool`]: updatedRunePool,
+                  deathCooldowns: updatedCooldowns,
+                  [`${playerKey}HeroesDeployedThisTurn`]: ((prev.metadata[`${playerKey}HeroesDeployedThisTurn` as keyof typeof prev.metadata] as number) || 0) + 1,
+                  turn1DeploymentPhase: newDeploymentPhase,
+                  actionPlayer: updatedActionPlayer,
+                  initiativePlayer: updatedInitiativePlayer,
+                  player1Passed: false,
+                  player2Passed: false,
+                  // Ensure phase is 'play' when deployment completes
+                  currentPhase: newDeploymentPhase === 'complete' ? 'play' : prev.metadata.currentPhase,
+                },
+              }
+            })
+            
+            setSelectedCardId(null)
+            return
+          }
+        
+        // For other cases (play phase, or non-hero cards), we still need to use handleDeploy
+        // But first ensure selectedCard is set by setting selectedCardId and waiting
+        setSelectedCardId(cardId)
+        setDraggedCardId(null)
+        
+        // Force a re-render by using a callback that checks if selectedCard is available
+        // We'll use a ref-like approach with multiple attempts
+        let attempts = 0
+        const tryDeploy = () => {
+          attempts++
+          // Check if we can access selectedCard now - but we can't from closure
+          // Instead, just try calling handleDeploy - if it fails silently, we'll retry
+          console.log(`[BattlefieldView] handleDrop - Attempt ${attempts} to deploy`)
+          
+          // Actually, let's just set selectedCardId and immediately call handleDeploy
+          // If it fails, we'll see in the logs
+          if (droppedCard.location === battlefieldId) {
+            handleChangeSlot(droppedCard, slotNum, battlefieldId)
+          } else {
+            handleDeploy(battlefieldId, slotNum)
+          }
+          
+          // If we've tried a few times and it's still not working, give up
+          if (attempts < 3) {
+            setTimeout(tryDeploy, 50)
+          }
+        }
+        
+        // Start trying immediately
+        setTimeout(tryDeploy, 50)
+      } else {
+        console.log(`[BattlefieldView] handleDrop - ERROR: Card owner doesn't match! droppedCard.owner:`, droppedCard.owner, 'expected:', player)
+      }
+    }
+
+    const handleDragOver = (e: React.DragEvent) => {
+      e.preventDefault() // Always prevent default to allow drop
+      e.stopPropagation()
+      
+      // Note: dataTransfer.getData() can't be read during dragover (browser security)
+      // We must rely on draggedCardId from context
+      console.log(`[BattlefieldView] handleDragOver - Slot ${slotNum}, Player ${player}, draggedCardId:`, draggedCardId, 'draggedCard:', draggedCard?.name, 'owner:', draggedCard?.owner, 'dragOverSlot:', dragOverSlot)
+      
+      // If we have a dragged card that belongs to this player, allow drop
+      if (draggedCardId && draggedCard?.owner === player) {
+        e.dataTransfer.dropEffect = 'move'
+        // Always update drag over state when dragging over this slot
+        if (dragOverSlot?.player !== player || dragOverSlot?.slotNum !== slotNum) {
+          console.log(`[BattlefieldView] handleDragOver - Setting dragOverSlot to ${player}, ${slotNum}`)
+          setDragOverSlot({ player, slotNum })
+        }
+      } else if (draggedCardId) {
+        // We're dragging something, but it doesn't belong to this player
+        console.log(`[BattlefieldView] handleDragOver - Card doesn't belong to this player`)
+        e.dataTransfer.dropEffect = 'none'
+        // Clear drag over if it was set
+        if (dragOverSlot?.player === player && dragOverSlot?.slotNum === slotNum) {
+          setDragOverSlot(null)
+        }
+      } else {
+        // No drag in progress, but allow the event to continue (might be from another component)
+        console.log(`[BattlefieldView] handleDragOver - No draggedCardId in context`)
+        e.dataTransfer.dropEffect = 'none'
+      }
+    }
+    
+    const handleDragEnter = (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      
+      // Note: dataTransfer.getData() can't be read during dragenter (browser security)
+      // We must rely on draggedCardId from context
+      // However, if draggedCardId isn't set yet (async state update), check if dataTransfer has the types
+      // If it has 'cardId' or 'text/plain' types, we know a card is being dragged
+      const hasCardData = e.dataTransfer.types.includes('cardId') || e.dataTransfer.types.includes('text/plain')
+      console.log(`[BattlefieldView] handleDragEnter - Slot ${slotNum}, Player ${player}, draggedCardId:`, draggedCardId, 'draggedCard:', draggedCard?.name, 'hasCardData:', hasCardData, 'types:', Array.from(e.dataTransfer.types))
+      
+      // Set drag over state if:
+      // 1. We have draggedCardId in context AND it belongs to this player, OR
+      // 2. We detect card data in dataTransfer (will validate on drop)
+      if (draggedCardId && draggedCard?.owner === player) {
+        console.log(`[BattlefieldView] handleDragEnter - Setting dragOverSlot (context has draggedCardId)`)
+        setDragOverSlot({ player, slotNum })
+      } else if (hasCardData && !draggedCardId) {
+        // Card is being dragged but context hasn't updated yet - set drag over optimistically
+        // Will be validated on drop
+        console.log(`[BattlefieldView] handleDragEnter - Setting dragOverSlot (optimistic, context not updated yet)`)
+        setDragOverSlot({ player, slotNum })
+      } else {
+        console.log(`[BattlefieldView] handleDragEnter - NOT setting dragOverSlot`)
+      }
+    }
+    
+    const handleDragLeave = (e: React.DragEvent) => {
+      // Only clear if we're actually leaving the slot element (not just moving to a child)
+      const currentTarget = e.currentTarget as HTMLElement
+      const relatedTarget = e.relatedTarget as HTMLElement | null
+      
+      // Check if relatedTarget is outside the current target
+      // If it's null or not a descendant, we're leaving
+      if (!relatedTarget || !currentTarget.contains(relatedTarget)) {
+        // Use requestAnimationFrame to check after DOM updates
+        requestAnimationFrame(() => {
+          // Verify mouse is actually outside the slot bounds
+          const rect = currentTarget.getBoundingClientRect()
+          // Use the last known mouse position from the event
+          const x = e.clientX || 0
+          const y = e.clientY || 0
+          
+          // Only clear if mouse is truly outside
+          if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+            if (dragOverSlot?.player === player && dragOverSlot?.slotNum === slotNum) {
+              setDragOverSlot(null)
+            }
+          }
+        })
+      }
+    }
 
     return (
       <div
         key={slotNum}
         style={{
           minHeight: '100px',
-          border: (canMoveHere || canEquipItem) ? `2px dashed ${playerColor}` : '1px solid #ddd',
+          border: isDragOver ? `3px solid ${playerColor}` : (canMoveHere || canEquipItem) ? `2px dashed ${playerColor}` : '1px solid #ddd',
           borderRadius: '4px',
           padding: '4px',
-          backgroundColor: (canMoveHere || canEquipItem) ? playerBgColor : '#f9f9f9',
+          backgroundColor: isDragOver ? playerBgColor : (canMoveHere || canEquipItem) ? '#f0f0f0' : '#f9f9f9',
           position: 'relative',
+          transition: 'all 0.2s',
+          width: '100%',
+          boxSizing: 'border-box',
+          boxShadow: isDragOver ? `0 0 10px ${playerColor}40` : 'none',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+        onDragEnter={handleDragEnter}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          handleDrop(e)
+          // Clear drag over state when dropping
+          setDragOverSlot(null)
         }}
         onClick={() => {
           // Check if equipping item to hero
@@ -121,32 +567,73 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
           }
         }}
       >
-        <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>Slot {slotNum}</div>
-        {cardInSlot ? (
-          <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
-            <HeroCard
-              card={cardInSlot}
-              onClick={(e) => handleCardClick(cardInSlot.id, e)}
-              isSelected={isSelected}
-              showStats={true}
-              onRemove={() => handleRemoveFromBattlefield(cardInSlot, battlefieldId)}
-              onDecreaseHealth={() => handleDecreaseHealth(cardInSlot)}
-              onIncreaseHealth={() => handleIncreaseHealth(cardInSlot)}
-              onDecreaseAttack={() => handleDecreaseAttack(cardInSlot)}
-              onIncreaseAttack={() => handleIncreaseAttack(cardInSlot)}
-              showCombatControls={true}
-              isDead={!!metadata.deathCooldowns[cardInSlot.id]}
-              isStunned={cardInSlot.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[cardInSlot.id])}
-              onToggleStun={cardInSlot.cardType === 'hero' ? () => handleToggleStun(cardInSlot) : undefined}
-              onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, cardInSlot.owner)}
-              onEditAbility={cardInSlot.cardType === 'hero' ? (heroId) => setEditingHeroId(heroId) : undefined}
-            />
-          </div>
-        ) : (
-          <div style={{ fontSize: '10px', color: '#ccc', textAlign: 'center', paddingTop: '20px' }}>
-            {canEquipItem ? 'Equip Item' : canMoveHere ? 'Drop here' : 'Empty'}
-          </div>
-        )}
+        <div 
+          style={{ 
+            fontSize: '10px', 
+            color: '#666', 
+            marginBottom: '2px',
+            pointerEvents: 'none', // Don't block drag events
+            userSelect: 'none',
+          }}
+        >
+          Slot {slotNum}
+        </div>
+        <div 
+          style={{ 
+            width: '100%', 
+            height: '100%',
+            minHeight: '80px',
+            position: 'relative',
+            flex: 1,
+          }}
+          onDragEnter={(e) => {
+            // Forward drag enter to parent - always forward, let parent decide
+            e.preventDefault()
+            e.stopPropagation()
+            handleDragEnter(e)
+          }}
+          onDragOver={(e) => {
+            // Allow drag events to bubble up to parent slot - always forward
+            e.preventDefault()
+            e.stopPropagation()
+            handleDragOver(e)
+          }}
+          onDrop={(e) => {
+            // Forward drop event to parent slot handler
+            // Call parent's handleDrop directly to avoid propagation issues
+            e.preventDefault()
+            e.stopPropagation()
+            console.log(`[BattlefieldView] Inner content div onDrop - forwarding to parent`)
+            handleDrop(e)
+            setDragOverSlot(null)
+          }}
+        >
+          {cardInSlot ? (
+            <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
+              <HeroCard
+                card={cardInSlot}
+                onClick={(e) => handleCardClick(cardInSlot.id, e)}
+                isSelected={isSelected}
+                showStats={true}
+                onRemove={() => handleRemoveFromBattlefield(cardInSlot, battlefieldId)}
+                onDecreaseHealth={() => handleDecreaseHealth(cardInSlot)}
+                onIncreaseHealth={() => handleIncreaseHealth(cardInSlot)}
+                onDecreaseAttack={() => handleDecreaseAttack(cardInSlot)}
+                onIncreaseAttack={() => handleIncreaseAttack(cardInSlot)}
+                showCombatControls={true}
+                isDead={!!metadata.deathCooldowns[cardInSlot.id]}
+                isStunned={cardInSlot.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[cardInSlot.id])}
+                onToggleStun={cardInSlot.cardType === 'hero' ? () => handleToggleStun(cardInSlot) : undefined}
+                onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, cardInSlot.owner)}
+                onEditAbility={cardInSlot.cardType === 'hero' ? (heroId) => setEditingHeroId(heroId) : undefined}
+              />
+            </div>
+          ) : (
+            <div style={{ fontSize: '10px', color: '#ccc', textAlign: 'center', paddingTop: '20px', pointerEvents: 'none' }}>
+              {canEquipItem ? 'Equip Item' : canMoveHere ? 'Drop here' : 'Empty'}
+            </div>
+          )}
+        </div>
       </div>
     )
   }
