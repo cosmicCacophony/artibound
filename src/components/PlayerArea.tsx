@@ -12,9 +12,11 @@ import { createCardFromTemplate } from '../game/sampleData'
 
 interface PlayerAreaProps {
   player: PlayerId
+  mode?: 'expanded' | 'collapsed'
+  showDebugControls?: boolean
 }
 
-export function PlayerArea({ player }: PlayerAreaProps) {
+export function PlayerArea({ player, mode = 'expanded', showDebugControls = false }: PlayerAreaProps) {
   const { 
     gameState,
     setGameState,
@@ -52,6 +54,25 @@ export function PlayerArea({ player }: PlayerAreaProps) {
   const playerBgColor = player === 'player1' ? '#ffe4e1' : '#e0f6ff'
   const playerTitleColor = player === 'player1' ? '#8b0000' : '#0066cc'
   const playerManaColor = player === 'player1' ? '#8b0000' : '#0066cc'
+
+  if (mode === 'collapsed') {
+    return (
+      <div className="player-zone__collapsed" style={{ borderColor: playerColor }}>
+        <div className="player-zone__collapsed-title" style={{ color: playerTitleColor }}>
+          {player === 'player1' ? 'P1' : 'P2'} {metadata.actionPlayer === player && <span title="Has Action">🎯</span>}
+          {metadata.initiativePlayer === player && <span title="Has Initiative">⚡</span>}
+        </div>
+        <div className="player-zone__collapsed-stats">
+          <span>Base {playerBase.length}</span>
+          <span>Deploy {playerDeployZone.length}</span>
+          <span>Hand {playerHand.length}</span>
+          <span>💎 {playerMana}/{playerMaxMana}</span>
+          <span>💰 {playerGold}</span>
+          <span>❤️ {playerNexusHP}</span>
+        </div>
+      </div>
+    )
+  }
 
   const moveCardToBase = (card: Card) => {
     const isHero = card.cardType === 'hero'
@@ -153,15 +174,7 @@ export function PlayerArea({ player }: PlayerAreaProps) {
   }
 
   return (
-    <div
-      style={{
-        border: `1px solid ${playerColor}`,
-        borderRadius: '2px',
-        padding: '1px 2px',
-        marginBottom: '0',
-        backgroundColor: 'transparent',
-      }}
-    >
+    <div className="player-zone__expanded" style={{ borderColor: playerColor }}>
       {/* For Player 1, put resources at bottom; for Player 2, keep at top */}
       {player === 'player2' && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0', flexWrap: 'wrap', gap: '2px' }}>
@@ -191,54 +204,58 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                   <span style={{ color: '#4caf50', marginLeft: '2px' }}>(+{playerMana - playerMaxMana})</span>
                 )}
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setGameState(prev => ({
-                    ...prev,
-                    metadata: {
-                      ...prev.metadata,
-                      [`${player}Mana`]: Math.max(0, (prev.metadata[`${player}Mana` as keyof typeof prev.metadata] as number) - 1),
-                    },
-                  }))
-                }}
-                style={{
-                  padding: '2px 4px',
-                  backgroundColor: '#f44336',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '2px',
-                  cursor: 'pointer',
-                  fontSize: '9px',
-                }}
-                title="Decrease mana"
-              >
-                -1
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setGameState(prev => ({
-                    ...prev,
-                    metadata: {
-                      ...prev.metadata,
-                      [`${player}Mana`]: (prev.metadata[`${player}Mana` as keyof typeof prev.metadata] as number) + 1,
-                    },
-                  }))
-                }}
-                style={{
-                  padding: '2px 4px',
-                  backgroundColor: '#4caf50',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '2px',
-                  cursor: 'pointer',
-                  fontSize: '9px',
-                }}
-                title="Increase mana"
-              >
-                +1
-              </button>
+              {showDebugControls && (
+                <>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setGameState(prev => ({
+                        ...prev,
+                        metadata: {
+                          ...prev.metadata,
+                          [`${player}Mana`]: Math.max(0, (prev.metadata[`${player}Mana` as keyof typeof prev.metadata] as number) - 1),
+                        },
+                      }))
+                    }}
+                    style={{
+                      padding: '2px 4px',
+                      backgroundColor: '#f44336',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '2px',
+                      cursor: 'pointer',
+                      fontSize: '9px',
+                    }}
+                    title="Decrease mana"
+                  >
+                    -1
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setGameState(prev => ({
+                        ...prev,
+                        metadata: {
+                          ...prev.metadata,
+                          [`${player}Mana`]: (prev.metadata[`${player}Mana` as keyof typeof prev.metadata] as number) + 1,
+                        },
+                      }))
+                    }}
+                    style={{
+                      padding: '2px 4px',
+                      backgroundColor: '#4caf50',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '2px',
+                      cursor: 'pointer',
+                      fontSize: '9px',
+                    }}
+                    title="Increase mana"
+                  >
+                    +1
+                  </button>
+                </>
+              )}
             </div>
             <div style={{ fontSize: '10px', fontWeight: 'bold' }}>💰 {playerGold}</div>
             <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#d32f2f' }}>❤️ {playerNexusHP}</div>
@@ -760,54 +777,58 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                 <span style={{ color: '#4caf50', marginLeft: '2px' }}>(+{playerMana - playerMaxMana})</span>
               )}
             </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setGameState(prev => ({
-                  ...prev,
-                  metadata: {
-                    ...prev.metadata,
-                    player1Mana: Math.max(0, prev.metadata.player1Mana - 1),
-                  },
-                }))
-              }}
-              style={{
-                padding: '2px 4px',
-                backgroundColor: '#f44336',
-                color: 'white',
-                border: 'none',
-                borderRadius: '2px',
-                cursor: 'pointer',
-                fontSize: '9px',
-              }}
-              title="Decrease mana"
-            >
-              -1
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setGameState(prev => ({
-                  ...prev,
-                  metadata: {
-                    ...prev.metadata,
-                    player1Mana: prev.metadata.player1Mana + 1,
-                  },
-                }))
-              }}
-              style={{
-                padding: '2px 4px',
-                backgroundColor: '#4caf50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '2px',
-                cursor: 'pointer',
-                fontSize: '9px',
-              }}
-              title="Increase mana"
-            >
-              +1
-            </button>
+            {showDebugControls && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setGameState(prev => ({
+                      ...prev,
+                      metadata: {
+                        ...prev.metadata,
+                        player1Mana: Math.max(0, prev.metadata.player1Mana - 1),
+                      },
+                    }))
+                  }}
+                  style={{
+                    padding: '2px 4px',
+                    backgroundColor: '#f44336',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '2px',
+                    cursor: 'pointer',
+                    fontSize: '9px',
+                  }}
+                  title="Decrease mana"
+                >
+                  -1
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setGameState(prev => ({
+                      ...prev,
+                      metadata: {
+                        ...prev.metadata,
+                        player1Mana: prev.metadata.player1Mana + 1,
+                      },
+                    }))
+                  }}
+                  style={{
+                    padding: '2px 4px',
+                    backgroundColor: '#4caf50',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '2px',
+                    cursor: 'pointer',
+                    fontSize: '9px',
+                  }}
+                  title="Increase mana"
+                >
+                  +1
+                </button>
+              </>
+            )}
           </div>
           <div style={{ fontSize: '10px', fontWeight: 'bold' }}>💰 {playerGold}</div>
           <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#d32f2f' }}>❤️ {playerNexusHP}</div>

@@ -1,97 +1,16 @@
 import { useState, useEffect } from 'react'
-import { Card, Hero, HeroAbility, GameMetadata, GameState } from '../game/types'
+import { Card, Hero, HeroAbility, GameMetadata } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { useDeployment } from '../hooks/useDeployment'
-import { useCombat } from '../hooks/useCombat'
-import { useHeroAbilities } from '../hooks/useHeroAbilities'
 import { useTurnManagement } from '../hooks/useTurnManagement'
 import { HeroCard } from './HeroCard'
 import { HeroAbilityEditor } from './HeroAbilityEditor'
-import { resolveSimultaneousCombat } from '../game/combatSystem'
+import { KeywordBadge } from './KeywordBadge'
 
 interface BattlefieldViewProps {
   battlefieldId: 'battlefieldA' | 'battlefieldB'
-}
-
-// Icon menu for tower health
-function TowerHealthMenu({ towerP1HP, towerP2HP, battlefieldName, onTowerDamage }: {
-  towerP1HP: number
-  towerP2HP: number
-  battlefieldName: string
-  onTowerDamage: (amount: number, player: 'player1' | 'player2') => void
-}) {
-  const [showMenu, setShowMenu] = useState(false)
-  const [menuPosition, setMenuPosition] = useState<{ x: number, y: number } | null>(null)
-
-  return (
-    <div style={{ position: 'relative' }}>
-      <button
-        onClick={(e) => {
-          const rect = e.currentTarget.getBoundingClientRect()
-          setMenuPosition({ x: rect.right, y: rect.top })
-          setShowMenu(!showMenu)
-        }}
-        style={{
-          padding: '4px 8px',
-          backgroundColor: '#666',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          fontSize: '11px',
-        }}
-        title="Tower Health"
-      >
-        🏰 {towerP1HP}/{towerP2HP}
-      </button>
-      {showMenu && menuPosition && (
-        <>
-          <div
-            style={{
-              position: 'fixed',
-              left: 0,
-              top: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 1000,
-            }}
-            onClick={() => setShowMenu(false)}
-          />
-          <div
-            style={{
-              position: 'fixed',
-              left: `${menuPosition.x}px`,
-              top: `${menuPosition.y}px`,
-              backgroundColor: 'white',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              padding: '8px',
-              zIndex: 1001,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-              minWidth: '150px',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ marginBottom: '8px', fontWeight: 'bold', fontSize: '12px' }}>Tower Health - {battlefieldName}</div>
-            <div style={{ marginBottom: '6px' }}>
-              <div style={{ fontSize: '11px', marginBottom: '4px' }}>P1 Tower: {towerP1HP} HP</div>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                <button onClick={() => { onTowerDamage(-1, 'player1'); setShowMenu(false) }} style={{ padding: '2px 6px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '2px', cursor: 'pointer', fontSize: '10px' }}>-1</button>
-                <button onClick={() => { onTowerDamage(1, 'player1'); setShowMenu(false) }} style={{ padding: '2px 6px', backgroundColor: '#4caf50', color: 'white', border: 'none', borderRadius: '2px', cursor: 'pointer', fontSize: '10px' }}>+1</button>
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '11px', marginBottom: '4px' }}>P2 Tower: {towerP2HP} HP</div>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                <button onClick={() => { onTowerDamage(-1, 'player2'); setShowMenu(false) }} style={{ padding: '2px 6px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '2px', cursor: 'pointer', fontSize: '10px' }}>-1</button>
-                <button onClick={() => { onTowerDamage(1, 'player2'); setShowMenu(false) }} style={{ padding: '2px 6px', backgroundColor: '#4caf50', color: 'white', border: 'none', borderRadius: '2px', cursor: 'pointer', fontSize: '10px' }}>+1</button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  )
+  showDebugControls?: boolean
+  onHoverUnit?: (cardId: string | null) => void
 }
 
 // Icon menu for creep spawning
@@ -193,37 +112,7 @@ function CreepSpawnMenu({ battlefieldId, metadata, onSpawnCreep }: {
 }
 
 // Icon menu for combat resolution
-function CombatMenu({ metadata, onCombat }: {
-  metadata: GameMetadata
-  gameState: GameState
-  onCombat: () => void
-}) {
-  const canCombat = metadata.player1Passed && metadata.player2Passed
-
-  return (
-    <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 10 }}>
-      <button
-        onClick={onCombat}
-        disabled={!canCombat}
-        style={{
-          padding: '6px 10px',
-          backgroundColor: canCombat ? '#4caf50' : '#ccc',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: canCombat ? 'pointer' : 'not-allowed',
-          fontSize: '12px',
-          fontWeight: 'bold',
-        }}
-        title={canCombat ? 'Resolve Combat for Both Battlefields' : 'Both players must pass before combat'}
-      >
-        ⚔️
-      </button>
-    </div>
-  )
-}
-
-export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
+export function BattlefieldView({ battlefieldId, showDebugControls = false, onHoverUnit }: BattlefieldViewProps) {
   const { 
     gameState, 
     selectedCard, 
@@ -251,8 +140,6 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       setDragOverSlot(null)
     }
   }, [draggedCardId])
-  const { handleDecreaseHealth, handleIncreaseHealth, handleDecreaseAttack, handleIncreaseAttack } = useCombat()
-  const { handleAbilityClick } = useHeroAbilities()
   const { handleToggleStun, handleSpawnCreep } = useTurnManagement()
 
   const battlefield = gameState[battlefieldId]
@@ -731,19 +618,14 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     return (
       <div
         key={slotNum}
+        className="battlefield-slot"
+        data-battlefield={battlefieldId}
+        data-player={player}
+        data-slot={slotNum}
         style={{
-          minHeight: '60px',
           border: isDragOver ? `2px solid ${playerColor}` : (canMoveHere || canEquipItem) ? `1px dashed ${playerColor}` : '1px solid #d3d3d3',
-          borderRadius: '3px',
-          padding: '4px',
           backgroundColor: isDragOver ? playerBgColor : (canMoveHere || canEquipItem) ? '#f5f5dc' : '#fafafa',
-          position: 'relative',
-          transition: 'all 0.2s',
-          width: '100%',
-          boxSizing: 'border-box',
-          boxShadow: isDragOver ? `0 0 6px ${playerColor}60` : '0 1px 2px rgba(0,0,0,0.1)',
-          display: 'flex',
-          flexDirection: 'column',
+          boxShadow: isDragOver ? `0 0 8px ${playerColor}60` : '0 1px 2px rgba(0,0,0,0.1)',
         }}
         onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
@@ -776,25 +658,11 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
           }
         }}
       >
-        <div 
-          style={{ 
-            fontSize: '10px', 
-            color: '#666', 
-            marginBottom: '2px',
-            pointerEvents: 'none', // Don't block drag events
-            userSelect: 'none',
-          }}
-        >
+        <div className="battlefield-slot__label">
           Slot {slotNum}
         </div>
-        <div 
-          style={{ 
-            width: '100%', 
-            height: '100%',
-            minHeight: '80px',
-            position: 'relative',
-            flex: 1,
-          }}
+        <div
+          className="battlefield-slot__content"
           onDragEnter={(e) => {
             // Forward drag enter to parent - always forward, let parent decide
             e.preventDefault()
@@ -819,20 +687,10 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
         >
           {cardInSlot ? (
             <div
+              className={`unit-card ${isSelected ? 'unit-card--selected' : ''}`}
               style={{
-                padding: '4px',
-                border: `1px solid ${isSelected ? '#ffd700' : (cardInSlot.cardType === 'hero' ? ((cardInSlot as Hero).colors?.[0] === 'red' ? '#c41e3a' : (cardInSlot as Hero).colors?.[0] === 'blue' ? '#0078d4' : (cardInSlot as Hero).colors?.[0] === 'green' ? '#228b22' : (cardInSlot as Hero).colors?.[0] === 'black' ? '#2d2d2d' : (cardInSlot as Hero).colors?.[0] === 'white' ? '#f0e68c' : '#8b7355') : '#8b7355')}`,
-                borderRadius: '3px',
+                border: `2px solid ${isSelected ? '#ffd700' : (cardInSlot.cardType === 'hero' ? ((cardInSlot as Hero).colors?.[0] === 'red' ? '#c41e3a' : (cardInSlot as Hero).colors?.[0] === 'blue' ? '#0078d4' : (cardInSlot as Hero).colors?.[0] === 'green' ? '#228b22' : (cardInSlot as Hero).colors?.[0] === 'black' ? '#2d2d2d' : (cardInSlot as Hero).colors?.[0] === 'white' ? '#f0e68c' : '#8b7355') : '#8b7355')}`,
                 backgroundColor: isSelected ? '#fffacd' : '#f5f5dc',
-                cursor: 'pointer',
-                fontSize: '9px',
-                minHeight: '50px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                boxShadow: isSelected ? '0 1px 3px rgba(255, 215, 0, 0.4)' : '0 1px 2px rgba(0,0,0,0.1)',
-                position: 'relative',
               }}
               onClick={(e) => {
                 e.stopPropagation()
@@ -848,6 +706,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
               onMouseEnter={(e) => {
                 setHoveredBattlefieldCard(cardInSlot.id)
                 setHoveredBattlefieldPosition({ x: e.clientX, y: e.clientY })
+                onHoverUnit?.(cardInSlot.id)
               }}
               onMouseMove={(e) => {
                 setHoveredBattlefieldPosition({ x: e.clientX, y: e.clientY })
@@ -855,9 +714,10 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
               onMouseLeave={() => {
                 setHoveredBattlefieldCard(null)
                 setHoveredBattlefieldPosition(null)
+                onHoverUnit?.(null)
               }}
             >
-              <div style={{ fontWeight: 'bold', fontSize: '9px', marginBottom: '2px', color: '#2d2d2d', textAlign: 'center', lineHeight: '1.1' }}>
+              <div className="unit-card__name">
                 {cardInSlot.name}
               </div>
               {cardInSlot.cardType === 'hero' && (cardInSlot as Hero).colors && (cardInSlot as Hero).colors!.length > 0 && (
@@ -887,21 +747,38 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                 </div>
               )}
               {'attack' in cardInSlot && 'health' in cardInSlot && (
-                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#8b0000', textAlign: 'center', lineHeight: '1.2' }}>
+                <div className="unit-card__stats">
                   {cardInSlot.attack}/{cardInSlot.health}
                 </div>
               )}
-              <div style={{ display: 'flex', gap: '3px', marginTop: '2px', fontSize: '8px', justifyContent: 'center' }}>
+              <div className="unit-card__status">
                 {!!metadata.deathCooldowns[cardInSlot.id] && (
                   <span style={{ color: '#8b0000' }}>⏱{metadata.deathCooldowns[cardInSlot.id]}</span>
                 )}
                 {cardInSlot.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[cardInSlot.id]) && (
                   <span style={{ color: '#4b0082' }}>⚡</span>
                 )}
+                {metadata.barrierUnits?.[cardInSlot.id] && (
+                  <span style={{ color: '#1976d2' }}>🛡️</span>
+                )}
+              </div>
+              <div className="unit-card__keywords">
+                {cardInSlot.cardType === 'hero' && (cardInSlot as Hero).crossStrike && (
+                  <KeywordBadge keyword="crossStrike" />
+                )}
+                {cardInSlot.cardType === 'hero' && (cardInSlot as Hero).assassinate && (
+                  <KeywordBadge keyword="assassinate" />
+                )}
+                {(cardInSlot as any).specialEffects?.includes('cleave') && (
+                  <KeywordBadge keyword="cleave" />
+                )}
+                {metadata.barrierUnits?.[cardInSlot.id] && (
+                  <KeywordBadge keyword="barrier" />
+                )}
               </div>
             </div>
           ) : (
-            <div style={{ fontSize: '7px', color: '#999', textAlign: 'center', paddingTop: '8px', pointerEvents: 'none', fontStyle: 'italic' }}>
+            <div className="battlefield-slot__placeholder">
               {canEquipItem ? 'Equip' : canMoveHere ? 'Drop' : ''}
             </div>
           )}
@@ -971,222 +848,71 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
         />
       )}
       <div
+        className="battlefield-container"
         style={{
-        border: `2px solid ${borderColor}`,
-        borderRadius: '3px',
-        padding: '6px',
-        backgroundColor: bgColor,
-        minHeight: '300px',
-        height: '100%',
-        boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0' }}>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ marginTop: 0, marginBottom: 0, fontSize: '11px' }}>
-            Battlefield {battlefieldName}
-            <span style={{ fontSize: '9px', fontWeight: 'normal', marginLeft: '4px', color: '#666' }}>
-              ({getAvailableSlots(allCards)})
-            </span>
-          </h3>
+          border: `2px solid ${borderColor}`,
+          backgroundColor: bgColor,
+        }}
+      >
+      <div className="battlefield-header">
+        <div className="battlefield-title">
+          Battlefield {battlefieldName}
+          <span className="battlefield-subtitle">({getAvailableSlots(allCards)})</span>
         </div>
-        <TowerHealthMenu 
-          towerP1HP={towerP1HP} 
-          towerP2HP={towerP2HP} 
-          battlefieldName={battlefieldName}
-          onTowerDamage={handleTowerDamage}
-        />
+        {showDebugControls && metadata.currentPhase === 'play' && (
+          <CreepSpawnMenu 
+            battlefieldId={battlefieldId}
+            metadata={metadata}
+            onSpawnCreep={handleSpawnCreep}
+          />
+        )}
       </div>
-      {/* Manual Creep Spawn - Icon Menu */}
-      {metadata.currentPhase === 'play' && (
-        <CreepSpawnMenu 
-          battlefieldId={battlefieldId}
-          metadata={metadata}
-          onSpawnCreep={handleSpawnCreep}
-        />
-      )}
-      {/* Go to Combat Button - Icon Menu */}
-      {metadata.currentPhase === 'play' && battlefieldId === 'battlefieldA' && (
-        <CombatMenu
-          metadata={metadata}
-          gameState={gameState}
-          onCombat={() => {
-              // Check if both players passed, if so resolve combat for both battlefields
-              if (metadata.player1Passed && metadata.player2Passed) {
-                // Resolve simultaneous combat for both battlefields
-                const initialTowerHP = {
-                  towerA_player1: metadata.towerA_player1_HP,
-                  towerA_player2: metadata.towerA_player2_HP,
-                  towerB_player1: metadata.towerB_player1_HP,
-                  towerB_player2: metadata.towerB_player2_HP,
-                }
-                
-                const initialTowerArmor = {
-                  towerA_player1: metadata.towerA_player1_Armor,
-                  towerA_player2: metadata.towerA_player2_Armor,
-                  towerB_player1: metadata.towerB_player1_Armor,
-                  towerB_player2: metadata.towerB_player2_Armor,
-                }
-                
-                // Resolve combat for both battlefields simultaneously
-                const resultA = resolveSimultaneousCombat(
-                  gameState.battlefieldA,
-                  'battlefieldA',
-                  initialTowerHP,
-                  metadata.stunnedHeroes || {},
-                  initialTowerArmor,
-                  gameState
-                )
-                
-                const resultB = resolveSimultaneousCombat(
-                  gameState.battlefieldB,
-                  'battlefieldB',
-                  resultA.updatedTowerHP,
-                  metadata.stunnedHeroes || {},
-                  initialTowerArmor,
-                  gameState
-                )
-                
-                // Process killed heroes for both battlefields - separate by player
-                // Draw cards for opponent when heroes are killed
-                const processKilledHeroes = (
-                  originalBattlefield: typeof gameState.battlefieldA,
-                  updatedBattlefield: typeof gameState.battlefieldA,
-                  player1Base: Card[],
-                  player2Base: Card[],
-                  deathCooldowns: Record<string, number>
-                ) => {
-                  const newP1Base = [...player1Base]
-                  const newP2Base = [...player2Base]
-                  const newCooldowns = { ...deathCooldowns }
-                  
-                  // Process player1 heroes
-                  originalBattlefield.player1.forEach(originalCard => {
-                    if (originalCard.cardType === 'hero') {
-                      const stillAlive = updatedBattlefield.player1.some(c => c.id === originalCard.id)
-                      if (!stillAlive) {
-                        const hero = originalCard as import('../game/types').Hero
-                        newP1Base.push({
-                          ...hero,
-                          location: 'base' as const,
-                          currentHealth: 0,
-                          slot: undefined,
-                        })
-                        newCooldowns[hero.id] = 2
-                      }
-                    }
-                  })
-                  
-                  // Process player2 heroes
-                  originalBattlefield.player2.forEach(originalCard => {
-                    if (originalCard.cardType === 'hero') {
-                      const stillAlive = updatedBattlefield.player2.some(c => c.id === originalCard.id)
-                      if (!stillAlive) {
-                        const hero = originalCard as import('../game/types').Hero
-                        newP2Base.push({
-                          ...hero,
-                          location: 'base' as const,
-                          currentHealth: 0,
-                          slot: undefined,
-                        })
-                        newCooldowns[hero.id] = 2
-                      }
-                    }
-                  })
-                  
-                  return { newP1Base, newP2Base, newCooldowns }
-                }
-                
-                const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA } = processKilledHeroes(
-                  gameState.battlefieldA,
-                  resultA.updatedBattlefield,
-                  gameState.player1Base,
-                  gameState.player2Base,
-                  metadata.deathCooldowns
-                )
-                
-                const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB } = processKilledHeroes(
-                  gameState.battlefieldB,
-                  resultB.updatedBattlefield,
-                  newP1BaseA,
-                  newP2BaseA,
-                  newCooldownsA
-                )
-                
-                // Apply combat results
-                // Calculate total overflow damage TO each player's nexus
-                // overflowDamage.player1 = damage dealt BY player1 (goes TO player2's nexus)
-                // overflowDamage.player2 = damage dealt BY player2 (goes TO player1's nexus)
-                const totalDamageToP1Nexus = resultA.overflowDamage.player2 + resultB.overflowDamage.player2
-                const totalDamageToP2Nexus = resultA.overflowDamage.player1 + resultB.overflowDamage.player1
-                
-                setGameState(prev => {
-                  const newP1NexusHP = Math.max(0, prev.metadata.player1NexusHP - totalDamageToP1Nexus)
-                  const newP2NexusHP = Math.max(0, prev.metadata.player2NexusHP - totalDamageToP2Nexus)
-                  
-                  return {
-                    ...prev,
-                    battlefieldA: resultA.updatedBattlefield,
-                    battlefieldB: resultB.updatedBattlefield,
-                    player1Base: newP1BaseB,
-                    player2Base: newP2BaseB,
-                    metadata: {
-                      ...prev.metadata,
-                      towerA_player1_HP: resultA.updatedTowerHP.towerA_player1,
-                      towerA_player2_HP: resultA.updatedTowerHP.towerA_player2,
-                      towerB_player1_HP: resultB.updatedTowerHP.towerB_player1,
-                      towerB_player2_HP: resultB.updatedTowerHP.towerB_player2,
-                      player1NexusHP: newP1NexusHP,
-                      player2NexusHP: newP2NexusHP,
-                      deathCooldowns: newCooldownsB,
-                      player1Passed: false,
-                      player2Passed: false,
-                    },
-                  }
-                })
-                
-                // Show combat summary modal
-                setCombatSummaryData({
-                  battlefieldA: {
-                    name: 'Battlefield A',
-                    combatLog: resultA.combatLog,
-                    towerHP: {
-                      player1: resultA.updatedTowerHP.towerA_player1,
-                      player2: resultA.updatedTowerHP.towerA_player2,
-                    },
-                    overflowDamage: resultA.overflowDamage,
-                  },
-                  battlefieldB: {
-                    name: 'Battlefield B',
-                    combatLog: resultB.combatLog,
-                    towerHP: {
-                      player1: resultB.updatedTowerHP.towerB_player1,
-                      player2: resultB.updatedTowerHP.towerB_player2,
-                    },
-                    overflowDamage: resultB.overflowDamage,
-                  },
-                })
-                setShowCombatSummary(true)
-              } else {
-                alert('Both players must pass before going to combat')
-              }
-          }}
-        />
-      )}
+      <div className="tower-row tower-row--top">
+        <div
+          className="tower-display"
+          data-battlefield={battlefieldId}
+          data-player="player2"
+          data-tower="true"
+        >
+          🏰 P2 {towerP2HP}
+          {showDebugControls && (
+            <div className="tower-display__controls">
+              <button onClick={() => handleTowerDamage(-1, 'player2')}>-</button>
+              <button onClick={() => handleTowerDamage(1, 'player2')}>+</button>
+            </div>
+          )}
+        </div>
+      </div>
       
       {/* Player 2 side */}
-      <div style={{ marginBottom: '1px' }}>
-        <h4 style={{ fontSize: '8px', marginBottom: '0', color: '#666' }}>P2</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1px', marginBottom: '1px' }}>
+      <div className="battlefield-row">
+        <div className="battlefield-row__label">P2</div>
+        <div className="battlefield-row__grid">
           {[1, 2, 3, 4, 5].map(slotNum => renderSlot(slotNum, 'player2'))}
         </div>
       </div>
 
       {/* Player 1 side */}
-      <div>
-        <h4 style={{ fontSize: '8px', marginBottom: '0', color: '#666' }}>P1</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1px' }}>
+      <div className="battlefield-row">
+        <div className="battlefield-row__label">P1</div>
+        <div className="battlefield-row__grid">
           {[1, 2, 3, 4, 5].map(slotNum => renderSlot(slotNum, 'player1'))}
+        </div>
+      </div>
+      <div className="tower-row tower-row--bottom">
+        <div
+          className="tower-display"
+          data-battlefield={battlefieldId}
+          data-player="player1"
+          data-tower="true"
+        >
+          🏰 P1 {towerP1HP}
+          {showDebugControls && (
+            <div className="tower-display__controls">
+              <button onClick={() => handleTowerDamage(-1, 'player1')}>-</button>
+              <button onClick={() => handleTowerDamage(1, 'player1')}>+</button>
+            </div>
+          )}
         </div>
       </div>
 
