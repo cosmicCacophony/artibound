@@ -1761,6 +1761,10 @@ export function createInitialGameState(): {
     towerA_player2_Armor: 0,
     towerB_player1_Armor: 0,
     towerB_player2_Armor: 0,
+    laneMomentum: {
+      battlefieldA: { player1: 0, player2: 0 },
+      battlefieldB: { player1: 0, player2: 0 },
+    },
     player1Tier: 1,
     player2Tier: 1,
     deathCooldowns: {}, // Track hero death cooldowns - Record<cardId, counter> (starts at 2, decreases by 1 each turn, prevents deployment for 1 full round)
@@ -1998,6 +2002,10 @@ export function createGameStateFromDraft(
     towerA_player2_Armor: 0,
     towerB_player1_Armor: 0,
     towerB_player2_Armor: 0,
+    laneMomentum: {
+      battlefieldA: { player1: 0, player2: 0 },
+      battlefieldB: { player1: 0, player2: 0 },
+    },
     player1Tier: 1,
     player2Tier: 1,
     deathCooldowns: {},

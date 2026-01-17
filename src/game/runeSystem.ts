@@ -3,7 +3,7 @@ import { RunePool, RuneColor, Color, Hero, BaseCard, Seal, PlayerId, BloodMagicC
 /**
  * Rune System
  * 
- * - Permanent runes: Added when you deploy a hero, removed when hero is bounced
+ * - Permanent runes: Added when you deploy a hero, removed when hero dies
  * - Temporary runes: Added by spells (Dark Ritual), cleared at end of turn
  * - Seals: Permanent artifacts that generate 1 rune of their color each turn
  * - Runes are used for color requirements of spells/cards
@@ -64,8 +64,8 @@ export function addRunesFromHero(hero: Hero, pool: RunePool): RunePool {
 }
 
 /**
- * Remove runes from pool (when hero is bounced/removed)
- * Called when a hero is removed from battlefield
+ * Remove runes from pool (when hero dies)
+ * Called when a hero is removed from battlefield due to death
  */
 export function removeRunesFromHero(hero: Hero, pool: RunePool): RunePool {
   if (!hero.colors || hero.colors.length === 0) {

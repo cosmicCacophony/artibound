@@ -1,7 +1,8 @@
 import { useCallback, useEffect } from 'react'
-import { TurnPhase, Card, GameMetadata, ShopItem, Hero, BaseCard } from '../game/types'
+import { TurnPhase, Card, GameMetadata, ShopItem, Hero, BaseCard, PlayerId } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { getDefaultTargets, resolveCombat, resolveSimultaneousCombat, resolveRangedAttacks } from '../game/combatSystem'
+import { removeRunesFromHero } from '../game/runeSystem'
 import { tier1Items, createCardFromTemplate } from '../game/sampleData'
 
 export function useTurnManagement() {
@@ -74,6 +75,17 @@ export function useTurnManagement() {
         resultB.updatedTowerHP,
         initialTowerArmor
       )
+
+      const laneMomentumDelta = {
+        battlefieldA: {
+          player1: Math.max(0, initialTowerHP.towerA_player2 - resultA.updatedTowerHP.towerA_player2),
+          player2: Math.max(0, initialTowerHP.towerA_player1 - resultA.updatedTowerHP.towerA_player1),
+        },
+        battlefieldB: {
+          player1: Math.max(0, initialTowerHP.towerB_player2 - resultB.updatedTowerHP.towerB_player2),
+          player2: Math.max(0, initialTowerHP.towerB_player1 - resultB.updatedTowerHP.towerB_player1),
+        },
+      }
       
       // Process killed heroes (same logic as in BattlefieldView) - separate by player
       const processKilledHeroes = (
@@ -81,11 +93,16 @@ export function useTurnManagement() {
         updatedBattlefield: typeof gameState.battlefieldA,
         player1Base: Card[],
         player2Base: Card[],
-        deathCooldowns: Record<string, number>
+        deathCooldowns: Record<string, number>,
+        player1RunePool: GameMetadata['player1RunePool'],
+        player2RunePool: GameMetadata['player2RunePool']
       ) => {
         const newP1Base = [...player1Base]
         const newP2Base = [...player2Base]
         const newCooldowns = { ...deathCooldowns }
+        let updatedP1RunePool = player1RunePool
+        let updatedP2RunePool = player2RunePool
+        const blackHeroesDied: Array<{ player: PlayerId }> = []
         
         // Process player1 heroes
         originalBattlefield.player1.forEach(originalCard => {
@@ -100,6 +117,10 @@ export function useTurnManagement() {
                 slot: undefined,
               })
               newCooldowns[hero.id] = 2
+              updatedP1RunePool = removeRunesFromHero(hero, updatedP1RunePool)
+              if (hero.colors?.includes('black')) {
+                blackHeroesDied.push({ player: 'player1' })
+              }
             }
           }
         })
@@ -117,27 +138,35 @@ export function useTurnManagement() {
                 slot: undefined,
               })
               newCooldowns[hero.id] = 2
+              updatedP2RunePool = removeRunesFromHero(hero, updatedP2RunePool)
+              if (hero.colors?.includes('black')) {
+                blackHeroesDied.push({ player: 'player2' })
+              }
             }
           }
         })
-        
-        return { newP1Base, newP2Base, newCooldowns }
+
+        return { newP1Base, newP2Base, newCooldowns, updatedP1RunePool, updatedP2RunePool, blackHeroesDied }
       }
       
-      const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA, blackHeroesDied: blackHeroesDiedA } = processKilledHeroes(
+      const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA, updatedP1RunePool: updatedP1RunePoolA, updatedP2RunePool: updatedP2RunePoolA, blackHeroesDied: blackHeroesDiedA } = processKilledHeroes(
         gameState.battlefieldA,
         resultA.updatedBattlefield,
         gameState.player1Base,
         gameState.player2Base,
-        metadata.deathCooldowns
+        metadata.deathCooldowns,
+        metadata.player1RunePool,
+        metadata.player2RunePool
       )
       
-      const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB, blackHeroesDied: blackHeroesDiedB } = processKilledHeroes(
+      const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB, updatedP1RunePool: updatedP1RunePoolB, updatedP2RunePool: updatedP2RunePoolB, blackHeroesDied: blackHeroesDiedB } = processKilledHeroes(
         gameState.battlefieldB,
         resultB.updatedBattlefield,
         newP1BaseA,
         newP2BaseA,
-        newCooldownsA
+        newCooldownsA,
+        updatedP1RunePoolA,
+        updatedP2RunePoolA
       )
       
       // Add B runes for black heroes that died
@@ -155,8 +184,8 @@ export function useTurnManagement() {
         const newP2NexusHP = Math.max(0, prev.metadata.player2NexusHP - totalDamageToP2Nexus)
         
         // Add B runes for black heroes that died
-        let updatedP1RunePool = prev.metadata.player1RunePool
-        let updatedP2RunePool = prev.metadata.player2RunePool
+        let updatedP1RunePool = updatedP1RunePoolB
+        let updatedP2RunePool = updatedP2RunePoolB
         
         allBlackHeroesDied.forEach(({ player }) => {
           if (player === 'player1') {
@@ -172,6 +201,22 @@ export function useTurnManagement() {
           }
         })
         
+        const existingLaneMomentum = prev.metadata.laneMomentum || {
+          battlefieldA: { player1: 0, player2: 0 },
+          battlefieldB: { player1: 0, player2: 0 },
+        }
+
+        const updatedLaneMomentum = {
+          battlefieldA: {
+            player1: existingLaneMomentum.battlefieldA.player1 + laneMomentumDelta.battlefieldA.player1,
+            player2: existingLaneMomentum.battlefieldA.player2 + laneMomentumDelta.battlefieldA.player2,
+          },
+          battlefieldB: {
+            player1: existingLaneMomentum.battlefieldB.player1 + laneMomentumDelta.battlefieldB.player1,
+            player2: existingLaneMomentum.battlefieldB.player2 + laneMomentumDelta.battlefieldB.player2,
+          },
+        }
+
         return {
           ...prev,
           battlefieldA: resultA.updatedBattlefield,
@@ -193,6 +238,7 @@ export function useTurnManagement() {
             deathCooldowns: newCooldownsB,
             player1RunePool: updatedP1RunePool,
             player2RunePool: updatedP2RunePool,
+            laneMomentum: updatedLaneMomentum,
           },
         }
       })

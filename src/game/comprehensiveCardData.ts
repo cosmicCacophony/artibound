@@ -52,7 +52,8 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 4,
     maxHealth: 4,
     currentHealth: 4,
-    supportEffect: 'Gains +2/+0 when you cast spells',
+    supportEffect: 'Gains +2/+0 when you cast spells. Synergy: +1 attack if another BR spell hero is deployed.',
+    synergyTag: 'br-spell',
     equippedItems: [],
     ability: {
       name: 'Spell Mastery',
@@ -74,7 +75,8 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 5,
     maxHealth: 5,
     currentHealth: 5,
-    supportEffect: 'Converts spells into tower damage',
+    supportEffect: 'Converts spells into tower damage. Synergy: +1 attack if another BR spell hero is deployed.',
+    synergyTag: 'br-spell',
     equippedItems: [],
     ability: {
       name: 'Spell Burn',
@@ -582,7 +584,9 @@ export const rgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 6,
     maxHealth: 6,
     currentHealth: 6,
-    supportEffect: 'Can fight enemy units',    equippedItems: [],
+    supportEffect: 'Can fight enemy units. Synergy: +1 attack if another RG mighty hero is deployed.',
+    synergyTag: 'rg-mighty',
+    equippedItems: [],
     ability: {
       name: 'Battle Rage',
       description: 'Fight all enemy units in front of this hero and adjacent to it.',
@@ -603,6 +607,8 @@ export const rgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 6,
     maxHealth: 6,
     currentHealth: 6,
+    supportEffect: 'Chromatic payoff for U/B runes. Synergy: +1 attack if another RG mighty hero is deployed.',
+    synergyTag: 'rg-mighty',
     equippedItems: [],
     ability: {
       name: 'Elemental Fury',
@@ -853,7 +859,9 @@ export const rbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 7,
     maxHealth: 7,
     currentHealth: 7,
-    supportEffect: 'Draw card when unit dies',    equippedItems: [],
+    supportEffect: 'Draw card when unit dies. Synergy: +1 attack if another BR spell hero is deployed.',
+    synergyTag: 'br-spell',
+    equippedItems: [],
     ability: {
       name: 'Blood Sacrifice',
       description: 'Sacrifice a unit you control: Deal 3 damage to target unit or hero, draw a card.',
@@ -924,7 +932,8 @@ export const rbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 5,
     maxHealth: 5,
     currentHealth: 5,
-    supportEffect: 'Converts spells into tower damage',
+    supportEffect: 'Converts spells into tower damage. Synergy: +1 attack if another BR spell hero is deployed.',
+    synergyTag: 'br-spell',
     equippedItems: [],
     ability: {
       name: 'Soul Siphon',
@@ -946,7 +955,8 @@ export const rbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 5,
     maxHealth: 5,
     currentHealth: 5,
-    supportEffect: 'Multi-spell reward: card draw and buffs',
+    supportEffect: 'Multi-spell reward: card draw and buffs. Synergy: +1 attack if another BR spell hero is deployed.',
+    synergyTag: 'br-spell',
     equippedItems: [],
     ability: {
       name: 'Night Harvest',
@@ -1947,6 +1957,8 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 7,
     maxHealth: 7,
     currentHealth: 7,
+    supportEffect: 'Blood Magic up to 2 runes. Synergy: +1 attack if another UB curse hero is deployed.',
+    synergyTag: 'ub-curse',
     equippedItems: [],
     ability: {
       name: 'Limited Blood Magic',
@@ -1974,7 +1986,8 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 6,
     maxHealth: 6,
     currentHealth: 6,
-    supportEffect: 'Creates Curse spells each turn, curses spread if not removed',
+    supportEffect: 'Creates Curse spells each turn, curses spread if not removed. Synergy: +1 attack if another UB curse hero is deployed.',
+    synergyTag: 'ub-curse',
     equippedItems: [],
     ability: {
       name: 'Curse Mastery',
@@ -4050,7 +4063,8 @@ export const uwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 6,
     maxHealth: 6,
     currentHealth: 6,
-    supportEffect: 'Creates creatures from spell casting',
+    supportEffect: 'Creates creatures from spell casting. Synergy: +1 attack if another UW arcane hero is deployed.',
+    synergyTag: 'uw-arcane',
     equippedItems: [],
     ability: {
       name: 'Spell Summoning',
@@ -4428,6 +4442,8 @@ export const rareWUHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 7,
     currentHealth: 7,
     signatureCardId: 'rare-wu-spellweaver-sig',
+    supportEffect: 'Spell cost reduction. Synergy: +1 attack if another UW arcane hero is deployed.',
+    synergyTag: 'uw-arcane',
     equippedItems: [],
     ability: {
       name: 'Arcane Protection',

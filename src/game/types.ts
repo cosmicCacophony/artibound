@@ -141,6 +141,11 @@ export interface GameMetadata {
   towerA_player2_Armor: number
   towerB_player1_Armor: number
   towerB_player2_Armor: number
+  // Lane momentum: cumulative tower damage per lane per player
+  laneMomentum: {
+    battlefieldA: { player1: number; player2: number }
+    battlefieldB: { player1: number; player2: number }
+  }
   player1Tier: 1 | 2
   player2Tier: 1 | 2
   // Death cooldown: Record of card ID -> cooldown counter (starts at 2, decreases by 1 each turn, 0 = ready)
@@ -273,6 +278,7 @@ export interface Hero extends BaseCard {
   temporaryHP?: number // Temporary HP bonus (resets at end of turn)
   temporaryAttack?: number // Temporary attack bonus (resets at end of turn)
   supportEffect?: string
+  synergyTag?: string // Hero synergy tag (bonuses when paired with another matching hero)
   location: Location
   owner: PlayerId
   slot?: number // Slot position 1-5 on battlefield
@@ -545,7 +551,7 @@ export interface GameState {
 }
 
 export const BATTLEFIELD_SLOT_LIMIT = 5
-export const TOWER_HP = 30
+export const TOWER_HP = 15
 export const NEXUS_HP = 30
 export const STARTING_GOLD = 5
 
