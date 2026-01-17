@@ -60,7 +60,6 @@ export interface BaseCard {
   manaCost?: number // Cost to play this card (uses mana)
   colors?: Color[] // Colors required to cast in lane with matching hero color
   consumesRunes?: boolean // If true, casting this card consumes runes from the pool
-  bloodMagic?: BloodMagicConfig // Built-in Blood Magic for GBR/GBR+ cards
 }
 
 export interface Item {
@@ -141,6 +140,11 @@ export interface GameMetadata {
   towerA_player2_Armor: number
   towerB_player1_Armor: number
   towerB_player2_Armor: number
+  // Lane momentum: cumulative tower damage per lane per player
+  laneMomentum: {
+    battlefieldA: { player1: number; player2: number }
+    battlefieldB: { player1: number; player2: number }
+  }
   player1Tier: 1 | 2
   player2Tier: 1 | 2
   // Death cooldown: Record of card ID -> cooldown counter (starts at 2, decreases by 1 each turn, 0 = ready)
@@ -196,8 +200,6 @@ export interface GameMetadata {
   player2ColorsPlayedThisTurn: Color[]
   player1CardTypesPlayedThisTurn: CardType[]
   player2CardTypesPlayedThisTurn: CardType[]
-  // Blood Magic: Pending tower damage from blood magic usage (applied during deployment)
-  pendingBloodMagicCost?: number
   // Hero counters: Track counters on specific heroes (e.g., WB hero life-spent counters)
   heroCounters?: Record<string, number> // Format: heroId -> counter count
 }
@@ -225,22 +227,6 @@ export type HeroAbilityTrigger =
   | 'activated' // Manual activation with mana cost
 
 // Chromatic Payoff System - Green's rune identity
-export interface ChromaticPayoff {
-  triggerColors: RuneColor[] // Which colors trigger the payoff (colors this hero doesn't produce)
-  effectType: 'damage' | 'heal' | 'buff' | 'draw' | 'mana' | 'rune'
-  effectValue: number // Magnitude of the bonus
-  perRuneSpent?: boolean // If true, triggers once per rune spent (default: false = once per spell)
-  description: string // Display text for the payoff
-}
-
-// Blood Magic System - Black's rune identity
-export interface BloodMagicConfig {
-  enabled: boolean
-  costReduction?: number // Reduce all costs by this amount (min 1)
-  maxSubstitutions?: number // Max runes you can substitute (undefined = unlimited)
-  description: string
-}
-
 export interface HeroAbility {
   name: string
   description: string
@@ -255,10 +241,6 @@ export interface HeroAbility {
   manaRestore?: number // Restore N mana when you cast a spell
   spellCostReduction?: number // Your spells cost N less
   spellDamageBonus?: number // Your spells deal +N damage
-  // Chromatic Payoff field - Green's unique rune identity
-  chromaticPayoff?: ChromaticPayoff // Triggers when player spends off-color runes
-  // Blood Magic field - Black's unique rune identity
-  bloodMagic?: BloodMagicConfig // Pay life for missing runes
   // For tracking cooldown: Record<heroId, turnLastUsed>
   // Stored in GameMetadata.heroAbilityCooldowns
 }
@@ -272,12 +254,13 @@ export interface Hero extends BaseCard {
   currentHealth: number // Track current health for combat
   temporaryHP?: number // Temporary HP bonus (resets at end of turn)
   temporaryAttack?: number // Temporary attack bonus (resets at end of turn)
+  crossStrike?: number // Deals damage across battlefields when attacking an empty slot
+  assassinate?: boolean // Can target any unit in lane if no blocker in front
   supportEffect?: string
   location: Location
   owner: PlayerId
   slot?: number // Slot position 1-5 on battlefield
   equippedItems?: string[] // Array of item IDs
-  attachedEquipment?: string[] // IDs of equipment artifacts attached to this hero
   signatureCardId?: string // ID of the signature card for this hero (2 copies added to deck)
   bonusVsHeroes?: number // Bonus damage when attacking heroes (e.g., +3 for assassins)
   ability?: HeroAbility // Hero's activated ability (mana cost + cooldown)
@@ -316,6 +299,8 @@ export interface GenericUnit extends BaseCard {
   currentHealth: number
   temporaryHP?: number // Temporary HP bonus (resets at end of turn)
   temporaryAttack?: number // Temporary attack bonus (resets at end of turn)
+  crossStrike?: number // Deals damage across battlefields when attacking an empty slot
+  assassinate?: boolean // Can target any unit in lane if no blocker in front
   location: Location
   owner: PlayerId
   slot?: number
@@ -323,7 +308,6 @@ export interface GenericUnit extends BaseCard {
   stackPower?: number // Combined power if stacked
   stackHealth?: number // Combined health if stacked
   rangedAttack?: number // If set, this unit can attack from base/deployZone, dealing damage evenly to both towers
-  attachedEquipment?: string[] // IDs of equipment artifacts attached to this unit
   // Evolve mechanics
   evolveThreshold?: number // Number of different colors/types needed to evolve
   evolveBonus?: {
@@ -410,8 +394,6 @@ export type ArtifactEffectType =
   | 'target_buff' // Single-target buff
   | 'life_loss_draw' // Lose life but draw card
   | 'token_generation' // Spawns tokens each turn
-  | 'equipment' // Can be attached to units
-  | 'saga' // Saga-like artifact with multiple chapters
   | 'archetype_tracker' // Tracks archetype-specific conditions (stuns, mighty units, etc.)
   | 'spell_book' // Blue spell book artifact with modal choices
   | 'scry_artifact' // Artifact that provides scry effect each turn
@@ -423,22 +405,6 @@ export interface ArtifactCard extends BaseCard {
   effectType: ArtifactEffectType
   effectValue: number // Value for the effect (e.g., +1 attack, +1 mana, etc.)
   tempManaGeneration?: number // For rune_generation artifacts: amount of temporary mana generated per turn
-  // Equipment-specific fields
-  attachedToUnitId?: string // ID of unit this equipment is attached to (undefined if in base)
-  equipCost?: number // Mana cost to re-equip after unit dies
-  equipmentBonuses?: {
-    attack?: number
-    health?: number
-    maxHealth?: number
-    abilities?: string[] // e.g., ['cleave', 'taunt', 'flying', 'barrier']
-  }
-  // Saga-specific fields
-  sagaCounters?: number // Current chapter number (1, 2, or 3). Artifact is destroyed when it reaches 3
-  sagaEffects?: {
-    chapter1?: string // Effect description for chapter 1
-    chapter2?: string // Effect description for chapter 2
-    chapter3?: string // Effect description for chapter 3
-  }
 }
 
 export type Card = Hero | SignatureCard | HybridCard | GenericUnit | SpellCard | ItemCard | ArtifactCard
@@ -545,7 +511,7 @@ export interface GameState {
 }
 
 export const BATTLEFIELD_SLOT_LIMIT = 5
-export const TOWER_HP = 30
+export const TOWER_HP = 15
 export const NEXUS_HP = 30
 export const STARTING_GOLD = 5
 
