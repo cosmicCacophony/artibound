@@ -1,4 +1,4 @@
-import { RunePool, RuneColor, Color, Hero, BaseCard, Seal, PlayerId, BloodMagicConfig } from './types'
+import { RunePool, RuneColor, Color, Hero, BaseCard, Seal, PlayerId } from './types'
 
 /**
  * Rune System
@@ -396,73 +396,4 @@ export function getAvailableRuneCount(pool: RunePool): number {
  */
 export function getTemporaryRuneCount(pool: RunePool): number {
   return pool.temporaryRunes?.length || 0
-}
-
-/**
- * Blood Magic System - Calculate life cost to substitute missing runes
- * 
- * Cost structure per tower (multiply by 2 for total):
- * - Black (B): 2 life/tower (4 total)
- * - Red/Green (R/G): 3 life/tower (6 total)
- * - Blue/White (U/W): 4 life/tower (8 total)
- * 
- * Returns:
- * - canCast: Whether blood magic can substitute the missing runes
- * - missingRunes: Array of runes that would be substituted
- * - lifeCostPerTower: Life cost per tower (multiply by 2 for total)
- */
-export function getBloodMagicCost(
-  card: BaseCard,
-  runePool: RunePool,
-  bloodMagic: BloodMagicConfig
-): { canCast: boolean; missingRunes: RuneColor[]; lifeCostPerTower: number } {
-  if (!bloodMagic.enabled) {
-    return { canCast: false, missingRunes: [], lifeCostPerTower: 0 }
-  }
-
-  // Only works for cards that consume runes
-  if (!card.consumesRunes || !card.colors || card.colors.length === 0) {
-    return { canCast: false, missingRunes: [], lifeCostPerTower: 0 }
-  }
-
-  // Get missing runes
-  const missingRunes = getMissingRunes(card, runePool) as RuneColor[]
-
-  if (missingRunes.length === 0) {
-    return { canCast: false, missingRunes: [], lifeCostPerTower: 0 }
-  }
-
-  // Check max substitutions
-  if (bloodMagic.maxSubstitutions !== undefined && missingRunes.length > bloodMagic.maxSubstitutions) {
-    return { canCast: false, missingRunes, lifeCostPerTower: 0 }
-  }
-
-  // Calculate life cost per tower based on color
-  // Black: 2, Red/Green: 3, Blue/White: 4
-  const costReduction = bloodMagic.costReduction || 0
-  let totalCostPerTower = 0
-
-  for (const runeColor of missingRunes) {
-    let baseCost = 0
-    
-    if (runeColor === 'black') {
-      baseCost = 2
-    } else if (runeColor === 'red' || runeColor === 'green') {
-      baseCost = 3
-    } else if (runeColor === 'blue' || runeColor === 'white') {
-      baseCost = 4
-    } else {
-      baseCost = 3 // Default fallback
-    }
-
-    // Apply cost reduction (minimum 1 life per rune)
-    const reducedCost = Math.max(1, baseCost - costReduction)
-    totalCostPerTower += reducedCost
-  }
-
-  return {
-    canCast: true,
-    missingRunes,
-    lifeCostPerTower: totalCostPerTower
-  }
 }

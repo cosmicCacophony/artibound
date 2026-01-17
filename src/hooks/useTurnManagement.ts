@@ -611,69 +611,11 @@ export function useTurnManagement() {
       const battlefieldAWithCreeps = updatedBattlefieldA // No longer spawning creeps
       const battlefieldBWithCreeps = updatedBattlefieldB // No longer spawning creeps
       
-      // Process saga artifacts: increment counters, create tokens, apply effects, destroy after Chapter 3
-      const processSagaArtifacts = (
-        playerBase: import('../game/types').Card[],
-        player: 'player1' | 'player2',
-        battlefields: { battlefieldA: typeof prev.battlefieldA, battlefieldB: typeof prev.battlefieldB }
-      ): {
-        updatedBase: import('../game/types').Card[]
-        updatedBattlefields: { battlefieldA: typeof prev.battlefieldA, battlefieldB: typeof prev.battlefieldB }
-      } => {
-        let updatedBase = [...playerBase]
-        let updatedBattlefieldA = { ...battlefields.battlefieldA }
-        let updatedBattlefieldB = { ...battlefields.battlefieldB }
-        
-        const sagaArtifacts = updatedBase.filter(
-          card => card.cardType === 'artifact' && 
-          (card as import('../game/types').ArtifactCard).effectType === 'saga' &&
-          card.owner === player
-        ) as import('../game/types').ArtifactCard[]
-        
-        for (const artifact of sagaArtifacts) {
-          const currentCounter = artifact.sagaCounters || 0
-          const newCounter = currentCounter + 1
-          
-          // Update artifact with new counter
-          updatedBase = updatedBase.map(card => 
-            card.id === artifact.id 
-              ? { ...card, sagaCounters: newCounter } as import('../game/types').ArtifactCard
-              : card
-          )
-          
-          // Destroy artifact after Chapter 3
-          if (newCounter >= 3) {
-            updatedBase = updatedBase.filter(card => card.id !== artifact.id)
-          }
-        }
-        
-        return { 
-          updatedBase, 
-          updatedBattlefields: { battlefieldA: updatedBattlefieldA, battlefieldB: updatedBattlefieldB }
-        }
-      }
-      
-      // Process sagas for player1
-      const p1Saga = processSagaArtifacts(
-        prev.player1Base, 
-        'player1',
-        { battlefieldA: battlefieldAWithCreeps, battlefieldB: battlefieldBWithCreeps }
-      )
-      
-      // Process sagas for player2 (using updated battlefields from player1)
-      const p2Saga = processSagaArtifacts(
-        prev.player2Base,
-        'player2',
-        p1Saga.updatedBattlefields
-      )
-      
-      // Final battlefields combine both players' saga effects
-      const finalBattlefieldA = p2Saga.updatedBattlefields.battlefieldA
-      const finalBattlefieldB = p2Saga.updatedBattlefields.battlefieldB
-      
-      // Final bases (player1 and player2 processed separately)
-      const finalP1Base = p1Saga.updatedBase
-      const finalP2Base = p2Saga.updatedBase
+      // No saga artifacts - keep battlefields/base as-is
+      const finalBattlefieldA = battlefieldAWithCreeps
+      const finalBattlefieldB = battlefieldBWithCreeps
+      const finalP1Base = prev.player1Base
+      const finalP2Base = prev.player2Base
       
       // Rune system updates:
       // 1. Clear temporary runes from previous turn

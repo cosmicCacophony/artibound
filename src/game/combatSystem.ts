@@ -1,5 +1,18 @@
 import { Card, AttackTarget, AttackTargetType, Battlefield, PlayerId, GameMetadata, GameState, GenericUnit } from './types'
-import { getSagaCombatDamageBonus } from './sagaSystem'
+
+const LANE_MOMENTUM_THRESHOLD = 10
+const LANE_MOMENTUM_ATTACK_BONUS = 1
+
+function getLaneMomentumBonus(
+  gameState: GameState | undefined,
+  battlefieldId: 'battlefieldA' | 'battlefieldB',
+  player: PlayerId
+): number {
+  const laneMomentum = gameState?.metadata?.laneMomentum
+  if (!laneMomentum) return 0
+  const totalDamage = laneMomentum[battlefieldId]?.[player] ?? 0
+  return totalDamage >= LANE_MOMENTUM_THRESHOLD ? LANE_MOMENTUM_ATTACK_BONUS : 0
+}
 
 /**
  * Combat System - Handles all combat-related logic
@@ -32,6 +45,23 @@ export function getDefaultTarget(
       targetSlot: attackerSlot,
     }
   } else {
+    // Assassinate: if no unit in front, target any enemy unit in this lane instead of tower
+    if (attacker.assassinate) {
+      const candidates = opponentUnits.filter(u => u.slot !== undefined)
+      if (candidates.length > 0) {
+        const sorted = [...candidates].sort((a, b) => {
+          const aHealth = (a as GenericUnit).currentHealth ?? 0
+          const bHealth = (b as GenericUnit).currentHealth ?? 0
+          if (aHealth !== bHealth) return aHealth - bHealth
+          return (a.slot || 0) - (b.slot || 0)
+        })
+        return {
+          type: 'unit',
+          targetId: sorted[0].id,
+          targetSlot: sorted[0].slot,
+        }
+      }
+    }
     // No unit in front, attack tower
     return {
       type: 'tower',
@@ -126,13 +156,12 @@ export function resolveAttack(
         attackPower = 0
       } else {
         attackPower = getAttackPower(attacker, targetIsHero)
+        attackPower += getLaneMomentumBonus(gameState, battlefieldId, attacker.owner)
         if (targetIsHero && attacker.cardType === 'hero' && 'bonusVsHeroes' in attacker && attacker.bonusVsHeroes) {
           attackPower += attacker.bonusVsHeroes
         }
         // Apply Chapter 3 saga bonus: +3 damage to combat target
-        if (gameState) {
-          attackPower += getSagaCombatDamageBonus(gameState, attacker.owner)
-        }
+        
         
       }
       
@@ -190,10 +219,9 @@ export function resolveAttack(
         attackPower = 0
       } else {
         attackPower = getAttackPower(attacker, false) // No hero bonus vs towers
+        attackPower += getLaneMomentumBonus(gameState, battlefieldId, attacker.owner)
         // Apply Chapter 3 saga bonus: +3 damage to combat target (towers count as combat targets)
-        if (gameState) {
-          attackPower += getSagaCombatDamageBonus(gameState, attacker.owner)
-        }
+        
         
       }
       
@@ -213,9 +241,8 @@ export function resolveAttack(
         attackPower = 0
       } else {
         attackPower = getAttackPower(attacker, false)
-        if (gameState) {
-          attackPower += getSagaCombatDamageBonus(gameState, attacker.owner)
-        }
+        attackPower += getLaneMomentumBonus(gameState, battlefieldId, attacker.owner)
+        
         
       }
       damageDealt = 0 // No damage to tower (it's already dead)
@@ -400,6 +427,85 @@ export function resolveSimultaneousCombat(
       : (player === 'player1' ? 'towerB_player1' : 'towerB_player2')
     return currentTowerHP[towerKey] === 0
   }
+
+  const applyCrossStrike = (
+    attacker: Card,
+    slot: number,
+    opponent: PlayerId,
+    otherBattlefieldId: 'battlefieldA' | 'battlefieldB',
+    damage: number
+  ) => {
+    if (damage <= 0) return
+    const otherBattlefield = currentBattlefield[otherBattlefieldId]
+    const targetUnit = otherBattlefield[opponent].find(u => u.slot === slot)
+
+    if (targetUnit && 'currentHealth' in targetUnit) {
+      const tempHP = (targetUnit.cardType === 'hero' || targetUnit.cardType === 'generic') && 'temporaryHP' in targetUnit
+        ? (targetUnit.temporaryHP || 0)
+        : 0
+      const effectiveHealth = targetUnit.currentHealth + tempHP
+      const damageAfterTempHP = Math.max(0, damage - tempHP)
+      const newHealth = Math.max(0, targetUnit.currentHealth - damageAfterTempHP)
+      const newTempHP = Math.max(0, tempHP - damage)
+      const killed = newHealth <= 0
+
+      const updatedUnit = {
+        ...targetUnit,
+        currentHealth: newHealth,
+        temporaryHP: newTempHP,
+      }
+
+      const updatedOpponentUnits = killed
+        ? otherBattlefield[opponent].filter(u => u.id !== targetUnit.id)
+        : otherBattlefield[opponent].map(u => (u.id === targetUnit.id ? updatedUnit : u))
+
+      currentBattlefield = {
+        ...currentBattlefield,
+        [otherBattlefieldId]: {
+          ...otherBattlefield,
+          [opponent]: updatedOpponentUnits,
+        },
+      }
+
+      combatLog.push({
+        attackerId: attacker.id,
+        attackerName: attacker.name,
+        targetType: 'unit',
+        targetId: targetUnit.id,
+        targetName: targetUnit.name,
+        damage: Math.min(damage, effectiveHealth),
+        killed,
+      })
+      return
+    }
+
+    const towerKey = otherBattlefieldId === 'battlefieldA'
+      ? (opponent === 'player1' ? 'towerA_player1' : 'towerA_player2')
+      : (opponent === 'player1' ? 'towerB_player1' : 'towerB_player2')
+    const towerHPBefore = currentTowerHP[towerKey]
+    const armor = towerArmor?.[towerKey] || 0
+    const damageAfterArmor = Math.max(0, damage - armor)
+    const newTowerHP = Math.max(0, towerHPBefore - damageAfterArmor)
+
+    if (towerHPBefore > 0 && newTowerHP === 0) {
+      const overflow = Math.max(0, damageAfterArmor - towerHPBefore)
+      overflowDamage[attacker.owner] += overflow
+    } else if (towerHPBefore === 0) {
+      overflowDamage[attacker.owner] += damageAfterArmor
+    }
+
+    currentTowerHP = {
+      ...currentTowerHP,
+      [towerKey]: newTowerHP,
+    }
+
+    combatLog.push({
+      attackerId: attacker.id,
+      attackerName: attacker.name,
+      targetType: 'tower',
+      damage: damageAfterArmor,
+    })
+  }
   
   // Get all units from both players with their slots
   const player1Units = battlefield.player1.filter(u => u.slot !== undefined)
@@ -424,24 +530,22 @@ export function resolveSimultaneousCombat(
       const targetIsHero = p1Target?.type === 'unit' && p1Target.targetId ? 
         currentBattlefield.player2.find(u => u.id === p1Target.targetId)?.cardType === 'hero' : false
       p1AttackPower = getAttackPower(p1Unit, targetIsHero)
+      p1AttackPower += getLaneMomentumBonus(gameState, battlefieldId, p1Unit.owner)
       if (targetIsHero && p1Unit.cardType === 'hero' && 'bonusVsHeroes' in p1Unit && p1Unit.bonusVsHeroes) {
         p1AttackPower += p1Unit.bonusVsHeroes
       }
-      if (gameState) {
-        p1AttackPower += getSagaCombatDamageBonus(gameState, p1Unit.owner)
-      }
+      
     }
     let p2AttackPower = 0
     if (p2Unit && !p2IsStunned) {
       const targetIsHero = p2Target?.type === 'unit' && p2Target.targetId ? 
         currentBattlefield.player1.find(u => u.id === p2Target.targetId)?.cardType === 'hero' : false
       p2AttackPower = getAttackPower(p2Unit, targetIsHero)
+      p2AttackPower += getLaneMomentumBonus(gameState, battlefieldId, p2Unit.owner)
       if (targetIsHero && p2Unit.cardType === 'hero' && 'bonusVsHeroes' in p2Unit && p2Unit.bonusVsHeroes) {
         p2AttackPower += p2Unit.bonusVsHeroes
       }
-      if (gameState) {
-        p2AttackPower += getSagaCombatDamageBonus(gameState, p2Unit.owner)
-      }
+      
     }
     
     // Apply Player 1's attack
@@ -487,6 +591,15 @@ export function resolveSimultaneousCombat(
         } else {
           // Tower was already dead - all damage goes to nexus
           overflowDamage.player1 += p1AttackPower
+        }
+      }
+
+      // Cross-Strike: if attacking an empty slot, strike the mirrored slot on the other battlefield
+      if (p1Target.type === 'tower' && !p1IsStunned && p1Unit.crossStrike) {
+        const hadBlocker = battlefield.player2.some(u => u.slot === slot)
+        if (!hadBlocker) {
+          const otherBattlefieldId = battlefieldId === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
+          applyCrossStrike(p1Unit, slot, 'player2', otherBattlefieldId, p1Unit.crossStrike)
         }
       }
       
@@ -571,6 +684,15 @@ export function resolveSimultaneousCombat(
         } else {
           // Tower was already dead - all damage goes to nexus
           overflowDamage.player2 += p2AttackPower
+        }
+      }
+
+      // Cross-Strike: if attacking an empty slot, strike the mirrored slot on the other battlefield
+      if (p2Target.type === 'tower' && !p2IsStunned && p2Unit.crossStrike) {
+        const hadBlocker = battlefield.player1.some(u => u.slot === slot)
+        if (!hadBlocker) {
+          const otherBattlefieldId = battlefieldId === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
+          applyCrossStrike(p2Unit, slot, 'player1', otherBattlefieldId, p2Unit.crossStrike)
         }
       }
       
