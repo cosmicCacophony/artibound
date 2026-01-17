@@ -263,7 +263,7 @@ export function consumeRunesForCard(card: BaseCard, runePool: RunePool): RunePoo
  * Consume runes and return which colors were consumed
  * Returns array of colors that were actually consumed from the pool
  * 
- * This is used for chromatic payoff triggers - tracking which rune colors were spent
+ * Tracks which rune colors were spent for rune consumption logic
  */
 export function consumeRunesForCardWithTracking(
   card: BaseCard, 

@@ -2763,18 +2763,6 @@ export const rwgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 0,
     },
   },
-  {
-    id: 'white-spell-disarm',
-    name: 'Disarm',
-    description: 'Target enemy unit cannot attack this turn. Draw a card.',
-    cardType: 'spell',
-    colors: ['white'],
-    manaCost: 2,
-    effect: {
-      type: 'stun', // Stun prevents attacking
-      damage: 0,
-    },
-  },
   // New blue multi-target damage spell
   {
     id: 'blue-spell-arcane-missiles',
@@ -3011,9 +2999,8 @@ export const ubrCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
 ]
 
 // ============================================================================
-// GBR (Green/Black/Red) - Blood Magic Built-in
+// GBR (Green/Black/Red)
 // ============================================================================
-// All GBR cards have built-in Blood Magic - no hero needed!
 
 export const gbrHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   // GBR heroes can be added here if needed
@@ -3086,7 +3073,7 @@ export const gbrSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
 ]
 
 // ============================================================================
-// GBRU (Green/Black/Red/Blue) - 4-Color Blood Magic
+// GBRU (Green/Black/Red/Blue)
 // ============================================================================
 
 export const gbruCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
@@ -3096,7 +3083,7 @@ export const gbruSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
 ]
 
 // ============================================================================
-// GBRW (Green/Black/Red/White) - 4-Color Blood Magic
+// GBRW (Green/Black/Red/White)
 // ============================================================================
 
 export const gbrwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
@@ -3431,22 +3418,6 @@ export const uwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
 
 export const uwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   // Divine Wrath removed - replaced with artifact
-  // White Stun Spell
-  {
-    id: 'white-spell-stun',
-    name: 'Stun',
-    description: 'Stun target enemy unit or hero. Costs 2W.',
-    cardType: 'spell',
-    colors: ['white'],
-    manaCost: 2,
-    effect: {
-      type: 'stun',
-      stunDuration: 1,
-      affectsUnits: true,
-      affectsHeroes: true,
-    },
-    initiative: true,
-  },
   // Unbreakable Column Spell (replacement for artifact)
   {
     id: 'white-spell-unbreakable-column',
@@ -3459,23 +3430,6 @@ export const uwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for buff + permanent regen
       damage: 0,
-    },
-    initiative: true,
-  },
-  // White/Blue Stun Spell (2 turns)
-  {
-    id: 'wgu-spell-prolonged-stun',
-    name: 'Prolonged Stun',
-    description: 'Stun target enemy unit or hero for 2 turns. Costs 3WU.',
-    cardType: 'spell',
-    colors: ['white', 'blue'],
-    manaCost: 3,
-    consumesRunes: true,
-    effect: {
-      type: 'stun',
-      stunDuration: 2,
-      affectsUnits: true,
-      affectsHeroes: true,
     },
     initiative: true,
   },
@@ -3492,21 +3446,6 @@ export const uwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       type: 'draw_and_heal',
       damage: 0, // Placeholder - would need custom effect for tower heal
       drawCount: 3,
-    },
-    initiative: true,
-  },
-  // Blue/White Move + Stun
-  {
-    id: 'uw-spell-reposition-stun',
-    name: 'Reposition and Stun',
-    description: 'Move target enemy unit to an empty slot within range 4 and stun all adjacent units. Costs 1UW.',
-    cardType: 'spell',
-    colors: ['blue', 'white'],
-    manaCost: 1,
-    consumesRunes: true,
-    effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect for move + stun adjacent
-      damage: 0,
     },
     initiative: true,
   },
@@ -3531,28 +3470,7 @@ export const uwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
 // WB (White/Black) - Life Channeler
 // ============================================================================
 
-export const wbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
-  {
-    id: 'wb-hero-life-channeler',
-    name: 'Life Channeler',
-    description: '3/6. Whenever you spend tower life (Blood Magic), put a counter on this hero. Remove 5 counters: Heal 5 to any tower or unit.',
-    cardType: 'hero',
-    colors: ['white', 'black'],
-    attack: 3,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
-    equippedItems: [],
-    ability: {
-      name: 'Life Transfer',
-      description: 'Remove 5 counters from this hero to heal 5 to any tower or unit.',
-      manaCost: 1,
-      cooldown: 2,
-      effectType: 'heal_target',
-      effectValue: 5,
-    },
-  },
-]
+export const wbHeroes: Omit<Hero, 'location' | 'owner'>[] = []
 
 export const wbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
   // WB (White-Black) - Life Channeler
@@ -3859,7 +3777,7 @@ export const allArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   ...rgArtifacts,
   ...ubArtifacts,
   ...archetypeArtifacts, // Mono-color archetype tracking artifacts
-  // Rare artifacts (equipment)
+  // Rare artifacts
   ...rareWhiteCards,
   ...rareRGCards,
   ...rareWGCards,
@@ -3960,15 +3878,6 @@ export const archetypeBattlefields: BattlefieldDefinition[] = [
     colors: ['blue', 'black'],
     staticAbility: 'Gain extra gold for killing units',
     staticAbilityId: 'gold-on-kill',
-  },
-  // UW - Proactive Control
-  {
-    id: 'battlefield-uw-control',
-    name: 'Temple Grounds',
-    description: 'UW battlefield - proactive control',
-    colors: ['blue', 'white'],
-    staticAbility: 'Units gain barrier when played',
-    staticAbilityId: 'unit-barrier-buff',
   },
 ]
 

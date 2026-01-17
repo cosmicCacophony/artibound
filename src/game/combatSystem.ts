@@ -160,7 +160,6 @@ export function resolveAttack(
         if (targetIsHero && attacker.cardType === 'hero' && 'bonusVsHeroes' in attacker && attacker.bonusVsHeroes) {
           attackPower += attacker.bonusVsHeroes
         }
-        // Apply Chapter 3 saga bonus: +3 damage to combat target
         
         
       }
@@ -220,7 +219,6 @@ export function resolveAttack(
       } else {
         attackPower = getAttackPower(attacker, false) // No hero bonus vs towers
         attackPower += getLaneMomentumBonus(gameState, battlefieldId, attacker.owner)
-        // Apply Chapter 3 saga bonus: +3 damage to combat target (towers count as combat targets)
         
         
       }
