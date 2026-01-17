@@ -886,12 +886,17 @@ export function createCardFromTemplate(
   // Handle heroes - template should already have all properties
   if (template.cardType === 'hero') {
     const heroTemplate = template as unknown as Omit<Hero, 'location' | 'owner' | 'id' | 'name' | 'description' | 'cardType'>
+    // Ensure template cannot override ownership/location/id when instancing from draft selections.
+    const { owner: _ignoredOwner, location: _ignoredLocation, id: _ignoredId, ...safeHeroTemplate } =
+      heroTemplate as unknown as Omit<Hero, 'location' | 'owner' | 'id'>
     return {
       ...base,
-      ...heroTemplate,
-      maxHealth: heroTemplate.maxHealth || heroTemplate.health,
-      currentHealth: heroTemplate.currentHealth !== undefined ? heroTemplate.currentHealth : (heroTemplate.maxHealth || heroTemplate.health),
-      equippedItems: heroTemplate.equippedItems || [],
+      ...safeHeroTemplate,
+      maxHealth: safeHeroTemplate.maxHealth || safeHeroTemplate.health,
+      currentHealth: safeHeroTemplate.currentHealth !== undefined
+        ? safeHeroTemplate.currentHealth
+        : (safeHeroTemplate.maxHealth || safeHeroTemplate.health),
+      equippedItems: safeHeroTemplate.equippedItems || [],
     } as Hero
   }
 

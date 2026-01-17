@@ -278,7 +278,6 @@ export interface Hero extends BaseCard {
   temporaryHP?: number // Temporary HP bonus (resets at end of turn)
   temporaryAttack?: number // Temporary attack bonus (resets at end of turn)
   supportEffect?: string
-  synergyTag?: string // Hero synergy tag (bonuses when paired with another matching hero)
   location: Location
   owner: PlayerId
   slot?: number // Slot position 1-5 on battlefield

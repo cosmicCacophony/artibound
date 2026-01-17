@@ -1,33 +1,6 @@
 import { Card, AttackTarget, AttackTargetType, Battlefield, PlayerId, GameMetadata, GameState, GenericUnit } from './types'
 import { getSagaCombatDamageBonus } from './sagaSystem'
 
-function getLaneMomentumBonus(
-  gameState: GameState | undefined,
-  battlefieldId: 'battlefieldA' | 'battlefieldB',
-  player: PlayerId
-): number {
-  const laneMomentum = gameState?.metadata?.laneMomentum
-  if (!laneMomentum) return 0
-  const totalDamage = laneMomentum[battlefieldId]?.[player] ?? 0
-  if (totalDamage >= 15) return 3
-  if (totalDamage >= 10) return 2
-  if (totalDamage >= 5) return 1
-  return 0
-}
-
-function getHeroSynergyAttackBonus(attacker: Card, gameState: GameState | undefined): number {
-  if (!gameState || attacker.cardType !== 'hero') return 0
-  const synergyTag = attacker.synergyTag
-  if (!synergyTag) return 0
-  const owner = attacker.owner
-  const playerHeroes = [
-    ...gameState.battlefieldA[owner as 'player1' | 'player2'],
-    ...gameState.battlefieldB[owner as 'player1' | 'player2'],
-  ].filter(card => card.cardType === 'hero') as Card[]
-  const matchingHeroes = playerHeroes.filter(hero => hero.synergyTag === synergyTag)
-  return matchingHeroes.length >= 2 ? 1 : 0
-}
-
 /**
  * Combat System - Handles all combat-related logic
  * 
@@ -160,8 +133,7 @@ export function resolveAttack(
         if (gameState) {
           attackPower += getSagaCombatDamageBonus(gameState, attacker.owner)
         }
-        attackPower += getLaneMomentumBonus(gameState, battlefieldId, attacker.owner)
-        attackPower += getHeroSynergyAttackBonus(attacker, gameState)
+        
       }
       
       // Calculate effective health (currentHealth + temporaryHP)
@@ -222,8 +194,7 @@ export function resolveAttack(
         if (gameState) {
           attackPower += getSagaCombatDamageBonus(gameState, attacker.owner)
         }
-        attackPower += getLaneMomentumBonus(gameState, battlefieldId, attacker.owner)
-        attackPower += getHeroSynergyAttackBonus(attacker, gameState)
+        
       }
       
       // Apply tower armor (reduce damage by armor amount)
@@ -245,8 +216,7 @@ export function resolveAttack(
         if (gameState) {
           attackPower += getSagaCombatDamageBonus(gameState, attacker.owner)
         }
-        attackPower += getLaneMomentumBonus(gameState, battlefieldId, attacker.owner)
-        attackPower += getHeroSynergyAttackBonus(attacker, gameState)
+        
       }
       damageDealt = 0 // No damage to tower (it's already dead)
     }
@@ -460,8 +430,6 @@ export function resolveSimultaneousCombat(
       if (gameState) {
         p1AttackPower += getSagaCombatDamageBonus(gameState, p1Unit.owner)
       }
-      p1AttackPower += getLaneMomentumBonus(gameState, battlefieldId, p1Unit.owner)
-      p1AttackPower += getHeroSynergyAttackBonus(p1Unit, gameState)
     }
     let p2AttackPower = 0
     if (p2Unit && !p2IsStunned) {
@@ -474,8 +442,6 @@ export function resolveSimultaneousCombat(
       if (gameState) {
         p2AttackPower += getSagaCombatDamageBonus(gameState, p2Unit.owner)
       }
-      p2AttackPower += getLaneMomentumBonus(gameState, battlefieldId, p2Unit.owner)
-      p2AttackPower += getHeroSynergyAttackBonus(p2Unit, gameState)
     }
     
     // Apply Player 1's attack

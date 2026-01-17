@@ -196,7 +196,8 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
             const playerKey = player
             
             // Turn 1 deployment sequence validation (same as useDeployment.ts)
-            if (metadata.currentTurn === 1) {
+            // Only enforce turn 1 counter-deployment rules during PLAY phase.
+            if (isPlayPhase && metadata.currentTurn === 1) {
               const deploymentPhase = metadata.turn1DeploymentPhase || 'p1_lane1'
               
               if (deploymentPhase === 'p1_lane1') {
@@ -251,8 +252,8 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
                   return
                 }
               }
-            } else {
-              // Normal turn (not turn 1) - check action
+            } else if (isPlayPhase) {
+              // Normal turn (not turn 1) - check action (play phase only)
               if (metadata.actionPlayer !== playerKey) {
                 alert('It\'s not your turn to act!')
                 return

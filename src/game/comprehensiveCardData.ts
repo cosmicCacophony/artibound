@@ -52,8 +52,7 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 4,
     maxHealth: 4,
     currentHealth: 4,
-    supportEffect: 'Gains +2/+0 when you cast spells. Synergy: +1 attack if another BR spell hero is deployed.',
-    synergyTag: 'br-spell',
+    supportEffect: 'Gains +2/+0 when you cast spells.',
     equippedItems: [],
     ability: {
       name: 'Spell Mastery',
@@ -75,8 +74,7 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 5,
     maxHealth: 5,
     currentHealth: 5,
-    supportEffect: 'Converts spells into tower damage. Synergy: +1 attack if another BR spell hero is deployed.',
-    synergyTag: 'br-spell',
+    supportEffect: 'Converts spells into tower damage.',
     equippedItems: [],
     ability: {
       name: 'Spell Burn',
@@ -86,28 +84,6 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       trigger: 'passive',
       effectType: 'damage_target',
       effectValue: 1,
-    },
-  },
-  {
-    id: 'red-hero-blaze-champion',
-    name: 'Blaze Champion',
-    description: '3/6. Whenever you cast a spell, gain a Blaze counter. At 5 counters: Deal 4 damage divided among any targets.',
-    cardType: 'hero',
-    colors: ['red'],
-    attack: 3,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
-    supportEffect: 'Builds spell counters for burst damage',
-    equippedItems: [],
-    ability: {
-      name: 'Blaze Burst',
-      description: 'Whenever you cast a spell, gain a Blaze counter. At 5 counters: Deal 4 damage divided among any targets and remove all counters.',
-      manaCost: 0,
-      cooldown: 0,
-      trigger: 'passive',
-      effectType: 'custom',
-      effectValue: 4,
     },
   },
 ]
@@ -584,8 +560,7 @@ export const rgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 6,
     maxHealth: 6,
     currentHealth: 6,
-    supportEffect: 'Can fight enemy units. Synergy: +1 attack if another RG mighty hero is deployed.',
-    synergyTag: 'rg-mighty',
+    supportEffect: 'Can fight enemy units.',
     equippedItems: [],
     ability: {
       name: 'Battle Rage',
@@ -594,6 +569,29 @@ export const rgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       cooldown: 0, // Can use multiple times
       effectType: 'multi_fight', // Custom effect: fights front + adjacent
       effectValue: 3, // Can hit up to 3 units
+    },
+  },
+  // RG Mighty Champion
+  {
+    id: 'green-hero-mighty-champion',
+    name: 'Mighty Champion',
+    description: '4/6. Your creatures with 5+ power get +1/+1.',
+    cardType: 'hero',
+    colors: ['green'],
+    attack: 4,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
+    supportEffect: 'Creatures with 5+ power get +1/+1',
+    equippedItems: [],
+    ability: {
+      name: 'Mighty Blessing',
+      description: 'Passive: Your creatures with 5+ power get +1/+1.',
+      manaCost: 0,
+      cooldown: 0,
+      trigger: 'passive',
+      effectType: 'buff_units',
+      effectValue: 1,
     },
   },
   // Chromatic Payoff Hero - Green's rune identity
@@ -607,8 +605,7 @@ export const rgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 6,
     maxHealth: 6,
     currentHealth: 6,
-    supportEffect: 'Chromatic payoff for U/B runes. Synergy: +1 attack if another RG mighty hero is deployed.',
-    synergyTag: 'rg-mighty',
+    supportEffect: 'Chromatic payoff for U/B runes.',
     equippedItems: [],
     ability: {
       name: 'Elemental Fury',
@@ -849,78 +846,6 @@ export const ruSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
 // ============================================================================
 
 export const rbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
-  {
-    id: 'rb-hero-reaper',
-    name: 'Blood Reaper',
-    description: 'Kills enemies for cards',
-    cardType: 'hero',
-    colors: ['red', 'black'],
-    attack: 4,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-    supportEffect: 'Draw card when unit dies. Synergy: +1 attack if another BR spell hero is deployed.',
-    synergyTag: 'br-spell',
-    equippedItems: [],
-    ability: {
-      name: 'Blood Sacrifice',
-      description: 'Sacrifice a unit you control: Deal 3 damage to target unit or hero, draw a card.',
-      manaCost: 1,
-      cooldown: 2,
-      effectType: 'sacrifice_unit',
-      effectValue: 3,
-    },
-  },
-  // Black Dopamine Hit: Cross-Lane Assassin Hero
-  {
-    id: 'black-hero-cross-assassin',
-    name: 'Cross-Lane Assassin',
-    description: '4/8. Activated (1 mana): Move this hero to any battlefield. If it moves, it may fight an enemy unit there.',
-    cardType: 'hero',
-    colors: ['black'],
-    attack: 4,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-    supportEffect: 'Can move across battlefields',    equippedItems: [],
-    bonusVsHeroes: 4,
-    ability: {
-      name: 'Shadow Step',
-      description: 'Move this hero to any battlefield. If it moves, it may fight an enemy unit there.',
-      manaCost: 1,
-      cooldown: 2,
-      effectType: 'move_and_fight', // Custom effect: move across battlefields and fight
-      effectValue: 1,
-    },
-  },
-  // Blood Magic Heroes (Black's Rune Identity)
-  // Mono-Black Blood Magic Hero - Dark Ritualist (Black runes only, very cheap)
-  {
-    id: 'black-hero-dark-ritualist',
-    name: 'Dark Ritualist',
-    description: '3/8. Mono-Black Blood Magic: Pay 1 life per tower for BLACK runes only. Does not work for other colors.',
-    cardType: 'hero',
-    colors: ['black'],
-    attack: 3,
-    health: 8,
-    maxHealth: 8,
-    currentHealth: 8,
-    equippedItems: [],
-    ability: {
-      name: 'Dark Ritual Blood Magic',
-      description: 'Passive: Pay 1 life per tower (2 total) for BLACK runes only. Other colors cannot be substituted.',
-      manaCost: 0,
-      cooldown: 0,
-      trigger: 'passive',
-      effectType: 'buff_units',
-      effectValue: 0,
-      bloodMagic: {
-        enabled: true,
-        costReduction: 1, // Reduces black cost from 2 to 1
-        description: 'Pay 1 life/tower for BLACK runes only (mono-black support)'
-      }
-    }
-  },
   // Strong Mono-Black Hero
   {
     id: 'black-hero-soul-reaper',
@@ -932,8 +857,7 @@ export const rbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 5,
     maxHealth: 5,
     currentHealth: 5,
-    supportEffect: 'Converts spells into tower damage. Synergy: +1 attack if another BR spell hero is deployed.',
-    synergyTag: 'br-spell',
+    supportEffect: 'Converts spells into tower damage.',
     equippedItems: [],
     ability: {
       name: 'Soul Siphon',
@@ -943,52 +867,6 @@ export const rbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       trigger: 'passive',
       effectType: 'damage_target',
       effectValue: 1,
-    },
-  },
-  {
-    id: 'black-hero-night-harvester',
-    name: 'Night Harvester',
-    description: '3/5. Whenever you cast your 2nd spell each turn, draw a card and this hero gains +1/+1 until end of turn.',
-    cardType: 'hero',
-    colors: ['black'],
-    attack: 3,
-    health: 5,
-    maxHealth: 5,
-    currentHealth: 5,
-    supportEffect: 'Multi-spell reward: card draw and buffs. Synergy: +1 attack if another BR spell hero is deployed.',
-    synergyTag: 'br-spell',
-    equippedItems: [],
-    ability: {
-      name: 'Night Harvest',
-      description: 'Passive: Whenever you cast your 2nd spell each turn, draw a card and this hero gains +1/+1 until end of turn.',
-      manaCost: 0,
-      cooldown: 0,
-      trigger: 'passive',
-      effectType: 'draw_card',
-      effectValue: 1,
-    },
-  },
-  // Shadowfiend - Scaling Black Hero
-  {
-    id: 'black-hero-shadowfiend',
-    name: 'Shadowfiend',
-    description: '2/6. Whenever an adjacent unit dies, this hero gains +1/+1 counter. When this hero dies, it loses half its counters (rounded down).',
-    cardType: 'hero',
-    colors: ['black'],
-    attack: 2,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
-    supportEffect: 'Gains +1/+1 counters from adjacent deaths',
-    equippedItems: [],
-    ability: {
-      name: 'Necro Mastery',
-      description: 'Deal 1 damage to a random enemy unit for each +1/+1 counter on this hero. Costs 2B.',
-      manaCost: 2,
-      cooldown: 2,
-      effectType: 'shadowfiend_ability', // Custom effect
-      effectValue: 1, // 1 damage per counter
-      runeCost: ['black'],
     },
   },
 ]
@@ -1271,29 +1149,6 @@ export const gwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       manaCost: 1,
       cooldown: 2,
       effectType: 'custom', // Custom: grants barrier
-      effectValue: 1,
-    },
-  },
-  // GW Mighty Champion (GWR pivot)
-  {
-    id: 'green-hero-mighty-champion',
-    name: 'Mighty Champion',
-    description: '4/6. Your creatures with 5+ power get +1/+1.',
-    cardType: 'hero',
-    colors: ['green'],
-    attack: 4,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
-    supportEffect: 'Creatures with 5+ power get +1/+1',
-    equippedItems: [],
-    ability: {
-      name: 'Mighty Blessing',
-      description: 'Passive: Your creatures with 5+ power get +1/+1.',
-      manaCost: 0,
-      cooldown: 0,
-      trigger: 'passive',
-      effectType: 'buff_units',
       effectValue: 1,
     },
   },
@@ -1925,56 +1780,6 @@ export const guSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
 // ============================================================================
 
 export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
-  {
-    id: 'ub-hero-nature-guardian',
-    name: 'Nature Guardian',
-    description: 'Resilient control hero',
-    cardType: 'hero',
-    colors: ['green', 'black'], // Changed from green to green/black to enable black spells
-    attack: 3, // Reduced from 4
-    health: 7, // Reduced from 10
-    maxHealth: 7, // Reduced from 10
-    currentHealth: 7, // Reduced from 10
-    supportEffect: 'When an enemy unit dies, gain +1 max mana this turn',    equippedItems: [],
-    ability: {
-      name: 'Steal Creep',
-      description: 'Take control of target enemy unit (units only, not heroes)',
-      manaCost: 1,
-      cooldown: 4,
-      effectType: 'steal_unit',
-      effectValue: 0,
-      startsOnCooldown: true, // Starts on cooldown at game start
-    },
-  },
-  // Blood Magic Hero - Desperate Necromancer (Limited substitutions)
-  {
-    id: 'ub-hero-desperate-necromancer',
-    name: 'Desperate Necromancer',
-    description: '3/7. Blood Magic (max 2 runes per spell): Pay tower life for up to 2 missing runes per spell. B: 2, R/G: 3, U/W: 4 per tower.',
-    cardType: 'hero',
-    colors: ['blue', 'black'],
-    attack: 3,
-    health: 7,
-    maxHealth: 7,
-    currentHealth: 7,
-    supportEffect: 'Blood Magic up to 2 runes. Synergy: +1 attack if another UB curse hero is deployed.',
-    synergyTag: 'ub-curse',
-    equippedItems: [],
-    ability: {
-      name: 'Limited Blood Magic',
-      description: 'Passive: Pay tower life for up to 2 missing runes per spell. B: 2, R/G: 3, U/W: 4 per tower.',
-      manaCost: 0,
-      cooldown: 0,
-      trigger: 'passive',
-      effectType: 'buff_units',
-      effectValue: 0,
-      bloodMagic: {
-        enabled: true,
-        maxSubstitutions: 2,
-        description: 'Pay tower life for up to 2 missing runes (B: 2, R/G: 3, U/W: 4 per tower)'
-      }
-    }
-  },
   // Morgana-Inspired Curse Hero (Enhanced)
   {
     id: 'blue-hero-morgana-curser',
@@ -1986,8 +1791,7 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 6,
     maxHealth: 6,
     currentHealth: 6,
-    supportEffect: 'Creates Curse spells each turn, curses spread if not removed. Synergy: +1 attack if another UB curse hero is deployed.',
-    synergyTag: 'ub-curse',
+    supportEffect: 'Creates Curse spells each turn, curses spread if not removed.',
     equippedItems: [],
     ability: {
       name: 'Curse Mastery',
@@ -1998,6 +1802,28 @@ export const ubHeroes: Omit<Hero, 'location' | 'owner'>[] = [
       effectType: 'create_curse_spell', // Creates curse spell card
       effectValue: 1, // Creates 1 curse spell, spreads if curses not removed
       spreadEffect: true, // If curses not removed, create more
+    },
+  },
+  {
+    id: 'black-hero-night-harvester',
+    name: 'Night Harvester',
+    description: '3/5. Whenever you cast your 2nd spell each turn, draw a card and this hero gains +1/+1 until end of turn.',
+    cardType: 'hero',
+    colors: ['black'],
+    attack: 3,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+    supportEffect: 'Multi-spell reward: card draw and buffs.',
+    equippedItems: [],
+    ability: {
+      name: 'Night Harvest',
+      description: 'Passive: Whenever you cast your 2nd spell each turn, draw a card and this hero gains +1/+1 until end of turn.',
+      manaCost: 0,
+      cooldown: 0,
+      trigger: 'passive',
+      effectType: 'draw_card',
+      effectValue: 1,
     },
   },
 ]
@@ -4063,8 +3889,7 @@ export const uwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 6,
     maxHealth: 6,
     currentHealth: 6,
-    supportEffect: 'Creates creatures from spell casting. Synergy: +1 attack if another UW arcane hero is deployed.',
-    synergyTag: 'uw-arcane',
+    supportEffect: 'Creates creatures from spell casting.',
     equippedItems: [],
     ability: {
       name: 'Spell Summoning',
@@ -4442,8 +4267,7 @@ export const rareWUHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 7,
     currentHealth: 7,
     signatureCardId: 'rare-wu-spellweaver-sig',
-    supportEffect: 'Spell cost reduction. Synergy: +1 attack if another UW arcane hero is deployed.',
-    synergyTag: 'uw-arcane',
+    supportEffect: 'Spell cost reduction.',
     equippedItems: [],
     ability: {
       name: 'Arcane Protection',
@@ -4497,6 +4321,34 @@ export const rareBRCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith'
 // ALL CARDS COMBINED
 // ============================================================================
 
+const allowedTwoColorCombos = new Set([
+  'black-red',   // BR
+  'black-blue',  // UB
+  'green-red',   // RG
+])
+
+const allowedThreeColorCombos = new Set([
+  'black-blue-red',   // UBR
+  'black-green-red',  // BRG
+  'green-red-white',  // RGW
+  'blue-green-white', // UWG
+  'black-blue-white', // UWB
+])
+
+const isAllowedDraftColor = (colors?: Color[]): boolean => {
+  if (!colors || colors.length === 0) return true
+  const uniqueColors = Array.from(new Set(colors))
+  if (uniqueColors.length <= 1) return true
+  const colorKey = uniqueColors.sort().join('-')
+  if (uniqueColors.length === 2) {
+    return allowedTwoColorCombos.has(colorKey)
+  }
+  if (uniqueColors.length === 3) {
+    return allowedThreeColorCombos.has(colorKey)
+  }
+  return false
+}
+
 export const allHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   ...rwHeroes,
   ...rgHeroes,
@@ -4515,7 +4367,7 @@ export const allHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   // Rare heroes
   ...rareBlueHeroes,
   ...rareWUHeroes,
-]
+].filter(hero => isAllowedDraftColor(hero.colors))
 
 export const allCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
   ...rwCards,
@@ -4544,7 +4396,7 @@ export const allCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
   ...rareGreenCards,
   ...rareUBCards,
   ...rareBRCards,
-]
+].filter(card => isAllowedDraftColor(card.colors))
 
 // ============================================================================
 // RUNE MANIPULATION SPELLS - Ramp, Seals, Mana Rocks
@@ -4563,7 +4415,7 @@ export const allArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
   ...rareWhiteCards,
   ...rareRGCards,
   ...rareWGCards,
-]
+].filter(artifact => isAllowedDraftColor(artifact.colors))
 
 export const allSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   ...rwSpells,
@@ -4582,7 +4434,7 @@ export const allSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   ...gbrwSpells,
   ...wubSpells, // WUB (White/Blue/Black) - Esper Control/Value
   ...wguSpells, // WGU (White/Green/Blue) - Bant Control/Value
-]
+].filter(spell => isAllowedDraftColor(spell.colors))
 
 // ============================================================================
 // BATTLEFIELDS
