@@ -12,6 +12,8 @@ export function useDeployment() {
 
   const handleDeploy = useCallback((location: Location, targetSlot?: number) => {
     if (!selectedCardId || !selectedCard) return
+
+    const removeFromLocation = (cards: Card[]) => cards.filter(c => c.id !== selectedCardId)
     
     const isPlayPhase = metadata.currentPhase === 'play'
     const isDeployPhase = metadata.currentPhase === 'deploy'
@@ -315,6 +317,74 @@ export function useDeployment() {
         }
         return
       }
+    }
+
+    // Spells can be cast onto a battlefield without occupying a slot
+    if (selectedCard.cardType === 'spell' && (location === 'battlefieldA' || location === 'battlefieldB')) {
+      setGameState(prev => {
+        const runePoolKey = `${selectedCard.owner}RunePool` as keyof GameMetadata
+        const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
+        let updatedRunePool = prev.metadata[runePoolKey] as any
+        let updatedMana = prev.metadata[manaKey] as number
+
+        if (cardTemplate.manaCost) {
+          updatedMana = updatedMana - cardTemplate.manaCost
+        }
+        const { newPool } = consumeRunesForCardWithTracking(cardTemplate, updatedRunePool)
+        updatedRunePool = newPool
+
+        return {
+          ...prev,
+          [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
+          [`${selectedCard.owner}Base`]: removeFromLocation(prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[]),
+          [`${selectedCard.owner}DeployZone`]: removeFromLocation(prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[]),
+          metadata: {
+            ...prev.metadata,
+            [runePoolKey]: updatedRunePool,
+            [manaKey]: updatedMana,
+          },
+        }
+      })
+
+      if (isPlayPhase) {
+        const spellCard = selectedCard as SpellCard
+        if (spellCard.effect.type === 'create_tokens' || spellCard.effect.type === 'tokenize') {
+          const tokens = buildTokenDefinitions(spellCard)
+          const templateId = getTemplateId(spellCard.id)
+          const temporaryZone = {
+            type: 'tokenize' as const,
+            title: 'Token Creation',
+            description: 'Drag tokens onto the battlefield.',
+            owner: spellCard.owner,
+            tokens,
+          }
+          setPendingEffect({
+            cardId: templateId,
+            owner: spellCard.owner,
+            effect: spellCard.effect,
+            temporaryZone,
+          })
+          setTemporaryZone(temporaryZone)
+          setSelectedCardId(null)
+          return
+        }
+
+        let pendingEffect: PendingEffect | null = null
+        setGameState(prev => {
+          const result = resolveSpellEffect({
+            gameState: prev,
+            spell: spellCard,
+            owner: spellCard.owner,
+          })
+          pendingEffect = result.pendingEffect
+          return result.nextState
+        })
+        setPendingEffect(pendingEffect)
+        setTemporaryZone(pendingEffect?.temporaryZone || null)
+      }
+
+      setSelectedCardId(null)
+      return
     }
 
     // Check if deploying to battlefield and slots are full

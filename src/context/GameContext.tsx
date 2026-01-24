@@ -195,7 +195,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const initializeRandomGame = useCallback(() => {
     // Assign archetypes - one player gets UBG, the other gets boss Legion deck (AI-only)
-    const useBossForPlayer2 = Math.random() > 0.5
+    const useBossForPlayer2 = true
     const player1Archetype: Archetype = 'ubg-control'
     const player2Archetype: Archetype = useBossForPlayer2 ? 'rw-legion' : 'ubg-control'
     

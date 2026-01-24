@@ -148,6 +148,43 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
   const { handleToggleStun, handleSpawnCreep } = useTurnManagement()
 
   const battlefield = gameState[battlefieldId]
+  const handleBattlefieldDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const tokenData = e.dataTransfer.getData('tokenData') || e.dataTransfer.getData('text/token')
+    if (tokenData) {
+      return
+    }
+
+    let cardId = e.dataTransfer.getData('cardId') || e.dataTransfer.getData('text/plain')
+    if (!cardId) {
+      return
+    }
+    if (cardId.startsWith('token:')) {
+      return
+    }
+
+    const allCards = [
+      ...gameState.player1Hand,
+      ...gameState.player2Hand,
+      ...gameState.player1Base,
+      ...gameState.player2Base,
+      ...gameState.player1DeployZone,
+      ...gameState.player2DeployZone,
+      ...gameState.battlefieldA.player1,
+      ...gameState.battlefieldA.player2,
+      ...gameState.battlefieldB.player1,
+      ...gameState.battlefieldB.player2,
+    ]
+    const droppedCard = allCards.find(c => c.id === cardId)
+    if (!droppedCard || droppedCard.cardType !== 'spell') {
+      return
+    }
+    setSelectedCardId(cardId)
+    setDraggedCardId(null)
+    handleDeploy(battlefieldId)
+  }
   const battlefieldAP1 = gameState.battlefieldA.player1
   const battlefieldAP2 = gameState.battlefieldA.player2
   const battlefieldBP1 = gameState.battlefieldB.player1
@@ -958,6 +995,13 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
           border: `2px solid ${borderColor}`,
           backgroundColor: bgColor,
         }}
+        onDragOver={(e) => {
+          const types = Array.from(e.dataTransfer.types)
+          if (types.includes('tokenData') || types.includes('text/token') || types.includes('cardId') || types.includes('text/plain')) {
+            e.preventDefault()
+          }
+        }}
+        onDrop={handleBattlefieldDrop}
       >
       <div className="battlefield-header">
         <div className="battlefield-title">
