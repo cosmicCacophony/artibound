@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
-import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, BattlefieldDefinition, FinalDraftSelection, Color, HEROES_REQUIRED, CARDS_REQUIRED, ShopItem, Archetype, GameMetadata } from '../game/types'
+import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, BattlefieldDefinition, FinalDraftSelection, Color, HEROES_REQUIRED, CARDS_REQUIRED, ShopItem, Archetype, GameMetadata, PendingEffect } from '../game/types'
 import { createInitialGameState, createCardLibrary, createGameStateFromDraft } from '../game/sampleData'
 import { allCards, allSpells, allArtifacts, allBattlefields, allHeroes } from '../game/cardData'
 import { ubHeroes } from '../game/comprehensiveCardData'
@@ -60,6 +60,10 @@ interface GameContextType {
     }
   } | null
   setCombatSummaryData: (data: any) => void
+
+  // Pending effects (targeting or confirmation)
+  pendingEffect: PendingEffect | null
+  setPendingEffect: (effect: PendingEffect | null) => void
   
   // Computed values
   selectedCard: Card | null
@@ -128,6 +132,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       overflowDamage: { player1: number, player2: number }
     }
   } | null>(null)
+  const [pendingEffect, setPendingEffect] = useState<PendingEffect | null>(null)
   
   // Computed values
   const metadata = gameState.metadata
@@ -450,6 +455,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setShowCombatSummary,
     combatSummaryData,
     setCombatSummaryData,
+    pendingEffect,
+    setPendingEffect,
     selectedCard,
     metadata,
     activePlayer,

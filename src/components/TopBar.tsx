@@ -5,7 +5,6 @@ import { useTurnManagement } from '../hooks/useTurnManagement'
 interface TopBarProps {
   showDebug: boolean
   onToggleDebug: () => void
-  onResolveCombat: () => void
   onTogglePreview: () => void
   isPreviewActive: boolean
 }
@@ -13,7 +12,6 @@ interface TopBarProps {
 export function TopBar({
   showDebug,
   onToggleDebug,
-  onResolveCombat,
   onTogglePreview,
   isPreviewActive,
 }: TopBarProps) {
@@ -21,7 +19,15 @@ export function TopBar({
   const { savedStates, exportGameState, importGameState } = useGamePersistence()
   const { handleNextPhase, handleNextTurn, handlePass, handleEndDeployPhase } = useTurnManagement()
 
-  const canCombat = metadata.player1Passed && metadata.player2Passed
+  const passLabel = (() => {
+    if (metadata.currentPhase !== 'play' || !metadata.actionPlayer) {
+      return 'Pass'
+    }
+    const otherPassed = metadata.actionPlayer === 'player1'
+      ? metadata.player2Passed
+      : metadata.player1Passed
+    return otherPassed ? 'Pass to Combat' : 'Pass'
+  })()
 
   return (
     <div className="topbar">
@@ -59,9 +65,6 @@ export function TopBar({
         <button className="topbar__button" onClick={onTogglePreview}>
           {isPreviewActive ? 'Exit Preview' : 'Preview'}
         </button>
-        <button className="topbar__button" onClick={onResolveCombat} disabled={!canCombat} title={canCombat ? 'Resolve combat' : 'Both players must pass'}>
-          Combat
-        </button>
         {metadata.currentTurn === 1 && metadata.turn1DeploymentPhase && metadata.turn1DeploymentPhase !== 'complete' && (
           (metadata.turn1DeploymentPhase === 'p2_lane1' || metadata.turn1DeploymentPhase === 'p1_lane2') && (
             <button
@@ -75,7 +78,7 @@ export function TopBar({
         {metadata.currentPhase === 'play' && metadata.actionPlayer &&
           !(metadata.currentTurn === 1 && metadata.turn1DeploymentPhase && metadata.turn1DeploymentPhase !== 'complete') && (
             <button className="topbar__button" onClick={() => handlePass(metadata.actionPlayer!)}>
-              Pass
+              {passLabel}
             </button>
           )}
         <button className="topbar__button topbar__button--ghost" onClick={onToggleDebug}>

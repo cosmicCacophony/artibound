@@ -6,6 +6,7 @@ import { useTurnManagement } from '../hooks/useTurnManagement'
 import { HeroCard } from './HeroCard'
 import { HeroAbilityEditor } from './HeroAbilityEditor'
 import { KeywordBadge } from './KeywordBadge'
+import { isValidTargetForContext, resolveSpellEffect } from '../game/effectResolver'
 
 interface BattlefieldViewProps {
   battlefieldId: 'battlefieldA' | 'battlefieldB'
@@ -125,6 +126,8 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
     setGameState,
     setShowCombatSummary,
     setCombatSummaryData,
+    pendingEffect,
+    setPendingEffect,
   } = useGameContext()
   const [editingHeroId, setEditingHeroId] = useState<string | null>(null)
   // Track which slot is currently being dragged over (player + slotNum)
@@ -162,6 +165,32 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
     if (e) {
       e.stopPropagation()
     }
+    if (pendingEffect?.targeting) {
+      const isValidTarget = isValidTargetForContext(gameState, cardId, pendingEffect.targeting, pendingEffect.owner)
+      if (isValidTarget) {
+        setGameState(prev => {
+          const spell = {
+            id: pendingEffect.cardId,
+            name: pendingEffect.cardId,
+            description: '',
+            cardType: 'spell',
+            location: 'base',
+            owner: pendingEffect.owner,
+            effect: pendingEffect.effect,
+          } as import('../game/types').SpellCard
+          const result = resolveSpellEffect({
+            gameState: prev,
+            spell,
+            owner: pendingEffect.owner,
+            targetId: cardId,
+          })
+          return result.nextState
+        })
+        setPendingEffect(null)
+        setSelectedCardId(null)
+        return
+      }
+    }
     setSelectedCardId(selectedCardId === cardId ? null : cardId)
   }
 
@@ -181,6 +210,11 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
   const renderSlot = (slotNum: number, player: 'player1' | 'player2') => {
     const cardInSlot = battlefield[player].find(c => c.slot === slotNum)
     const isSelected = selectedCard && selectedCard.id === cardInSlot?.id
+    const isTargetable = Boolean(
+      pendingEffect?.targeting &&
+      cardInSlot &&
+      isValidTargetForContext(gameState, cardInSlot.id, pendingEffect.targeting, pendingEffect.owner)
+    )
     
     // Get dragged card if any - also check battlefields in case card is being moved
     const draggedCard = draggedCardId ? 
@@ -689,7 +723,7 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
             <div
               className={`unit-card ${isSelected ? 'unit-card--selected' : ''}`}
               style={{
-                border: `2px solid ${isSelected ? '#ffd700' : (cardInSlot.cardType === 'hero' ? ((cardInSlot as Hero).colors?.[0] === 'red' ? '#c41e3a' : (cardInSlot as Hero).colors?.[0] === 'blue' ? '#0078d4' : (cardInSlot as Hero).colors?.[0] === 'green' ? '#228b22' : (cardInSlot as Hero).colors?.[0] === 'black' ? '#2d2d2d' : (cardInSlot as Hero).colors?.[0] === 'white' ? '#f0e68c' : '#8b7355') : '#8b7355')}`,
+                border: `2px solid ${isSelected ? '#ffd700' : isTargetable ? '#4caf50' : (cardInSlot.cardType === 'hero' ? ((cardInSlot as Hero).colors?.[0] === 'red' ? '#c41e3a' : (cardInSlot as Hero).colors?.[0] === 'blue' ? '#0078d4' : (cardInSlot as Hero).colors?.[0] === 'green' ? '#228b22' : (cardInSlot as Hero).colors?.[0] === 'black' ? '#2d2d2d' : (cardInSlot as Hero).colors?.[0] === 'white' ? '#f0e68c' : '#8b7355') : '#8b7355')}`,
                 backgroundColor: isSelected ? '#fffacd' : '#f5f5dc',
               }}
               onClick={(e) => {

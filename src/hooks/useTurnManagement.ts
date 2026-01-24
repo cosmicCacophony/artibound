@@ -217,6 +217,11 @@ export function useTurnManagement() {
           },
         }
 
+      const allCardsToDraw = {
+        player1: [] as Card[],
+        player2: [] as Card[],
+      }
+
         return {
           ...prev,
           battlefieldA: resultA.updatedBattlefield,
@@ -272,9 +277,9 @@ export function useTurnManagement() {
       })
       setShowCombatSummary(true)
       
-      // End turn - switch player and reset to play phase
+      // End turn - switch player and enter deploy phase
       nextPlayer = player === 'player1' ? 'player2' : 'player1'
-      nextPhase = 'play'
+      nextPhase = 'deploy'
       shouldIncrementTurn = nextPlayer === 'player1'
       
       // Reset pass flags at start of new turn
@@ -375,23 +380,41 @@ export function useTurnManagement() {
 
       const totalGoldThisTurn = baseGoldPerTurn + goldPerTurnFromItems
 
-      setGameState(prev => ({
-        ...prev,
-        metadata: {
-          ...prev.metadata,
-          [`${player}Gold`]: (prev.metadata[`${player}Gold` as keyof GameMetadata] as number) + totalGoldThisTurn,
-          currentTurn: prev.metadata.currentTurn + (shouldIncrementTurn ? 1 : 0),
-          activePlayer: nextPlayer,
-          currentPhase: nextPhase,
-          [`${nextPlayer}MaxMana`]: nextPlayerMaxMana,
-          [`${nextPlayer}Mana`]: nextPlayerMaxMana, // Restore to max
-          // Reset pass flags at start of new turn
-          player1Passed: false,
-          player2Passed: false,
-          // Reset turn 1 deployment phase if we're past turn 1
-          ...(shouldIncrementTurn && prev.metadata.currentTurn > 1 ? { turn1DeploymentPhase: 'complete' } : {}),
-        },
-      }))
+      setGameState(prev => {
+        const canDeployHero = (playerId: 'player1' | 'player2') => {
+          const base = prev[`${playerId}Base` as keyof typeof prev] as Card[]
+          const deployZone = prev[`${playerId}DeployZone` as keyof typeof prev] as Card[]
+          const cooldowns = prev.metadata.deathCooldowns || {}
+
+          const baseHeroesReady = base.some(card => card.cardType === 'hero' && (cooldowns[card.id] || 0) === 0)
+          const deployHeroesReady = deployZone.some(card => card.cardType === 'hero')
+          return baseHeroesReady || deployHeroesReady
+        }
+
+        const shouldSkipDeploy = nextPhase === 'deploy' &&
+          !canDeployHero('player1') &&
+          !canDeployHero('player2')
+
+        const resolvedPhase = shouldSkipDeploy ? 'play' : nextPhase
+
+        return {
+          ...prev,
+          metadata: {
+            ...prev.metadata,
+            [`${player}Gold`]: (prev.metadata[`${player}Gold` as keyof GameMetadata] as number) + totalGoldThisTurn,
+            currentTurn: prev.metadata.currentTurn + (shouldIncrementTurn ? 1 : 0),
+            activePlayer: nextPlayer,
+            currentPhase: resolvedPhase,
+            [`${nextPlayer}MaxMana`]: nextPlayerMaxMana,
+            [`${nextPlayer}Mana`]: nextPlayerMaxMana, // Restore to max
+            // Reset pass flags at start of new turn
+            player1Passed: false,
+            player2Passed: false,
+            // Reset turn 1 deployment phase if we're past turn 1
+            ...(shouldIncrementTurn && prev.metadata.currentTurn > 1 ? { turn1DeploymentPhase: 'complete' } : {}),
+          },
+        }
+      })
       return
     }
     
@@ -404,6 +427,12 @@ export function useTurnManagement() {
       },
     }))
   }, [metadata, gameState, combatTargetsA, combatTargetsB, setGameState, setCombatTargetsA, setCombatTargetsB])
+
+  useEffect(() => {
+    if (metadata.currentPhase === 'play' && metadata.player1Passed && metadata.player2Passed) {
+      handleNextPhase()
+    }
+  }, [metadata.currentPhase, metadata.player1Passed, metadata.player2Passed, handleNextPhase])
 
   const handleToggleSpellPlayed = useCallback((card: Card) => {
     // Allow any card type to be marked as played (spells, units, heroes)
@@ -806,6 +835,12 @@ export function useTurnManagement() {
       }
     })
   }, [setGameState])
+
+  useEffect(() => {
+    if (metadata.currentPhase === 'play' && metadata.player1Passed && metadata.player2Passed) {
+      handleNextPhase()
+    }
+  }, [metadata.currentPhase, metadata.player1Passed, metadata.player2Passed, handleNextPhase])
 
   return {
     handleNextPhase,

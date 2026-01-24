@@ -1,12 +1,13 @@
 import { useCallback } from 'react'
-import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT, Hero, ItemCard, BaseCard, SpellCard } from '../game/types'
+import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT, Hero, ItemCard, BaseCard, SpellCard, PendingEffect } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { tier1Items } from '../game/sampleData'
 import { canAffordCard, consumeRunesForCard, addRunesFromHero, removeRunesFromHero, addTemporaryRunes, consumeRunesForCardWithTracking } from '../game/runeSystem'
 import { canPlayCardInLane } from '../game/colorSystem'
+import { resolveSpellEffect } from '../game/effectResolver'
 
 export function useDeployment() {
-  const { gameState, setGameState, selectedCard, selectedCardId, setSelectedCardId, getAvailableSlots } = useGameContext()
+  const { gameState, setGameState, selectedCard, selectedCardId, setSelectedCardId, getAvailableSlots, setPendingEffect } = useGameContext()
   const metadata = gameState.metadata
 
   const handleDeploy = useCallback((location: Location, targetSlot?: number) => {
@@ -624,9 +625,12 @@ export function useDeployment() {
       }
       
       // Handle action/initiative passing
-      // During turn 1 deployment phase (before complete), don't pass action/initiative
-      if (metadata.currentTurn === 1 && selectedCard.cardType === 'hero' && updatedMetadata.turn1DeploymentPhase !== 'complete') {
-        // Still in deployment phase - action/initiative handled above
+      // During deploy phase, both players can deploy freely - don't pass action/initiative
+      if (metadata.currentPhase === 'deploy') {
+        updatedMetadata.player1Passed = false
+        updatedMetadata.player2Passed = false
+      } else if (metadata.currentTurn === 1 && selectedCard.cardType === 'hero' && updatedMetadata.turn1DeploymentPhase !== 'complete') {
+        // Still in turn 1 deployment phase - action/initiative handled above
         updatedMetadata.player1Passed = false
         updatedMetadata.player2Passed = false
       } else {
@@ -638,6 +642,21 @@ export function useDeployment() {
         updatedMetadata.player1Passed = false
         updatedMetadata.player2Passed = false
       }
+
+      if (metadata.currentPhase === 'deploy') {
+        const canDeployHero = (playerId: 'player1' | 'player2') => {
+          const base = prev[`${playerId}Base` as keyof typeof prev] as Card[]
+          const deployZone = prev[`${playerId}DeployZone` as keyof typeof prev] as Card[]
+          const cooldowns = prev.metadata.deathCooldowns || {}
+          const baseHeroesReady = base.some(card => card.cardType === 'hero' && (cooldowns[card.id] || 0) === 0)
+          const deployHeroesReady = deployZone.some(card => card.cardType === 'hero')
+          return baseHeroesReady || deployHeroesReady
+        }
+
+        if (!canDeployHero('player1') && !canDeployHero('player2')) {
+          updatedMetadata.currentPhase = 'play'
+        }
+      }
       
       return {
         ...prev,
@@ -645,8 +664,23 @@ export function useDeployment() {
       }
     })
     
+    // Resolve spell effects after casting (play phase only)
+    if (selectedCard.cardType === 'spell' && isPlayPhase) {
+      let pendingEffect: PendingEffect | null = null
+      setGameState(prev => {
+        const result = resolveSpellEffect({
+          gameState: prev,
+          spell: selectedCard as SpellCard,
+          owner: selectedCard.owner,
+        })
+        pendingEffect = result.pendingEffect
+        return result.nextState
+      })
+      setPendingEffect(pendingEffect)
+    }
+
     setSelectedCardId(null)
-  }, [selectedCard, selectedCardId, gameState, metadata, getAvailableSlots, setGameState, setSelectedCardId])
+  }, [selectedCard, selectedCardId, gameState, metadata, getAvailableSlots, setGameState, setSelectedCardId, setPendingEffect])
 
   const handleChangeSlot = useCallback((card: Card, newSlot: number, location: 'battlefieldA' | 'battlefieldB') => {
     if (newSlot < 1 || newSlot > 5) return
