@@ -7,6 +7,7 @@ import { CardLibraryView } from './CardLibraryView'
 import { CombatSummaryModal } from './CombatSummaryModal'
 import { TopBar } from './TopBar'
 import { CombatPreviewOverlay } from './CombatPreviewOverlay'
+import { TemporaryGameZone } from './TemporaryGameZone'
 
 export function Board() {
   const { 
@@ -15,6 +16,8 @@ export function Board() {
     setShowCombatSummary,
     combatSummaryData,
     selectedCardId,
+    temporaryZone,
+    setTemporaryZone,
   } = useGameContext()
   
   const [showDebug, setShowDebug] = useState(false)
@@ -33,6 +36,13 @@ export function Board() {
 
       <ItemShopModal />
       <CardLibraryView />
+      {temporaryZone && (
+        <TemporaryGameZone
+          zone={temporaryZone}
+          onConfirm={() => setTemporaryZone(null)}
+          onCancel={() => setTemporaryZone(null)}
+        />
+      )}
       {combatSummaryData && (
         <CombatSummaryModal
           isOpen={showCombatSummary}

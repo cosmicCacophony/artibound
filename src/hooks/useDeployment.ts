@@ -4,10 +4,10 @@ import { useGameContext } from '../context/GameContext'
 import { tier1Items } from '../game/sampleData'
 import { canAffordCard, consumeRunesForCard, addRunesFromHero, removeRunesFromHero, addTemporaryRunes, consumeRunesForCardWithTracking } from '../game/runeSystem'
 import { canPlayCardInLane } from '../game/colorSystem'
-import { resolveSpellEffect } from '../game/effectResolver'
+import { buildTokenDefinitions, getTemplateId, resolveSpellEffect } from '../game/effectResolver'
 
 export function useDeployment() {
-  const { gameState, setGameState, selectedCard, selectedCardId, setSelectedCardId, getAvailableSlots, setPendingEffect } = useGameContext()
+  const { gameState, setGameState, selectedCard, selectedCardId, setSelectedCardId, getAvailableSlots, setPendingEffect, setTemporaryZone } = useGameContext()
   const metadata = gameState.metadata
 
   const handleDeploy = useCallback((location: Location, targetSlot?: number) => {
@@ -18,6 +18,8 @@ export function useDeployment() {
     
     // Deploy phase: only heroes can be deployed, and bouncing is allowed
     if (isDeployPhase) {
+      let newDeploymentPhase = metadata.turn1DeploymentPhase || 'p1_lane1'
+
       if (selectedCard.cardType !== 'hero') {
         alert('Only heroes can be deployed during the deploy phase!')
         return
@@ -26,6 +28,57 @@ export function useDeployment() {
         alert('Heroes must be deployed to a battlefield during deploy phase!')
         return
       }
+
+      if (metadata.currentTurn === 1 && metadata.turn1DeploymentPhase !== 'complete') {
+        const deploymentPhase = metadata.turn1DeploymentPhase || 'p1_lane1'
+
+        if (deploymentPhase === 'p1_lane1') {
+          if (selectedCard.owner !== 'player1') {
+            alert('Player 1 must deploy first hero to lane 1 (Battlefield A)')
+            return
+          }
+          if (location !== 'battlefieldA') {
+            alert('Player 1 must deploy to lane 1 (Battlefield A) first')
+            return
+          }
+          newDeploymentPhase = 'p2_lane1'
+        } else if (deploymentPhase === 'p2_lane1') {
+          if (selectedCard.owner === 'player2' && location !== 'battlefieldA') {
+            alert('Player 2 can only counter-deploy to lane 1 (Battlefield A) or pass')
+            return
+          }
+          if (selectedCard.owner === 'player2') {
+            newDeploymentPhase = 'p2_lane2'
+          }
+          if (selectedCard.owner === 'player1') {
+            alert('Player 2 can counter-deploy to lane 1 or pass')
+            return
+          }
+        } else if (deploymentPhase === 'p2_lane2') {
+          if (selectedCard.owner !== 'player2') {
+            alert('Player 2 must deploy hero to lane 2 (Battlefield B)')
+            return
+          }
+          if (location !== 'battlefieldB') {
+            alert('Player 2 must deploy to lane 2 (Battlefield B)')
+            return
+          }
+          newDeploymentPhase = 'p1_lane2'
+        } else if (deploymentPhase === 'p1_lane2') {
+          if (selectedCard.owner === 'player1' && location !== 'battlefieldB') {
+            alert('Player 1 can only counter-deploy to lane 2 (Battlefield B) or pass')
+            return
+          }
+          if (selectedCard.owner === 'player1') {
+            newDeploymentPhase = 'complete'
+          }
+          if (selectedCard.owner === 'player2') {
+            alert('Player 1 can counter-deploy to lane 2 or pass')
+            return
+          }
+        }
+      }
+
       // Check if hero is on cooldown
       const cooldownCounter = metadata.deathCooldowns[selectedCard.id]
       if (cooldownCounter !== undefined && cooldownCounter > 0) {
@@ -123,6 +176,14 @@ export function useDeployment() {
             // Increment heroes deployed counter (only counts if deploying from base/deployZone, not moving between battlefields)
             ...(selectedCard.location === 'base' || selectedCard.location === 'deployZone' ? {
               [`${selectedCard.owner}HeroesDeployedThisTurn`]: ((prev.metadata[`${selectedCard.owner}HeroesDeployedThisTurn` as keyof typeof prev.metadata] as number) || 0) + 1,
+            } : {}),
+            ...(metadata.currentTurn === 1 ? {
+              turn1DeploymentPhase: newDeploymentPhase,
+              ...(newDeploymentPhase === 'complete' ? {
+                currentPhase: 'play',
+                actionPlayer: 'player1',
+                initiativePlayer: 'player1',
+              } : {}),
             } : {}),
           },
         }
@@ -666,21 +727,44 @@ export function useDeployment() {
     
     // Resolve spell effects after casting (play phase only)
     if (selectedCard.cardType === 'spell' && isPlayPhase) {
+      const spellCard = selectedCard as SpellCard
+      if (spellCard.effect.type === 'create_tokens' || spellCard.effect.type === 'tokenize') {
+        const tokens = buildTokenDefinitions(spellCard)
+        const templateId = getTemplateId(spellCard.id)
+        const temporaryZone = {
+          type: 'tokenize' as const,
+          title: 'Token Creation',
+          description: 'Drag tokens onto the battlefield.',
+          owner: spellCard.owner,
+          tokens,
+        }
+        setPendingEffect({
+          cardId: templateId,
+          owner: spellCard.owner,
+          effect: spellCard.effect,
+          temporaryZone,
+        })
+        setTemporaryZone(temporaryZone)
+        setSelectedCardId(null)
+        return
+      }
+
       let pendingEffect: PendingEffect | null = null
       setGameState(prev => {
         const result = resolveSpellEffect({
           gameState: prev,
-          spell: selectedCard as SpellCard,
-          owner: selectedCard.owner,
+          spell: spellCard,
+          owner: spellCard.owner,
         })
         pendingEffect = result.pendingEffect
         return result.nextState
       })
       setPendingEffect(pendingEffect)
+      setTemporaryZone(pendingEffect?.temporaryZone || null)
     }
 
     setSelectedCardId(null)
-  }, [selectedCard, selectedCardId, gameState, metadata, getAvailableSlots, setGameState, setSelectedCardId, setPendingEffect])
+  }, [selectedCard, selectedCardId, gameState, metadata, getAvailableSlots, setGameState, setSelectedCardId, setPendingEffect, setTemporaryZone])
 
   const handleChangeSlot = useCallback((card: Card, newSlot: number, location: 'battlefieldA' | 'battlefieldB') => {
     if (newSlot < 1 || newSlot > 5) return

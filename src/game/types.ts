@@ -339,6 +339,7 @@ export type SpellEffectType =
   | 'return_to_base' // Returns target card to its owner's base
   | 'draw_and_heal' // Draws cards and heals
   | 'steal_unit' // Take control of target enemy unit
+  | 'create_tokens' // Create token(s) via temporary zone
   | 'tokenize' // Create token(s) in temporary zone
   | 'scry' // Scry-style choice (top/bottom)
   | 'buff_until_end_of_turn' // Grant temporary buffs/keywords
@@ -367,6 +368,8 @@ export interface SpellEffect {
   tokenPower?: number
   tokenHealth?: number
   tokenKeywords?: string[]
+  tokenStats?: { attack: number; health: number }
+  tokenType?: string
   // Conal effects
   conalTotalDamage?: number // Total damage to distribute
   conalMaxTargets?: number // Max units in front to include

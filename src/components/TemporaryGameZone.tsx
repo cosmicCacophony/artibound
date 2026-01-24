@@ -6,7 +6,7 @@ interface TemporaryGameZoneProps {
   onCancel: () => void
 }
 
-const renderToken = (token: TokenDefinition) => (
+  const renderToken = (token: TokenDefinition, owner: string) => (
   <div
     key={token.id}
     style={{
@@ -16,6 +16,16 @@ const renderToken = (token: TokenDefinition) => (
       minWidth: '90px',
       textAlign: 'center',
       backgroundColor: '#f5f5f5',
+      cursor: 'grab',
+    }}
+    draggable
+    onDragStart={(e) => {
+      const payload = JSON.stringify({ ...token, owner })
+      e.dataTransfer.setData('tokenData', payload)
+      e.dataTransfer.setData('text/token', payload)
+      e.dataTransfer.setData('text/plain', `token:${payload}`)
+      e.dataTransfer.effectAllowed = 'move'
+      e.dataTransfer.dropEffect = 'move'
     }}
   >
     <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{token.name}</div>
@@ -39,16 +49,12 @@ export function TemporaryGameZone({ zone, onConfirm, onCancel }: TemporaryGameZo
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backgroundColor: 'transparent',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 10000,
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onCancel()
-        }
+        pointerEvents: 'none',
       }}
     >
       <div
@@ -59,15 +65,15 @@ export function TemporaryGameZone({ zone, onConfirm, onCancel }: TemporaryGameZo
           maxWidth: '680px',
           width: '90%',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+          pointerEvents: 'auto',
         }}
-        onClick={(e) => e.stopPropagation()}
       >
         <h2 style={{ marginTop: 0 }}>{zone.title}</h2>
         <p style={{ color: '#666' }}>{zone.description}</p>
 
         {zone.type === 'tokenize' && zone.tokens && (
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px' }}>
-            {zone.tokens.map(renderToken)}
+            {zone.tokens.map(token => renderToken(token, zone.owner))}
           </div>
         )}
 

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
-import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, BattlefieldDefinition, FinalDraftSelection, Color, HEROES_REQUIRED, CARDS_REQUIRED, ShopItem, Archetype, GameMetadata, PendingEffect } from '../game/types'
+import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, BattlefieldDefinition, FinalDraftSelection, Color, HEROES_REQUIRED, CARDS_REQUIRED, ShopItem, Archetype, GameMetadata, PendingEffect, TemporaryZone } from '../game/types'
 import { createInitialGameState, createCardLibrary, createGameStateFromDraft } from '../game/sampleData'
 import { allCards, allSpells, allArtifacts, allBattlefields, allHeroes } from '../game/cardData'
 import { ubHeroes } from '../game/comprehensiveCardData'
@@ -64,6 +64,8 @@ interface GameContextType {
   // Pending effects (targeting or confirmation)
   pendingEffect: PendingEffect | null
   setPendingEffect: (effect: PendingEffect | null) => void
+  temporaryZone: TemporaryZone | null
+  setTemporaryZone: (zone: TemporaryZone | null) => void
   
   // Computed values
   selectedCard: Card | null
@@ -133,6 +135,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   } | null>(null)
   const [pendingEffect, setPendingEffect] = useState<PendingEffect | null>(null)
+  const [temporaryZone, setTemporaryZone] = useState<TemporaryZone | null>(null)
   
   // Computed values
   const metadata = gameState.metadata
@@ -383,9 +386,34 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [initializeGameFromDraft])
 
   const initializeDraftGame = useCallback((player1Selection: FinalDraftSelection) => {
+    const toTemplateId = (cardId: string) => {
+      const player1Index = cardId.indexOf('-player1-')
+      if (player1Index !== -1) {
+        return cardId.slice(0, player1Index)
+      }
+      const player2Index = cardId.indexOf('-player2-')
+      if (player2Index !== -1) {
+        return cardId.slice(0, player2Index)
+      }
+      return cardId
+    }
+
+    const normalizeDraftSelection = (selection: FinalDraftSelection): FinalDraftSelection => ({
+      ...selection,
+      heroes: selection.heroes.map(hero => ({
+        ...hero,
+        id: toTemplateId(hero.id),
+      })),
+      cards: selection.cards.map(card => ({
+        ...card,
+        id: toTemplateId(card.id),
+      })),
+    })
+
+    const normalizedPlayer1Selection = normalizeDraftSelection(player1Selection)
     // Save the current draft to localStorage (this will shift previous drafts)
     // After saving: current draft is at index 0, previous draft (if exists) is at index 1
-    saveDraft(player1Selection)
+    saveDraft(normalizedPlayer1Selection)
     
     // Get the previous draft (the one that was saved before this one, now at index 1)
     const previousDraft = getPreviousDraft()
@@ -394,7 +422,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     
     if (previousDraft) {
       // Use the previous draft as player2's deck (play against your last draft)
-      player2Selection = previousDraft
+      player2Selection = normalizeDraftSelection(previousDraft)
     } else {
       // Fall back to boss Legion deck if no previous draft exists
       const boss = boss1ValiantLegion
@@ -425,7 +453,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
     
     // Initialize game from player1's draft vs player2's deck (previous draft or RW Legion)
-    initializeGameFromDraft(player1Selection, player2Selection)
+    initializeGameFromDraft(normalizedPlayer1Selection, player2Selection)
   }, [initializeGameFromDraft])
 
   const value: GameContextType = {
@@ -457,6 +485,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setCombatSummaryData,
     pendingEffect,
     setPendingEffect,
+    temporaryZone,
+    setTemporaryZone,
     selectedCard,
     metadata,
     activePlayer,

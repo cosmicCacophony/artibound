@@ -128,6 +128,8 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
     setCombatSummaryData,
     pendingEffect,
     setPendingEffect,
+    temporaryZone,
+    setTemporaryZone,
   } = useGameContext()
   const [editingHeroId, setEditingHeroId] = useState<string | null>(null)
   // Track which slot is currently being dragged over (player + slotNum)
@@ -252,6 +254,64 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
     const handleDrop = (e: React.DragEvent) => {
       e.preventDefault()
       e.stopPropagation()
+
+      let tokenData = e.dataTransfer.getData('tokenData') || e.dataTransfer.getData('text/token')
+      if (!tokenData) {
+        const textPayload = e.dataTransfer.getData('text/plain')
+        if (textPayload.startsWith('token:')) {
+          tokenData = textPayload.slice('token:'.length)
+        }
+      }
+      if (tokenData) {
+        try {
+          const token = JSON.parse(tokenData) as { id: string; name: string; attack: number; health: number; keywords?: string[]; owner: 'player1' | 'player2' }
+          if (token.owner !== player) {
+            alert('You can only deploy your own tokens.')
+            return
+          }
+          if (cardInSlot) {
+            alert('That slot is occupied.')
+            return
+          }
+          if (getAvailableSlots(battlefield[player]) <= 0) {
+            alert('Battlefield is full.')
+            return
+          }
+
+          setGameState(prev => ({
+            ...prev,
+            [battlefieldId]: {
+              ...prev[battlefieldId],
+              [player]: [
+                ...prev[battlefieldId][player],
+                {
+                  id: token.id,
+                  name: token.name,
+                  description: `${token.name} token`,
+                  cardType: 'generic',
+                  colors: [],
+                  manaCost: 0,
+                  attack: token.attack,
+                  health: token.health,
+                  maxHealth: token.health,
+                  currentHealth: token.health,
+                  location: battlefieldId,
+                  owner: token.owner,
+                  slot: slotNum,
+                },
+              ].sort((a, b) => (a.slot || 0) - (b.slot || 0)),
+            },
+          }))
+
+          if (temporaryZone?.tokens) {
+            const remainingTokens = temporaryZone.tokens.filter(t => t.id !== token.id)
+            setTemporaryZone(remainingTokens.length > 0 ? { ...temporaryZone, tokens: remainingTokens } : null)
+          }
+        } catch (error) {
+          console.error('Failed to parse token data', error)
+        }
+        return
+      }
       
       console.log(`[BattlefieldView] handleDrop - Slot ${slotNum}, Player ${player}`)
       console.log(`[BattlefieldView] handleDrop - draggedCardId from context:`, draggedCardId)
@@ -570,10 +630,18 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
       e.stopPropagation()
       
       // Note: dataTransfer.getData() can't be read during dragover (browser security)
-      // We must rely on draggedCardId from context
-      console.log(`[BattlefieldView] handleDragOver - Slot ${slotNum}, Player ${player}, draggedCardId:`, draggedCardId, 'draggedCard:', draggedCard?.name, 'owner:', draggedCard?.owner, 'dragOverSlot:', dragOverSlot)
+      // We must rely on draggedCardId from context or drag types
+      const dragTypes = Array.from(e.dataTransfer.types)
+      console.log(`[BattlefieldView] handleDragOver - Slot ${slotNum}, Player ${player}, draggedCardId:`, draggedCardId, 'draggedCard:', draggedCard?.name, 'owner:', draggedCard?.owner, 'dragOverSlot:', dragOverSlot, 'types:', dragTypes)
       
       // If we have a dragged card that belongs to this player, allow drop
+      const isTokenDrag = dragTypes.includes('tokenData') || dragTypes.includes('text/token')
+      const hasCardData = dragTypes.includes('cardId') || dragTypes.includes('text/plain')
+      if (isTokenDrag) {
+        e.dataTransfer.dropEffect = 'move'
+        setDragOverSlot({ player, slotNum })
+        return
+      }
       if (draggedCardId && draggedCard?.owner === player) {
         e.dataTransfer.dropEffect = 'move'
         // Always update drag over state when dragging over this slot
@@ -581,6 +649,8 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
           console.log(`[BattlefieldView] handleDragOver - Setting dragOverSlot to ${player}, ${slotNum}`)
           setDragOverSlot({ player, slotNum })
         }
+      } else if (hasCardData) {
+        setDragOverSlot({ player, slotNum })
       } else if (draggedCardId) {
         // We're dragging something, but it doesn't belong to this player
         console.log(`[BattlefieldView] handleDragOver - Card doesn't belong to this player`)
@@ -605,12 +675,13 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
       // However, if draggedCardId isn't set yet (async state update), check if dataTransfer has the types
       // If it has 'cardId' or 'text/plain' types, we know a card is being dragged
       const hasCardData = e.dataTransfer.types.includes('cardId') || e.dataTransfer.types.includes('text/plain')
+      const isTokenDrag = e.dataTransfer.types.includes('tokenData') || e.dataTransfer.types.includes('text/token')
       console.log(`[BattlefieldView] handleDragEnter - Slot ${slotNum}, Player ${player}, draggedCardId:`, draggedCardId, 'draggedCard:', draggedCard?.name, 'hasCardData:', hasCardData, 'types:', Array.from(e.dataTransfer.types))
       
       // Set drag over state if:
       // 1. We have draggedCardId in context AND it belongs to this player, OR
       // 2. We detect card data in dataTransfer (will validate on drop)
-      if (draggedCardId && draggedCard?.owner === player) {
+      if (isTokenDrag || (draggedCardId && draggedCard?.owner === player)) {
         console.log(`[BattlefieldView] handleDragEnter - Setting dragOverSlot (context has draggedCardId)`)
         setDragOverSlot({ player, slotNum })
       } else if (hasCardData && !draggedCardId) {

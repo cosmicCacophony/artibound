@@ -1,4 +1,4 @@
-import { BaseCard, Card, GameState, PendingEffect, PlayerId, SpellCard, TargetingContext } from './types'
+import { BaseCard, Card, GameState, PendingEffect, PlayerId, SpellCard, TargetingContext, TokenDefinition } from './types'
 import { createCardFromTemplate } from './sampleData'
 
 interface ResolveSpellEffectInput {
@@ -14,7 +14,7 @@ interface ResolveSpellEffectResult {
   pendingEffect: PendingEffect | null
 }
 
-const getTemplateId = (cardId: string): string => {
+export const getTemplateId = (cardId: string): string => {
   const ownerIndex = cardId.indexOf('-player1-')
   if (ownerIndex !== -1) {
     return cardId.slice(0, ownerIndex)
@@ -54,6 +54,23 @@ const getTargetingContextForSpell = (spell: SpellCard): TargetingContext | null 
     default:
       return null
   }
+}
+
+export const buildTokenDefinitions = (spell: SpellCard): TokenDefinition[] => {
+  const count = spell.effect.tokenCount || 0
+  const tokenStats = spell.effect.tokenStats || { attack: spell.effect.tokenPower || 1, health: spell.effect.tokenHealth || 1 }
+  const tokenType = spell.effect.tokenType || 'Token'
+  const tokenName = `${tokenType.charAt(0).toUpperCase()}${tokenType.slice(1)} Token`
+  const tokenKeywords = spell.effect.tokenKeywords || []
+  const timestamp = Date.now()
+
+  return Array.from({ length: count }, (_, index) => ({
+    id: `${getTemplateId(spell.id)}-token-${timestamp}-${index}`,
+    name: tokenName,
+    attack: tokenStats.attack,
+    health: tokenStats.health,
+    keywords: tokenKeywords,
+  }))
 }
 
 const getAllCards = (state: GameState): Card[] => [
@@ -252,6 +269,25 @@ export const resolveSpellEffect = ({
         effect: spell.effect,
         targeting: targetingContext,
         selectedTargetIds: [],
+      },
+    }
+  }
+
+  if (spell.effect.type === 'create_tokens' || spell.effect.type === 'tokenize') {
+    const tokens = buildTokenDefinitions(spell)
+    return {
+      nextState: gameState,
+      pendingEffect: {
+        cardId: templateId,
+        owner,
+        effect: spell.effect,
+        temporaryZone: {
+          type: 'tokenize',
+          title: 'Token Creation',
+          description: 'Drag tokens onto the battlefield.',
+          owner,
+          tokens,
+        },
       },
     }
   }
