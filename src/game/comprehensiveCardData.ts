@@ -47,9 +47,11 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     cardType: 'hero',
     colors: ['red'],
     attack: 3,
-    height: 4,
+    health: 4,
     maxHealth: 4,
-    currentHealth: 4,    equippedItems: [],
+    currentHealth: 4,
+    equippedItems: [],
+    specialEffects: ['cleave'],
   },
   // BR Aggressive Spell-Synergy Heroes
   {
@@ -605,6 +607,7 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 2,
     maxHealth: 2,
     currentHealth: 2,
+    specialEffects: ['cleave'],
   },
   {
     id: 'red-unit-cleaving-berserker',
@@ -618,6 +621,7 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 2,
     maxHealth: 2,
     currentHealth: 2,
+    specialEffects: ['cleave'],
   },
   {
     id: 'rg-unit-rift-pouncer',
@@ -3701,6 +3705,7 @@ export const rareBRCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith'
     maxHealth: 3,
     currentHealth: 3,
     description: '5/3, Cleave. When deployed: Deal 2 damage to all units and all towers. Aggressive control finisher for BR.',
+    specialEffects: ['cleave'],
   },
 ]
 
@@ -3807,6 +3812,7 @@ export const allArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
 
 export const allSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   ...rwSpells,
+  ...rgSpells,
   ...ruSpells,
   ...rbSpells,
   ...gbSpells,

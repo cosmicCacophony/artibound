@@ -478,6 +478,62 @@ export function resolveSimultaneousCombat(
     return currentTowerHP[towerKey] === 0
   }
 
+  const applyCleaveDamage = (
+    attacker: Card,
+    attackerSlot: number,
+    attackPower: number,
+    opponent: PlayerId
+  ) => {
+    // Check if attacker has cleave
+    const hasCleave = attacker.specialEffects?.includes('cleave') || false
+    if (!hasCleave || attackPower <= 0) return
+
+    const opponentUnits = currentBattlefield[opponent]
+    const adjacentSlots = [attackerSlot - 1, attackerSlot + 1].filter(s => s >= 1 && s <= 5)
+    
+    for (const adjacentSlot of adjacentSlots) {
+      const adjacentUnit = opponentUnits.find(u => u.slot === adjacentSlot)
+      if (adjacentUnit && 'currentHealth' in adjacentUnit) {
+        const tempHP = (adjacentUnit.cardType === 'hero' || adjacentUnit.cardType === 'generic') && 'temporaryHP' in adjacentUnit
+          ? (adjacentUnit.temporaryHP || 0)
+          : 0
+        const tribeBuff = getTribeBuff(gameState, battlefieldId, adjacentUnit.owner, (adjacentUnit as any).tribe)
+        const buffHealth = tribeBuff.health
+        const effectiveHealth = adjacentUnit.currentHealth + tempHP + buffHealth
+        const damageAfterTempHP = Math.max(0, attackPower - tempHP)
+        const damageAfterBuff = Math.max(0, damageAfterTempHP - buffHealth)
+        const newHealth = Math.max(0, adjacentUnit.currentHealth - damageAfterBuff)
+        const newTempHP = Math.max(0, tempHP - attackPower)
+        const killed = newHealth <= 0
+
+        const updatedUnit = {
+          ...adjacentUnit,
+          currentHealth: newHealth,
+          temporaryHP: newTempHP,
+        }
+
+        const updatedOpponentUnits = killed
+          ? opponentUnits.filter(u => u.id !== adjacentUnit.id)
+          : opponentUnits.map(u => (u.id === adjacentUnit.id ? updatedUnit : u))
+
+        currentBattlefield = {
+          ...currentBattlefield,
+          [opponent]: updatedOpponentUnits,
+        }
+
+        combatLog.push({
+          attackerId: attacker.id,
+          attackerName: attacker.name,
+          targetType: 'unit',
+          targetId: adjacentUnit.id,
+          targetName: adjacentUnit.name,
+          damage: Math.min(attackPower, effectiveHealth),
+          killed,
+        })
+      }
+    }
+  }
+
   const applyCrossStrike = (
     attacker: Card,
     slot: number,
@@ -485,8 +541,9 @@ export function resolveSimultaneousCombat(
     otherBattlefieldId: 'battlefieldA' | 'battlefieldB',
     damage: number
   ) => {
-    if (damage <= 0) return
-    const otherBattlefield = currentBattlefield[otherBattlefieldId]
+    if (damage <= 0 || !gameState) return
+    const otherBattlefield = gameState[otherBattlefieldId]
+    if (!otherBattlefield) return
     const targetUnit = otherBattlefield[opponent].find(u => u.slot === slot)
 
     if (targetUnit && 'currentHealth' in targetUnit) {
@@ -512,12 +569,12 @@ export function resolveSimultaneousCombat(
         ? otherBattlefield[opponent].filter(u => u.id !== targetUnit.id)
         : otherBattlefield[opponent].map(u => (u.id === targetUnit.id ? updatedUnit : u))
 
-      currentBattlefield = {
-        ...currentBattlefield,
-        [otherBattlefieldId]: {
+      // Update the other battlefield in gameState directly
+      if (gameState) {
+        gameState[otherBattlefieldId] = {
           ...otherBattlefield,
           [opponent]: updatedOpponentUnits,
-        },
+        }
       }
 
       combatLog.push({
@@ -626,6 +683,11 @@ export function resolveSimultaneousCombat(
       currentBattlefield = result.updatedBattlefield
       currentTowerHP = result.updatedTowerHP
       
+      // Apply cleave damage to adjacent units
+      if (!p1IsStunned) {
+        applyCleaveDamage(p1Unit, slot, p1AttackPower, 'player2')
+      }
+      
       // Track overflow damage
       if (p1Target.type === 'tower') {
         const towerKey = battlefieldId === 'battlefieldA' 
@@ -718,6 +780,11 @@ export function resolveSimultaneousCombat(
       
       currentBattlefield = result.updatedBattlefield
       currentTowerHP = result.updatedTowerHP
+      
+      // Apply cleave damage to adjacent units
+      if (!p2IsStunned) {
+        applyCleaveDamage(p2Unit, slot, p2AttackPower, 'player1')
+      }
       
       // Track overflow damage
       if (p2Target.type === 'tower') {

@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
-import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, BattlefieldDefinition, FinalDraftSelection, Color, HEROES_REQUIRED, CARDS_REQUIRED, ShopItem, Archetype, GameMetadata, PendingEffect, TemporaryZone } from '../game/types'
+import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, SpellCard, BattlefieldDefinition, FinalDraftSelection, Color, HEROES_REQUIRED, CARDS_REQUIRED, ShopItem, Archetype, GameMetadata, PendingEffect, TemporaryZone } from '../game/types'
 import { createInitialGameState, createCardLibrary, createGameStateFromDraft } from '../game/sampleData'
 import { allCards, allSpells, allArtifacts, allBattlefields, allHeroes } from '../game/cardData'
 import { ubHeroes } from '../game/comprehensiveCardData'
 import { boss1ValiantLegion } from '../game/bossData'
 import { heroMatchesArchetype, cardMatchesArchetype } from '../game/archetypeUtils'
 import { saveDraft, getPreviousDraft } from '../game/draftStorage'
+import { getStockDeckById } from '../game/stockDecks'
 
 interface GameContextType {
   // Game State
@@ -78,6 +79,7 @@ interface GameContextType {
   initializeGameFromDraft: (player1Selection: FinalDraftSelection, player2Selection: FinalDraftSelection) => void
   initializeRandomGame: () => void
   initializeDraftGame: (player1Selection: FinalDraftSelection) => void
+  initializeStockDeckGame: (deckId: string) => void
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
@@ -219,10 +221,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
       
       // Filter out undefined cards and combine boss cards
       player2Cards = [
-        ...boss.units.filter((card): card is BaseCard => card !== undefined && card !== null),
-        ...boss.spells.filter((card): card is BaseCard => card !== undefined && card !== null),
-        ...boss.artifacts.filter((card): card is BaseCard => card !== undefined && card !== null),
-      ]
+        ...boss.units,
+        ...boss.spells,
+        ...boss.artifacts,
+      ].filter(Boolean) as BaseCard[]
     } else {
       // Normal deck building for non-Legion archetypes
       player2Heroes = []
@@ -304,8 +306,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       
       const keySpellsForP2 = ubgKeySpellIds
         .map(id => allSpells.find(s => s.id === id))
-        .filter(Boolean)
-        .filter(c => cardMatchesArchetype(c, [player2Archetype])) as BaseCard[]
+        .filter((spell): spell is Omit<SpellCard, 'location' | 'owner'> => Boolean(spell))
+        .filter(spell => cardMatchesArchetype(spell, [player2Archetype])) as BaseCard[]
       
       const DRAFTED_CARDS_REQUIRED = 22
       let player2DraftedCards = [
@@ -342,8 +344,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     
     const keySpellsForP1 = ubgKeySpellIds
       .map(id => allSpells.find(s => s.id === id))
-      .filter(Boolean)
-      .filter(c => cardMatchesArchetype(c, [player1Archetype])) as BaseCard[]
+      .filter((spell): spell is Omit<SpellCard, 'location' | 'owner'> => Boolean(spell))
+      .filter(spell => cardMatchesArchetype(spell, [player1Archetype])) as BaseCard[]
     
     let player1DraftedCards = [
       ...keySpellsForP1,
@@ -439,10 +441,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
       
       // Filter out undefined cards and combine boss cards (units + spells + artifacts)
       const player2Cards: BaseCard[] = [
-        ...boss.units.filter((card): card is BaseCard => card !== undefined && card !== null),
-        ...boss.spells.filter((card): card is BaseCard => card !== undefined && card !== null),
-        ...boss.artifacts.filter((card): card is BaseCard => card !== undefined && card !== null),
-      ]
+        ...boss.units,
+        ...boss.spells,
+        ...boss.artifacts,
+      ].filter(Boolean) as BaseCard[]
       
       // Create final selection for player2 (battlefield will be ignored, but required by type)
       player2Selection = {
@@ -454,6 +456,45 @@ export function GameProvider({ children }: { children: ReactNode }) {
     
     // Initialize game from player1's draft vs player2's deck (previous draft or RW Legion)
     initializeGameFromDraft(normalizedPlayer1Selection, player2Selection)
+  }, [initializeGameFromDraft])
+
+  const initializeStockDeckGame = useCallback((deckId: string) => {
+    const stockDeck = getStockDeckById(deckId)
+    if (!stockDeck) {
+      console.warn(`Stock deck not found: ${deckId}`)
+      return
+    }
+
+    const player1SignatureCards: BaseCard[] = []
+    for (const hero of stockDeck.heroes) {
+      if (hero.signatureCardId) {
+        const sigCard = allCards.find(card => card.id === hero.signatureCardId)
+          || allSpells.find(spell => spell.id === hero.signatureCardId)
+        if (sigCard) {
+          player1SignatureCards.push(sigCard)
+          player1SignatureCards.push(sigCard)
+        }
+      }
+    }
+
+    const player1Selection: FinalDraftSelection = {
+      heroes: stockDeck.heroes as Hero[],
+      cards: [...stockDeck.cards, ...player1SignatureCards],
+      battlefield: allBattlefields[0], // Placeholder, will be replaced by hardcoded ones
+    }
+
+    const boss = boss1ValiantLegion
+    const player2Selection: FinalDraftSelection = {
+      heroes: boss.heroes.filter(Boolean) as Hero[],
+      cards: [
+        ...boss.units,
+        ...boss.spells,
+        ...boss.artifacts,
+      ].filter(Boolean) as BaseCard[],
+      battlefield: allBattlefields[0], // Placeholder, will be replaced by hardcoded ones
+    }
+
+    initializeGameFromDraft(player1Selection, player2Selection)
   }, [initializeGameFromDraft])
 
   const value: GameContextType = {
@@ -495,6 +536,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     initializeGameFromDraft,
     initializeRandomGame,
     initializeDraftGame,
+    initializeStockDeckGame,
   }
   
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>
