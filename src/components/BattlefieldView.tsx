@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, Hero, HeroAbility, GameMetadata } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { useDeployment } from '../hooks/useDeployment'
@@ -137,6 +137,11 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
   // Track hovered card in battlefield for full details popup
   const [hoveredBattlefieldCard, setHoveredBattlefieldCard] = useState<string | null>(null)
   const [hoveredBattlefieldPosition, setHoveredBattlefieldPosition] = useState<{ x: number, y: number } | null>(null)
+  const pendingDropRef = useRef<{
+    cardId: string
+    battlefieldId: 'battlefieldA' | 'battlefieldB'
+    slotNum: number
+  } | null>(null)
   const { handleDeploy, handleChangeSlot, handleRemoveFromBattlefield, handleEquipItem } = useDeployment()
   
   // Clear drag over state when drag ends
@@ -145,6 +150,23 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
       setDragOverSlot(null)
     }
   }, [draggedCardId])
+
+  useEffect(() => {
+    const pending = pendingDropRef.current
+    if (!pending) return
+
+    if (selectedCardId !== pending.cardId || !selectedCard) {
+      return
+    }
+
+    if (selectedCard.location === pending.battlefieldId) {
+      handleChangeSlot(selectedCard, pending.slotNum, pending.battlefieldId)
+    } else {
+      handleDeploy(pending.battlefieldId, pending.slotNum)
+    }
+
+    pendingDropRef.current = null
+  }, [selectedCardId, selectedCard, handleDeploy, handleChangeSlot])
   const { handleToggleStun, handleSpawnCreep } = useTurnManagement()
 
   const battlefield = gameState[battlefieldId]
@@ -398,271 +420,27 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
         return
       }
       
-      // Use the same deployment logic as clicking - but do it directly since we have the card
-      if (droppedCard.owner === player) {
-        console.log(`[BattlefieldView] handleDrop - Card owner matches, proceeding with deployment`)
-        console.log(`[BattlefieldView] handleDrop - droppedCard.location:`, droppedCard.location, 'battlefieldId:', battlefieldId)
-        console.log(`[BattlefieldView] handleDrop - droppedCard.cardType:`, droppedCard.cardType, 'currentPhase:', metadata.currentPhase)
-        
-        setDraggedCardId(null)
-        
-          // For heroes, ALWAYS handle deployment directly - we have the card, no need to wait for context
-          if (droppedCard.cardType === 'hero') {
-            console.log(`[BattlefieldView] handleDrop - Taking direct deployment path for hero (phase: ${metadata.currentPhase})`)
-            
-            const isDeployPhase = metadata.currentPhase === 'deploy'
-            const isPlayPhase = metadata.currentPhase === 'play'
-            
-            // Phase validation
-            if (!isDeployPhase && !isPlayPhase) {
-              alert(`Cannot deploy during ${metadata.currentPhase} phase!`)
-              return
-            }
-            
-            const battlefieldKey = battlefieldId as 'battlefieldA' | 'battlefieldB'
-            const playerKey = player
-            
-            // Turn 1 deployment sequence validation (same as useDeployment.ts)
-            // Only enforce turn 1 counter-deployment rules during PLAY phase.
-            if (isPlayPhase && metadata.currentTurn === 1) {
-              const deploymentPhase = metadata.turn1DeploymentPhase || 'p1_lane1'
-              
-              if (deploymentPhase === 'p1_lane1') {
-                // Player 1 deploys hero to lane 1 (battlefieldA)
-                if (playerKey !== 'player1') {
-                  alert('Player 1 must deploy first hero to lane 1 (Battlefield A)')
-                  return
-                }
-                if (battlefieldKey !== 'battlefieldA') {
-                  alert('Player 1 must deploy to lane 1 (Battlefield A) first')
-                  return
-                }
-              } else if (deploymentPhase === 'p2_lane1') {
-                // Player 2 can counter-deploy to lane 1 (battlefieldA) OR pass
-                // If deploying, must be to battlefieldA
-                if (playerKey === 'player2' && battlefieldKey !== 'battlefieldA') {
-                  alert('Player 2 can only counter-deploy to lane 1 (Battlefield A) or pass')
-                  return
-                }
-                // If player 1 tries to deploy (shouldn't happen), block it
-                if (playerKey === 'player1') {
-                  alert('Player 2 can counter-deploy to lane 1 or pass')
-                  return
-                }
-              } else if (deploymentPhase === 'p2_lane2') {
-                // Player 2 deploys hero to lane 2 (battlefieldB)
-                if (playerKey !== 'player2') {
-                  alert('Player 2 must deploy hero to lane 2 (Battlefield B)')
-                  return
-                }
-                if (battlefieldKey !== 'battlefieldB') {
-                  alert('Player 2 must deploy to lane 2 (Battlefield B)')
-                  return
-                }
-              } else if (deploymentPhase === 'p1_lane2') {
-                // Player 1 can counter-deploy to lane 2 (battlefieldB) OR pass
-                // If deploying, must be to battlefieldB
-                if (playerKey === 'player1' && battlefieldKey !== 'battlefieldB') {
-                  alert('Player 1 can only counter-deploy to lane 2 (Battlefield B) or pass')
-                  return
-                }
-                // If player 2 tries to deploy (shouldn't happen), block it
-                if (playerKey === 'player2') {
-                  alert('Player 1 can counter-deploy to lane 2 or pass')
-                  return
-                }
-              } else if (deploymentPhase === 'complete') {
-                // Turn 1 deployment complete - normal action rules apply
-                // Check action
-                if (metadata.actionPlayer !== playerKey) {
-                  alert('It\'s not your turn to act!')
-                  return
-                }
-              }
-            } else if (isPlayPhase) {
-              // Normal turn (not turn 1) - check action (play phase only)
-              if (metadata.actionPlayer !== playerKey) {
-                alert('It\'s not your turn to act!')
-                return
-              }
-            }
-            
-            // Check if hero is on cooldown (only for deploy phase from base/deployZone)
-            if (isDeployPhase && (droppedCard.location === 'base' || droppedCard.location === 'deployZone')) {
-              const cooldownCounter = metadata.deathCooldowns[droppedCard.id]
-              if (cooldownCounter !== undefined && cooldownCounter > 0) {
-                alert(`Hero is on cooldown! ${cooldownCounter} turn${cooldownCounter !== 1 ? 's' : ''} remaining.`)
-                return
-              }
-            }
-            
-            console.log(`[BattlefieldView] handleDrop - Directly deploying hero (phase: ${metadata.currentPhase})`)
-            
-            // Directly update game state for hero deployment
-            setGameState(prev => {
-              const battlefield = prev[battlefieldKey][playerKey]
-              
-              // Check if there's an existing hero in this slot
-              const existingHeroInSlot = battlefield.find(c => c.slot === slotNum && c.cardType === 'hero') as Hero | undefined
-              
-              // Remove deploying hero from wherever it is (hand, base, deploy zone, or other battlefield)
-              const newHand = (prev[`${playerKey}Hand` as keyof typeof prev] as Card[])
-                .filter(c => c.id !== droppedCard.id)
-              const newBase = (prev[`${playerKey}Base` as keyof typeof prev] as Card[])
-                .filter(c => c.id !== droppedCard.id)
-              const newDeployZone = (prev[`${playerKey}DeployZone` as keyof typeof prev] as Card[])
-                .filter(c => c.id !== droppedCard.id)
-              
-              // Also remove from other battlefield if it's there
-              const otherBattlefieldKey = battlefieldKey === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
-              const otherBattlefield = prev[otherBattlefieldKey][playerKey].filter(c => c.id !== droppedCard.id)
-              
-              // If there's an existing hero, bounce it to base with 1 cooldown
-              let updatedBase = newBase
-              let updatedCooldowns = { ...prev.metadata.deathCooldowns }
-              
-              if (existingHeroInSlot) {
-                const bouncedHero = {
-                  ...existingHeroInSlot,
-                  location: 'base' as const,
-                  slot: undefined,
-                }
-                updatedBase = [...updatedBase, bouncedHero]
-                updatedCooldowns[existingHeroInSlot.id] = 1
-              }
-              
-              // Add runes from the deploying hero
-              const heroColors = (droppedCard as Hero).colors || []
-              const currentRunePool = prev.metadata[`${playerKey}RunePool` as keyof typeof prev.metadata] as any
-              const updatedRunePool = {
-                runes: [...currentRunePool.runes, ...heroColors],
-              }
-              
-              // Remove existing hero from battlefield if bounced
-              const updatedBattlefield = battlefield
-                .filter(c => c.id !== droppedCard.id && (existingHeroInSlot ? c.id !== existingHeroInSlot.id : true))
-              
-              // Add the deploying hero to the battlefield
-              const deployedHero = {
-                ...droppedCard,
-                location: battlefieldKey,
-                slot: slotNum,
-              } as Hero
-              
-              // Handle turn 1 deployment phase updates (EXACT same logic as useDeployment.ts)
-              let newDeploymentPhase = prev.metadata.turn1DeploymentPhase || 'p1_lane1'
-              let updatedActionPlayer = prev.metadata.actionPlayer
-              let updatedInitiativePlayer = prev.metadata.initiativePlayer
-              
-              if (prev.metadata.currentTurn === 1) {
-                const deploymentPhase = prev.metadata.turn1DeploymentPhase || 'p1_lane1'
-                
-                if (deploymentPhase === 'p1_lane1') {
-                  // Player 1 deploys hero to lane 1 (battlefieldA)
-                  // After deployment, Player 2 can counter-deploy to lane 1
-                  newDeploymentPhase = 'p2_lane1'
-                } else if (deploymentPhase === 'p2_lane1') {
-                  // Player 2 can counter-deploy to lane 1 (battlefieldA) OR pass
-                  // If deploying, move to next phase
-                  if (playerKey === 'player2') {
-                    newDeploymentPhase = 'p2_lane2'
-                  }
-                } else if (deploymentPhase === 'p2_lane2') {
-                  // Player 2 deploys hero to lane 2 (battlefieldB)
-                  // After deployment, Player 1 can counter-deploy to lane 2
-                  newDeploymentPhase = 'p1_lane2'
-                } else if (deploymentPhase === 'p1_lane2') {
-                  // Player 1 can counter-deploy to lane 2 (battlefieldB) OR pass
-                  // If deploying, deployment is complete
-                  if (playerKey === 'player1') {
-                    newDeploymentPhase = 'complete'
-                  }
-                }
-                
-                // When deployment is complete, set action and initiative
-                if (newDeploymentPhase === 'complete') {
-                  updatedActionPlayer = 'player1' // Player 1 gets action after deployment
-                  updatedInitiativePlayer = 'player1' // Player 1 also gets initiative
-                } else {
-                  // During deployment, no action/initiative (players are deploying, not acting)
-                  updatedActionPlayer = null
-                  updatedInitiativePlayer = null
-                }
-              } else {
-                // Normal turn (not turn 1) - pass action/initiative to opponent
-                const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
-                updatedActionPlayer = otherPlayer
-                updatedInitiativePlayer = otherPlayer
-              }
+        // Use the same deployment logic as clicking via handleDeploy
+        if (droppedCard.owner === player) {
+          console.log(`[BattlefieldView] handleDrop - Card owner matches, proceeding with deployment`)
+          console.log(`[BattlefieldView] handleDrop - droppedCard.location:`, droppedCard.location, 'battlefieldId:', battlefieldId)
+          console.log(`[BattlefieldView] handleDrop - droppedCard.cardType:`, droppedCard.cardType, 'currentPhase:', metadata.currentPhase)
 
-              const updatedActivePlayer = newDeploymentPhase === 'p2_lane1' || newDeploymentPhase === 'p2_lane2'
-                ? 'player2'
-                : 'player1'
-              
-              return {
-                ...prev,
-                [battlefieldKey]: {
-                  ...prev[battlefieldKey],
-                  [playerKey]: [...updatedBattlefield, deployedHero].sort((a, b) => (a.slot || 0) - (b.slot || 0)),
-                },
-                [`${playerKey}Hand`]: newHand,
-                [`${playerKey}Base`]: updatedBase,
-                [`${playerKey}DeployZone`]: newDeployZone,
-                [otherBattlefieldKey]: {
-                  ...prev[otherBattlefieldKey],
-                  [playerKey]: otherBattlefield,
-                },
-                metadata: {
-                  ...prev.metadata,
-                  [`${playerKey}RunePool`]: updatedRunePool,
-                  deathCooldowns: updatedCooldowns,
-                  [`${playerKey}HeroesDeployedThisTurn`]: ((prev.metadata[`${playerKey}HeroesDeployedThisTurn` as keyof typeof prev.metadata] as number) || 0) + 1,
-                  turn1DeploymentPhase: newDeploymentPhase,
-                  actionPlayer: updatedActionPlayer,
-                  initiativePlayer: updatedInitiativePlayer,
-                  activePlayer: newDeploymentPhase === 'complete' ? 'player1' : updatedActivePlayer,
-                  player1Passed: false,
-                  player2Passed: false,
-                  // Ensure phase is 'play' when deployment completes
-                  currentPhase: newDeploymentPhase === 'complete' ? 'play' : prev.metadata.currentPhase,
-                },
-              }
-            })
-            
+          setDraggedCardId(null)
+
+          if (droppedCard.location === battlefieldId) {
+            handleChangeSlot(droppedCard, slotNum, battlefieldId)
             setSelectedCardId(null)
             return
           }
-        
-        // For other cases (play phase, or non-hero cards), we still need to use handleDeploy
-        // But first ensure selectedCard is set by setting selectedCardId and waiting
-        setSelectedCardId(cardId)
-        setDraggedCardId(null)
-        
-        // Force a re-render by using a callback that checks if selectedCard is available
-        // We'll use a ref-like approach with multiple attempts
-        let attempts = 0
-        const tryDeploy = () => {
-          attempts++
-          // Check if we can access selectedCard now - but we can't from closure
-          // Instead, just try calling handleDeploy - if it fails silently, we'll retry
-          console.log(`[BattlefieldView] handleDrop - Attempt ${attempts} to deploy`)
-          
-          // Actually, let's just set selectedCardId and immediately call handleDeploy
-          // If it fails, we'll see in the logs
-          if (droppedCard.location === battlefieldId) {
-            handleChangeSlot(droppedCard, slotNum, battlefieldId)
-          } else {
-            handleDeploy(battlefieldId, slotNum)
+
+          pendingDropRef.current = {
+            cardId,
+            battlefieldId,
+            slotNum,
           }
-          
-          // If we've tried a few times and it's still not working, give up
-          if (attempts < 3) {
-            setTimeout(tryDeploy, 50)
-          }
-        }
+          setSelectedCardId(cardId)
         
-        // Start trying immediately
-        setTimeout(tryDeploy, 50)
       } else {
         console.log(`[BattlefieldView] handleDrop - ERROR: Card owner doesn't match! droppedCard.owner:`, droppedCard.owner, 'expected:', player)
       }
@@ -822,15 +600,6 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
             e.preventDefault()
             e.stopPropagation()
             handleDragOver(e)
-          }}
-          onDrop={(e) => {
-            // Forward drop event to parent slot handler
-            // Call parent's handleDrop directly to avoid propagation issues
-            e.preventDefault()
-            e.stopPropagation()
-            console.log(`[BattlefieldView] Inner content div onDrop - forwarding to parent`)
-            handleDrop(e)
-            setDragOverSlot(null)
           }}
         >
           {cardInSlot ? (

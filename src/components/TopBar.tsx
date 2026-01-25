@@ -18,6 +18,10 @@ export function TopBar({
   const { metadata, activePlayer, showCardLibrary, setShowCardLibrary } = useGameContext()
   const { savedStates, exportGameState, importGameState } = useGamePersistence()
   const { handleNextPhase, handleNextTurn, handlePass, handleEndDeployPhase } = useTurnManagement()
+  const showDeployOwner = metadata.currentPhase !== 'deploy' || metadata.currentTurn === 1
+  const phaseLabel = showDeployOwner
+    ? `${activePlayer === 'player1' ? 'P1' : 'P2'} ${metadata.currentPhase}`
+    : 'Deploy'
 
   const passLabel = (() => {
     if (metadata.currentPhase !== 'play' || !metadata.actionPlayer) {
@@ -37,7 +41,7 @@ export function TopBar({
           Turn {metadata.currentTurn}
         </div>
         <div className="topbar__pill topbar__pill--phase">
-          {activePlayer === 'player1' ? 'P1' : 'P2'} {metadata.currentPhase}
+          {phaseLabel}
         </div>
         {metadata.actionPlayer && (
           <div className={`topbar__pill ${metadata.actionPlayer === 'player1' ? 'topbar__pill--p1' : 'topbar__pill--p2'}`}>

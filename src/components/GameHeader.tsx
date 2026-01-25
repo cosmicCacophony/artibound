@@ -6,6 +6,8 @@ export function GameHeader() {
   const { metadata, activePlayer, setShowCardLibrary, setGameState } = useGameContext()
   const { savedStates, exportGameState, importGameState } = useGamePersistence()
   const { handleNextPhase, handleNextTurn, handlePass, handleEndDeployPhase } = useTurnManagement()
+  const showDeployOwner = metadata.currentPhase !== 'deploy' || metadata.currentTurn === 1
+  const activePlayerLabel = activePlayer === 'player1' ? 'P1' : 'P2'
 
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0', flexShrink: 0, padding: '1px 2px' }}>
@@ -46,7 +48,7 @@ export function GameHeader() {
           </div>
         )}
         <div style={{ fontSize: '10px', fontWeight: 'bold' }}>
-          T{metadata.currentTurn} {activePlayer === 'player1' ? 'P1' : 'P2'}
+          {showDeployOwner ? `T${metadata.currentTurn} ${activePlayerLabel}` : `T${metadata.currentTurn}`}
         </div>
         <div style={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'capitalize' }}>
           {metadata.currentPhase}
