@@ -18,6 +18,9 @@ export function Board() {
     selectedCardId,
     temporaryZone,
     setTemporaryZone,
+    pendingEffect,
+    setPendingEffect,
+    setGameState,
   } = useGameContext()
   
   const [showDebug, setShowDebug] = useState(false)
@@ -39,8 +42,46 @@ export function Board() {
       {temporaryZone && (
         <TemporaryGameZone
           zone={temporaryZone}
-          onConfirm={() => setTemporaryZone(null)}
-          onCancel={() => setTemporaryZone(null)}
+          onConfirm={(selection) => {
+            if (pendingEffect?.cardId === 'black-artifact-rix-altar' && selection) {
+              setGameState(prev => {
+                const removeCard = (cards: typeof prev.player1Hand) => cards.filter(card => card.id !== selection)
+                const targetBattlefield = window.confirm('Deal damage to Tower A? (Cancel = Tower B)') ? 'battlefieldA' : 'battlefieldB'
+                const enemy = pendingEffect.owner === 'player1' ? 'player2' : 'player1'
+                const towerKey = targetBattlefield === 'battlefieldA'
+                  ? (enemy === 'player1' ? 'towerA_player1_HP' : 'towerA_player2_HP')
+                  : (enemy === 'player1' ? 'towerB_player1_HP' : 'towerB_player2_HP')
+
+                return {
+                  ...prev,
+                  player1Hand: removeCard(prev.player1Hand),
+                  player2Hand: removeCard(prev.player2Hand),
+                  player1Base: removeCard(prev.player1Base),
+                  player2Base: removeCard(prev.player2Base),
+                  player1DeployZone: removeCard(prev.player1DeployZone),
+                  player2DeployZone: removeCard(prev.player2DeployZone),
+                  battlefieldA: {
+                    player1: removeCard(prev.battlefieldA.player1),
+                    player2: removeCard(prev.battlefieldA.player2),
+                  },
+                  battlefieldB: {
+                    player1: removeCard(prev.battlefieldB.player1),
+                    player2: removeCard(prev.battlefieldB.player2),
+                  },
+                  metadata: {
+                    ...prev.metadata,
+                    [towerKey]: Math.max(0, (prev.metadata as any)[towerKey] - (pendingEffect.effect.damage || 4)),
+                  },
+                }
+              })
+              setPendingEffect(null)
+            }
+            setTemporaryZone(null)
+          }}
+          onCancel={() => {
+            setPendingEffect(null)
+            setTemporaryZone(null)
+          }}
         />
       )}
       {combatSummaryData && (

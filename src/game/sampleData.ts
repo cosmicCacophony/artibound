@@ -857,6 +857,8 @@ export function createCardFromTemplate(
     manaCost: template.manaCost,
     colors: template.colors,
     consumesRunes: template.consumesRunes,
+    tribe: template.tribe,
+    tribeBuff: template.tribeBuff,
   }
 
   // Handle spell cards - check comprehensive data first, then test deck data

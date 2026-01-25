@@ -348,12 +348,6 @@ export function useTurnManagement() {
         }
       })
       
-      // Regenerate mana for next player (+1 max mana, restore to max)
-      const nextPlayerMaxMana = Math.min(
-        (nextPlayer === 'player1' ? metadata.player1MaxMana : metadata.player2MaxMana) + 1,
-        10 // Cap at 10
-      )
-      
       // Calculate gold per turn (base + items)
       const baseGoldPerTurn = 3
       let goldPerTurnFromItems = 0
@@ -381,6 +375,19 @@ export function useTurnManagement() {
       const totalGoldThisTurn = baseGoldPerTurn + goldPerTurnFromItems
 
       setGameState(prev => {
+        const nextP1MaxMana = shouldIncrementTurn
+          ? Math.min(prev.metadata.player1MaxMana + 1, 10)
+          : prev.metadata.player1MaxMana
+        const nextP2MaxMana = shouldIncrementTurn
+          ? Math.min(prev.metadata.player2MaxMana + 1, 10)
+          : prev.metadata.player2MaxMana
+
+        const nextP1Mana = shouldIncrementTurn ? nextP1MaxMana : prev.metadata.player1Mana
+        const nextP2Mana = shouldIncrementTurn ? nextP2MaxMana : prev.metadata.player2Mana
+
+        const resolvedP1Mana = nextPlayer === 'player1' ? nextP1MaxMana : nextP1Mana
+        const resolvedP2Mana = nextPlayer === 'player2' ? nextP2MaxMana : nextP2Mana
+
         const canDeployHero = (playerId: 'player1' | 'player2') => {
           const base = prev[`${playerId}Base` as keyof typeof prev] as Card[]
           const deployZone = prev[`${playerId}DeployZone` as keyof typeof prev] as Card[]
@@ -405,8 +412,10 @@ export function useTurnManagement() {
             currentTurn: prev.metadata.currentTurn + (shouldIncrementTurn ? 1 : 0),
             activePlayer: nextPlayer,
             currentPhase: resolvedPhase,
-            [`${nextPlayer}MaxMana`]: nextPlayerMaxMana,
-            [`${nextPlayer}Mana`]: nextPlayerMaxMana, // Restore to max
+            player1MaxMana: nextP1MaxMana,
+            player2MaxMana: nextP2MaxMana,
+            player1Mana: resolvedP1Mana,
+            player2Mana: resolvedP2Mana,
             // Reset pass flags at start of new turn
             player1Passed: false,
             player2Passed: false,
@@ -773,6 +782,7 @@ export function useTurnManagement() {
             metadata: {
               ...prev.metadata,
               turn1DeploymentPhase: 'p2_lane2',
+              activePlayer: 'player2',
             },
           }
         } else if (phase === 'p1_lane2' && player === 'player1') {
@@ -784,6 +794,7 @@ export function useTurnManagement() {
               turn1DeploymentPhase: 'complete',
               actionPlayer: 'player1',
               initiativePlayer: 'player1',
+              activePlayer: 'player1',
             },
           }
         } else {
@@ -806,6 +817,7 @@ export function useTurnManagement() {
       if (!otherPlayerPassed) {
         // Action goes to opponent
         newMetadata.actionPlayer = player === 'player1' ? 'player2' : 'player1'
+        newMetadata.activePlayer = newMetadata.actionPlayer
         // Initiative STAYS with the player who passed (they locked it in)
         // Don't change initiativePlayer - it stays with the player who passed
       }

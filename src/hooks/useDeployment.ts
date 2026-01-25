@@ -181,10 +181,12 @@ export function useDeployment() {
             } : {}),
             ...(metadata.currentTurn === 1 ? {
               turn1DeploymentPhase: newDeploymentPhase,
+              activePlayer: newDeploymentPhase === 'p2_lane1' || newDeploymentPhase === 'p2_lane2' ? 'player2' : 'player1',
               ...(newDeploymentPhase === 'complete' ? {
                 currentPhase: 'play',
                 actionPlayer: 'player1',
                 initiativePlayer: 'player1',
+                activePlayer: 'player1',
               } : {}),
             } : {}),
           },
@@ -295,9 +297,9 @@ export function useDeployment() {
     const playerMana = selectedCard.owner === 'player1' ? metadata.player1Mana : metadata.player2Mana
     const playerRunePool = selectedCard.owner === 'player1' ? metadata.player1RunePool : metadata.player2RunePool
     
-    // Only check costs for non-heroes, or spells being deployed to battlefields (not base)
+    // Check costs for all non-heroes (including spells)
     // Heroes don't cost runes - they generate runes when deployed
-    if (!isHero && (!isSpell || location !== 'base')) {
+    if (!isHero) {
       // Check mana cost
       if (cardTemplate.manaCost && cardTemplate.manaCost > playerMana) {
         alert(`Not enough mana! Need ${cardTemplate.manaCost}, have ${playerMana}`)
@@ -319,6 +321,81 @@ export function useDeployment() {
       }
     }
 
+    // Spells can be cast onto a base without occupying a slot
+    if (selectedCard.cardType === 'spell' && location === 'base') {
+      setGameState(prev => {
+        const runePoolKey = `${selectedCard.owner}RunePool` as keyof GameMetadata
+        const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
+        let updatedRunePool = prev.metadata[runePoolKey] as any
+        let updatedMana = prev.metadata[manaKey] as number
+
+        if (cardTemplate.manaCost) {
+          updatedMana = updatedMana - cardTemplate.manaCost
+        }
+        const { newPool } = consumeRunesForCardWithTracking(cardTemplate, updatedRunePool)
+        updatedRunePool = newPool
+
+        const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
+
+        return {
+          ...prev,
+          [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
+          [`${selectedCard.owner}Base`]: removeFromLocation(prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[]),
+          [`${selectedCard.owner}DeployZone`]: removeFromLocation(prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[]),
+          metadata: {
+            ...prev.metadata,
+            [runePoolKey]: updatedRunePool,
+            [manaKey]: updatedMana,
+            actionPlayer: otherPlayer,
+            initiativePlayer: otherPlayer,
+            activePlayer: otherPlayer,
+            player1Passed: false,
+            player2Passed: false,
+          },
+        }
+      })
+
+      if (isPlayPhase) {
+        const spellCard = selectedCard as SpellCard
+        if (spellCard.effect.type === 'create_tokens' || spellCard.effect.type === 'tokenize') {
+          const tokens = buildTokenDefinitions(spellCard)
+          const templateId = getTemplateId(spellCard.id)
+          const temporaryZone = {
+            type: 'tokenize' as const,
+            title: 'Token Creation',
+            description: 'Drag tokens onto the battlefield.',
+            owner: spellCard.owner,
+            tokens,
+          }
+          setPendingEffect({
+            cardId: templateId,
+            owner: spellCard.owner,
+            effect: spellCard.effect,
+            temporaryZone,
+          })
+          setTemporaryZone(temporaryZone)
+          setSelectedCardId(null)
+          return
+        }
+
+        let pendingEffect: PendingEffect | null = null
+        setGameState(prev => {
+          const result = resolveSpellEffect({
+            gameState: prev,
+            spell: spellCard,
+            owner: spellCard.owner,
+          })
+          pendingEffect = result.pendingEffect
+          return result.nextState
+        })
+        setPendingEffect(pendingEffect)
+        setTemporaryZone(pendingEffect?.temporaryZone || null)
+      }
+
+      setSelectedCardId(null)
+      return
+    }
+
     // Spells can be cast onto a battlefield without occupying a slot
     if (selectedCard.cardType === 'spell' && (location === 'battlefieldA' || location === 'battlefieldB')) {
       setGameState(prev => {
@@ -333,6 +410,8 @@ export function useDeployment() {
         const { newPool } = consumeRunesForCardWithTracking(cardTemplate, updatedRunePool)
         updatedRunePool = newPool
 
+        const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
+
         return {
           ...prev,
           [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
@@ -342,6 +421,11 @@ export function useDeployment() {
             ...prev.metadata,
             [runePoolKey]: updatedRunePool,
             [manaKey]: updatedMana,
+            actionPlayer: otherPlayer,
+            initiativePlayer: otherPlayer,
+            activePlayer: otherPlayer,
+            player1Passed: false,
+            player2Passed: false,
           },
         }
       })
@@ -770,6 +854,7 @@ export function useDeployment() {
         const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
         updatedMetadata.actionPlayer = otherPlayer
         updatedMetadata.initiativePlayer = otherPlayer
+        updatedMetadata.activePlayer = otherPlayer
         updatedMetadata.player1Passed = false
         updatedMetadata.player2Passed = false
       }

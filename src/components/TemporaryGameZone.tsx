@@ -108,6 +108,27 @@ export function TemporaryGameZone({ zone, onConfirm, onCancel }: TemporaryGameZo
           </div>
         )}
 
+        {zone.type === 'target_select' && zone.selectableCards && (
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px' }}>
+            {zone.selectableCards.map(card => (
+              <button
+                key={card.id}
+                onClick={() => onConfirm(card.id)}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #888',
+                  backgroundColor: '#fafafa',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                }}
+              >
+                {card.name}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
           <button
             onClick={onCancel}

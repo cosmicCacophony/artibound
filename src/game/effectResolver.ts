@@ -70,6 +70,7 @@ export const buildTokenDefinitions = (spell: SpellCard): TokenDefinition[] => {
     attack: tokenStats.attack,
     health: tokenStats.health,
     keywords: tokenKeywords,
+    tribe: spell.effect.tokenType,
   }))
 }
 

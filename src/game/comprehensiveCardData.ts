@@ -16,6 +16,11 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 6,
     currentHealth: 6,    equippedItems: [],
     supportEffect: 'Legion units get +1/+1',
+    tribeBuff: {
+      tribe: 'legion',
+      attack: 1,
+      health: 1,
+    },
   },
   {
     id: 'rw-hero-captain',
@@ -28,6 +33,11 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     maxHealth: 6,
     currentHealth: 6,    equippedItems: [],
     supportEffect: 'Legion units get +1/+1',
+    tribeBuff: {
+      tribe: 'legion',
+      attack: 1,
+      health: 1,
+    },
   },
   // Red Cleave Hero (Sven-like) - Tool to deal with creep-stacking cards
   {
@@ -100,10 +110,11 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['red', 'white'],
     manaCost: 4,
-    attack: 4,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
+    attack: 3,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    tribe: 'legion',
   },
   // Ranged Units - Can attack from base/deploy zone
   {
@@ -118,6 +129,7 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 3,
     currentHealth: 3,
     rangedAttack: 2,
+    tribe: 'legion',
   },
   // New Magic-inspired RW cards
   {
@@ -132,6 +144,12 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 5,
     maxHealth: 5,
     currentHealth: 5,
+    tribe: 'legion',
+    tribeBuff: {
+      tribe: 'legion',
+      attack: 2,
+      health: 2,
+    },
   },
   {
     id: 'rw-unit-legion-vanguard',
@@ -145,6 +163,7 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 4,
     maxHealth: 4,
     currentHealth: 4,
+    tribe: 'legion',
   },
 ]
 
@@ -169,6 +188,11 @@ export const rwArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     manaCost: 5,
     effectType: 'damage_amplifier',
     effectValue: 3, // +3 attack, +1 health handled separately if needed
+    tribeBuff: {
+      tribe: 'legion',
+      attack: 3,
+      health: 1,
+    },
   },
   {
     id: 'rw-artifact-rally-banner',

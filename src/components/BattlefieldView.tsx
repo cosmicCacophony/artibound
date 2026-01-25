@@ -335,6 +335,7 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
                   location: battlefieldId,
                   owner: token.owner,
                   slot: slotNum,
+                  tribe: token.tribe,
                 },
               ].sort((a, b) => (a.slot || 0) - (b.slot || 0)),
             },
@@ -593,6 +594,10 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
                 updatedActionPlayer = otherPlayer
                 updatedInitiativePlayer = otherPlayer
               }
+
+              const updatedActivePlayer = newDeploymentPhase === 'p2_lane1' || newDeploymentPhase === 'p2_lane2'
+                ? 'player2'
+                : 'player1'
               
               return {
                 ...prev,
@@ -615,6 +620,7 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
                   turn1DeploymentPhase: newDeploymentPhase,
                   actionPlayer: updatedActionPlayer,
                   initiativePlayer: updatedInitiativePlayer,
+                  activePlayer: newDeploymentPhase === 'complete' ? 'player1' : updatedActivePlayer,
                   player1Passed: false,
                   player2Passed: false,
                   // Ensure phase is 'play' when deployment completes

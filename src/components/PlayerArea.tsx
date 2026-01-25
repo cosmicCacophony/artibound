@@ -32,6 +32,8 @@ export function PlayerArea({ player, mode = 'expanded', showDebugControls = fals
     setPlayer1SidebarCards,
     player2SidebarCards,
     setPlayer2SidebarCards,
+    setPendingEffect,
+    setTemporaryZone,
   } = useGameContext()
   const [editingHeroId, setEditingHeroId] = useState<string | null>(null)
   const [hoveredBaseCard, setHoveredBaseCard] = useState<string | null>(null)
@@ -134,6 +136,36 @@ export function PlayerArea({ player, mode = 'expanded', showDebugControls = fals
   const handleCardClick = (cardId: string, e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation()
+    }
+
+    const baseCard = playerBase.find(card => card.id === cardId)
+    if (baseCard && baseCard.cardType === 'artifact' && baseCard.id.startsWith('black-artifact-rix-altar')) {
+      const battlefieldUnits = [
+        ...gameState.battlefieldA[player as 'player1' | 'player2'],
+        ...gameState.battlefieldB[player as 'player1' | 'player2'],
+      ]
+      const champions = battlefieldUnits.filter(card => card.name.includes('Champion'))
+      if (champions.length === 0) {
+        alert('No champions available to sacrifice.')
+        return
+      }
+
+      setPendingEffect({
+        cardId: 'black-artifact-rix-altar',
+        owner: player,
+        effect: {
+          type: 'targeted_damage',
+          damage: 4,
+        },
+      })
+      setTemporaryZone({
+        type: 'target_select',
+        title: 'Rix Altar',
+        description: 'Choose a champion to sacrifice.',
+        owner: player,
+        selectableCards: champions.map(card => ({ id: card.id, name: card.name })),
+      })
+      return
     }
     
     // Double-click to move to base

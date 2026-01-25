@@ -60,6 +60,12 @@ export interface BaseCard {
   manaCost?: number // Cost to play this card (uses mana)
   colors?: Color[] // Colors required to cast in lane with matching hero color
   consumesRunes?: boolean // If true, casting this card consumes runes from the pool
+  tribe?: string
+  tribeBuff?: {
+    tribe: string
+    attack: number
+    health: number
+  }
 }
 
 export interface Item {
@@ -398,6 +404,7 @@ export interface TokenDefinition {
   attack: number
   health: number
   keywords?: string[]
+  tribe?: string
 }
 
 export type TemporaryZoneType = 'tokenize' | 'scry' | 'sacrifice' | 'target_select'
@@ -410,6 +417,7 @@ export interface TemporaryZone {
   tokens?: TokenDefinition[]
   scryCardId?: string
   selectableCardIds?: string[]
+  selectableCards?: Array<{ id: string; name: string }>
   confirmLabel?: string
 }
 
