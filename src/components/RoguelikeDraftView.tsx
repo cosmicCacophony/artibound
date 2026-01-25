@@ -4,12 +4,11 @@ import { RoguelikeDraftItem } from '../game/roguelikeTypes'
 import { Hero, ArtifactCard, SpellCard, GenericUnit, BaseCard, FinalDraftSelection } from '../game/types'
 import { CardPreview } from './CardPreview'
 // Simple export function for roguelike draft
-const downloadDraftAsJSON = (draftState: any, _: any, archetype: string) => {
+const downloadDraftAsJSON = (selection: FinalDraftSelection, archetype: string) => {
   const dataStr = JSON.stringify({
+    timestamp: Date.now(),
     archetype,
-    draftedCards: draftState.draftedCards,
-    heroes: draftState.heroes,
-    timestamp: new Date().toISOString(),
+    selection,
   }, null, 2)
   
   const dataBlob = new Blob([dataStr], { type: 'application/json' })
@@ -42,6 +41,48 @@ export function RoguelikeDraftView({ onStartGame }: RoguelikeDraftViewProps = {}
 
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
   const summary = getDraftSummary()
+
+  const toTemplateId = (cardId: string) => {
+    const player1Index = cardId.indexOf('-player1-')
+    if (player1Index !== -1) {
+      return cardId.slice(0, player1Index)
+    }
+    const player2Index = cardId.indexOf('-player2-')
+    if (player2Index !== -1) {
+      return cardId.slice(0, player2Index)
+    }
+    return cardId
+  }
+
+  const buildDraftSelection = () => {
+    const allCards: BaseCard[] = [
+      ...draftState.draftedArtifacts,
+      ...draftState.draftedSpells,
+      ...draftState.draftedUnits,
+    ]
+
+    const fullHeroes: Hero[] = draftState.draftedHeroes.map((hero, index) => ({
+      ...hero,
+      location: 'base' as const,
+      owner: 'player1' as const,
+      id: `${hero.id}-player1-${Date.now()}-${index}`,
+    }))
+
+    const selection: FinalDraftSelection = {
+      heroes: fullHeroes,
+      cards: allCards,
+      battlefield: allBattlefields[0],
+    }
+
+    return {
+      selection,
+      normalizedSelection: {
+        ...selection,
+        heroes: selection.heroes.map(hero => ({ ...hero, id: toTemplateId(hero.id) })),
+        cards: selection.cards.map(card => ({ ...card, id: toTemplateId(card.id) })),
+      },
+    }
+  }
 
   // Handle item click (select/deselect)
   const handleItemClick = (item: RoguelikeDraftItem) => {
@@ -218,29 +259,8 @@ export function RoguelikeDraftView({ onStartGame }: RoguelikeDraftViewProps = {}
         <div style={{ textAlign: 'center', marginTop: '30px' }}>
           <button
             onClick={() => {
-              // Convert roguelike draft to FinalDraftSelection format
-              // Combine artifacts, spells, and units into cards array
-              const allCards: BaseCard[] = [
-                ...artifacts,
-                ...spells,
-                ...units,
-              ]
-              
-              // Convert heroes to full Hero type (add location and owner)
-              const fullHeroes: Hero[] = heroes.map((hero, index) => ({
-                ...hero,
-                location: 'base' as const,
-                owner: 'player1' as const,
-                id: `${hero.id}-player1-${Date.now()}-${index}`,
-              }))
-              
-              const player1Selection: FinalDraftSelection = {
-                heroes: fullHeroes,
-                cards: allCards,
-                battlefield: allBattlefields[0], // Placeholder, will be replaced by hardcoded ones
-              }
-              
-              initializeDraftGame(player1Selection)
+              const { selection } = buildDraftSelection()
+              initializeDraftGame(selection)
               if (onStartGame) {
                 onStartGame()
               }
@@ -271,7 +291,8 @@ export function RoguelikeDraftView({ onStartGame }: RoguelikeDraftViewProps = {}
                 ? `Multicolor (${colorStr})`
                 : `${colorStr.charAt(0).toUpperCase() + colorStr.slice(1)} Focus`
               
-              downloadDraftAsJSON(draftState, undefined, archetype)
+              const { normalizedSelection } = buildDraftSelection()
+              downloadDraftAsJSON(normalizedSelection, archetype)
             }}
             style={{
               padding: '12px 24px',
