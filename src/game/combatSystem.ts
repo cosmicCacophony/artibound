@@ -155,7 +155,7 @@ export function resolveAttack(
       if (isStunned) {
         attackPower = 0
       } else {
-        attackPower = getAttackPower(attacker, targetIsHero)
+        attackPower = getAttackPower(attacker, gameState, battlefieldId, targetIsHero)
         attackPower += getLaneMomentumBonus(gameState, battlefieldId, attacker.owner)
         if (targetIsHero && attacker.cardType === 'hero' && 'bonusVsHeroes' in attacker && attacker.bonusVsHeroes) {
           attackPower += attacker.bonusVsHeroes
@@ -164,15 +164,24 @@ export function resolveAttack(
         
       }
       
-      // Calculate effective health (currentHealth + temporaryHP)
+      // Calculate effective health (currentHealth + temporaryHP + tribe buff)
       const tempHP = (targetUnit.cardType === 'hero' || targetUnit.cardType === 'generic') && 'temporaryHP' in targetUnit
         ? (targetUnit.temporaryHP || 0)
         : 0
-      const effectiveHealth = targetUnit.currentHealth + tempHP
+      const tribeBuff = getTribeBuff(
+        gameState,
+        battlefieldId,
+        targetUnit.owner,
+        (targetUnit as any).tribe,
+        targetUnit.id
+      )
+      const buffHealth = tribeBuff.health
+      const effectiveHealth = targetUnit.currentHealth + tempHP + buffHealth
       
       // Apply damage - temporary HP absorbs damage first
       const damageAfterTempHP = Math.max(0, attackPower - tempHP)
-      const newHealth = Math.max(0, targetUnit.currentHealth - damageAfterTempHP)
+      const damageAfterBuff = Math.max(0, damageAfterTempHP - buffHealth)
+      const newHealth = Math.max(0, targetUnit.currentHealth - damageAfterBuff)
       const newTempHP = Math.max(0, tempHP - attackPower)
       
       damageDealt = Math.min(attackPower, effectiveHealth)
@@ -217,7 +226,7 @@ export function resolveAttack(
       if (isStunned) {
         attackPower = 0
       } else {
-        attackPower = getAttackPower(attacker, false) // No hero bonus vs towers
+        attackPower = getAttackPower(attacker, gameState, battlefieldId, false) // No hero bonus vs towers
         attackPower += getLaneMomentumBonus(gameState, battlefieldId, attacker.owner)
         
         
@@ -238,7 +247,7 @@ export function resolveAttack(
       if (isStunned) {
         attackPower = 0
       } else {
-        attackPower = getAttackPower(attacker, false)
+        attackPower = getAttackPower(attacker, gameState, battlefieldId, false)
         attackPower += getLaneMomentumBonus(gameState, battlefieldId, attacker.owner)
         
         
@@ -258,7 +267,49 @@ export function resolveAttack(
 /**
  * Get attack power of a unit (handles stacked units, hero bonuses, and temporary attack)
  */
-function getAttackPower(unit: Card, targetIsHero: boolean = false): number {
+export function getTribeBuff(
+  gameState: GameState | undefined,
+  battlefieldId: 'battlefieldA' | 'battlefieldB',
+  owner: PlayerId,
+  tribe: string | undefined,
+  targetCardId?: string
+): { attack: number; health: number } {
+  if (!gameState || !tribe) {
+    return { attack: 0, health: 0 }
+  }
+
+  const sources: Card[] = [
+    ...gameState[battlefieldId][owner],
+  ] as Card[]
+
+  return sources.reduce(
+    (acc, card) => {
+      const isInPlay = card.location === battlefieldId
+
+      if (!isInPlay || !card.tribeBuff) {
+        return acc
+      }
+      if (card.tribeBuff.tribe !== tribe) {
+        return acc
+      }
+      if (card.tribeBuff.excludeSelf && targetCardId && card.id === targetCardId) {
+        return acc
+      }
+      return {
+        attack: acc.attack + card.tribeBuff.attack,
+        health: acc.health + card.tribeBuff.health,
+      }
+    },
+    { attack: 0, health: 0 }
+  )
+}
+
+function getAttackPower(
+  unit: Card,
+  gameState: GameState | undefined,
+  battlefieldId: 'battlefieldA' | 'battlefieldB',
+  targetIsHero: boolean = false
+): number {
   let baseAttack = 0
   if (unit.cardType === 'generic' && 'stackPower' in unit && unit.stackPower !== undefined) {
     baseAttack = unit.stackPower
@@ -271,6 +322,18 @@ function getAttackPower(unit: Card, targetIsHero: boolean = false): number {
     ? (unit.temporaryAttack || 0)
     : 0
   baseAttack += tempAttack
+
+  // Add tribe buff attack (if applicable)
+  if ('tribe' in unit) {
+    const tribeBuff = getTribeBuff(
+      gameState,
+      battlefieldId,
+      unit.owner,
+      (unit as any).tribe,
+      unit.id
+    )
+    baseAttack += tribeBuff.attack
+  }
   
   // Apply hero bonus vs heroes (e.g., assassins +3 vs heroes)
   if (targetIsHero && unit.cardType === 'hero' && 'bonusVsHeroes' in unit && unit.bonusVsHeroes) {
@@ -334,7 +397,7 @@ export function resolveCombat(
           : (opponent === 'player1' ? 'towerB_player1' : 'towerB_player2')
         const towerHPBefore = initialTowerHP[towerKey]
         const towerHPAfter = currentTowerHP[towerKey]
-        const attackPowerForTower = getAttackPower(attacker, false) // No hero bonus vs towers
+        const attackPowerForTower = getAttackPower(attacker, gameState, battlefieldId, false) // No hero bonus vs towers
         
         if (towerHPBefore > 0) {
           // Tower was alive - check if we destroyed it
@@ -426,6 +489,68 @@ export function resolveSimultaneousCombat(
     return currentTowerHP[towerKey] === 0
   }
 
+  const applyCleaveDamage = (
+    attacker: Card,
+    attackerSlot: number,
+    attackPower: number,
+    opponent: PlayerId
+  ) => {
+    // Check if attacker has cleave
+    const hasCleave = attacker.specialEffects?.includes('cleave') || false
+    if (!hasCleave || attackPower <= 0) return
+
+    const opponentUnits = currentBattlefield[opponent]
+    const adjacentSlots = [attackerSlot - 1, attackerSlot + 1].filter(s => s >= 1 && s <= 5)
+    
+    for (const adjacentSlot of adjacentSlots) {
+      const adjacentUnit = opponentUnits.find(u => u.slot === adjacentSlot)
+      if (adjacentUnit && 'currentHealth' in adjacentUnit) {
+        const tempHP = (adjacentUnit.cardType === 'hero' || adjacentUnit.cardType === 'generic') && 'temporaryHP' in adjacentUnit
+          ? (adjacentUnit.temporaryHP || 0)
+          : 0
+        const tribeBuff = getTribeBuff(
+          gameState,
+          battlefieldId,
+          adjacentUnit.owner,
+          (adjacentUnit as any).tribe,
+          adjacentUnit.id
+        )
+        const buffHealth = tribeBuff.health
+        const effectiveHealth = adjacentUnit.currentHealth + tempHP + buffHealth
+        const damageAfterTempHP = Math.max(0, attackPower - tempHP)
+        const damageAfterBuff = Math.max(0, damageAfterTempHP - buffHealth)
+        const newHealth = Math.max(0, adjacentUnit.currentHealth - damageAfterBuff)
+        const newTempHP = Math.max(0, tempHP - attackPower)
+        const killed = newHealth <= 0
+
+        const updatedUnit = {
+          ...adjacentUnit,
+          currentHealth: newHealth,
+          temporaryHP: newTempHP,
+        }
+
+        const updatedOpponentUnits = killed
+          ? opponentUnits.filter(u => u.id !== adjacentUnit.id)
+          : opponentUnits.map(u => (u.id === adjacentUnit.id ? updatedUnit : u))
+
+        currentBattlefield = {
+          ...currentBattlefield,
+          [opponent]: updatedOpponentUnits,
+        }
+
+        combatLog.push({
+          attackerId: attacker.id,
+          attackerName: attacker.name,
+          targetType: 'unit',
+          targetId: adjacentUnit.id,
+          targetName: adjacentUnit.name,
+          damage: Math.min(attackPower, effectiveHealth),
+          killed,
+        })
+      }
+    }
+  }
+
   const applyCrossStrike = (
     attacker: Card,
     slot: number,
@@ -433,17 +558,27 @@ export function resolveSimultaneousCombat(
     otherBattlefieldId: 'battlefieldA' | 'battlefieldB',
     damage: number
   ) => {
-    if (damage <= 0) return
-    const otherBattlefield = currentBattlefield[otherBattlefieldId]
+    if (damage <= 0 || !gameState) return
+    const otherBattlefield = gameState[otherBattlefieldId]
+    if (!otherBattlefield) return
     const targetUnit = otherBattlefield[opponent].find(u => u.slot === slot)
 
     if (targetUnit && 'currentHealth' in targetUnit) {
       const tempHP = (targetUnit.cardType === 'hero' || targetUnit.cardType === 'generic') && 'temporaryHP' in targetUnit
         ? (targetUnit.temporaryHP || 0)
         : 0
-      const effectiveHealth = targetUnit.currentHealth + tempHP
+      const tribeBuff = getTribeBuff(
+        gameState,
+        otherBattlefieldId,
+        targetUnit.owner,
+        (targetUnit as any).tribe,
+        targetUnit.id
+      )
+      const buffHealth = tribeBuff.health
+      const effectiveHealth = targetUnit.currentHealth + tempHP + buffHealth
       const damageAfterTempHP = Math.max(0, damage - tempHP)
-      const newHealth = Math.max(0, targetUnit.currentHealth - damageAfterTempHP)
+      const damageAfterBuff = Math.max(0, damageAfterTempHP - buffHealth)
+      const newHealth = Math.max(0, targetUnit.currentHealth - damageAfterBuff)
       const newTempHP = Math.max(0, tempHP - damage)
       const killed = newHealth <= 0
 
@@ -457,12 +592,12 @@ export function resolveSimultaneousCombat(
         ? otherBattlefield[opponent].filter(u => u.id !== targetUnit.id)
         : otherBattlefield[opponent].map(u => (u.id === targetUnit.id ? updatedUnit : u))
 
-      currentBattlefield = {
-        ...currentBattlefield,
-        [otherBattlefieldId]: {
+      // Update the other battlefield in gameState directly
+      if (gameState) {
+        gameState[otherBattlefieldId] = {
           ...otherBattlefield,
           [opponent]: updatedOpponentUnits,
-        },
+        }
       }
 
       combatLog.push({
@@ -527,7 +662,7 @@ export function resolveSimultaneousCombat(
     if (p1Unit && !p1IsStunned) {
       const targetIsHero = p1Target?.type === 'unit' && p1Target.targetId ? 
         currentBattlefield.player2.find(u => u.id === p1Target.targetId)?.cardType === 'hero' : false
-      p1AttackPower = getAttackPower(p1Unit, targetIsHero)
+      p1AttackPower = getAttackPower(p1Unit, gameState, battlefieldId, targetIsHero)
       p1AttackPower += getLaneMomentumBonus(gameState, battlefieldId, p1Unit.owner)
       if (targetIsHero && p1Unit.cardType === 'hero' && 'bonusVsHeroes' in p1Unit && p1Unit.bonusVsHeroes) {
         p1AttackPower += p1Unit.bonusVsHeroes
@@ -538,7 +673,7 @@ export function resolveSimultaneousCombat(
     if (p2Unit && !p2IsStunned) {
       const targetIsHero = p2Target?.type === 'unit' && p2Target.targetId ? 
         currentBattlefield.player1.find(u => u.id === p2Target.targetId)?.cardType === 'hero' : false
-      p2AttackPower = getAttackPower(p2Unit, targetIsHero)
+      p2AttackPower = getAttackPower(p2Unit, gameState, battlefieldId, targetIsHero)
       p2AttackPower += getLaneMomentumBonus(gameState, battlefieldId, p2Unit.owner)
       if (targetIsHero && p2Unit.cardType === 'hero' && 'bonusVsHeroes' in p2Unit && p2Unit.bonusVsHeroes) {
         p2AttackPower += p2Unit.bonusVsHeroes
@@ -570,6 +705,11 @@ export function resolveSimultaneousCombat(
       
       currentBattlefield = result.updatedBattlefield
       currentTowerHP = result.updatedTowerHP
+      
+      // Apply cleave damage to adjacent units
+      if (!p1IsStunned) {
+        applyCleaveDamage(p1Unit, slot, p1AttackPower, 'player2')
+      }
       
       // Track overflow damage
       if (p1Target.type === 'tower') {
@@ -663,6 +803,11 @@ export function resolveSimultaneousCombat(
       
       currentBattlefield = result.updatedBattlefield
       currentTowerHP = result.updatedTowerHP
+      
+      // Apply cleave damage to adjacent units
+      if (!p2IsStunned) {
+        applyCleaveDamage(p2Unit, slot, p2AttackPower, 'player1')
+      }
       
       // Track overflow damage
       if (p2Target.type === 'tower') {

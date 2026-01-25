@@ -18,6 +18,463 @@ body {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
+:root {
+  --color-p1: #dc3545;
+  --color-p1-light: #ffebee;
+  --color-p2: #0d6efd;
+  --color-p2-light: #e3f2fd;
+  --color-battlefield-a: #4169e1;
+  --color-battlefield-b: #daa520;
+  --color-surface: #1a1a2e;
+  --color-surface-light: #f5f0e6;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --slot-width: 90px;
+  --slot-height: 110px;
+  --hand-card-width: 70px;
+}
+
+.board-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #101225;
+  color: #f5f5f5;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #2b2f4a;
+}
+
+.topbar__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.topbar__title {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+.topbar__pill {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #1b1f39;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.topbar__pill--phase {
+  text-transform: capitalize;
+}
+
+.topbar__pill--p1 {
+  background: rgba(220, 53, 69, 0.2);
+  border: 1px solid rgba(220, 53, 69, 0.5);
+}
+
+.topbar__pill--p2 {
+  background: rgba(13, 110, 253, 0.2);
+  border: 1px solid rgba(13, 110, 253, 0.5);
+}
+
+.topbar__resources {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.topbar__resource {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.topbar__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.topbar__button {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 150ms ease, opacity 150ms ease;
+}
+
+.topbar__button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.topbar__button--ghost {
+  background: #2d324f;
+}
+
+.topbar__debug {
+  position: absolute;
+  right: 12px;
+  top: 44px;
+  display: flex;
+  gap: 8px;
+  background: #12162c;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #2b2f4a;
+  z-index: 30;
+}
+
+.topbar__select {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #2b2f4a;
+  background: #0f1324;
+  color: #fff;
+  font-size: 11px;
+}
+
+.battlefield-arena {
+  flex: 1;
+  position: relative;
+  padding: 12px;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.battlefield-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: 1400px;
+}
+
+.battlefield-container {
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  min-height: 360px;
+}
+
+.battlefield-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.battlefield-title {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.battlefield-subtitle {
+  font-size: 10px;
+  font-weight: 500;
+  margin-left: 6px;
+  color: #666;
+}
+
+.tower-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.tower-row--bottom {
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.tower-display {
+  background: rgba(17, 17, 17, 0.75);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tower-display__controls {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.tower-display__controls button {
+  padding: 2px 6px;
+  font-size: 10px;
+  border-radius: 4px;
+  border: none;
+  background: #2b2f4a;
+  color: #fff;
+  cursor: pointer;
+}
+
+.battlefield-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.battlefield-row__label {
+  font-size: 10px;
+  color: #555;
+  font-weight: 600;
+}
+
+.battlefield-row__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(80px, 1fr));
+  gap: 6px;
+}
+
+.battlefield-slot {
+  min-height: var(--slot-height);
+  border-radius: 6px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+}
+
+.battlefield-slot__label {
+  font-size: 10px;
+  color: #666;
+  margin-bottom: 4px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.battlefield-slot__content {
+  flex: 1;
+  min-height: 90px;
+  position: relative;
+}
+
+.battlefield-slot__placeholder {
+  font-size: 9px;
+  color: #999;
+  text-align: center;
+  padding-top: 12px;
+  pointer-events: none;
+  font-style: italic;
+}
+
+.unit-card {
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  min-height: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.unit-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.unit-card--selected {
+  box-shadow: 0 0 0 3px #ffd700, 0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+.unit-card__name {
+  font-weight: 700;
+  font-size: 11px;
+  text-align: center;
+  color: #2d2d2d;
+  line-height: 1.2;
+}
+
+.unit-card__stats {
+  font-size: 13px;
+  font-weight: 700;
+  color: #8b0000;
+}
+
+.unit-card__status {
+  display: flex;
+  gap: 4px;
+  font-size: 10px;
+}
+
+.unit-card__keywords {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.keyword-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.1);
+  color: #333;
+}
+
+.keyword-badge--crossStrike {
+  color: #9c27b0;
+}
+
+.keyword-badge--assassinate {
+  color: #880e4f;
+}
+
+.keyword-badge--cleave {
+  color: #ff9800;
+}
+
+.keyword-badge--barrier {
+  color: #1976d2;
+}
+
+.tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.tooltip__content {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f1324;
+  color: #fff;
+  font-size: 11px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+  z-index: 50;
+}
+
+.tooltip:hover .tooltip__content {
+  opacity: 1;
+}
+
+.combat-preview {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.combat-preview--active {
+  background: rgba(10, 12, 24, 0.08);
+}
+
+.combat-preview__svg {
+  width: 100%;
+  height: 100%;
+}
+
+.combat-preview__label {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  transform: translateY(-50%);
+}
+
+.combat-preview__label--lethal {
+  background: rgba(244, 67, 54, 0.85);
+}
+
+.combat-preview__skull {
+  margin-left: 4px;
+}
+
+.player-zone {
+  width: 100%;
+  padding: 6px 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.player-zone--opponent {
+  background: rgba(20, 22, 40, 0.65);
+}
+
+.player-zone--self {
+  background: rgba(14, 16, 28, 0.9);
+}
+
+.player-zone__collapsed,
+.player-zone__expanded {
+  width: min(1400px, 100%);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.player-zone__collapsed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+}
+
+.player-zone__collapsed-title {
+  font-weight: 700;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.player-zone__collapsed-stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 .hero-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;

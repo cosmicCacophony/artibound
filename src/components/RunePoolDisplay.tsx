@@ -31,24 +31,24 @@ export function RunePoolDisplay({ runePool, seals = [], playerName, player }: Ru
   if (!runePool || !runePool.runes) {
     return (
       <div style={{ 
-        padding: '8px', 
+        padding: '1px 2px', 
         backgroundColor: '#1a1a1a', 
-        borderRadius: '8px',
+        borderRadius: '1px',
         border: '1px solid #333',
-        minWidth: '200px',
+        minWidth: 'auto',
       }}>
         {playerName && (
           <div style={{ 
-            fontSize: '12px', 
+            fontSize: '7px', 
             color: '#999', 
-            marginBottom: '8px',
+            marginBottom: '0',
             fontWeight: 'bold',
           }}>
             {playerName} Runes
           </div>
         )}
-        <div style={{ fontSize: '11px', color: '#999' }}>
-          No runes available
+        <div style={{ fontSize: '7px', color: '#999' }}>
+          No runes
         </div>
       </div>
     )
@@ -156,17 +156,17 @@ export function RunePoolDisplay({ runePool, seals = [], playerName, player }: Ru
 
   return (
     <div style={{ 
-      padding: '8px', 
+      padding: '1px 2px', 
       backgroundColor: '#1a1a1a', 
-      borderRadius: '8px',
+      borderRadius: '1px',
       border: '1px solid #333',
-      minWidth: '200px',
+      minWidth: 'auto',
     }}>
       {playerName && (
         <div style={{ 
-          fontSize: '12px', 
+          fontSize: '7px', 
           color: '#999', 
-          marginBottom: '8px',
+          marginBottom: '0',
           fontWeight: 'bold',
         }}>
           {playerName} Runes
@@ -176,8 +176,8 @@ export function RunePoolDisplay({ runePool, seals = [], playerName, player }: Ru
       {/* Color Symbols Row - Always show all 5 colors */}
       <div style={{ 
         display: 'flex', 
-        gap: '4px',
-        marginBottom: '8px',
+        gap: '1px',
+        marginBottom: '0',
         flexWrap: 'wrap',
       }}>
         {allColors.map(color => {
@@ -194,17 +194,17 @@ export function RunePoolDisplay({ runePool, seals = [], playerName, player }: Ru
                 handleAddRune(color)
               }}
               style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '4px',
+                width: '16px',
+                height: '16px',
+                borderRadius: '2px',
                 backgroundColor: colorStyle.bg,
                 color: colorStyle.text,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '16px',
+                fontSize: '8px',
                 fontWeight: 'bold',
-                border: `2px solid ${colorStyle.bg}`,
+                border: `1px solid ${colorStyle.bg}`,
                 cursor: 'pointer',
                 transition: 'transform 0.1s',
                 position: 'relative',
@@ -221,17 +221,17 @@ export function RunePoolDisplay({ runePool, seals = [], playerName, player }: Ru
               {totalCount > 0 && (
                 <span style={{
                   position: 'absolute',
-                  top: '-4px',
-                  right: '-4px',
+                  top: '-2px',
+                  right: '-2px',
                   backgroundColor: '#333',
                   color: '#fff',
                   borderRadius: '50%',
-                  width: '16px',
-                  height: '16px',
+                  width: '8px',
+                  height: '8px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '10px',
+                  fontSize: '6px',
                   border: '1px solid #666',
                 }}>
                   {totalCount}
@@ -247,9 +247,9 @@ export function RunePoolDisplay({ runePool, seals = [], playerName, player }: Ru
         <div style={{ 
           display: 'flex', 
           flexWrap: 'wrap',
-          gap: '4px',
-          marginBottom: '8px',
-          paddingTop: '8px',
+          gap: '1px',
+          marginBottom: '0',
+          paddingTop: '0',
           borderTop: '1px solid #333',
         }}>
           {/* Permanent Runes */}
@@ -263,17 +263,17 @@ export function RunePoolDisplay({ runePool, seals = [], playerName, player }: Ru
                   handleRemoveRune(rune, false)
                 }}
                 style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '4px',
+                  width: '14px',
+                  height: '14px',
+                  borderRadius: '2px',
                   backgroundColor: colorStyle.bg,
                   color: colorStyle.text,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '14px',
+                  fontSize: '8px',
                   fontWeight: 'bold',
-                  border: `2px solid ${colorStyle.bg}`,
+                  border: `1px solid ${colorStyle.bg}`,
                   cursor: 'pointer',
                   transition: 'transform 0.1s',
                 }}
@@ -303,18 +303,18 @@ export function RunePoolDisplay({ runePool, seals = [], playerName, player }: Ru
                   handleRemoveRune(rune, true)
                 }}
                 style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '4px',
+                  width: '14px',
+                  height: '14px',
+                  borderRadius: '2px',
                   backgroundColor: colorStyle.bg,
                   color: colorStyle.text,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '14px',
+                  fontSize: '8px',
                   fontWeight: 'bold',
-                  border: `2px dashed #ffd700`,
-                  boxShadow: '0 0 4px #ffd700',
+                  border: `1px dashed #ffd700`,
+                  boxShadow: '0 0 1px #ffd700',
                   cursor: 'pointer',
                   transition: 'transform 0.1s',
                 }}
@@ -340,12 +340,12 @@ export function RunePoolDisplay({ runePool, seals = [], playerName, player }: Ru
         <div style={{ 
           display: 'flex', 
           flexWrap: 'wrap', 
-          gap: '4px',
-          marginBottom: '8px',
-          paddingTop: '4px',
+          gap: '1px',
+          marginBottom: '0',
+          paddingTop: '0',
           borderTop: '1px solid #333',
         }}>
-          <span style={{ fontSize: '10px', color: '#999', marginRight: '4px', alignSelf: 'center' }}>
+          <span style={{ fontSize: '7px', color: '#999', marginRight: '1px', alignSelf: 'center' }}>
             Seals:
           </span>
           {seals.map((seal, index) => {
@@ -355,17 +355,17 @@ export function RunePoolDisplay({ runePool, seals = [], playerName, player }: Ru
               <div
                 key={`seal-${seal.id}-${index}`}
                 style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%', // Circle for seals
+                  width: '12px',
+                  height: '12px',
+                  borderRadius: '50%',
                   backgroundColor: color.bg,
                   color: color.text,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '11px',
+                  fontSize: '7px',
                   fontWeight: 'bold',
-                  border: `2px solid #666`,
+                  border: `1px solid #666`,
                   cursor: 'default',
                 }}
                 title={`${seal.name} - generates ${colorAbbreviation[seal.color]} each turn`}
@@ -378,14 +378,14 @@ export function RunePoolDisplay({ runePool, seals = [], playerName, player }: Ru
       )}
       
       <div style={{ 
-        fontSize: '11px', 
+        fontSize: '7px', 
         color: '#999',
         display: 'flex',
         justifyContent: 'space-between',
       }}>
-        <span>Total: {totalCount} runes</span>
+        <span>T:{totalCount}</span>
         {(runePool.temporaryRunes?.length || 0) > 0 && (
-          <span style={{ color: '#ffd700' }}>({runePool.temporaryRunes!.length} temp)</span>
+          <span style={{ color: '#ffd700' }}>({runePool.temporaryRunes!.length}t)</span>
         )}
       </div>
     </div>

@@ -4,14 +4,24 @@ import { RoguelikeDraftView } from './components/RoguelikeDraftView'
 import { HeroBrowserView } from './components/HeroBrowserView'
 import { CardBrowserView } from './components/CardBrowserView'
 import { GameProvider, useGameContext } from './context/GameContext'
+import { stockDecks } from './game/stockDecks'
 import './App.css'
 
 function AppContent() {
   const [view, setView] = useState<'game' | 'roguelike' | 'heroes' | 'cards'>('roguelike')
-  const { initializeRandomGame } = useGameContext()
+  const [selectedStockDeckId, setSelectedStockDeckId] = useState<string>(
+    stockDecks[0]?.id ?? ''
+  )
+  const { initializeRandomGame, initializeStockDeckGame } = useGameContext()
 
   const handleStartRandomGame = () => {
     initializeRandomGame()
+    setView('game')
+  }
+
+  const handleStartStockDeckGame = () => {
+    if (!selectedStockDeckId) return
+    initializeStockDeckGame(selectedStockDeckId)
     setView('game')
   }
 
@@ -71,6 +81,38 @@ function AppContent() {
           🃏 Browse Cards
         </button>
         <div style={{ marginLeft: 'auto' }}>
+          <select
+            value={selectedStockDeckId}
+            onChange={event => setSelectedStockDeckId(event.target.value)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '4px',
+              border: '1px solid #ccc',
+              marginRight: '8px',
+            }}
+          >
+            {stockDecks.map(deck => (
+              <option key={deck.id} value={deck.id}>
+                {deck.name}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={handleStartStockDeckGame}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              marginRight: '8px',
+            }}
+            title="Start a game with a stock archetype deck vs RW boss"
+          >
+            Start Stock Deck
+          </button>
           <button
             onClick={handleStartRandomGame}
             style={{

@@ -1,20 +1,120 @@
-import { useState, useEffect } from 'react'
-import { Card, Hero, HeroAbility } from '../game/types'
+import { useState, useEffect, useRef } from 'react'
+import { Card, Hero, HeroAbility, GameMetadata } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { useDeployment } from '../hooks/useDeployment'
-import { useCombat } from '../hooks/useCombat'
-import { useHeroAbilities } from '../hooks/useHeroAbilities'
 import { useTurnManagement } from '../hooks/useTurnManagement'
 import { HeroCard } from './HeroCard'
 import { HeroAbilityEditor } from './HeroAbilityEditor'
-import { resolveSimultaneousCombat } from '../game/combatSystem'
-import { createCardFromTemplate } from '../game/sampleData'
+import { KeywordBadge } from './KeywordBadge'
+import { isValidTargetForContext, resolveSpellEffect } from '../game/effectResolver'
+import { getTribeBuff } from '../game/combatSystem'
 
 interface BattlefieldViewProps {
   battlefieldId: 'battlefieldA' | 'battlefieldB'
+  showDebugControls?: boolean
+  onHoverUnit?: (cardId: string | null) => void
 }
 
-export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
+// Icon menu for creep spawning
+function CreepSpawnMenu({ battlefieldId, metadata, onSpawnCreep }: {
+  battlefieldId: 'battlefieldA' | 'battlefieldB'
+  metadata: GameMetadata
+  onSpawnCreep: (battlefieldId: 'battlefieldA' | 'battlefieldB', player: 'player1' | 'player2') => void
+}) {
+  const [showMenu, setShowMenu] = useState(false)
+  const currentActionPlayer = metadata.actionPlayer || metadata.activePlayer
+  const isPlayer1Turn = currentActionPlayer === 'player1'
+  const isPlayer2Turn = currentActionPlayer === 'player2'
+
+  return (
+    <div style={{ position: 'relative', marginBottom: '4px' }}>
+      <button
+        onClick={() => {
+          setShowMenu(!showMenu)
+        }}
+        style={{
+          padding: '2px 6px',
+          backgroundColor: '#9c27b0',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          fontSize: '10px',
+        }}
+        title="Spawn Creeps"
+      >
+        👾
+      </button>
+      {showMenu && (
+        <>
+          <div
+            style={{
+              position: 'fixed',
+              left: 0,
+              top: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 1000,
+            }}
+            onClick={() => setShowMenu(false)}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              backgroundColor: 'white',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              padding: '6px',
+              zIndex: 1001,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              marginTop: '4px',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => { onSpawnCreep(battlefieldId, 'player1'); setShowMenu(false) }}
+              disabled={!isPlayer1Turn}
+              style={{
+                padding: '4px 8px',
+                backgroundColor: isPlayer1Turn ? '#4caf50' : '#ccc',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: isPlayer1Turn ? 'pointer' : 'not-allowed',
+                fontSize: '11px',
+                marginRight: '4px',
+                opacity: isPlayer1Turn ? 1 : 0.6,
+              }}
+            >
+              Spawn P1 Creep
+            </button>
+            <button
+              onClick={() => { onSpawnCreep(battlefieldId, 'player2'); setShowMenu(false) }}
+              disabled={!isPlayer2Turn}
+              style={{
+                padding: '4px 8px',
+                backgroundColor: isPlayer2Turn ? '#f44336' : '#ccc',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: isPlayer2Turn ? 'pointer' : 'not-allowed',
+                fontSize: '11px',
+                opacity: isPlayer2Turn ? 1 : 0.6,
+              }}
+            >
+              Spawn P2 Creep
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// Icon menu for combat resolution
+export function BattlefieldView({ battlefieldId, showDebugControls = false, onHoverUnit }: BattlefieldViewProps) {
   const { 
     gameState, 
     selectedCard, 
@@ -27,14 +127,48 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     setGameState,
     setShowCombatSummary,
     setCombatSummaryData,
-    player1SidebarCards,
-    player2SidebarCards,
-    setPlayer1SidebarCards,
-    setPlayer2SidebarCards,
+    pendingEffect,
+    setPendingEffect,
+    temporaryZone,
+    setTemporaryZone,
   } = useGameContext()
+
+  const getDisplayedStats = (card: Card) => {
+    if (!('attack' in card) || !('health' in card)) {
+      return null
+    }
+    const baseAttack = card.cardType === 'generic' && 'stackPower' in card && card.stackPower !== undefined
+      ? card.stackPower
+      : card.attack
+    const baseHealth = card.cardType === 'generic' && 'stackHealth' in card && card.stackHealth !== undefined
+      ? card.stackHealth
+      : card.health
+    const tempAttack = (card.cardType === 'hero' || card.cardType === 'generic') && 'temporaryAttack' in card
+      ? (card.temporaryAttack || 0)
+      : 0
+    const tempHP = (card.cardType === 'hero' || card.cardType === 'generic') && 'temporaryHP' in card
+      ? (card.temporaryHP || 0)
+      : 0
+    const tribeBuff = 'tribe' in card
+      ? getTribeBuff(gameState, battlefieldId, card.owner, (card as any).tribe, card.id)
+      : { attack: 0, health: 0 }
+    return {
+      attack: baseAttack + tempAttack + tribeBuff.attack,
+      health: baseHealth + tempHP + tribeBuff.health,
+      tribeBuff,
+    }
+  }
   const [editingHeroId, setEditingHeroId] = useState<string | null>(null)
   // Track which slot is currently being dragged over (player + slotNum)
   const [dragOverSlot, setDragOverSlot] = useState<{ player: 'player1' | 'player2', slotNum: number } | null>(null)
+  // Track hovered card in battlefield for full details popup
+  const [hoveredBattlefieldCard, setHoveredBattlefieldCard] = useState<string | null>(null)
+  const [hoveredBattlefieldPosition, setHoveredBattlefieldPosition] = useState<{ x: number, y: number } | null>(null)
+  const pendingDropRef = useRef<{
+    cardId: string
+    battlefieldId: 'battlefieldA' | 'battlefieldB'
+    slotNum: number
+  } | null>(null)
   const { handleDeploy, handleChangeSlot, handleRemoveFromBattlefield, handleEquipItem } = useDeployment()
   
   // Clear drag over state when drag ends
@@ -43,11 +177,63 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       setDragOverSlot(null)
     }
   }, [draggedCardId])
-  const { handleDecreaseHealth, handleIncreaseHealth, handleDecreaseAttack, handleIncreaseAttack } = useCombat()
-  const { handleAbilityClick } = useHeroAbilities()
+
+  useEffect(() => {
+    const pending = pendingDropRef.current
+    if (!pending) return
+
+    if (selectedCardId !== pending.cardId || !selectedCard) {
+      return
+    }
+
+    if (selectedCard.location === pending.battlefieldId) {
+      handleChangeSlot(selectedCard, pending.slotNum, pending.battlefieldId)
+    } else {
+      handleDeploy(pending.battlefieldId, pending.slotNum)
+    }
+
+    pendingDropRef.current = null
+  }, [selectedCardId, selectedCard, handleDeploy, handleChangeSlot])
   const { handleToggleStun, handleSpawnCreep } = useTurnManagement()
 
   const battlefield = gameState[battlefieldId]
+  const handleBattlefieldDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const tokenData = e.dataTransfer.getData('tokenData') || e.dataTransfer.getData('text/token')
+    if (tokenData) {
+      return
+    }
+
+    let cardId = e.dataTransfer.getData('cardId') || e.dataTransfer.getData('text/plain')
+    if (!cardId) {
+      return
+    }
+    if (cardId.startsWith('token:')) {
+      return
+    }
+
+    const allCards = [
+      ...gameState.player1Hand,
+      ...gameState.player2Hand,
+      ...gameState.player1Base,
+      ...gameState.player2Base,
+      ...gameState.player1DeployZone,
+      ...gameState.player2DeployZone,
+      ...gameState.battlefieldA.player1,
+      ...gameState.battlefieldA.player2,
+      ...gameState.battlefieldB.player1,
+      ...gameState.battlefieldB.player2,
+    ]
+    const droppedCard = allCards.find(c => c.id === cardId)
+    if (!droppedCard || droppedCard.cardType !== 'spell') {
+      return
+    }
+    setSelectedCardId(cardId)
+    setDraggedCardId(null)
+    handleDeploy(battlefieldId)
+  }
   const battlefieldAP1 = gameState.battlefieldA.player1
   const battlefieldAP2 = gameState.battlefieldA.player2
   const battlefieldBP1 = gameState.battlefieldB.player1
@@ -59,13 +245,39 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
   
   const towerP1HP = battlefieldId === 'battlefieldA' ? metadata.towerA_player1_HP : metadata.towerB_player1_HP
   const towerP2HP = battlefieldId === 'battlefieldA' ? metadata.towerA_player2_HP : metadata.towerB_player2_HP
-  const borderColor = battlefieldId === 'battlefieldA' ? '#4a90e2' : '#ff9800'
-  const bgColor = battlefieldId === 'battlefieldA' ? '#e3f2fd' : '#fff3e0'
+  const borderColor = battlefieldId === 'battlefieldA' ? '#4169e1' : '#daa520'
+  const bgColor = battlefieldId === 'battlefieldA' ? '#e6f2ff' : '#fff8dc'
   const battlefieldName = battlefieldId === 'battlefieldA' ? 'A' : 'B'
 
   const handleCardClick = (cardId: string, e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation()
+    }
+    if (pendingEffect?.targeting) {
+      const isValidTarget = isValidTargetForContext(gameState, cardId, pendingEffect.targeting, pendingEffect.owner)
+      if (isValidTarget) {
+        setGameState(prev => {
+          const spell = {
+            id: pendingEffect.cardId,
+            name: pendingEffect.cardId,
+            description: '',
+            cardType: 'spell',
+            location: 'base',
+            owner: pendingEffect.owner,
+            effect: pendingEffect.effect,
+          } as import('../game/types').SpellCard
+          const result = resolveSpellEffect({
+            gameState: prev,
+            spell,
+            owner: pendingEffect.owner,
+            targetId: cardId,
+          })
+          return result.nextState
+        })
+        setPendingEffect(null)
+        setSelectedCardId(null)
+        return
+      }
     }
     setSelectedCardId(selectedCardId === cardId ? null : cardId)
   }
@@ -86,6 +298,11 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
   const renderSlot = (slotNum: number, player: 'player1' | 'player2') => {
     const cardInSlot = battlefield[player].find(c => c.slot === slotNum)
     const isSelected = selectedCard && selectedCard.id === cardInSlot?.id
+    const isTargetable = Boolean(
+      pendingEffect?.targeting &&
+      cardInSlot &&
+      isValidTargetForContext(gameState, cardInSlot.id, pendingEffect.targeting, pendingEffect.owner)
+    )
     
     // Get dragged card if any - also check battlefields in case card is being moved
     const draggedCard = draggedCardId ? 
@@ -114,8 +331,8 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
         cardInSlot.cardType === 'hero' &&
         cardInSlot.owner === player)
     
-    const playerColor = player === 'player1' ? '#f44336' : '#4a90e2'
-    const playerBgColor = player === 'player1' ? '#ffebee' : '#e3f2fd'
+    const playerColor = player === 'player1' ? '#c41e3a' : '#1e90ff'
+    const playerBgColor = player === 'player1' ? '#ffe4e1' : '#e0f6ff'
     // Check if this specific slot is being dragged over - highlight if dragging and over this slot
     // Also check dataTransfer as fallback since draggedCardId might not be set in context yet
     const isDragOver = dragOverSlot?.player === player && dragOverSlot?.slotNum === slotNum
@@ -123,6 +340,65 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     const handleDrop = (e: React.DragEvent) => {
       e.preventDefault()
       e.stopPropagation()
+
+      let tokenData = e.dataTransfer.getData('tokenData') || e.dataTransfer.getData('text/token')
+      if (!tokenData) {
+        const textPayload = e.dataTransfer.getData('text/plain')
+        if (textPayload.startsWith('token:')) {
+          tokenData = textPayload.slice('token:'.length)
+        }
+      }
+      if (tokenData) {
+        try {
+          const token = JSON.parse(tokenData) as { id: string; name: string; attack: number; health: number; keywords?: string[]; owner: 'player1' | 'player2' }
+          if (token.owner !== player) {
+            alert('You can only deploy your own tokens.')
+            return
+          }
+          if (cardInSlot) {
+            alert('That slot is occupied.')
+            return
+          }
+          if (getAvailableSlots(battlefield[player]) <= 0) {
+            alert('Battlefield is full.')
+            return
+          }
+
+          setGameState(prev => ({
+            ...prev,
+            [battlefieldId]: {
+              ...prev[battlefieldId],
+              [player]: [
+                ...prev[battlefieldId][player],
+                {
+                  id: token.id,
+                  name: token.name,
+                  description: `${token.name} token`,
+                  cardType: 'generic',
+                  colors: [],
+                  manaCost: 0,
+                  attack: token.attack,
+                  health: token.health,
+                  maxHealth: token.health,
+                  currentHealth: token.health,
+                  location: battlefieldId,
+                  owner: token.owner,
+                  slot: slotNum,
+                  tribe: token.tribe,
+                },
+              ].sort((a, b) => (a.slot || 0) - (b.slot || 0)),
+            },
+          }))
+
+          if (temporaryZone?.tokens) {
+            const remainingTokens = temporaryZone.tokens.filter(t => t.id !== token.id)
+            setTemporaryZone(remainingTokens.length > 0 ? { ...temporaryZone, tokens: remainingTokens } : null)
+          }
+        } catch (error) {
+          console.error('Failed to parse token data', error)
+        }
+        return
+      }
       
       console.log(`[BattlefieldView] handleDrop - Slot ${slotNum}, Player ${player}`)
       console.log(`[BattlefieldView] handleDrop - draggedCardId from context:`, draggedCardId)
@@ -171,266 +447,27 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
         return
       }
       
-      // Use the same deployment logic as clicking - but do it directly since we have the card
-      if (droppedCard.owner === player) {
-        console.log(`[BattlefieldView] handleDrop - Card owner matches, proceeding with deployment`)
-        console.log(`[BattlefieldView] handleDrop - droppedCard.location:`, droppedCard.location, 'battlefieldId:', battlefieldId)
-        console.log(`[BattlefieldView] handleDrop - droppedCard.cardType:`, droppedCard.cardType, 'currentPhase:', metadata.currentPhase)
-        
-        setDraggedCardId(null)
-        
-          // For heroes, ALWAYS handle deployment directly - we have the card, no need to wait for context
-          if (droppedCard.cardType === 'hero') {
-            console.log(`[BattlefieldView] handleDrop - Taking direct deployment path for hero (phase: ${metadata.currentPhase})`)
-            
-            const isDeployPhase = metadata.currentPhase === 'deploy'
-            const isPlayPhase = metadata.currentPhase === 'play'
-            
-            // Phase validation
-            if (!isDeployPhase && !isPlayPhase) {
-              alert(`Cannot deploy during ${metadata.currentPhase} phase!`)
-              return
-            }
-            
-            const battlefieldKey = battlefieldId as 'battlefieldA' | 'battlefieldB'
-            const playerKey = player
-            
-            // Turn 1 deployment sequence validation (same as useDeployment.ts)
-            // Only enforce turn 1 counter-deployment rules during PLAY phase.
-            if (isPlayPhase && metadata.currentTurn === 1) {
-              const deploymentPhase = metadata.turn1DeploymentPhase || 'p1_lane1'
-              
-              if (deploymentPhase === 'p1_lane1') {
-                // Player 1 deploys hero to lane 1 (battlefieldA)
-                if (playerKey !== 'player1') {
-                  alert('Player 1 must deploy first hero to lane 1 (Battlefield A)')
-                  return
-                }
-                if (battlefieldKey !== 'battlefieldA') {
-                  alert('Player 1 must deploy to lane 1 (Battlefield A) first')
-                  return
-                }
-              } else if (deploymentPhase === 'p2_lane1') {
-                // Player 2 can counter-deploy to lane 1 (battlefieldA) OR pass
-                // If deploying, must be to battlefieldA
-                if (playerKey === 'player2' && battlefieldKey !== 'battlefieldA') {
-                  alert('Player 2 can only counter-deploy to lane 1 (Battlefield A) or pass')
-                  return
-                }
-                // If player 1 tries to deploy (shouldn't happen), block it
-                if (playerKey === 'player1') {
-                  alert('Player 2 can counter-deploy to lane 1 or pass')
-                  return
-                }
-              } else if (deploymentPhase === 'p2_lane2') {
-                // Player 2 deploys hero to lane 2 (battlefieldB)
-                if (playerKey !== 'player2') {
-                  alert('Player 2 must deploy hero to lane 2 (Battlefield B)')
-                  return
-                }
-                if (battlefieldKey !== 'battlefieldB') {
-                  alert('Player 2 must deploy to lane 2 (Battlefield B)')
-                  return
-                }
-              } else if (deploymentPhase === 'p1_lane2') {
-                // Player 1 can counter-deploy to lane 2 (battlefieldB) OR pass
-                // If deploying, must be to battlefieldB
-                if (playerKey === 'player1' && battlefieldKey !== 'battlefieldB') {
-                  alert('Player 1 can only counter-deploy to lane 2 (Battlefield B) or pass')
-                  return
-                }
-                // If player 2 tries to deploy (shouldn't happen), block it
-                if (playerKey === 'player2') {
-                  alert('Player 1 can counter-deploy to lane 2 or pass')
-                  return
-                }
-              } else if (deploymentPhase === 'complete') {
-                // Turn 1 deployment complete - normal action rules apply
-                // Check action
-                if (metadata.actionPlayer !== playerKey) {
-                  alert('It\'s not your turn to act!')
-                  return
-                }
-              }
-            } else if (isPlayPhase) {
-              // Normal turn (not turn 1) - check action (play phase only)
-              if (metadata.actionPlayer !== playerKey) {
-                alert('It\'s not your turn to act!')
-                return
-              }
-            }
-            
-            // Check if hero is on cooldown (only for deploy phase from base/deployZone)
-            if (isDeployPhase && (droppedCard.location === 'base' || droppedCard.location === 'deployZone')) {
-              const cooldownCounter = metadata.deathCooldowns[droppedCard.id]
-              if (cooldownCounter !== undefined && cooldownCounter > 0) {
-                alert(`Hero is on cooldown! ${cooldownCounter} turn${cooldownCounter !== 1 ? 's' : ''} remaining.`)
-                return
-              }
-            }
-            
-            console.log(`[BattlefieldView] handleDrop - Directly deploying hero (phase: ${metadata.currentPhase})`)
-            
-            // Directly update game state for hero deployment
-            setGameState(prev => {
-              const battlefield = prev[battlefieldKey][playerKey]
-              
-              // Check if there's an existing hero in this slot
-              const existingHeroInSlot = battlefield.find(c => c.slot === slotNum && c.cardType === 'hero') as Hero | undefined
-              
-              // Remove deploying hero from wherever it is (hand, base, deploy zone, or other battlefield)
-              const newHand = (prev[`${playerKey}Hand` as keyof typeof prev] as Card[])
-                .filter(c => c.id !== droppedCard.id)
-              const newBase = (prev[`${playerKey}Base` as keyof typeof prev] as Card[])
-                .filter(c => c.id !== droppedCard.id)
-              const newDeployZone = (prev[`${playerKey}DeployZone` as keyof typeof prev] as Card[])
-                .filter(c => c.id !== droppedCard.id)
-              
-              // Also remove from other battlefield if it's there
-              const otherBattlefieldKey = battlefieldKey === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
-              const otherBattlefield = prev[otherBattlefieldKey][playerKey].filter(c => c.id !== droppedCard.id)
-              
-              // If there's an existing hero, bounce it to base with 1 cooldown
-              let updatedBase = newBase
-              let updatedCooldowns = { ...prev.metadata.deathCooldowns }
-              
-              if (existingHeroInSlot) {
-                const bouncedHero = {
-                  ...existingHeroInSlot,
-                  location: 'base' as const,
-                  slot: undefined,
-                }
-                updatedBase = [...updatedBase, bouncedHero]
-                updatedCooldowns[existingHeroInSlot.id] = 1
-              }
-              
-              // Add runes from the deploying hero
-              const heroColors = (droppedCard as Hero).colors || []
-              const currentRunePool = prev.metadata[`${playerKey}RunePool` as keyof typeof prev.metadata] as any
-              const updatedRunePool = {
-                runes: [...currentRunePool.runes, ...heroColors],
-              }
-              
-              // Remove existing hero from battlefield if bounced
-              const updatedBattlefield = battlefield
-                .filter(c => c.id !== droppedCard.id && (existingHeroInSlot ? c.id !== existingHeroInSlot.id : true))
-              
-              // Add the deploying hero to the battlefield
-              const deployedHero = {
-                ...droppedCard,
-                location: battlefieldKey,
-                slot: slotNum,
-              } as Hero
-              
-              // Handle turn 1 deployment phase updates (EXACT same logic as useDeployment.ts)
-              let newDeploymentPhase = prev.metadata.turn1DeploymentPhase || 'p1_lane1'
-              let updatedActionPlayer = prev.metadata.actionPlayer
-              let updatedInitiativePlayer = prev.metadata.initiativePlayer
-              
-              if (prev.metadata.currentTurn === 1) {
-                const deploymentPhase = prev.metadata.turn1DeploymentPhase || 'p1_lane1'
-                
-                if (deploymentPhase === 'p1_lane1') {
-                  // Player 1 deploys hero to lane 1 (battlefieldA)
-                  // After deployment, Player 2 can counter-deploy to lane 1
-                  newDeploymentPhase = 'p2_lane1'
-                } else if (deploymentPhase === 'p2_lane1') {
-                  // Player 2 can counter-deploy to lane 1 (battlefieldA) OR pass
-                  // If deploying, move to next phase
-                  if (playerKey === 'player2') {
-                    newDeploymentPhase = 'p2_lane2'
-                  }
-                } else if (deploymentPhase === 'p2_lane2') {
-                  // Player 2 deploys hero to lane 2 (battlefieldB)
-                  // After deployment, Player 1 can counter-deploy to lane 2
-                  newDeploymentPhase = 'p1_lane2'
-                } else if (deploymentPhase === 'p1_lane2') {
-                  // Player 1 can counter-deploy to lane 2 (battlefieldB) OR pass
-                  // If deploying, deployment is complete
-                  if (playerKey === 'player1') {
-                    newDeploymentPhase = 'complete'
-                  }
-                }
-                
-                // When deployment is complete, set action and initiative
-                if (newDeploymentPhase === 'complete') {
-                  updatedActionPlayer = 'player1' // Player 1 gets action after deployment
-                  updatedInitiativePlayer = 'player1' // Player 1 also gets initiative
-                } else {
-                  // During deployment, no action/initiative (players are deploying, not acting)
-                  updatedActionPlayer = null
-                  updatedInitiativePlayer = null
-                }
-              } else {
-                // Normal turn (not turn 1) - pass action/initiative to opponent
-                const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
-                updatedActionPlayer = otherPlayer
-                updatedInitiativePlayer = otherPlayer
-              }
-              
-              return {
-                ...prev,
-                [battlefieldKey]: {
-                  ...prev[battlefieldKey],
-                  [playerKey]: [...updatedBattlefield, deployedHero].sort((a, b) => (a.slot || 0) - (b.slot || 0)),
-                },
-                [`${playerKey}Hand`]: newHand,
-                [`${playerKey}Base`]: updatedBase,
-                [`${playerKey}DeployZone`]: newDeployZone,
-                [otherBattlefieldKey]: {
-                  ...prev[otherBattlefieldKey],
-                  [playerKey]: otherBattlefield,
-                },
-                metadata: {
-                  ...prev.metadata,
-                  [`${playerKey}RunePool`]: updatedRunePool,
-                  deathCooldowns: updatedCooldowns,
-                  [`${playerKey}HeroesDeployedThisTurn`]: ((prev.metadata[`${playerKey}HeroesDeployedThisTurn` as keyof typeof prev.metadata] as number) || 0) + 1,
-                  turn1DeploymentPhase: newDeploymentPhase,
-                  actionPlayer: updatedActionPlayer,
-                  initiativePlayer: updatedInitiativePlayer,
-                  player1Passed: false,
-                  player2Passed: false,
-                  // Ensure phase is 'play' when deployment completes
-                  currentPhase: newDeploymentPhase === 'complete' ? 'play' : prev.metadata.currentPhase,
-                },
-              }
-            })
-            
+        // Use the same deployment logic as clicking via handleDeploy
+        if (droppedCard.owner === player) {
+          console.log(`[BattlefieldView] handleDrop - Card owner matches, proceeding with deployment`)
+          console.log(`[BattlefieldView] handleDrop - droppedCard.location:`, droppedCard.location, 'battlefieldId:', battlefieldId)
+          console.log(`[BattlefieldView] handleDrop - droppedCard.cardType:`, droppedCard.cardType, 'currentPhase:', metadata.currentPhase)
+
+          setDraggedCardId(null)
+
+          if (droppedCard.location === battlefieldId) {
+            handleChangeSlot(droppedCard, slotNum, battlefieldId)
             setSelectedCardId(null)
             return
           }
-        
-        // For other cases (play phase, or non-hero cards), we still need to use handleDeploy
-        // But first ensure selectedCard is set by setting selectedCardId and waiting
-        setSelectedCardId(cardId)
-        setDraggedCardId(null)
-        
-        // Force a re-render by using a callback that checks if selectedCard is available
-        // We'll use a ref-like approach with multiple attempts
-        let attempts = 0
-        const tryDeploy = () => {
-          attempts++
-          // Check if we can access selectedCard now - but we can't from closure
-          // Instead, just try calling handleDeploy - if it fails silently, we'll retry
-          console.log(`[BattlefieldView] handleDrop - Attempt ${attempts} to deploy`)
-          
-          // Actually, let's just set selectedCardId and immediately call handleDeploy
-          // If it fails, we'll see in the logs
-          if (droppedCard.location === battlefieldId) {
-            handleChangeSlot(droppedCard, slotNum, battlefieldId)
-          } else {
-            handleDeploy(battlefieldId, slotNum)
+
+          pendingDropRef.current = {
+            cardId,
+            battlefieldId,
+            slotNum,
           }
-          
-          // If we've tried a few times and it's still not working, give up
-          if (attempts < 3) {
-            setTimeout(tryDeploy, 50)
-          }
-        }
+          setSelectedCardId(cardId)
         
-        // Start trying immediately
-        setTimeout(tryDeploy, 50)
       } else {
         console.log(`[BattlefieldView] handleDrop - ERROR: Card owner doesn't match! droppedCard.owner:`, droppedCard.owner, 'expected:', player)
       }
@@ -441,10 +478,18 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       e.stopPropagation()
       
       // Note: dataTransfer.getData() can't be read during dragover (browser security)
-      // We must rely on draggedCardId from context
-      console.log(`[BattlefieldView] handleDragOver - Slot ${slotNum}, Player ${player}, draggedCardId:`, draggedCardId, 'draggedCard:', draggedCard?.name, 'owner:', draggedCard?.owner, 'dragOverSlot:', dragOverSlot)
+      // We must rely on draggedCardId from context or drag types
+      const dragTypes = Array.from(e.dataTransfer.types)
+      console.log(`[BattlefieldView] handleDragOver - Slot ${slotNum}, Player ${player}, draggedCardId:`, draggedCardId, 'draggedCard:', draggedCard?.name, 'owner:', draggedCard?.owner, 'dragOverSlot:', dragOverSlot, 'types:', dragTypes)
       
       // If we have a dragged card that belongs to this player, allow drop
+      const isTokenDrag = dragTypes.includes('tokenData') || dragTypes.includes('text/token')
+      const hasCardData = dragTypes.includes('cardId') || dragTypes.includes('text/plain')
+      if (isTokenDrag) {
+        e.dataTransfer.dropEffect = 'move'
+        setDragOverSlot({ player, slotNum })
+        return
+      }
       if (draggedCardId && draggedCard?.owner === player) {
         e.dataTransfer.dropEffect = 'move'
         // Always update drag over state when dragging over this slot
@@ -452,6 +497,8 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
           console.log(`[BattlefieldView] handleDragOver - Setting dragOverSlot to ${player}, ${slotNum}`)
           setDragOverSlot({ player, slotNum })
         }
+      } else if (hasCardData) {
+        setDragOverSlot({ player, slotNum })
       } else if (draggedCardId) {
         // We're dragging something, but it doesn't belong to this player
         console.log(`[BattlefieldView] handleDragOver - Card doesn't belong to this player`)
@@ -476,12 +523,13 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       // However, if draggedCardId isn't set yet (async state update), check if dataTransfer has the types
       // If it has 'cardId' or 'text/plain' types, we know a card is being dragged
       const hasCardData = e.dataTransfer.types.includes('cardId') || e.dataTransfer.types.includes('text/plain')
+      const isTokenDrag = e.dataTransfer.types.includes('tokenData') || e.dataTransfer.types.includes('text/token')
       console.log(`[BattlefieldView] handleDragEnter - Slot ${slotNum}, Player ${player}, draggedCardId:`, draggedCardId, 'draggedCard:', draggedCard?.name, 'hasCardData:', hasCardData, 'types:', Array.from(e.dataTransfer.types))
       
       // Set drag over state if:
       // 1. We have draggedCardId in context AND it belongs to this player, OR
       // 2. We detect card data in dataTransfer (will validate on drop)
-      if (draggedCardId && draggedCard?.owner === player) {
+      if (isTokenDrag || (draggedCardId && draggedCard?.owner === player)) {
         console.log(`[BattlefieldView] handleDragEnter - Setting dragOverSlot (context has draggedCardId)`)
         setDragOverSlot({ player, slotNum })
       } else if (hasCardData && !draggedCardId) {
@@ -523,19 +571,14 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     return (
       <div
         key={slotNum}
+        className="battlefield-slot"
+        data-battlefield={battlefieldId}
+        data-player={player}
+        data-slot={slotNum}
         style={{
-          minHeight: '100px',
-          border: isDragOver ? `3px solid ${playerColor}` : (canMoveHere || canEquipItem) ? `2px dashed ${playerColor}` : '1px solid #ddd',
-          borderRadius: '4px',
-          padding: '4px',
-          backgroundColor: isDragOver ? playerBgColor : (canMoveHere || canEquipItem) ? '#f0f0f0' : '#f9f9f9',
-          position: 'relative',
-          transition: 'all 0.2s',
-          width: '100%',
-          boxSizing: 'border-box',
-          boxShadow: isDragOver ? `0 0 10px ${playerColor}40` : 'none',
-          display: 'flex',
-          flexDirection: 'column',
+          border: isDragOver ? `2px solid ${playerColor}` : (canMoveHere || canEquipItem) ? `1px dashed ${playerColor}` : '1px solid #d3d3d3',
+          backgroundColor: isDragOver ? playerBgColor : (canMoveHere || canEquipItem) ? '#f5f5dc' : '#fafafa',
+          boxShadow: isDragOver ? `0 0 8px ${playerColor}60` : '0 1px 2px rgba(0,0,0,0.1)',
         }}
         onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
@@ -568,25 +611,11 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
           }
         }}
       >
-        <div 
-          style={{ 
-            fontSize: '10px', 
-            color: '#666', 
-            marginBottom: '2px',
-            pointerEvents: 'none', // Don't block drag events
-            userSelect: 'none',
-          }}
-        >
+        <div className="battlefield-slot__label">
           Slot {slotNum}
         </div>
-        <div 
-          style={{ 
-            width: '100%', 
-            height: '100%',
-            minHeight: '80px',
-            position: 'relative',
-            flex: 1,
-          }}
+        <div
+          className="battlefield-slot__content"
           onDragEnter={(e) => {
             // Forward drag enter to parent - always forward, let parent decide
             e.preventDefault()
@@ -599,39 +628,111 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
             e.stopPropagation()
             handleDragOver(e)
           }}
-          onDrop={(e) => {
-            // Forward drop event to parent slot handler
-            // Call parent's handleDrop directly to avoid propagation issues
-            e.preventDefault()
-            e.stopPropagation()
-            console.log(`[BattlefieldView] Inner content div onDrop - forwarding to parent`)
-            handleDrop(e)
-            setDragOverSlot(null)
-          }}
         >
           {cardInSlot ? (
-            <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
-              <HeroCard
-                card={cardInSlot}
-                onClick={(e) => handleCardClick(cardInSlot.id, e)}
-                isSelected={isSelected}
-                showStats={true}
-                onRemove={() => handleRemoveFromBattlefield(cardInSlot, battlefieldId)}
-                onDecreaseHealth={() => handleDecreaseHealth(cardInSlot)}
-                onIncreaseHealth={() => handleIncreaseHealth(cardInSlot)}
-                onDecreaseAttack={() => handleDecreaseAttack(cardInSlot)}
-                onIncreaseAttack={() => handleIncreaseAttack(cardInSlot)}
-                showCombatControls={true}
-                isDead={!!metadata.deathCooldowns[cardInSlot.id]}
-                isStunned={cardInSlot.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[cardInSlot.id])}
-                onToggleStun={cardInSlot.cardType === 'hero' ? () => handleToggleStun(cardInSlot) : undefined}
-                onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, cardInSlot.owner)}
-                onEditAbility={cardInSlot.cardType === 'hero' ? (heroId) => setEditingHeroId(heroId) : undefined}
-              />
+            <div
+              className={`unit-card ${isSelected ? 'unit-card--selected' : ''}`}
+              style={{
+                border: `2px solid ${isSelected ? '#ffd700' : isTargetable ? '#4caf50' : (cardInSlot.cardType === 'hero' ? ((cardInSlot as Hero).colors?.[0] === 'red' ? '#c41e3a' : (cardInSlot as Hero).colors?.[0] === 'blue' ? '#0078d4' : (cardInSlot as Hero).colors?.[0] === 'green' ? '#228b22' : (cardInSlot as Hero).colors?.[0] === 'black' ? '#2d2d2d' : (cardInSlot as Hero).colors?.[0] === 'white' ? '#f0e68c' : '#8b7355') : '#8b7355')}`,
+                backgroundColor: isSelected ? '#fffacd' : '#f5f5dc',
+              }}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleCardClick(cardInSlot.id, e)
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault()
+                // Right-click for quick actions - could show menu or toggle stun
+                if (cardInSlot.cardType === 'hero' && handleToggleStun) {
+                  handleToggleStun(cardInSlot)
+                }
+              }}
+              onMouseEnter={(e) => {
+                setHoveredBattlefieldCard(cardInSlot.id)
+                setHoveredBattlefieldPosition({ x: e.clientX, y: e.clientY })
+                onHoverUnit?.(cardInSlot.id)
+              }}
+              onMouseMove={(e) => {
+                setHoveredBattlefieldPosition({ x: e.clientX, y: e.clientY })
+              }}
+              onMouseLeave={() => {
+                setHoveredBattlefieldCard(null)
+                setHoveredBattlefieldPosition(null)
+                onHoverUnit?.(null)
+              }}
+            >
+              <div className="unit-card__name">
+                {cardInSlot.name}
+              </div>
+              {cardInSlot.cardType === 'hero' && (cardInSlot as Hero).colors && (cardInSlot as Hero).colors!.length > 0 && (
+                <div style={{ display: 'flex', gap: '2px', marginBottom: '2px', justifyContent: 'center' }}>
+                  {(cardInSlot as Hero).colors!.map((color, i) => {
+                    const COLOR_MAP: Record<string, string> = {
+                      red: '#c41e3a',
+                      blue: '#0078d4',
+                      white: '#f0e68c',
+                      black: '#2d2d2d',
+                      green: '#228b22',
+                    }
+                    return (
+                      <div
+                        key={i}
+                        style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          backgroundColor: COLOR_MAP[color],
+                          border: '1px solid rgba(0,0,0,0.3)',
+                        }}
+                        title={color}
+                      />
+                    )
+                  })}
+                </div>
+              )}
+              {(() => {
+                const displayedStats = getDisplayedStats(cardInSlot)
+                if (!displayedStats) return null
+                const isTribeBuffed = displayedStats.tribeBuff.attack !== 0 || displayedStats.tribeBuff.health !== 0
+                return (
+                  <div
+                    className="unit-card__stats"
+                    style={{ color: isTribeBuffed ? '#2e7d32' : undefined }}
+                    title={isTribeBuffed ? 'Tribe buff active' : undefined}
+                  >
+                    {displayedStats.attack}/{displayedStats.health}
+                  </div>
+                )
+              })()}
+              <div className="unit-card__status">
+                {!!metadata.deathCooldowns[cardInSlot.id] && (
+                  <span style={{ color: '#8b0000' }}>⏱{metadata.deathCooldowns[cardInSlot.id]}</span>
+                )}
+                {cardInSlot.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[cardInSlot.id]) && (
+                  <span style={{ color: '#4b0082' }}>⚡</span>
+                )}
+                {metadata.barrierUnits?.[cardInSlot.id] && (
+                  <span style={{ color: '#1976d2' }}>🛡️</span>
+                )}
+              </div>
+              <div className="unit-card__keywords">
+                {cardInSlot.cardType === 'hero' && (cardInSlot as Hero).crossStrike && (
+                  <KeywordBadge keyword="crossStrike" />
+                )}
+                {cardInSlot.cardType === 'hero' && (cardInSlot as Hero).assassinate && (
+                  <KeywordBadge keyword="assassinate" />
+                )}
+                {(cardInSlot as any).specialEffects?.includes('cleave') && (
+                  <KeywordBadge keyword="cleave" />
+                )}
+                {metadata.barrierUnits?.[cardInSlot.id] && (
+                  <KeywordBadge keyword="barrier" />
+                )}
+              </div>
             </div>
           ) : (
-            <div style={{ fontSize: '10px', color: '#ccc', textAlign: 'center', paddingTop: '20px', pointerEvents: 'none' }}>
-              {canEquipItem ? 'Equip Item' : canMoveHere ? 'Drop here' : 'Empty'}
+            <div className="battlefield-slot__placeholder">
+              {canEquipItem ? 'Equip' : canMoveHere ? 'Drop' : ''}
             </div>
           )}
         </div>
@@ -700,369 +801,112 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
         />
       )}
       <div
+        className="battlefield-container"
         style={{
-        border: `2px solid ${borderColor}`,
-        borderRadius: '6px',
-        padding: '12px',
-        backgroundColor: bgColor,
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ marginTop: 0, fontSize: '16px' }}>
-            Battlefield {battlefieldName}
-            <span style={{ fontSize: '12px', fontWeight: 'normal', marginLeft: '8px', color: '#666' }}>
-              ({getAvailableSlots(allCards)} slots)
-            </span>
-          </h3>
+          border: `2px solid ${borderColor}`,
+          backgroundColor: bgColor,
+        }}
+        onDragOver={(e) => {
+          const types = Array.from(e.dataTransfer.types)
+          if (types.includes('tokenData') || types.includes('text/token') || types.includes('cardId') || types.includes('text/plain')) {
+            e.preventDefault()
+          }
+        }}
+        onDrop={handleBattlefieldDrop}
+      >
+      <div className="battlefield-header">
+        <div className="battlefield-title">
+          Battlefield {battlefieldName}
+          <span className="battlefield-subtitle">({getAvailableSlots(allCards)})</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a90e2' }}>
-              P2 Tower: {towerP2HP} HP
+        {showDebugControls && metadata.currentPhase === 'play' && (
+          <CreepSpawnMenu 
+            battlefieldId={battlefieldId}
+            metadata={metadata}
+            onSpawnCreep={handleSpawnCreep}
+          />
+        )}
+      </div>
+      <div className="tower-row tower-row--top">
+        <div
+          className="tower-display"
+          data-battlefield={battlefieldId}
+          data-player="player2"
+          data-tower="true"
+        >
+          🏰 P2 {towerP2HP}
+          {showDebugControls && (
+            <div className="tower-display__controls">
+              <button onClick={() => handleTowerDamage(-1, 'player2')}>-</button>
+              <button onClick={() => handleTowerDamage(1, 'player2')}>+</button>
             </div>
-            <button
-              onClick={() => handleTowerDamage(-1, 'player2')}
-              style={{
-                padding: '2px 6px',
-                backgroundColor: '#f44336',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '10px',
-              }}
-              title={`Deal 1 damage to P2 Tower ${battlefieldName}`}
-            >
-              -1
-            </button>
-            <button
-              onClick={() => handleTowerDamage(1, 'player2')}
-              style={{
-                padding: '2px 6px',
-                backgroundColor: '#4caf50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '10px',
-              }}
-              title={`Heal 1 HP to P2 Tower ${battlefieldName}`}
-            >
-              +1
-            </button>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#f44336' }}>
-              P1 Tower: {towerP1HP} HP
-            </div>
-            <button
-              onClick={() => handleTowerDamage(-1, 'player1')}
-              style={{
-                padding: '2px 6px',
-                backgroundColor: '#f44336',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '10px',
-              }}
-              title={`Deal 1 damage to P1 Tower ${battlefieldName}`}
-            >
-              -1
-            </button>
-            <button
-              onClick={() => handleTowerDamage(1, 'player1')}
-              style={{
-                padding: '2px 6px',
-                backgroundColor: '#4caf50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '10px',
-              }}
-              title={`Heal 1 HP to P1 Tower ${battlefieldName}`}
-            >
-              +1
-            </button>
-          </div>
+          )}
         </div>
-        {/* Manual Creep Spawn Button */}
-        {metadata.currentPhase === 'play' && (
-          <div style={{ marginTop: '8px', display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            {(() => {
-              // Use actionPlayer if available, otherwise fall back to activePlayer
-              const currentActionPlayer = metadata.actionPlayer || metadata.activePlayer
-              const isPlayer1Turn = currentActionPlayer === 'player1'
-              const isPlayer2Turn = currentActionPlayer === 'player2'
-              
-              return (
-                <>
-                  <button
-                    onClick={() => handleSpawnCreep(battlefieldId, 'player1')}
-                    disabled={!isPlayer1Turn}
-                    style={{
-                      padding: '6px 12px',
-                      backgroundColor: isPlayer1Turn ? '#4caf50' : '#ccc',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: isPlayer1Turn ? 'pointer' : 'not-allowed',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      opacity: isPlayer1Turn ? 1 : 0.6,
-                    }}
-                    title="Spawn a 1/1 creep in the first empty slot for Player 1"
-                  >
-                    Spawn P1 Creep
-                  </button>
-                  <button
-                    onClick={() => handleSpawnCreep(battlefieldId, 'player2')}
-                    disabled={!isPlayer2Turn}
-                    style={{
-                      padding: '6px 12px',
-                      backgroundColor: isPlayer2Turn ? '#f44336' : '#ccc',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: isPlayer2Turn ? 'pointer' : 'not-allowed',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      opacity: isPlayer2Turn ? 1 : 0.6,
-                    }}
-                    title="Spawn a 1/1 creep in the first empty slot for Player 2"
-                  >
-                    Spawn P2 Creep
-                  </button>
-                </>
-              )
-            })()}
-          </div>
-        )}
-        {/* Go to Combat Button - Resolves Both Battlefields Simultaneously */}
-        {metadata.currentPhase === 'play' && battlefieldId === 'battlefieldA' && (
-          <button
-            onClick={() => {
-              // Check if both players passed, if so resolve combat for both battlefields
-              if (metadata.player1Passed && metadata.player2Passed) {
-                // Resolve simultaneous combat for both battlefields
-                const initialTowerHP = {
-                  towerA_player1: metadata.towerA_player1_HP,
-                  towerA_player2: metadata.towerA_player2_HP,
-                  towerB_player1: metadata.towerB_player1_HP,
-                  towerB_player2: metadata.towerB_player2_HP,
-                }
-                
-                const initialTowerArmor = {
-                  towerA_player1: metadata.towerA_player1_Armor,
-                  towerA_player2: metadata.towerA_player2_Armor,
-                  towerB_player1: metadata.towerB_player1_Armor,
-                  towerB_player2: metadata.towerB_player2_Armor,
-                }
-                
-                // Resolve combat for both battlefields simultaneously
-                const resultA = resolveSimultaneousCombat(
-                  gameState.battlefieldA,
-                  'battlefieldA',
-                  initialTowerHP,
-                  metadata.stunnedHeroes || {},
-                  initialTowerArmor,
-                  gameState
-                )
-                
-                const resultB = resolveSimultaneousCombat(
-                  gameState.battlefieldB,
-                  'battlefieldB',
-                  resultA.updatedTowerHP,
-                  metadata.stunnedHeroes || {},
-                  initialTowerArmor,
-                  gameState
-                )
-                
-                // Process killed heroes for both battlefields - separate by player
-                // Draw cards for opponent when heroes are killed
-                const processKilledHeroes = (
-                  originalBattlefield: typeof gameState.battlefieldA,
-                  updatedBattlefield: typeof gameState.battlefieldA,
-                  player1Base: Card[],
-                  player2Base: Card[],
-                  deathCooldowns: Record<string, number>
-                ) => {
-                  const newP1Base = [...player1Base]
-                  const newP2Base = [...player2Base]
-                  const newCooldowns = { ...deathCooldowns }
-                  
-                  // Process player1 heroes
-                  originalBattlefield.player1.forEach(originalCard => {
-                    if (originalCard.cardType === 'hero') {
-                      const stillAlive = updatedBattlefield.player1.some(c => c.id === originalCard.id)
-                      if (!stillAlive) {
-                        const hero = originalCard as import('../game/types').Hero
-                        newP1Base.push({
-                          ...hero,
-                          location: 'base' as const,
-                          currentHealth: 0,
-                          slot: undefined,
-                        })
-                        newCooldowns[hero.id] = 2
-                      }
-                    }
-                  })
-                  
-                  // Process player2 heroes
-                  originalBattlefield.player2.forEach(originalCard => {
-                    if (originalCard.cardType === 'hero') {
-                      const stillAlive = updatedBattlefield.player2.some(c => c.id === originalCard.id)
-                      if (!stillAlive) {
-                        const hero = originalCard as import('../game/types').Hero
-                        newP2Base.push({
-                          ...hero,
-                          location: 'base' as const,
-                          currentHealth: 0,
-                          slot: undefined,
-                        })
-                        newCooldowns[hero.id] = 2
-                      }
-                    }
-                  })
-                  
-                  return { newP1Base, newP2Base, newCooldowns }
-                }
-                
-                const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA } = processKilledHeroes(
-                  gameState.battlefieldA,
-                  resultA.updatedBattlefield,
-                  gameState.player1Base,
-                  gameState.player2Base,
-                  metadata.deathCooldowns
-                )
-                
-                const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB } = processKilledHeroes(
-                  gameState.battlefieldB,
-                  resultB.updatedBattlefield,
-                  newP1BaseA,
-                  newP2BaseA,
-                  newCooldownsA
-                )
-                
-                // Apply combat results
-                // Calculate total overflow damage TO each player's nexus
-                // overflowDamage.player1 = damage dealt BY player1 (goes TO player2's nexus)
-                // overflowDamage.player2 = damage dealt BY player2 (goes TO player1's nexus)
-                const totalDamageToP1Nexus = resultA.overflowDamage.player2 + resultB.overflowDamage.player2
-                const totalDamageToP2Nexus = resultA.overflowDamage.player1 + resultB.overflowDamage.player1
-                
-                setGameState(prev => {
-                  const newP1NexusHP = Math.max(0, prev.metadata.player1NexusHP - totalDamageToP1Nexus)
-                  const newP2NexusHP = Math.max(0, prev.metadata.player2NexusHP - totalDamageToP2Nexus)
-                  
-                  return {
-                    ...prev,
-                    battlefieldA: resultA.updatedBattlefield,
-                    battlefieldB: resultB.updatedBattlefield,
-                    player1Base: newP1BaseB,
-                    player2Base: newP2BaseB,
-                    metadata: {
-                      ...prev.metadata,
-                      towerA_player1_HP: resultA.updatedTowerHP.towerA_player1,
-                      towerA_player2_HP: resultA.updatedTowerHP.towerA_player2,
-                      towerB_player1_HP: resultB.updatedTowerHP.towerB_player1,
-                      towerB_player2_HP: resultB.updatedTowerHP.towerB_player2,
-                      player1NexusHP: newP1NexusHP,
-                      player2NexusHP: newP2NexusHP,
-                      deathCooldowns: newCooldownsB,
-                      player1Passed: false,
-                      player2Passed: false,
-                    },
-                  }
-                })
-                
-                // Show combat summary modal
-                setCombatSummaryData({
-                  battlefieldA: {
-                    name: 'Battlefield A',
-                    combatLog: resultA.combatLog,
-                    towerHP: {
-                      player1: resultA.updatedTowerHP.towerA_player1,
-                      player2: resultA.updatedTowerHP.towerA_player2,
-                    },
-                    overflowDamage: resultA.overflowDamage,
-                  },
-                  battlefieldB: {
-                    name: 'Battlefield B',
-                    combatLog: resultB.combatLog,
-                    towerHP: {
-                      player1: resultB.updatedTowerHP.towerB_player1,
-                      player2: resultB.updatedTowerHP.towerB_player2,
-                    },
-                    overflowDamage: resultB.overflowDamage,
-                  },
-                })
-                setShowCombatSummary(true)
-              } else {
-                alert('Both players must pass before going to combat')
-              }
-            }}
-            disabled={!(metadata.player1Passed && metadata.player2Passed)}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: (metadata.player1Passed && metadata.player2Passed) ? '#4caf50' : '#ccc',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: (metadata.player1Passed && metadata.player2Passed) ? 'pointer' : 'not-allowed',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              marginLeft: '12px',
-            }}
-            title={(metadata.player1Passed && metadata.player2Passed) 
-              ? 'Resolve Combat for Both Battlefields (units in front attack each other simultaneously)'
-              : 'Both players must pass before combat'}
-          >
-            ⚔️ Resolve Combat (Both Battlefields)
-          </button>
-        )}
       </div>
       
       {/* Player 2 side */}
-      <div style={{ marginBottom: '12px' }}>
-        <h4 style={{ fontSize: '12px', marginBottom: '6px' }}>Player 2</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', marginBottom: '4px' }}>
+      <div className="battlefield-row">
+        <div className="battlefield-row__label">P2</div>
+        <div className="battlefield-row__grid">
           {[1, 2, 3, 4, 5].map(slotNum => renderSlot(slotNum, 'player2'))}
         </div>
       </div>
 
       {/* Player 1 side */}
-      <div>
-        <h4 style={{ fontSize: '14px', marginBottom: '10px' }}>Player 1</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px' }}>
+      <div className="battlefield-row">
+        <div className="battlefield-row__label">P1</div>
+        <div className="battlefield-row__grid">
           {[1, 2, 3, 4, 5].map(slotNum => renderSlot(slotNum, 'player1'))}
         </div>
       </div>
-
-      {selectedCard && (
-        <button
-          onClick={() => handleDeploy(battlefieldId)}
-          disabled={selectedCard && selectedCard.cardType !== 'generic' && getAvailableSlots(
-            selectedCard.owner === 'player1' ? battlefield[selectedCard.owner] : battlefield[selectedCard.owner]
-          ) <= 0}
-          style={{
-            marginTop: '10px',
-            padding: '8px 16px',
-            backgroundColor: borderColor,
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            opacity: selectedCard && selectedCard.cardType !== 'generic' && getAvailableSlots(
-              selectedCard.owner === 'player1' ? battlefield[selectedCard.owner] : battlefield[selectedCard.owner]
-            ) <= 0 ? 0.5 : 1,
-          }}
+      <div className="tower-row tower-row--bottom">
+        <div
+          className="tower-display"
+          data-battlefield={battlefieldId}
+          data-player="player1"
+          data-tower="true"
         >
-          Deploy {selectedCard.name} to Lane {battlefieldName}
-        </button>
-      )}
+          🏰 P1 {towerP1HP}
+          {showDebugControls && (
+            <div className="tower-display__controls">
+              <button onClick={() => handleTowerDamage(-1, 'player1')}>-</button>
+              <button onClick={() => handleTowerDamage(1, 'player1')}>+</button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Hover popup for battlefield cards */}
+      {hoveredBattlefieldCard && hoveredBattlefieldPosition && (() => {
+        const allBattlefieldCards = [...battlefield.player1, ...battlefield.player2]
+        const card = allBattlefieldCards.find(c => c.id === hoveredBattlefieldCard)
+        if (!card) return null
+        return (
+          <div
+            style={{
+              position: 'fixed',
+              left: `${Math.min(hoveredBattlefieldPosition.x + 20, window.innerWidth - 320)}px`,
+              top: `${Math.min(hoveredBattlefieldPosition.y + 20, window.innerHeight - 400)}px`,
+              zIndex: 2000,
+              pointerEvents: 'none',
+            }}
+          >
+            <HeroCard
+              card={card}
+              onClick={() => {}}
+              isSelected={false}
+              showStats={true}
+              isDead={!!metadata.deathCooldowns[card.id]}
+              cooldownCounter={metadata.deathCooldowns[card.id]}
+              isPlayed={false}
+              onTogglePlayed={() => {}}
+              isStunned={card.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[card.id])}
+              onToggleStun={undefined}
+              onAbilityClick={() => {}}
+            />
+          </div>
+        )
+      })()}
     </div>
     </>
   )

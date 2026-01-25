@@ -8,26 +8,42 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   {
     id: 'rw-hero-commander',
     name: 'Legion Commander',
-    description: 'Legion units get +1/+1.',
+    description: 'Legion. Tribal Legion 1 (other Legion units get +1/+1).',
     cardType: 'hero',
     colors: ['red', 'white'],
     attack: 3,
     health: 6,
     maxHealth: 6,
-    currentHealth: 6,    equippedItems: [],
-    supportEffect: 'Legion units get +1/+1',
+    currentHealth: 6,
+    equippedItems: [],
+    supportEffect: 'Tribal Legion 1 (other Legion units get +1/+1)',
+    tribe: 'legion',
+    tribeBuff: {
+      tribe: 'legion',
+      attack: 1,
+      health: 1,
+      excludeSelf: true,
+    },
   },
   {
     id: 'rw-hero-captain',
     name: 'Legion Commander',
-    description: 'Legion units get +1/+1.',
+    description: 'Legion. Tribal Legion 1 (other Legion units get +1/+1).',
     cardType: 'hero',
     colors: ['red', 'white'],
     attack: 3,
     health: 6,
     maxHealth: 6,
-    currentHealth: 6,    equippedItems: [],
-    supportEffect: 'Legion units get +1/+1',
+    currentHealth: 6,
+    equippedItems: [],
+    supportEffect: 'Tribal Legion 1 (other Legion units get +1/+1)',
+    tribe: 'legion',
+    tribeBuff: {
+      tribe: 'legion',
+      attack: 1,
+      health: 1,
+      excludeSelf: true,
+    },
   },
   // Red Cleave Hero (Sven-like) - Tool to deal with creep-stacking cards
   {
@@ -37,9 +53,11 @@ export const rwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     cardType: 'hero',
     colors: ['red'],
     attack: 3,
-    height: 4,
+    health: 4,
     maxHealth: 4,
-    currentHealth: 4,    equippedItems: [],
+    currentHealth: 4,
+    equippedItems: [],
+    specialEffects: ['cleave'],
   },
   // BR Aggressive Spell-Synergy Heroes
   {
@@ -96,14 +114,21 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'rw-legion-champion',
     name: 'Legion Champion',
-    description: 'Legion. When this attacks, all Legion units gain +1/+1 until end of turn.',
+    description: 'Legion. Tribal Legion 1 (other Legion units get +1/+1).',
     cardType: 'generic',
     colors: ['red', 'white'],
     manaCost: 4,
-    attack: 4,
-    health: 4,
-    maxHealth: 4,
-    currentHealth: 4,
+    attack: 3,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    tribe: 'legion',
+    tribeBuff: {
+      tribe: 'legion',
+      attack: 1,
+      health: 1,
+      excludeSelf: true,
+    },
   },
   // Ranged Units - Can attack from base/deploy zone
   {
@@ -118,6 +143,7 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     maxHealth: 3,
     currentHealth: 3,
     rangedAttack: 2,
+    tribe: 'legion',
   },
   // New Magic-inspired RW cards
   {
@@ -132,6 +158,12 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 5,
     maxHealth: 5,
     currentHealth: 5,
+    tribe: 'legion',
+    tribeBuff: {
+      tribe: 'legion',
+      attack: 2,
+      health: 2,
+    },
   },
   {
     id: 'rw-unit-legion-vanguard',
@@ -145,6 +177,7 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 4,
     maxHealth: 4,
     currentHealth: 4,
+    tribe: 'legion',
   },
 ]
 
@@ -169,6 +202,11 @@ export const rwArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     manaCost: 5,
     effectType: 'damage_amplifier',
     effectValue: 3, // +3 attack, +1 health handled separately if needed
+    tribeBuff: {
+      tribe: 'legion',
+      attack: 3,
+      health: 1,
+    },
   },
   {
     id: 'rw-artifact-rally-banner',
@@ -581,6 +619,7 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 2,
     maxHealth: 2,
     currentHealth: 2,
+    specialEffects: ['cleave'],
   },
   {
     id: 'red-unit-cleaving-berserker',
@@ -594,6 +633,7 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 2,
     maxHealth: 2,
     currentHealth: 2,
+    specialEffects: ['cleave'],
   },
   {
     id: 'rg-unit-rift-pouncer',
@@ -2094,16 +2134,15 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'black-spell-3b-draw',
     name: 'Dark Insight',
-    description: 'Draw 2 cards, lose 2 life.',
+    description: 'Draw 2 cards. Deal 1 damage to each of your towers.',
     cardType: 'spell',
     colors: ['black'],
     manaCost: 3,
     consumesRunes: true, // Requires B rune
     effect: {
-      type: 'draw_and_heal', // Using draw_and_heal with negative heal
-      damage: 0,
+      type: 'draw_and_heal',
       drawCount: 2,
-      healAmount: -2, // Negative heal = lose life
+      healAmount: 0,
     },
     initiative: true,
   },
@@ -2299,7 +2338,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ubg-spell-invulnerable-reflect',
     name: 'Reflective Shield',
-    description: 'Target hero gains invulnerable this turn. Any damage that hero would take is reflected back to the source. Costs 2U.',
+    description: 'Target hero gains barrier this turn. Costs 2U.',
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 2,
@@ -2339,15 +2378,14 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ubg-spell-aoe-6-distributed',
     name: 'Arcane Barrage',
-    description: 'Deal 6 damage evenly divided to target unit and adjacent units. 0 units: 6 to tower. 1 unit: 3+3. 2 units: 2+2+2. 3 units: 2+2+2. Costs 4UB.',
+    description: 'Conal. Deal 6 damage divided among enemy units in front of the caster. If none, deal 6 to the enemy tower. Costs 4UB.',
     cardType: 'spell',
     colors: ['blue', 'black'],
     manaCost: 4,
     consumesRunes: true, // Requires UB runes
     effect: {
-      type: 'adjacent_damage',
-      damage: 6,
-      adjacentCount: 3,
+      type: 'conal_damage',
+      conalTotalDamage: 6,
       affectsUnits: true,
       affectsHeroes: true,
     },
@@ -2823,7 +2861,7 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ubr-spell-exorcism',
     name: 'Exorcism',
-    description: 'Deal 12 total damage distributed to enemy units in front and tower. 0 units: 12 to tower. 1 unit: 6 to unit, 6 to tower. 2 units: 4 to each unit, 4 to tower. 3 units: 3 to each unit, 3 to tower. Costs 8UUUBBBR, refunds 8 mana.',
+    description: 'Conal. Deal 12 damage divided among enemy units in front of the caster. If none, deal 12 to the enemy tower. Costs 8UUUBBBR, refunds 8 mana.',
     cardType: 'spell',
     rarity: 'rare',
     colors: ['blue', 'blue', 'blue', 'black', 'black', 'black', 'red'], // PROHIBITIVE: 3U, 3B, 1R
@@ -2831,8 +2869,8 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     manaCost: 8,
     refundMana: 8, // Free spell mechanic - refunds mana cost
     effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect for Exorcism damage distribution
-      damage: 12, // Total damage, distribution handled by custom logic based on units in front
+      type: 'conal_damage',
+      conalTotalDamage: 12,
       affectsUnits: true,
       affectsHeroes: true,
     },
@@ -3679,6 +3717,7 @@ export const rareBRCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith'
     maxHealth: 3,
     currentHealth: 3,
     description: '5/3, Cleave. When deployed: Deal 2 damage to all units and all towers. Aggressive control finisher for BR.',
+    specialEffects: ['cleave'],
   },
 ]
 
@@ -3785,6 +3824,7 @@ export const allArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
 
 export const allSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   ...rwSpells,
+  ...rgSpells,
   ...ruSpells,
   ...rbSpells,
   ...gbSpells,

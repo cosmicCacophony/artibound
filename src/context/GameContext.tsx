@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
-import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, BattlefieldDefinition, FinalDraftSelection, Color, HEROES_REQUIRED, CARDS_REQUIRED, ShopItem, Archetype, GameMetadata } from '../game/types'
+import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, SpellCard, BattlefieldDefinition, FinalDraftSelection, Color, HEROES_REQUIRED, CARDS_REQUIRED, ShopItem, Archetype, GameMetadata, PendingEffect, TemporaryZone } from '../game/types'
 import { createInitialGameState, createCardLibrary, createGameStateFromDraft } from '../game/sampleData'
 import { allCards, allSpells, allArtifacts, allBattlefields, allHeroes } from '../game/cardData'
 import { ubHeroes } from '../game/comprehensiveCardData'
 import { boss1ValiantLegion } from '../game/bossData'
 import { heroMatchesArchetype, cardMatchesArchetype } from '../game/archetypeUtils'
 import { saveDraft, getPreviousDraft } from '../game/draftStorage'
+import { getStockDeckById } from '../game/stockDecks'
 
 interface GameContextType {
   // Game State
@@ -60,6 +61,12 @@ interface GameContextType {
     }
   } | null
   setCombatSummaryData: (data: any) => void
+
+  // Pending effects (targeting or confirmation)
+  pendingEffect: PendingEffect | null
+  setPendingEffect: (effect: PendingEffect | null) => void
+  temporaryZone: TemporaryZone | null
+  setTemporaryZone: (zone: TemporaryZone | null) => void
   
   // Computed values
   selectedCard: Card | null
@@ -72,6 +79,7 @@ interface GameContextType {
   initializeGameFromDraft: (player1Selection: FinalDraftSelection, player2Selection: FinalDraftSelection) => void
   initializeRandomGame: () => void
   initializeDraftGame: (player1Selection: FinalDraftSelection) => void
+  initializeStockDeckGame: (deckId: string) => void
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
@@ -128,6 +136,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       overflowDamage: { player1: number, player2: number }
     }
   } | null>(null)
+  const [pendingEffect, setPendingEffect] = useState<PendingEffect | null>(null)
+  const [temporaryZone, setTemporaryZone] = useState<TemporaryZone | null>(null)
   
   // Computed values
   const metadata = gameState.metadata
@@ -187,7 +197,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const initializeRandomGame = useCallback(() => {
     // Assign archetypes - one player gets UBG, the other gets boss Legion deck (AI-only)
-    const useBossForPlayer2 = Math.random() > 0.5
+    const useBossForPlayer2 = true
     const player1Archetype: Archetype = 'ubg-control'
     const player2Archetype: Archetype = useBossForPlayer2 ? 'rw-legion' : 'ubg-control'
     
@@ -211,10 +221,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
       
       // Filter out undefined cards and combine boss cards
       player2Cards = [
-        ...boss.units.filter((card): card is BaseCard => card !== undefined && card !== null),
-        ...boss.spells.filter((card): card is BaseCard => card !== undefined && card !== null),
-        ...boss.artifacts.filter((card): card is BaseCard => card !== undefined && card !== null),
-      ]
+        ...boss.units,
+        ...boss.spells,
+        ...boss.artifacts,
+      ].filter(Boolean) as BaseCard[]
     } else {
       // Normal deck building for non-Legion archetypes
       player2Heroes = []
@@ -296,8 +306,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       
       const keySpellsForP2 = ubgKeySpellIds
         .map(id => allSpells.find(s => s.id === id))
-        .filter(Boolean)
-        .filter(c => cardMatchesArchetype(c, [player2Archetype])) as BaseCard[]
+        .filter((spell): spell is Omit<SpellCard, 'location' | 'owner'> => Boolean(spell))
+        .filter(spell => cardMatchesArchetype(spell, [player2Archetype])) as BaseCard[]
       
       const DRAFTED_CARDS_REQUIRED = 22
       let player2DraftedCards = [
@@ -334,8 +344,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     
     const keySpellsForP1 = ubgKeySpellIds
       .map(id => allSpells.find(s => s.id === id))
-      .filter(Boolean)
-      .filter(c => cardMatchesArchetype(c, [player1Archetype])) as BaseCard[]
+      .filter((spell): spell is Omit<SpellCard, 'location' | 'owner'> => Boolean(spell))
+      .filter(spell => cardMatchesArchetype(spell, [player1Archetype])) as BaseCard[]
     
     let player1DraftedCards = [
       ...keySpellsForP1,
@@ -378,9 +388,34 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [initializeGameFromDraft])
 
   const initializeDraftGame = useCallback((player1Selection: FinalDraftSelection) => {
+    const toTemplateId = (cardId: string) => {
+      const player1Index = cardId.indexOf('-player1-')
+      if (player1Index !== -1) {
+        return cardId.slice(0, player1Index)
+      }
+      const player2Index = cardId.indexOf('-player2-')
+      if (player2Index !== -1) {
+        return cardId.slice(0, player2Index)
+      }
+      return cardId
+    }
+
+    const normalizeDraftSelection = (selection: FinalDraftSelection): FinalDraftSelection => ({
+      ...selection,
+      heroes: selection.heroes.map(hero => ({
+        ...hero,
+        id: toTemplateId(hero.id),
+      })),
+      cards: selection.cards.map(card => ({
+        ...card,
+        id: toTemplateId(card.id),
+      })),
+    })
+
+    const normalizedPlayer1Selection = normalizeDraftSelection(player1Selection)
     // Save the current draft to localStorage (this will shift previous drafts)
     // After saving: current draft is at index 0, previous draft (if exists) is at index 1
-    saveDraft(player1Selection)
+    saveDraft(normalizedPlayer1Selection)
     
     // Get the previous draft (the one that was saved before this one, now at index 1)
     const previousDraft = getPreviousDraft()
@@ -389,7 +424,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     
     if (previousDraft) {
       // Use the previous draft as player2's deck (play against your last draft)
-      player2Selection = previousDraft
+      player2Selection = normalizeDraftSelection(previousDraft)
     } else {
       // Fall back to boss Legion deck if no previous draft exists
       const boss = boss1ValiantLegion
@@ -406,10 +441,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
       
       // Filter out undefined cards and combine boss cards (units + spells + artifacts)
       const player2Cards: BaseCard[] = [
-        ...boss.units.filter((card): card is BaseCard => card !== undefined && card !== null),
-        ...boss.spells.filter((card): card is BaseCard => card !== undefined && card !== null),
-        ...boss.artifacts.filter((card): card is BaseCard => card !== undefined && card !== null),
-      ]
+        ...boss.units,
+        ...boss.spells,
+        ...boss.artifacts,
+      ].filter(Boolean) as BaseCard[]
       
       // Create final selection for player2 (battlefield will be ignored, but required by type)
       player2Selection = {
@@ -420,6 +455,45 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
     
     // Initialize game from player1's draft vs player2's deck (previous draft or RW Legion)
+    initializeGameFromDraft(normalizedPlayer1Selection, player2Selection)
+  }, [initializeGameFromDraft])
+
+  const initializeStockDeckGame = useCallback((deckId: string) => {
+    const stockDeck = getStockDeckById(deckId)
+    if (!stockDeck) {
+      console.warn(`Stock deck not found: ${deckId}`)
+      return
+    }
+
+    const player1SignatureCards: BaseCard[] = []
+    for (const hero of stockDeck.heroes) {
+      if (hero.signatureCardId) {
+        const sigCard = allCards.find(card => card.id === hero.signatureCardId)
+          || allSpells.find(spell => spell.id === hero.signatureCardId)
+        if (sigCard) {
+          player1SignatureCards.push(sigCard)
+          player1SignatureCards.push(sigCard)
+        }
+      }
+    }
+
+    const player1Selection: FinalDraftSelection = {
+      heroes: stockDeck.heroes as Hero[],
+      cards: [...stockDeck.cards, ...player1SignatureCards],
+      battlefield: allBattlefields[0], // Placeholder, will be replaced by hardcoded ones
+    }
+
+    const boss = boss1ValiantLegion
+    const player2Selection: FinalDraftSelection = {
+      heroes: boss.heroes.filter(Boolean) as Hero[],
+      cards: [
+        ...boss.units,
+        ...boss.spells,
+        ...boss.artifacts,
+      ].filter(Boolean) as BaseCard[],
+      battlefield: allBattlefields[0], // Placeholder, will be replaced by hardcoded ones
+    }
+
     initializeGameFromDraft(player1Selection, player2Selection)
   }, [initializeGameFromDraft])
 
@@ -450,6 +524,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setShowCombatSummary,
     combatSummaryData,
     setCombatSummaryData,
+    pendingEffect,
+    setPendingEffect,
+    temporaryZone,
+    setTemporaryZone,
     selectedCard,
     metadata,
     activePlayer,
@@ -458,6 +536,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     initializeGameFromDraft,
     initializeRandomGame,
     initializeDraftGame,
+    initializeStockDeckGame,
   }
   
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>

@@ -4,6 +4,7 @@ import { useGameContext } from '../context/GameContext'
 import { getDefaultTargets, resolveCombat, resolveSimultaneousCombat, resolveRangedAttacks } from '../game/combatSystem'
 import { removeRunesFromHero } from '../game/runeSystem'
 import { tier1Items, createCardFromTemplate } from '../game/sampleData'
+import { calculateNextTurn, getTurn1PhaseAfterPass, hasDeployableHero, normalizeTurnNumber, shouldEndDeployPhase } from '../game/deploymentRules'
 
 export function useTurnManagement() {
   const { 
@@ -217,6 +218,11 @@ export function useTurnManagement() {
           },
         }
 
+      const allCardsToDraw = {
+        player1: [] as Card[],
+        player2: [] as Card[],
+      }
+
         return {
           ...prev,
           battlefieldA: resultA.updatedBattlefield,
@@ -272,10 +278,11 @@ export function useTurnManagement() {
       })
       setShowCombatSummary(true)
       
-      // End turn - switch player and reset to play phase
-      nextPlayer = player === 'player1' ? 'player2' : 'player1'
-      nextPhase = 'play'
-      shouldIncrementTurn = nextPlayer === 'player1'
+      // End turn - switch player and enter deploy phase on new turn only
+      const turnResult = calculateNextTurn(metadata.currentTurn, player)
+      nextPlayer = turnResult.nextPlayer
+      shouldIncrementTurn = turnResult.shouldIncrementTurn
+      nextPhase = shouldIncrementTurn ? 'deploy' : 'play'
       
       // Reset pass flags at start of new turn
       const resetPassFlags = true
@@ -343,12 +350,6 @@ export function useTurnManagement() {
         }
       })
       
-      // Regenerate mana for next player (+1 max mana, restore to max)
-      const nextPlayerMaxMana = Math.min(
-        (nextPlayer === 'player1' ? metadata.player1MaxMana : metadata.player2MaxMana) + 1,
-        10 // Cap at 10
-      )
-      
       // Calculate gold per turn (base + items)
       const baseGoldPerTurn = 3
       let goldPerTurnFromItems = 0
@@ -375,23 +376,61 @@ export function useTurnManagement() {
 
       const totalGoldThisTurn = baseGoldPerTurn + goldPerTurnFromItems
 
-      setGameState(prev => ({
-        ...prev,
-        metadata: {
-          ...prev.metadata,
-          [`${player}Gold`]: (prev.metadata[`${player}Gold` as keyof GameMetadata] as number) + totalGoldThisTurn,
-          currentTurn: prev.metadata.currentTurn + (shouldIncrementTurn ? 1 : 0),
-          activePlayer: nextPlayer,
-          currentPhase: nextPhase,
-          [`${nextPlayer}MaxMana`]: nextPlayerMaxMana,
-          [`${nextPlayer}Mana`]: nextPlayerMaxMana, // Restore to max
-          // Reset pass flags at start of new turn
-          player1Passed: false,
-          player2Passed: false,
-          // Reset turn 1 deployment phase if we're past turn 1
-          ...(shouldIncrementTurn && prev.metadata.currentTurn > 1 ? { turn1DeploymentPhase: 'complete' } : {}),
-        },
-      }))
+      setGameState(prev => {
+        const nextP1MaxMana = shouldIncrementTurn
+          ? Math.min(prev.metadata.player1MaxMana + 1, 10)
+          : prev.metadata.player1MaxMana
+        const nextP2MaxMana = shouldIncrementTurn
+          ? Math.min(prev.metadata.player2MaxMana + 1, 10)
+          : prev.metadata.player2MaxMana
+
+        const nextP1Mana = shouldIncrementTurn ? nextP1MaxMana : prev.metadata.player1Mana
+        const nextP2Mana = shouldIncrementTurn ? nextP2MaxMana : prev.metadata.player2Mana
+
+        const resolvedP1Mana = nextPlayer === 'player1' ? nextP1MaxMana : nextP1Mana
+        const resolvedP2Mana = nextPlayer === 'player2' ? nextP2MaxMana : nextP2Mana
+
+        const canDeployHero = (playerId: 'player1' | 'player2') => {
+          const base = prev[`${playerId}Base` as keyof typeof prev] as Card[]
+          const deployZone = prev[`${playerId}DeployZone` as keyof typeof prev] as Card[]
+          const cooldowns = prev.metadata.deathCooldowns || {}
+
+          const baseHeroesReady = base.some(card => card.cardType === 'hero' && (cooldowns[card.id] || 0) === 0)
+          const deployHeroesReady = deployZone.some(card => card.cardType === 'hero')
+          return baseHeroesReady || deployHeroesReady
+        }
+
+        const shouldSkipDeploy = nextPhase === 'deploy' &&
+          !canDeployHero('player1') &&
+          !canDeployHero('player2')
+
+        const resolvedPhase = shouldSkipDeploy ? 'play' : nextPhase
+
+        return {
+          ...prev,
+          metadata: {
+            ...prev.metadata,
+            [`${player}Gold`]: (prev.metadata[`${player}Gold` as keyof GameMetadata] as number) + totalGoldThisTurn,
+            currentTurn: turnResult.nextTurn,
+            activePlayer: nextPlayer,
+            currentPhase: resolvedPhase,
+            player1MaxMana: nextP1MaxMana,
+            player2MaxMana: nextP2MaxMana,
+            player1Mana: resolvedP1Mana,
+            player2Mana: resolvedP2Mana,
+            // Reset pass flags at start of new turn
+            player1Passed: false,
+            player2Passed: false,
+            // Reset deploy counters when entering deploy phase
+            ...(resolvedPhase === 'deploy' ? {
+              player1HeroesDeployedThisTurn: 0,
+              player2HeroesDeployedThisTurn: 0,
+            } : {}),
+            // Reset turn 1 deployment phase if we're past turn 1
+            ...(shouldIncrementTurn && prev.metadata.currentTurn > 1 ? { turn1DeploymentPhase: 'complete' } : {}),
+          },
+        }
+      })
       return
     }
     
@@ -404,6 +443,12 @@ export function useTurnManagement() {
       },
     }))
   }, [metadata, gameState, combatTargetsA, combatTargetsB, setGameState, setCombatTargetsA, setCombatTargetsB])
+
+  useEffect(() => {
+    if (metadata.currentPhase === 'play' && metadata.player1Passed && metadata.player2Passed) {
+      handleNextPhase()
+    }
+  }, [metadata.currentPhase, metadata.player1Passed, metadata.player2Passed, handleNextPhase])
 
   const handleToggleSpellPlayed = useCallback((card: Card) => {
     // Allow any card type to be marked as played (spells, units, heroes)
@@ -525,7 +570,7 @@ export function useTurnManagement() {
 
   const handleNextTurn = useCallback(() => {
     setGameState(prev => {
-      const newTurn = prev.metadata.currentTurn + 1
+      const newTurn = normalizeTurnNumber(prev.metadata.currentTurn) + 1
       
       // Increase max mana for both players (+1 per turn, capped at 10)
       const newPlayer1MaxMana = Math.min(prev.metadata.player1MaxMana + 1, 10)
@@ -735,31 +780,26 @@ export function useTurnManagement() {
       if (prev.metadata.currentTurn === 1 && prev.metadata.turn1DeploymentPhase && 
           prev.metadata.turn1DeploymentPhase !== 'complete') {
         const phase = prev.metadata.turn1DeploymentPhase
-        
-        // During counter-deployment phases, passing skips counter-deployment
-        if (phase === 'p2_lane1' && player === 'player2') {
-          // Player 2 passes counter-deployment to lane 1, move to lane 2 deployment
-          return {
-            ...prev,
-            metadata: {
-              ...prev.metadata,
-              turn1DeploymentPhase: 'p2_lane2',
-            },
-          }
-        } else if (phase === 'p1_lane2' && player === 'player1') {
-          // Player 1 passes counter-deployment to lane 2, deployment complete
-          return {
-            ...prev,
-            metadata: {
-              ...prev.metadata,
-              turn1DeploymentPhase: 'complete',
-              actionPlayer: 'player1',
-              initiativePlayer: 'player1',
-            },
-          }
-        } else {
-          // Wrong player trying to pass, or wrong phase
+        const passResult = getTurn1PhaseAfterPass(phase, player)
+        if (!passResult) {
           return prev
+        }
+
+        const nextMetadata = {
+          ...prev.metadata,
+          turn1DeploymentPhase: passResult.nextPhase,
+          activePlayer: passResult.nextActivePlayer,
+        }
+
+        if (passResult.nextPhase === 'complete') {
+          nextMetadata.actionPlayer = 'player1'
+          nextMetadata.initiativePlayer = 'player1'
+          nextMetadata.activePlayer = 'player1'
+        }
+
+        return {
+          ...prev,
+          metadata: nextMetadata,
         }
       }
       
@@ -777,6 +817,7 @@ export function useTurnManagement() {
       if (!otherPlayerPassed) {
         // Action goes to opponent
         newMetadata.actionPlayer = player === 'player1' ? 'player2' : 'player1'
+        newMetadata.activePlayer = newMetadata.actionPlayer
         // Initiative STAYS with the player who passed (they locked it in)
         // Don't change initiativePlayer - it stays with the player who passed
       }
@@ -796,16 +837,56 @@ export function useTurnManagement() {
       if (prev.metadata.currentPhase !== 'deploy') {
         return prev
       }
+
+      const turn = normalizeTurnNumber(prev.metadata.currentTurn)
+      const p1HasDeployHeroes = hasDeployableHero(
+        prev.player1Base,
+        prev.player1DeployZone,
+        prev.metadata.deathCooldowns || {}
+      )
+      const p2HasDeployHeroes = hasDeployableHero(
+        prev.player2Base,
+        prev.player2DeployZone,
+        prev.metadata.deathCooldowns || {}
+      )
+
+      const canEndDeploy = shouldEndDeployPhase({
+        turn,
+        p1HeroesDeployed: prev.metadata.player1HeroesDeployedThisTurn || 0,
+        p2HeroesDeployed: prev.metadata.player2HeroesDeployedThisTurn || 0,
+        p1HasDeployHeroes,
+        p2HasDeployHeroes,
+      })
+
+      if (turn === 2 && !canEndDeploy) {
+        alert('Turn 2 deploy: both players must deploy 1 hero before starting the turn.')
+        return prev
+      }
+
+      if (turn >= 3 && !canEndDeploy) {
+        alert('Deploy phase continues until both deploy zones are empty.')
+        return prev
+      }
       
+      const nextActionPlayer = prev.metadata.actionPlayer ?? prev.metadata.initiativePlayer ?? 'player1'
+
       return {
         ...prev,
         metadata: {
           ...prev.metadata,
           currentPhase: 'play',
+          actionPlayer: nextActionPlayer,
+          activePlayer: nextActionPlayer,
         },
       }
     })
   }, [setGameState])
+
+  useEffect(() => {
+    if (metadata.currentPhase === 'play' && metadata.player1Passed && metadata.player2Passed) {
+      handleNextPhase()
+    }
+  }, [metadata.currentPhase, metadata.player1Passed, metadata.player2Passed, handleNextPhase])
 
   return {
     handleNextPhase,

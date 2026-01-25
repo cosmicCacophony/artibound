@@ -62,12 +62,12 @@ export const boss1ValiantLegion: Boss = {
   archetype: 'rw-go-wide',
   colors: ['red', 'white'],
   
-  // 4 Heroes - Balanced mix of RW and R
+  // 4 Heroes - Legion leaders + cleave control
   heroes: [
-    rwHeroes[0], // Valiant Commander (RW) - Rally ability
-    rwHeroes[1], // War Captain (R) - High attack, tactical
-    rwHeroes[2], // Battle Vanguard (R) - Mobile warrior
-    rwHeroes[0], // Valiant Commander (RW) - Duplicate for consistency
+    rwHeroes.find(h => h.id === 'rw-hero-commander')!, // Legion Commander
+    rwHeroes.find(h => h.id === 'rw-hero-captain')!, // Legion Commander (duplicate)
+    rwHeroes.find(h => h.id === 'red-hero-cleaver')!, // Cleave Warrior
+    rwHeroes.find(h => h.id === 'red-hero-cleaver')!, // Cleave Warrior (duplicate)
   ],
   
   // 4 Artifacts - Core synergies

@@ -1,73 +1,130 @@
+import { useState } from 'react'
 import { useGameContext } from '../context/GameContext'
-import { GameHeader } from './GameHeader'
 import { PlayerArea } from './PlayerArea'
 import { BattlefieldView } from './BattlefieldView'
 import { ItemShopModal } from './ItemShopModal'
-import { CardLibrarySidebar } from './CardLibrarySidebar'
 import { CardLibraryView } from './CardLibraryView'
 import { CombatSummaryModal } from './CombatSummaryModal'
+import { TopBar } from './TopBar'
+import { CombatPreviewOverlay } from './CombatPreviewOverlay'
+import { TemporaryGameZone } from './TemporaryGameZone'
 
 export function Board() {
   const { 
-    player1SidebarCards, 
-    setPlayer1SidebarCards, 
-    player2SidebarCards, 
-    setPlayer2SidebarCards,
+    gameState,
     showCombatSummary,
     setShowCombatSummary,
     combatSummaryData,
+    selectedCardId,
+    temporaryZone,
+    setTemporaryZone,
+    pendingEffect,
+    setPendingEffect,
+    setGameState,
   } = useGameContext()
   
+  const [showDebug, setShowDebug] = useState(false)
+  const [isOpponentExpanded, setIsOpponentExpanded] = useState(false)
+  const [isPreviewActive, setIsPreviewActive] = useState(false)
+  const [hoveredUnitId, setHoveredUnitId] = useState<string | null>(null)
+
   return (
-    <div style={{ display: 'flex', fontFamily: 'Arial, sans-serif', height: '100vh' }}>
-      {/* Left Sidebar - Player 1 */}
-      <CardLibrarySidebar 
-        player="player1" 
-        cards={player1SidebarCards} 
-        setCards={setPlayer1SidebarCards} 
+    <div className="board-root">
+      <TopBar
+        showDebug={showDebug}
+        onToggleDebug={() => setShowDebug(prev => !prev)}
+        onTogglePreview={() => setIsPreviewActive(prev => !prev)}
+        isPreviewActive={isPreviewActive}
       />
 
-      {/* Main Board */}
-      <div style={{ flex: 1, padding: '15px', overflowY: 'auto', position: 'relative', minWidth: 0 }}>
-        <GameHeader />
+      <ItemShopModal />
+      <CardLibraryView />
+      {temporaryZone && (
+        <TemporaryGameZone
+          zone={temporaryZone}
+          onConfirm={(selection) => {
+            if (pendingEffect?.cardId === 'black-artifact-rix-altar' && selection) {
+              setGameState(prev => {
+                const removeCard = (cards: typeof prev.player1Hand) => cards.filter(card => card.id !== selection)
+                const targetBattlefield = window.confirm('Deal damage to Tower A? (Cancel = Tower B)') ? 'battlefieldA' : 'battlefieldB'
+                const enemy = pendingEffect.owner === 'player1' ? 'player2' : 'player1'
+                const towerKey = targetBattlefield === 'battlefieldA'
+                  ? (enemy === 'player1' ? 'towerA_player1_HP' : 'towerA_player2_HP')
+                  : (enemy === 'player1' ? 'towerB_player1_HP' : 'towerB_player2_HP')
 
-        <ItemShopModal />
-        <CardLibraryView />
-        {combatSummaryData && (
-          <CombatSummaryModal
-            isOpen={showCombatSummary}
-            onClose={() => setShowCombatSummary(false)}
-            battlefieldA={combatSummaryData.battlefieldA}
-            battlefieldB={combatSummaryData.battlefieldB}
-          />
-        )}
-
-        {/* Player 2 Area (Top) */}
-        <PlayerArea player="player2" />
-
-        {/* Battlefields (Middle) */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '15px',
-            marginBottom: '15px',
+                return {
+                  ...prev,
+                  player1Hand: removeCard(prev.player1Hand),
+                  player2Hand: removeCard(prev.player2Hand),
+                  player1Base: removeCard(prev.player1Base),
+                  player2Base: removeCard(prev.player2Base),
+                  player1DeployZone: removeCard(prev.player1DeployZone),
+                  player2DeployZone: removeCard(prev.player2DeployZone),
+                  battlefieldA: {
+                    player1: removeCard(prev.battlefieldA.player1),
+                    player2: removeCard(prev.battlefieldA.player2),
+                  },
+                  battlefieldB: {
+                    player1: removeCard(prev.battlefieldB.player1),
+                    player2: removeCard(prev.battlefieldB.player2),
+                  },
+                  metadata: {
+                    ...prev.metadata,
+                    [towerKey]: Math.max(0, (prev.metadata as any)[towerKey] - (pendingEffect.effect.damage || 4)),
+                  },
+                }
+              })
+              setPendingEffect(null)
+            }
+            setTemporaryZone(null)
           }}
-        >
-          <BattlefieldView battlefieldId="battlefieldA" />
-          <BattlefieldView battlefieldId="battlefieldB" />
-        </div>
+          onCancel={() => {
+            setPendingEffect(null)
+            setTemporaryZone(null)
+          }}
+        />
+      )}
+      {combatSummaryData && (
+        <CombatSummaryModal
+          isOpen={showCombatSummary}
+          onClose={() => setShowCombatSummary(false)}
+          battlefieldA={combatSummaryData.battlefieldA}
+          battlefieldB={combatSummaryData.battlefieldB}
+        />
+      )}
 
-        {/* Player 1 Area (Bottom) */}
-        <PlayerArea player="player1" />
+      <div
+        className={`player-zone player-zone--opponent ${isOpponentExpanded ? 'player-zone--expanded' : 'player-zone--collapsed'}`}
+        onMouseEnter={() => setIsOpponentExpanded(true)}
+        onMouseLeave={() => setIsOpponentExpanded(false)}
+      >
+        <PlayerArea player="player2" mode={isOpponentExpanded ? 'expanded' : 'collapsed'} showDebugControls={showDebug} />
       </div>
 
-      {/* Right Sidebar - Player 2 */}
-      <CardLibrarySidebar 
-        player="player2" 
-        cards={player2SidebarCards} 
-        setCards={setPlayer2SidebarCards} 
-      />
+      <div className="battlefield-arena">
+        <CombatPreviewOverlay
+          gameState={gameState}
+          hoveredUnitId={hoveredUnitId}
+          selectedUnitId={selectedCardId}
+          isPreviewActive={isPreviewActive}
+        />
+        <div className="battlefield-grid">
+          <BattlefieldView
+            battlefieldId="battlefieldA"
+            showDebugControls={showDebug}
+            onHoverUnit={setHoveredUnitId}
+          />
+          <BattlefieldView
+            battlefieldId="battlefieldB"
+            showDebugControls={showDebug}
+            onHoverUnit={setHoveredUnitId}
+          />
+        </div>
+      </div>
+
+      <div className="player-zone player-zone--self">
+        <PlayerArea player="player1" mode="expanded" showDebugControls={showDebug} />
+      </div>
     </div>
   )
 }

@@ -60,6 +60,13 @@ export interface BaseCard {
   manaCost?: number // Cost to play this card (uses mana)
   colors?: Color[] // Colors required to cast in lane with matching hero color
   consumesRunes?: boolean // If true, casting this card consumes runes from the pool
+  tribe?: string
+  tribeBuff?: {
+    tribe: string
+    attack: number
+    health: number
+    excludeSelf?: boolean
+  }
 }
 
 export interface Item {
@@ -339,6 +346,11 @@ export type SpellEffectType =
   | 'return_to_base' // Returns target card to its owner's base
   | 'draw_and_heal' // Draws cards and heals
   | 'steal_unit' // Take control of target enemy unit
+  | 'create_tokens' // Create token(s) via temporary zone
+  | 'tokenize' // Create token(s) in temporary zone
+  | 'scry' // Scry-style choice (top/bottom)
+  | 'buff_until_end_of_turn' // Grant temporary buffs/keywords
+  | 'conal_damage' // Conal damage based on units in front
 
 export interface SpellEffect {
   type: SpellEffectType
@@ -358,6 +370,65 @@ export interface SpellEffect {
   // Draw and heal effects
   drawCount?: number // Number of cards to draw
   healAmount?: number // Amount of life to gain
+  // Tokenize and temporary zone effects
+  tokenCount?: number
+  tokenPower?: number
+  tokenHealth?: number
+  tokenKeywords?: string[]
+  tokenStats?: { attack: number; health: number }
+  tokenType?: string
+  // Conal effects
+  conalTotalDamage?: number // Total damage to distribute
+  conalMaxTargets?: number // Max units in front to include
+  // Buff effects
+  buffKeywords?: string[]
+  buffAttack?: number
+  buffHealth?: number
+}
+
+export type TargetType = 'unit' | 'hero' | 'tower'
+export type TargetSide = 'friendly' | 'enemy' | 'any'
+
+export interface TargetingContext {
+  targetType: TargetType
+  targetSide: TargetSide
+  allowBattlefield?: 'battlefieldA' | 'battlefieldB' | 'any'
+  maxTargets?: number
+  minHealth?: number
+  maxHealth?: number
+  requireHeroCaster?: boolean
+}
+
+export interface TokenDefinition {
+  id: string
+  name: string
+  attack: number
+  health: number
+  keywords?: string[]
+  tribe?: string
+}
+
+export type TemporaryZoneType = 'tokenize' | 'scry' | 'sacrifice' | 'target_select'
+
+export interface TemporaryZone {
+  type: TemporaryZoneType
+  title: string
+  description: string
+  owner: PlayerId
+  tokens?: TokenDefinition[]
+  scryCardId?: string
+  selectableCardIds?: string[]
+  selectableCards?: Array<{ id: string; name: string }>
+  confirmLabel?: string
+}
+
+export interface PendingEffect {
+  cardId: string
+  owner: PlayerId
+  effect: SpellEffect
+  targeting?: TargetingContext
+  selectedTargetIds?: string[]
+  temporaryZone?: TemporaryZone
 }
 
 export interface SpellCard extends BaseCard {
@@ -501,6 +572,8 @@ export interface GameState {
   battlefieldA: Battlefield
   battlefieldB: Battlefield
   cardLibrary: BaseCard[] // All available cards in the library (for sidebar)
+  player1Library?: BaseCard[]
+  player2Library?: BaseCard[]
   metadata: GameMetadata
   // Draft system (to be implemented)
   draftState?: DraftState
