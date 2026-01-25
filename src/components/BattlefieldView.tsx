@@ -7,6 +7,7 @@ import { HeroCard } from './HeroCard'
 import { HeroAbilityEditor } from './HeroAbilityEditor'
 import { KeywordBadge } from './KeywordBadge'
 import { isValidTargetForContext, resolveSpellEffect } from '../game/effectResolver'
+import { getTribeBuff } from '../game/combatSystem'
 
 interface BattlefieldViewProps {
   battlefieldId: 'battlefieldA' | 'battlefieldB'
@@ -131,6 +132,32 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
     temporaryZone,
     setTemporaryZone,
   } = useGameContext()
+
+  const getDisplayedStats = (card: Card) => {
+    if (!('attack' in card) || !('health' in card)) {
+      return null
+    }
+    const baseAttack = card.cardType === 'generic' && 'stackPower' in card && card.stackPower !== undefined
+      ? card.stackPower
+      : card.attack
+    const baseHealth = card.cardType === 'generic' && 'stackHealth' in card && card.stackHealth !== undefined
+      ? card.stackHealth
+      : card.health
+    const tempAttack = (card.cardType === 'hero' || card.cardType === 'generic') && 'temporaryAttack' in card
+      ? (card.temporaryAttack || 0)
+      : 0
+    const tempHP = (card.cardType === 'hero' || card.cardType === 'generic') && 'temporaryHP' in card
+      ? (card.temporaryHP || 0)
+      : 0
+    const tribeBuff = 'tribe' in card
+      ? getTribeBuff(gameState, battlefieldId, card.owner, (card as any).tribe, card.id)
+      : { attack: 0, health: 0 }
+    return {
+      attack: baseAttack + tempAttack + tribeBuff.attack,
+      health: baseHealth + tempHP + tribeBuff.health,
+      tribeBuff,
+    }
+  }
   const [editingHeroId, setEditingHeroId] = useState<string | null>(null)
   // Track which slot is currently being dragged over (player + slotNum)
   const [dragOverSlot, setDragOverSlot] = useState<{ player: 'player1' | 'player2', slotNum: number } | null>(null)
@@ -663,11 +690,20 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
                   })}
                 </div>
               )}
-              {'attack' in cardInSlot && 'health' in cardInSlot && (
-                <div className="unit-card__stats">
-                  {cardInSlot.attack}/{cardInSlot.health}
-                </div>
-              )}
+              {(() => {
+                const displayedStats = getDisplayedStats(cardInSlot)
+                if (!displayedStats) return null
+                const isTribeBuffed = displayedStats.tribeBuff.attack !== 0 || displayedStats.tribeBuff.health !== 0
+                return (
+                  <div
+                    className="unit-card__stats"
+                    style={{ color: isTribeBuffed ? '#2e7d32' : undefined }}
+                    title={isTribeBuffed ? 'Tribe buff active' : undefined}
+                  >
+                    {displayedStats.attack}/{displayedStats.health}
+                  </div>
+                )
+              })()}
               <div className="unit-card__status">
                 {!!metadata.deathCooldowns[cardInSlot.id] && (
                   <span style={{ color: '#8b0000' }}>⏱{metadata.deathCooldowns[cardInSlot.id]}</span>

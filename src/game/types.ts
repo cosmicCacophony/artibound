@@ -65,6 +65,7 @@ export interface BaseCard {
     tribe: string
     attack: number
     health: number
+    excludeSelf?: boolean
   }
 }
 

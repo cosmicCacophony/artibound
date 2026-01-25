@@ -168,7 +168,13 @@ export function resolveAttack(
       const tempHP = (targetUnit.cardType === 'hero' || targetUnit.cardType === 'generic') && 'temporaryHP' in targetUnit
         ? (targetUnit.temporaryHP || 0)
         : 0
-      const tribeBuff = getTribeBuff(gameState, battlefieldId, targetUnit.owner, (targetUnit as any).tribe)
+      const tribeBuff = getTribeBuff(
+        gameState,
+        battlefieldId,
+        targetUnit.owner,
+        (targetUnit as any).tribe,
+        targetUnit.id
+      )
       const buffHealth = tribeBuff.health
       const effectiveHealth = targetUnit.currentHealth + tempHP + buffHealth
       
@@ -261,33 +267,32 @@ export function resolveAttack(
 /**
  * Get attack power of a unit (handles stacked units, hero bonuses, and temporary attack)
  */
-function getTribeBuff(
+export function getTribeBuff(
   gameState: GameState | undefined,
   battlefieldId: 'battlefieldA' | 'battlefieldB',
   owner: PlayerId,
-  tribe: string | undefined
+  tribe: string | undefined,
+  targetCardId?: string
 ): { attack: number; health: number } {
   if (!gameState || !tribe) {
     return { attack: 0, health: 0 }
   }
 
   const sources: Card[] = [
-    ...gameState.battlefieldA[owner],
-    ...gameState.battlefieldB[owner],
-    ...gameState[`${owner}Base` as keyof GameState],
+    ...gameState[battlefieldId][owner],
   ] as Card[]
 
   return sources.reduce(
     (acc, card) => {
-      const isInPlay =
-        card.location === 'battlefieldA' ||
-        card.location === 'battlefieldB' ||
-        (card.cardType === 'artifact' && card.location === 'base')
+      const isInPlay = card.location === battlefieldId
 
       if (!isInPlay || !card.tribeBuff) {
         return acc
       }
       if (card.tribeBuff.tribe !== tribe) {
+        return acc
+      }
+      if (card.tribeBuff.excludeSelf && targetCardId && card.id === targetCardId) {
         return acc
       }
       return {
@@ -320,7 +325,13 @@ function getAttackPower(
 
   // Add tribe buff attack (if applicable)
   if ('tribe' in unit) {
-    const tribeBuff = getTribeBuff(gameState, battlefieldId, unit.owner, (unit as any).tribe)
+    const tribeBuff = getTribeBuff(
+      gameState,
+      battlefieldId,
+      unit.owner,
+      (unit as any).tribe,
+      unit.id
+    )
     baseAttack += tribeBuff.attack
   }
   
@@ -497,7 +508,13 @@ export function resolveSimultaneousCombat(
         const tempHP = (adjacentUnit.cardType === 'hero' || adjacentUnit.cardType === 'generic') && 'temporaryHP' in adjacentUnit
           ? (adjacentUnit.temporaryHP || 0)
           : 0
-        const tribeBuff = getTribeBuff(gameState, battlefieldId, adjacentUnit.owner, (adjacentUnit as any).tribe)
+        const tribeBuff = getTribeBuff(
+          gameState,
+          battlefieldId,
+          adjacentUnit.owner,
+          (adjacentUnit as any).tribe,
+          adjacentUnit.id
+        )
         const buffHealth = tribeBuff.health
         const effectiveHealth = adjacentUnit.currentHealth + tempHP + buffHealth
         const damageAfterTempHP = Math.max(0, attackPower - tempHP)
@@ -550,7 +567,13 @@ export function resolveSimultaneousCombat(
       const tempHP = (targetUnit.cardType === 'hero' || targetUnit.cardType === 'generic') && 'temporaryHP' in targetUnit
         ? (targetUnit.temporaryHP || 0)
         : 0
-      const tribeBuff = getTribeBuff(gameState, otherBattlefieldId, targetUnit.owner, (targetUnit as any).tribe)
+      const tribeBuff = getTribeBuff(
+        gameState,
+        otherBattlefieldId,
+        targetUnit.owner,
+        (targetUnit as any).tribe,
+        targetUnit.id
+      )
       const buffHealth = tribeBuff.health
       const effectiveHealth = targetUnit.currentHealth + tempHP + buffHealth
       const damageAfterTempHP = Math.max(0, damage - tempHP)
