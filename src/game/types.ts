@@ -224,6 +224,7 @@ export type HeroAbilityEffectType =
   | 'rune_to_damage' // Spend runes to deal tower damage (combo payoff)
   | 'sacrifice_unit' // Sacrifice a unit for effect
   | 'shadowfiend_ability' // Shadowfiend: deal 1 damage per counter to random enemy unit
+  | 'create_spell' // Create a spell via temporary zone
   | 'custom' // Custom effect
 
 export type HeroAbilityTrigger = 
@@ -386,7 +387,7 @@ export interface SpellEffect {
   buffHealth?: number
 }
 
-export type TargetType = 'unit' | 'hero' | 'tower'
+export type TargetType = 'unit' | 'hero' | 'tower' | 'any'
 export type TargetSide = 'friendly' | 'enemy' | 'any'
 
 export interface TargetingContext {
@@ -408,7 +409,7 @@ export interface TokenDefinition {
   tribe?: string
 }
 
-export type TemporaryZoneType = 'tokenize' | 'scry' | 'sacrifice' | 'target_select'
+export type TemporaryZoneType = 'tokenize' | 'scry' | 'sacrifice' | 'target_select' | 'spell_create' | 'ritualist_discard'
 
 export interface TemporaryZone {
   type: TemporaryZoneType
@@ -416,10 +417,12 @@ export interface TemporaryZone {
   description: string
   owner: PlayerId
   tokens?: TokenDefinition[]
+  spellCards?: SpellCard[]
   scryCardId?: string
   selectableCardIds?: string[]
   selectableCards?: Array<{ id: string; name: string }>
   confirmLabel?: string
+  tokenId?: string
 }
 
 export interface PendingEffect {

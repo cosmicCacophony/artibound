@@ -1,4 +1,4 @@
-import { TemporaryZone, TokenDefinition } from '../game/types'
+import { TemporaryZone, TokenDefinition, SpellCard } from '../game/types'
 
 interface TemporaryGameZoneProps {
   zone: TemporaryZone
@@ -40,6 +40,35 @@ interface TemporaryGameZoneProps {
   </div>
 )
 
+const renderSpell = (spell: SpellCard, owner: string) => (
+  <div
+    key={spell.id}
+    style={{
+      border: '1px solid #555',
+      borderRadius: '6px',
+      padding: '8px',
+      minWidth: '120px',
+      textAlign: 'center',
+      backgroundColor: '#f3e5f5',
+      cursor: 'grab',
+    }}
+    draggable
+    onDragStart={(e) => {
+      const payload = JSON.stringify({ spell, owner })
+      e.dataTransfer.setData('spellData', payload)
+      e.dataTransfer.setData('text/spell', payload)
+      e.dataTransfer.setData('text/plain', `spell:${payload}`)
+      e.dataTransfer.effectAllowed = 'move'
+      e.dataTransfer.dropEffect = 'move'
+    }}
+  >
+    <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{spell.name}</div>
+    <div style={{ fontSize: '12px', color: '#555' }}>
+      {spell.manaCost ?? 0} mana
+    </div>
+  </div>
+)
+
 export function TemporaryGameZone({ zone, onConfirm, onCancel }: TemporaryGameZoneProps) {
   return (
     <div
@@ -77,6 +106,12 @@ export function TemporaryGameZone({ zone, onConfirm, onCancel }: TemporaryGameZo
           </div>
         )}
 
+        {zone.type === 'spell_create' && zone.spellCards && (
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px' }}>
+            {zone.spellCards.map(spell => renderSpell(spell, zone.owner))}
+          </div>
+        )}
+
         {zone.type === 'scry' && (
           <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
             <button
@@ -108,7 +143,7 @@ export function TemporaryGameZone({ zone, onConfirm, onCancel }: TemporaryGameZo
           </div>
         )}
 
-        {zone.type === 'target_select' && zone.selectableCards && (
+        {(zone.type === 'target_select' || zone.type === 'ritualist_discard') && zone.selectableCards && (
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px' }}>
             {zone.selectableCards.map(card => (
               <button

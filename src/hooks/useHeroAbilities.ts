@@ -1,11 +1,18 @@
 import { useCallback } from 'react'
 import { useGameContext } from '../context/GameContext'
 import { HeroAbility } from '../game/types'
+import { generatedSpells } from '../game/comprehensiveCardData'
 
 export function useHeroAbilities() {
-  const { setGameState, metadata } = useGameContext()
+  const { setGameState, metadata, setTemporaryZone, setPendingEffect } = useGameContext()
 
   const handleAbilityClick = useCallback((heroId: string, ability: HeroAbility, heroOwner: 'player1' | 'player2') => {
+    const lastUsedTurn = metadata.heroAbilityCooldowns?.[heroId]
+    if (ability.cooldown > 0 && lastUsedTurn && metadata.currentTurn - lastUsedTurn < ability.cooldown) {
+      alert(`Ability is on cooldown. Ready in ${ability.cooldown - (metadata.currentTurn - lastUsedTurn)} turn(s).`)
+      return
+    }
+
     // Check if player has enough mana
     const playerMana = heroOwner === 'player1' ? metadata.player1Mana : metadata.player2Mana
     if (playerMana < ability.manaCost) {
@@ -44,6 +51,10 @@ export function useHeroAbilities() {
         actionPlayer: otherPlayer,
         initiativePlayer: otherPlayer,
       }
+      updates.heroAbilityCooldowns = {
+        ...prev.metadata.heroAbilityCooldowns,
+        [heroId]: prev.metadata.currentTurn,
+      }
 
       // Handle WB Life Channeler counter removal and healing
       if (heroId === 'wb-hero-life-channeler' && ability.effectType === 'heal_target') {
@@ -77,9 +88,23 @@ export function useHeroAbilities() {
       }
     })
 
+    if (ability.effectType === 'create_spell' && heroId === 'black-hero-soul-reaper') {
+      const spellTemplate = generatedSpells.find(spell => spell.id === 'black-spell-soul-siphon')
+      if (spellTemplate) {
+        setTemporaryZone({
+          type: 'spell_create',
+          title: 'Soul Siphon',
+          description: 'Drag the spell into your hand.',
+          owner: heroOwner,
+          spellCards: [spellTemplate],
+        })
+        setPendingEffect(null)
+      }
+    }
+
     // Note: Cooldown tracking will be handled by the user later
     console.log(`Used ${ability.name} from hero ${heroId}. Mana: ${newMana}, Initiative passed to ${otherPlayer}`)
-  }, [metadata, setGameState])
+  }, [metadata, setGameState, setTemporaryZone, setPendingEffect])
 
   return {
     handleAbilityClick,

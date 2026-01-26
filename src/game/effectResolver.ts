@@ -29,6 +29,11 @@ export const getTemplateId = (cardId: string): string => {
 const getTargetingContextForSpell = (spell: SpellCard): TargetingContext | null => {
   const templateId = getTemplateId(spell.id)
   switch (templateId) {
+    case 'black-spell-soul-siphon':
+      return {
+        targetType: 'any',
+        targetSide: 'any',
+      }
     case 'black-sig-shadow-strike':
       return {
         targetType: 'unit',
@@ -137,7 +142,7 @@ const moveCardToBase = (state: GameState, card: Card): GameState => {
   }
 }
 
-const drawCards = (state: GameState, owner: PlayerId, count: number): GameState => {
+export const drawCards = (state: GameState, owner: PlayerId, count: number): GameState => {
   if (count <= 0) return state
   const libraryKey = owner === 'player1' ? 'player1Library' : 'player2Library'
   const library = (state[libraryKey] || []) as BaseCard[]
@@ -237,6 +242,7 @@ export const isValidTargetForContext = (state: GameState, targetId: string, cont
   if (!target) return false
   if (context.targetType === 'unit' && target.cardType === 'hero') return false
   if (context.targetType === 'hero' && target.cardType !== 'hero') return false
+  if (context.targetType === 'any' && target.cardType !== 'hero' && target.cardType !== 'generic') return false
 
   if (context.targetSide === 'friendly' && target.owner !== owner) return false
   if (context.targetSide === 'enemy' && target.owner === owner) return false

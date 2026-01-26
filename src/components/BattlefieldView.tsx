@@ -8,6 +8,7 @@ import { HeroAbilityEditor } from './HeroAbilityEditor'
 import { KeywordBadge } from './KeywordBadge'
 import { isValidTargetForContext, resolveSpellEffect } from '../game/effectResolver'
 import { getTribeBuff } from '../game/combatSystem'
+import { RunePoolDisplay } from './RunePoolDisplay'
 
 interface BattlefieldViewProps {
   battlefieldId: 'battlefieldA' | 'battlefieldB'
@@ -278,6 +279,37 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
         setSelectedCardId(null)
         return
       }
+    }
+    const battlefieldCards = [...gameState.battlefieldA.player1, ...gameState.battlefieldA.player2, ...gameState.battlefieldB.player1, ...gameState.battlefieldB.player2]
+    const ritualToken = battlefieldCards.find(card => card.id === cardId && card.cardType === 'generic' && card.name === 'Ritual Token')
+    if (ritualToken) {
+      if (metadata.currentPhase !== 'play') {
+        alert('Ritual Token can only be used during the play phase.')
+        return
+      }
+      if (metadata.actionPlayer !== ritualToken.owner) {
+        alert('You do not have the action right now.')
+        return
+      }
+      const playerManaKey = ritualToken.owner === 'player1' ? 'player1Mana' : 'player2Mana'
+      if ((metadata as any)[playerManaKey] < 1) {
+        alert('Not enough mana! Need 1.')
+        return
+      }
+      const hand = ritualToken.owner === 'player1' ? gameState.player1Hand : gameState.player2Hand
+      if (hand.length === 0) {
+        alert('No cards to discard.')
+        return
+      }
+      setTemporaryZone({
+        type: 'ritualist_discard',
+        title: 'Ritual Token',
+        description: 'Discard a card to draw a card. The token is sacrificed.',
+        owner: ritualToken.owner,
+        selectableCards: hand.map(card => ({ id: card.id, name: card.name })),
+        tokenId: ritualToken.id,
+      })
+      return
     }
     setSelectedCardId(selectedCardId === cardId ? null : cardId)
   }
@@ -833,8 +865,15 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
           data-battlefield={battlefieldId}
           data-player="player2"
           data-tower="true"
+          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
         >
-          🏰 P2 {towerP2HP}
+          <span>🏰 P2 {towerP2HP}</span>
+          <RunePoolDisplay
+            runePool={metadata.player2RunePool}
+            playerName="P2"
+            player="player2"
+            seals={metadata.player2Seals || []}
+          />
           {showDebugControls && (
             <div className="tower-display__controls">
               <button onClick={() => handleTowerDamage(-1, 'player2')}>-</button>
@@ -865,8 +904,15 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
           data-battlefield={battlefieldId}
           data-player="player1"
           data-tower="true"
+          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
         >
-          🏰 P1 {towerP1HP}
+          <span>🏰 P1 {towerP1HP}</span>
+          <RunePoolDisplay
+            runePool={metadata.player1RunePool}
+            playerName="P1"
+            player="player1"
+            seals={metadata.player1Seals || []}
+          />
           {showDebugControls && (
             <div className="tower-display__controls">
               <button onClick={() => handleTowerDamage(-1, 'player1')}>-</button>

@@ -890,6 +890,32 @@ export function useDeployment() {
       setTemporaryZone(pendingEffect?.temporaryZone || null)
     }
 
+    if (
+      selectedCard.cardType === 'generic' &&
+      isPlayPhase &&
+      cardTemplate.id === 'rb-unit-token-ritualist' &&
+      (location === 'battlefieldA' || location === 'battlefieldB') &&
+      selectedCard.location !== 'battlefieldA' &&
+      selectedCard.location !== 'battlefieldB'
+    ) {
+      const ritualToken = {
+        id: `ritual-token-${Date.now()}`,
+        name: 'Ritual Token',
+        attack: 1,
+        health: 1,
+        keywords: ['Ritual'],
+        tribe: 'ritualist',
+      }
+      const temporaryZone = {
+        type: 'tokenize' as const,
+        title: 'Ritual Token',
+        description: 'Drag the token onto the battlefield.',
+        owner: selectedCard.owner,
+        tokens: [ritualToken],
+      }
+      setTemporaryZone(temporaryZone)
+    }
+
     setSelectedCardId(null)
   }, [selectedCard, selectedCardId, gameState, metadata, getAvailableSlots, setGameState, setSelectedCardId, setPendingEffect, setTemporaryZone])
 

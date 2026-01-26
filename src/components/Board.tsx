@@ -8,6 +8,8 @@ import { CombatSummaryModal } from './CombatSummaryModal'
 import { TopBar } from './TopBar'
 import { CombatPreviewOverlay } from './CombatPreviewOverlay'
 import { TemporaryGameZone } from './TemporaryGameZone'
+import { drawCards } from '../game/effectResolver'
+import { PlayerId } from '../game/types'
 
 export function Board() {
   const { 
@@ -43,6 +45,38 @@ export function Board() {
         <TemporaryGameZone
           zone={temporaryZone}
           onConfirm={(selection) => {
+            if (temporaryZone?.type === 'ritualist_discard' && selection) {
+              setGameState(prev => {
+                const owner: PlayerId = temporaryZone.owner
+                const otherPlayer: PlayerId = owner === 'player1' ? 'player2' : 'player1'
+                const manaKey = `${owner}Mana` as keyof typeof prev.metadata
+                const tokenId = temporaryZone.tokenId
+                let nextState = {
+                  ...prev,
+                  player1Hand: owner === 'player1' ? prev.player1Hand.filter(card => card.id !== selection) : prev.player1Hand,
+                  player2Hand: owner === 'player2' ? prev.player2Hand.filter(card => card.id !== selection) : prev.player2Hand,
+                  battlefieldA: {
+                    player1: prev.battlefieldA.player1.filter(card => card.id !== tokenId),
+                    player2: prev.battlefieldA.player2.filter(card => card.id !== tokenId),
+                  },
+                  battlefieldB: {
+                    player1: prev.battlefieldB.player1.filter(card => card.id !== tokenId),
+                    player2: prev.battlefieldB.player2.filter(card => card.id !== tokenId),
+                  },
+                  metadata: {
+                    ...prev.metadata,
+                    [manaKey]: Math.max(0, (prev.metadata as any)[manaKey] - 1),
+                    actionPlayer: otherPlayer,
+                    initiativePlayer: otherPlayer,
+                  },
+                }
+                nextState = drawCards(nextState, owner, 1)
+                return nextState
+              })
+              setPendingEffect(null)
+              setTemporaryZone(null)
+              return
+            }
             if (pendingEffect?.cardId === 'black-artifact-rix-altar' && selection) {
               setGameState(prev => {
                 const removeCard = (cards: typeof prev.player1Hand) => cards.filter(card => card.id !== selection)

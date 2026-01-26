@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { PlayerId, Hero, Card } from '../game/types'
 import { useGameContext } from '../context/GameContext'
-import { RunePoolDisplay } from './RunePoolDisplay'
 import { useDeployment } from '../hooks/useDeployment'
 import { useTurnManagement } from '../hooks/useTurnManagement'
 import { useItemShop } from '../hooks/useItemShop'
@@ -220,14 +219,6 @@ export function PlayerArea({ player, mode = 'expanded', showDebugControls = fals
             )}
           </h2>
           <div style={{ display: 'flex', gap: '2px', alignItems: 'center', flexWrap: 'wrap', fontSize: '8px' }}>
-            {/* Rune Pool Display */}
-            <RunePoolDisplay 
-              runePool={metadata.player2RunePool}
-              playerName="Player 2"
-              player="player2"
-              seals={metadata.player2Seals || []}
-            />
-            
             {/* Legacy Mana Display */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
               <div style={{ fontSize: '10px', fontWeight: 'bold', color: playerManaColor }}>
@@ -668,7 +659,38 @@ export function PlayerArea({ player, mode = 'expanded', showDebugControls = fals
       {/* Hand - Compact with hover */}
       <div style={{ marginTop: '0', marginBottom: '0' }}>
         <h3 style={{ marginTop: 0, marginBottom: '0', fontSize: '7px' }}>H({playerHand.length})</h3>
-        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+        <div
+          style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}
+          onDragOver={(e) => {
+            if (e.dataTransfer.types.includes('spellData')) {
+              e.preventDefault()
+              e.stopPropagation()
+              e.dataTransfer.dropEffect = 'move'
+            }
+          }}
+          onDrop={(e) => {
+            const spellData = e.dataTransfer.getData('spellData')
+            if (!spellData) return
+            e.preventDefault()
+            e.stopPropagation()
+            try {
+              const payload = JSON.parse(spellData) as { spell: Card; owner: PlayerId }
+              if (payload.owner !== player) {
+                alert('You can only add spells to your own hand.')
+                return
+              }
+              const newCard = createCardFromTemplate(payload.spell as any, player, 'hand')
+              setGameState(prev => ({
+                ...prev,
+                [`${player}Hand`]: [...(prev[`${player}Hand` as keyof typeof prev] as any[]), newCard],
+              }))
+              setTemporaryZone(null)
+              setPendingEffect(null)
+            } catch (error) {
+              console.error('Failed to parse spell data', error)
+            }
+          }}
+        >
           {playerHand.length > 0 ? (
             playerHand.map(card => {
               const hero = card.cardType === 'hero' ? card as Hero : null
@@ -793,14 +815,6 @@ export function PlayerArea({ player, mode = 'expanded', showDebugControls = fals
       {/* Player 1 Resources at Bottom */}
       {player === 'player1' && (
         <div style={{ display: 'flex', gap: '2px', alignItems: 'center', flexWrap: 'wrap', fontSize: '8px', marginTop: '0', paddingTop: '0', borderTop: '1px solid #ddd' }}>
-          {/* Rune Pool Display */}
-          <RunePoolDisplay 
-            runePool={metadata.player1RunePool}
-            playerName="Player 1"
-            player="player1"
-            seals={metadata.player1Seals || []}
-          />
-          
           {/* Legacy Mana Display */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
             <div style={{ fontSize: '10px', fontWeight: 'bold', color: playerManaColor }}>

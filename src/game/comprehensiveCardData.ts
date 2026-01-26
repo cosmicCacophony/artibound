@@ -859,23 +859,22 @@ export const rbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   {
     id: 'black-hero-soul-reaper',
     name: 'Soul Reaper',
-    description: '3/5. Whenever you cast a spell, opponent loses 1 life.',
+    description: '3/5. Activated (1 mana): Create a 0-cost spell that deals 4 damage to a unit or hero.',
     cardType: 'hero',
     colors: ['black'],
     attack: 3,
     health: 5,
     maxHealth: 5,
     currentHealth: 5,
-    supportEffect: 'Converts spells into tower damage.',
+    supportEffect: 'Creates a free damage spell.',
     equippedItems: [],
     ability: {
       name: 'Soul Siphon',
-      description: 'Passive: Whenever you cast a spell, opponent tower loses 1 HP.',
-      manaCost: 0,
-      cooldown: 0,
-      trigger: 'passive',
-      effectType: 'damage_target',
-      effectValue: 1,
+      description: 'Create a 0-cost spell that deals 4 damage to a unit or hero.',
+      manaCost: 1,
+      cooldown: 2,
+      trigger: 'activated',
+      effectType: 'create_spell',
     },
   },
 ]
@@ -969,7 +968,7 @@ export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'rb-unit-token-ritualist',
     name: 'Token Ritualist',
-    description: '2/3. Sacrifice a token: Create a free spell in hand that deals 4 damage to any target. Costs 3B.',
+    description: '2/3. When you cast this, create a Ritual Token. Ritual Token: 1 mana, discard a card, draw a card, then sacrifice this.',
     cardType: 'generic',
     colors: ['black'],
     manaCost: 3,
@@ -978,7 +977,7 @@ export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     health: 3,
     maxHealth: 3,
     currentHealth: 3,
-    specialEffects: ['token_sacrifice'], // Custom: sacrifice token to create free spell (spell velocity)
+    specialEffects: ['token_sacrifice'], // Custom: ritual token support
   },
   // Moved from monoRedAggroCards - Artifact Forger (artifact sacrifice fits RB)
   {
@@ -1175,6 +1174,28 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       affectsHeroes: true,
     },
     initiative: true,
+  },
+]
+
+// ============================================================================
+// Generated Spells (created by abilities, not draftable)
+// ============================================================================
+
+export const generatedSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+  {
+    id: 'black-spell-soul-siphon',
+    name: 'Soul Siphon',
+    description: 'Deal 4 damage to a unit or hero. Costs 0.',
+    cardType: 'spell',
+    colors: ['black'],
+    manaCost: 0,
+    consumesRunes: false,
+    effect: {
+      type: 'targeted_damage',
+      damage: 4,
+      affectsUnits: true,
+      affectsHeroes: true,
+    },
   },
 ]
 
