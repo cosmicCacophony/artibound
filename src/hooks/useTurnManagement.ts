@@ -278,11 +278,14 @@ export function useTurnManagement() {
       })
       setShowCombatSummary(true)
       
-      // End turn - switch player and enter deploy phase on new turn only
-      const turnResult = calculateNextTurn(metadata.currentTurn, player)
-      nextPlayer = turnResult.nextPlayer
-      shouldIncrementTurn = turnResult.shouldIncrementTurn
-      nextPhase = shouldIncrementTurn ? 'deploy' : 'play'
+      // End turn - after combat, ALWAYS increment turn and go to deploy phase
+      // Combat happens when both players pass, so turn should always advance
+      shouldIncrementTurn = true
+      nextPhase = 'deploy'
+      // Player 1 always starts the new turn
+      nextPlayer = 'player1'
+      // Calculate next turn number
+      const nextTurnNumber = normalizeTurnNumber(metadata.currentTurn) + 1
       
       // Reset pass flags at start of new turn
       const resetPassFlags = true
@@ -293,20 +296,29 @@ export function useTurnManagement() {
           const base = prev[`${player}Base` as keyof typeof prev] as Card[]
           const deployZone = prev[`${player}DeployZone` as keyof typeof prev] as Card[]
           const cooldowns = { ...prev.metadata.deathCooldowns }
+          const updatedCooldowns: Record<string, number> = {}
+          Object.entries(cooldowns).forEach(([cardId, counter]) => {
+            const nextCounter = Math.max(0, counter - 1)
+            if (nextCounter > 0) {
+              updatedCooldowns[cardId] = nextCounter
+            }
+          })
+          
+          console.log(`[turn-debug] processCooldowns START for ${player}`, {
+            baseCount: base.length,
+            baseHeroes: base.filter(c => c.cardType === 'hero').map(c => c.name),
+            deployZoneCount: deployZone.length,
+            deployZoneHeroes: deployZone.filter(c => c.cardType === 'hero').map(c => c.name),
+            cooldowns: { ...cooldowns },
+          })
           
           const heroesToMove: Card[] = []
           const heroesToKeep: Card[] = []
           
-          // Decrement all cooldowns and process heroes
+          // Process heroes using updated cooldowns
           base.forEach(card => {
             if (card.cardType === 'hero') {
-              const currentCooldown = cooldowns[card.id] || 0
-              if (currentCooldown > 0) {
-                // Decrement cooldown
-                cooldowns[card.id] = currentCooldown - 1
-              }
-              
-              const newCooldown = cooldowns[card.id] || 0
+              const newCooldown = updatedCooldowns[card.id] || 0
               if (newCooldown === 0) {
                 // Cooldown expired - move to deployZone and heal to full
                 const hero = card as import('../game/types').Hero
@@ -315,8 +327,8 @@ export function useTurnManagement() {
                   location: 'deployZone' as const,
                   currentHealth: hero.maxHealth, // Heal to full when ready to deploy
                 })
-                // Remove from cooldowns when moved to deployZone
-                delete cooldowns[card.id]
+                // Ensure cooldown removed when moved to deployZone
+                delete updatedCooldowns[card.id]
               } else {
                 // Still on cooldown - keep in base
                 heroesToKeep.push(card)
@@ -327,10 +339,21 @@ export function useTurnManagement() {
             }
           })
           
+          console.log(`[turn-debug] processCooldowns END for ${player}`, {
+            heroesToMoveCount: heroesToMove.length,
+            heroesToMove: heroesToMove.map(c => c.name),
+            heroesToKeepCount: heroesToKeep.length,
+            newDeployZoneCount: deployZone.length + heroesToMove.length,
+          })
+          
+          // Filter out any heroes that are already in deployZone to prevent duplicates
+          const existingIds = new Set(deployZone.map(c => c.id))
+          const uniqueHeroesToMove = heroesToMove.filter(h => !existingIds.has(h.id))
+          
           return {
             newBase: heroesToKeep,
-            newDeployZone: [...deployZone, ...heroesToMove],
-            newCooldowns: cooldowns,
+            newDeployZone: [...deployZone, ...uniqueHeroesToMove],
+            newCooldowns: updatedCooldowns,
           }
         }
         
@@ -395,14 +418,35 @@ export function useTurnManagement() {
           const deployZone = prev[`${playerId}DeployZone` as keyof typeof prev] as Card[]
           const cooldowns = prev.metadata.deathCooldowns || {}
 
-          const baseHeroesReady = base.some(card => card.cardType === 'hero' && (cooldowns[card.id] || 0) === 0)
-          const deployHeroesReady = deployZone.some(card => card.cardType === 'hero')
-          return baseHeroesReady || deployHeroesReady
+          const baseHeroes = base.filter(card => card.cardType === 'hero')
+          const baseHeroesReady = baseHeroes.filter(card => (cooldowns[card.id] || 0) === 0)
+          const deployHeroesReady = deployZone.filter(card => card.cardType === 'hero')
+          
+          console.log(`[turn-debug] canDeployHero ${playerId}`, {
+            baseHeroCount: baseHeroes.length,
+            baseHeroNames: baseHeroes.map(c => c.name),
+            baseHeroesReadyCount: baseHeroesReady.length,
+            baseHeroesReadyNames: baseHeroesReady.map(c => c.name),
+            deployZoneHeroCount: deployHeroesReady.length,
+            deployZoneHeroNames: deployHeroesReady.map(c => c.name),
+            cooldowns: { ...cooldowns },
+          })
+          
+          return baseHeroesReady.length > 0 || deployHeroesReady.length > 0
         }
 
-        const shouldSkipDeploy = nextPhase === 'deploy' &&
-          !canDeployHero('player1') &&
-          !canDeployHero('player2')
+        const p1CanDeploy = canDeployHero('player1')
+        const p2CanDeploy = canDeployHero('player2')
+        
+        const shouldSkipDeploy = nextPhase === 'deploy' && !p1CanDeploy && !p2CanDeploy
+        
+        console.log('[turn-debug] phase decision', {
+          nextPhase,
+          p1CanDeploy,
+          p2CanDeploy,
+          shouldSkipDeploy,
+          resolvedPhase: shouldSkipDeploy ? 'play' : nextPhase,
+        })
 
         const resolvedPhase = shouldSkipDeploy ? 'play' : nextPhase
 
@@ -411,7 +455,7 @@ export function useTurnManagement() {
           metadata: {
             ...prev.metadata,
             [`${player}Gold`]: (prev.metadata[`${player}Gold` as keyof GameMetadata] as number) + totalGoldThisTurn,
-            currentTurn: turnResult.nextTurn,
+            currentTurn: nextTurnNumber,
             activePlayer: nextPlayer,
             currentPhase: resolvedPhase,
             player1MaxMana: nextP1MaxMana,
@@ -587,20 +631,44 @@ export function useTurnManagement() {
         // Counter reaches 0 - hero can be redeployed, remove from cooldown tracking
       })
       
-      // Heal heroes in base that are no longer on death cooldown (counter reached 0)
-      const healHeroInBase = (c: Card): Card => {
-        if (c.cardType === 'hero' && c.location === 'base' && !newDeathCooldowns[c.id] && prev.metadata.deathCooldowns[c.id]) {
-          const hero = c as import('../game/types').Hero
-          if (hero.currentHealth < hero.maxHealth) {
-            return { ...hero, currentHealth: hero.maxHealth }
+      // Move heroes whose cooldown expired back to deploy zone and heal to full.
+      const processReadyHeroes = (base: Card[], deployZone: Card[]) => {
+        const updatedBase: Card[] = []
+        const heroesToMove: Card[] = []
+        const existingIds = new Set(deployZone.map(card => card.id))
+
+        base.forEach(card => {
+          if (
+            card.cardType === 'hero' &&
+            card.location === 'base' &&
+            prev.metadata.deathCooldowns[card.id] &&
+            !newDeathCooldowns[card.id]
+          ) {
+            const hero = card as import('../game/types').Hero
+            if (!existingIds.has(hero.id)) {
+              heroesToMove.push({
+                ...hero,
+                location: 'deployZone' as const,
+                currentHealth: hero.maxHealth,
+              })
+            }
+          } else {
+            updatedBase.push(card)
           }
+        })
+
+        return {
+          newBase: updatedBase,
+          newDeployZone: [...deployZone, ...heroesToMove],
         }
-        return c
       }
       
       // At start of new turn, action goes to whoever has initiative
       // If no one has initiative (shouldn't happen), default to player1
       const nextAction = prev.metadata.initiativePlayer || 'player1'
+
+      const p1Ready = processReadyHeroes(prev.player1Base, prev.player1DeployZone)
+      const p2Ready = processReadyHeroes(prev.player2Base, prev.player2DeployZone)
       
       // Dark Archmage spawn logic: spawn Void Apprentice in adjacent slot at start of each turn
       const spawnVoidApprentices = (battlefield: typeof prev.battlefieldA, battlefieldId: 'battlefieldA' | 'battlefieldB') => {
@@ -659,8 +727,10 @@ export function useTurnManagement() {
       // No saga artifacts - keep battlefields/base as-is
       const finalBattlefieldA = battlefieldAWithCreeps
       const finalBattlefieldB = battlefieldBWithCreeps
-      const finalP1Base = prev.player1Base
-      const finalP2Base = prev.player2Base
+      const finalP1Base = p1Ready.newBase
+      const finalP2Base = p2Ready.newBase
+      const finalP1DeployZone = p1Ready.newDeployZone
+      const finalP2DeployZone = p2Ready.newDeployZone
       
       // Rune system updates:
       // 1. Clear temporary runes from previous turn
@@ -722,12 +792,12 @@ export function useTurnManagement() {
       const p1RuneResult = clearAndGenerateRunes(
         prev.metadata.player1RunePool,
         prev.metadata.player1Seals || [],
-        prev.player1Base
+        finalP1Base
       )
       const p2RuneResult = clearAndGenerateRunes(
         prev.metadata.player2RunePool,
         prev.metadata.player2Seals || [],
-        prev.player2Base
+        finalP2Base
       )
       
       // Temporary stats are now persistent - they don't reset automatically
@@ -739,8 +809,10 @@ export function useTurnManagement() {
         battlefieldB: finalBattlefieldB,
         player1Hand: prev.player1Hand,
         player2Hand: prev.player2Hand,
-        player1Base: finalP1Base.map(c => healHeroInBase(c)),
-        player2Base: finalP2Base.map(c => healHeroInBase(c)),
+        player1Base: finalP1Base,
+        player1DeployZone: finalP1DeployZone,
+        player2Base: finalP2Base,
+        player2DeployZone: finalP2DeployZone,
         metadata: {
           ...prev.metadata,
           currentTurn: newTurn,

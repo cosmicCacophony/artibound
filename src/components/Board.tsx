@@ -149,7 +149,15 @@ export function Board() {
                   targetId: selection,
                 })
                 
-                return {
+                console.log('[spell-target-confirm] after resolveSpellEffect', {
+                  deathCooldowns: result.nextState.metadata.deathCooldowns,
+                  player1BaseCount: result.nextState.player1Base.length,
+                  player2BaseCount: result.nextState.player2Base.length,
+                  player1BaseHeroes: result.nextState.player1Base.filter(c => c.cardType === 'hero').map(c => c.name),
+                  player2BaseHeroes: result.nextState.player2Base.filter(c => c.cardType === 'hero').map(c => c.name),
+                })
+                
+                const finalState = {
                   ...result.nextState,
                   [`${pendingEffect.owner}Hand`]: removeSpellFromZones(result.nextState[`${pendingEffect.owner}Hand` as keyof typeof result.nextState] as import('../game/types').Card[]),
                   [`${pendingEffect.owner}Base`]: removeSpellFromZones(result.nextState[`${pendingEffect.owner}Base` as keyof typeof result.nextState] as import('../game/types').Card[]),
@@ -165,6 +173,14 @@ export function Board() {
                     player2Passed: false,
                   },
                 }
+                
+                console.log('[spell-target-confirm] final state', {
+                  deathCooldowns: finalState.metadata.deathCooldowns,
+                  player1BaseCount: (finalState.player1Base as import('../game/types').Card[]).length,
+                  player2BaseCount: (finalState.player2Base as import('../game/types').Card[]).length,
+                })
+                
+                return finalState
               })
               setPendingEffect(null)
               setTemporaryZone(null)

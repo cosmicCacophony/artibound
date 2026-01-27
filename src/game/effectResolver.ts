@@ -178,8 +178,92 @@ export const drawCards = (state: GameState, owner: PlayerId, count: number): Gam
 const applyDamageToTarget = (state: GameState, target: Card, damage: number): GameState => {
   if (!('currentHealth' in target)) return state
   const newHealth = (target.currentHealth || 0) - damage
+  console.log('[spell-damage] applyDamageToTarget', {
+    targetName: target.name,
+    targetId: target.id,
+    targetType: target.cardType,
+    targetOwner: target.owner,
+    currentHealth: target.currentHealth,
+    damage,
+    newHealth,
+    willDie: newHealth <= 0,
+  })
   if (newHealth <= 0) {
-    return removeCardFromAllZones(state, target.id)
+    // Target is killed - remove from battlefield
+    let nextState = removeCardFromAllZones(state, target.id)
+    
+    // If it's a hero, add to base with death cooldown
+    if (target.cardType === 'hero') {
+      const hero = target as import('./types').Hero
+      const deadHero = {
+        ...hero,
+        location: 'base' as const,
+        currentHealth: 0,
+        slot: undefined,
+      }
+      
+      // Add to owner's base and set cooldown
+      if (hero.owner === 'player1') {
+        nextState = {
+          ...nextState,
+          player1Base: [...nextState.player1Base, deadHero],
+          metadata: {
+            ...nextState.metadata,
+            deathCooldowns: {
+              ...nextState.metadata.deathCooldowns,
+              [hero.id]: 2, // 2 turn cooldown
+            },
+          },
+        }
+      } else {
+        nextState = {
+          ...nextState,
+          player2Base: [...nextState.player2Base, deadHero],
+          metadata: {
+            ...nextState.metadata,
+            deathCooldowns: {
+              ...nextState.metadata.deathCooldowns,
+              [hero.id]: 2, // 2 turn cooldown
+            },
+          },
+        }
+      }
+      
+      // Remove runes from the hero's owner's pool
+      // Note: We can't import removeRunesFromHero here due to circular deps,
+      // so we'll handle rune removal inline
+      const runePoolKey = hero.owner === 'player1' ? 'player1RunePool' : 'player2RunePool'
+      const currentPool = nextState.metadata[runePoolKey] as import('./types').RunePool
+      if (hero.colors && hero.colors.length > 0) {
+        const newRunes = [...currentPool.runes]
+        for (const color of hero.colors) {
+          const index = newRunes.indexOf(color as import('./types').RuneColor)
+          if (index !== -1) {
+            newRunes.splice(index, 1)
+          }
+        }
+        nextState = {
+          ...nextState,
+          metadata: {
+            ...nextState.metadata,
+            [runePoolKey]: {
+              ...currentPool,
+              runes: newRunes,
+            },
+          },
+        }
+      }
+      console.log('[spell-damage] hero death processed', {
+        heroName: hero.name,
+        heroId: hero.id,
+        heroOwner: hero.owner,
+        addedToBase: hero.owner + 'Base',
+        cooldownSet: 2,
+        deathCooldowns: nextState.metadata.deathCooldowns,
+      })
+    }
+    // For non-hero units (generic), just remove them completely
+    return nextState
   }
 
   const updateCard = (card: Card) =>
