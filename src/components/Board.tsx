@@ -8,7 +8,7 @@ import { CombatSummaryModal } from './CombatSummaryModal'
 import { TopBar } from './TopBar'
 import { CombatPreviewOverlay } from './CombatPreviewOverlay'
 import { TemporaryGameZone } from './TemporaryGameZone'
-import { drawCards } from '../game/effectResolver'
+import { drawCards, resolveSpellEffect } from '../game/effectResolver'
 import { PlayerId } from '../game/types'
 
 export function Board() {
@@ -72,6 +72,99 @@ export function Board() {
                 }
                 nextState = drawCards(nextState, owner, 1)
                 return nextState
+              })
+              setPendingEffect(null)
+              setTemporaryZone(null)
+              return
+            }
+            if (temporaryZone?.type === 'target_select' && pendingEffect?.targeting && selection) {
+              if (pendingEffect.cardId === 'black-sig-shadow-strike') {
+                const confirmed = window.confirm('Cast Shadow Strike on this target?')
+                if (!confirmed) {
+                  return
+                }
+              }
+              setGameState(prev => {
+                const spellData = pendingEffect.spellData || {}
+                const spell = {
+                  id: pendingEffect.cardId,
+                  name: pendingEffect.cardId,
+                  description: '',
+                  cardType: 'spell',
+                  location: 'base',
+                  owner: pendingEffect.owner,
+                  effect: pendingEffect.effect,
+                  colors: spellData.colors || [],
+                  consumesRunes: spellData.consumesRunes || false,
+                  manaCost: spellData.manaCost || 0,
+                  refundMana: spellData.refundMana || 0,
+                } as import('../game/types').SpellCard
+                
+                // Find and remove the spell card from hand/base using instance ID
+                const instanceId = pendingEffect.instanceId
+                const removeSpellFromZones = (cards: import('../game/types').Card[]) => 
+                  cards.filter(card => card.id !== instanceId)
+                
+                // Pay costs and resolve effect
+                const runePoolKey = `${pendingEffect.owner}RunePool` as keyof typeof prev.metadata
+                const manaKey = `${pendingEffect.owner}Mana` as keyof typeof prev.metadata
+                let updatedRunePool = prev.metadata[runePoolKey] as import('../game/types').RunePool
+                let updatedMana = prev.metadata[manaKey] as number
+                
+                // Pay mana cost
+                if (spell.manaCost) {
+                  updatedMana = updatedMana - spell.manaCost
+                }
+                
+                // Consume runes if needed
+                if (spell.consumesRunes && spell.colors) {
+                  const newTempRunes = [...(updatedRunePool.temporaryRunes || [])]
+                  const newPermRunes = [...updatedRunePool.runes]
+                  for (const color of spell.colors) {
+                    const tempIdx = newTempRunes.indexOf(color as import('../game/types').RuneColor)
+                    if (tempIdx !== -1) {
+                      newTempRunes.splice(tempIdx, 1)
+                    } else {
+                      const permIdx = newPermRunes.indexOf(color as import('../game/types').RuneColor)
+                      if (permIdx !== -1) {
+                        newPermRunes.splice(permIdx, 1)
+                      }
+                    }
+                  }
+                  updatedRunePool = { runes: newPermRunes, temporaryRunes: newTempRunes }
+                }
+                
+                // Apply refund
+                if (spell.refundMana) {
+                  updatedMana = updatedMana + spell.refundMana
+                }
+                
+                const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
+                
+                // Resolve the spell effect with target
+                const result = resolveSpellEffect({
+                  gameState: prev,
+                  spell,
+                  owner: pendingEffect.owner,
+                  targetId: selection,
+                })
+                
+                return {
+                  ...result.nextState,
+                  [`${pendingEffect.owner}Hand`]: removeSpellFromZones(result.nextState[`${pendingEffect.owner}Hand` as keyof typeof result.nextState] as import('../game/types').Card[]),
+                  [`${pendingEffect.owner}Base`]: removeSpellFromZones(result.nextState[`${pendingEffect.owner}Base` as keyof typeof result.nextState] as import('../game/types').Card[]),
+                  [`${pendingEffect.owner}DeployZone`]: removeSpellFromZones(result.nextState[`${pendingEffect.owner}DeployZone` as keyof typeof result.nextState] as import('../game/types').Card[]),
+                  metadata: {
+                    ...result.nextState.metadata,
+                    [runePoolKey]: updatedRunePool,
+                    [manaKey]: updatedMana,
+                    actionPlayer: otherPlayer,
+                    initiativePlayer: otherPlayer,
+                    activePlayer: otherPlayer,
+                    player1Passed: false,
+                    player2Passed: false,
+                  },
+                }
               })
               setPendingEffect(null)
               setTemporaryZone(null)

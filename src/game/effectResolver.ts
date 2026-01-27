@@ -36,7 +36,7 @@ const getTargetingContextForSpell = (spell: SpellCard): TargetingContext | null 
       }
     case 'black-sig-shadow-strike':
       return {
-        targetType: 'unit',
+        targetType: 'any',
         targetSide: 'enemy',
         maxHealth: 4,
       }
@@ -57,8 +57,16 @@ const getTargetingContextForSpell = (spell: SpellCard): TargetingContext | null 
         targetSide: 'friendly',
       }
     default:
-      return null
+      break
   }
+  if (spell.name === 'Shadow Strike') {
+    return {
+      targetType: 'any',
+      targetSide: 'enemy',
+      maxHealth: 4,
+    }
+  }
+  return null
 }
 
 export const buildTokenDefinitions = (spell: SpellCard): TokenDefinition[] => {
@@ -247,6 +255,11 @@ export const isValidTargetForContext = (state: GameState, targetId: string, cont
   if (context.targetSide === 'friendly' && target.owner !== owner) return false
   if (context.targetSide === 'enemy' && target.owner === owner) return false
 
+  if (context.allowBattlefield && context.allowBattlefield !== 'any') {
+    const targetBattlefield = findBattlefieldForCard(state, targetId)
+    if (targetBattlefield !== context.allowBattlefield) return false
+  }
+
   if (typeof context.minHealth === 'number' && 'currentHealth' in target) {
     if ((target.currentHealth || 0) < context.minHealth) return false
   }
@@ -266,6 +279,13 @@ export const resolveSpellEffect = ({
   const targetingContext = getTargetingContextForSpell(spell)
 
   const templateId = getTemplateId(spell.id)
+  console.log('[spell-targeting] resolveSpellEffect', {
+    spellId: spell.id,
+    templateId,
+    spellName: spell.name,
+    effectType: spell.effect?.type,
+    targetingContext,
+  })
 
   if (targetingContext && !targetId) {
     return {

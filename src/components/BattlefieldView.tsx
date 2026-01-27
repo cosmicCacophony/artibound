@@ -257,6 +257,20 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
     if (pendingEffect?.targeting) {
       const isValidTarget = isValidTargetForContext(gameState, cardId, pendingEffect.targeting, pendingEffect.owner)
       if (isValidTarget) {
+        if (pendingEffect.cardId === 'black-sig-shadow-strike') {
+          const battlefieldCards = [
+            ...gameState.battlefieldA.player1,
+            ...gameState.battlefieldA.player2,
+            ...gameState.battlefieldB.player1,
+            ...gameState.battlefieldB.player2,
+          ]
+          const targetCard = battlefieldCards.find(card => card.id === cardId)
+          const targetName = targetCard ? targetCard.name : 'this target'
+          const confirmed = window.confirm(`Cast Shadow Strike on ${targetName}?`)
+          if (!confirmed) {
+            return
+          }
+        }
         setGameState(prev => {
           const spell = {
             id: pendingEffect.cardId,
@@ -691,6 +705,49 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
                 setHoveredBattlefieldCard(null)
                 setHoveredBattlefieldPosition(null)
                 onHoverUnit?.(null)
+              }}
+              onDragOver={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                e.dataTransfer.dropEffect = 'move'
+              }}
+              onDrop={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                const droppedCardId = e.dataTransfer.getData('cardId') || e.dataTransfer.getData('text/plain')
+                console.log('[spell-targeting] drop on unit', {
+                  droppedCardId,
+                  targetId: cardInSlot.id,
+                  targetName: cardInSlot.name,
+                  battlefieldId,
+                })
+                if (!droppedCardId || droppedCardId.startsWith('token:')) {
+                  return
+                }
+                const allCards = [
+                  ...gameState.player1Hand,
+                  ...gameState.player2Hand,
+                  ...gameState.player1Base,
+                  ...gameState.player2Base,
+                  ...gameState.player1DeployZone,
+                  ...gameState.player2DeployZone,
+                  ...gameState.battlefieldA.player1,
+                  ...gameState.battlefieldA.player2,
+                  ...gameState.battlefieldB.player1,
+                  ...gameState.battlefieldB.player2,
+                ]
+                const droppedCard = allCards.find(c => c.id === droppedCardId)
+                console.log('[spell-targeting] dropped card lookup', {
+                  found: Boolean(droppedCard),
+                  cardType: droppedCard?.cardType,
+                  cardName: droppedCard?.name,
+                })
+                if (!droppedCard || droppedCard.cardType !== 'spell') {
+                  return
+                }
+                setSelectedCardId(droppedCardId)
+                setDraggedCardId(null)
+                handleDeploy(battlefieldId)
               }}
             >
               <div className="unit-card__name">

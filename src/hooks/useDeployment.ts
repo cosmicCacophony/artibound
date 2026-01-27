@@ -4,7 +4,7 @@ import { useGameContext } from '../context/GameContext'
 import { tier1Items } from '../game/sampleData'
 import { canAffordCard, consumeRunesForCard, addRunesFromHero, removeRunesFromHero, addTemporaryRunes, consumeRunesForCardWithTracking } from '../game/runeSystem'
 import { canPlayCardInLane } from '../game/colorSystem'
-import { buildTokenDefinitions, getTemplateId, resolveSpellEffect } from '../game/effectResolver'
+import { buildTokenDefinitions, getTemplateId, resolveSpellEffect, isValidTargetForContext } from '../game/effectResolver'
 import { canDeployHeroThisTurn, getActivePlayerForTurn1Phase, hasDeployableHero, normalizeTurnNumber, shouldEndDeployPhase, validateTurn1Deployment } from '../game/deploymentRules'
 
 export function useDeployment() {
@@ -13,6 +13,14 @@ export function useDeployment() {
 
   const handleDeploy = useCallback((location: Location, targetSlot?: number) => {
     if (!selectedCardId || !selectedCard) return
+    console.log('[spell-targeting] handleDeploy start', {
+      selectedCardId,
+      selectedCardName: selectedCard.name,
+      selectedCardType: selectedCard.cardType,
+      location,
+      targetSlot,
+      phase: metadata.currentPhase,
+    })
 
     const removeFromLocation = (cards: Card[]) => cards.filter(c => c.id !== selectedCardId)
     
@@ -292,6 +300,10 @@ export function useDeployment() {
 
     // Spells can be cast onto a base without occupying a slot
     if (selectedCard.cardType === 'spell' && location === 'base') {
+      console.log('[spell-targeting] casting spell from base', {
+        spellId: selectedCard.id,
+        spellName: selectedCard.name,
+      })
       setGameState(prev => {
         const runePoolKey = `${selectedCard.owner}RunePool` as keyof GameMetadata
         const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
@@ -357,8 +369,45 @@ export function useDeployment() {
           pendingEffect = result.pendingEffect
           return result.nextState
         })
+        console.log('[spell-targeting] base resolve result', {
+          hasPendingEffect: Boolean(pendingEffect),
+          targeting: pendingEffect?.targeting || null,
+        })
         setPendingEffect(pendingEffect)
-        setTemporaryZone(pendingEffect?.temporaryZone || null)
+        if (pendingEffect?.targeting) {
+          const allBattlefieldCards = [
+            ...gameState.battlefieldA.player1,
+            ...gameState.battlefieldA.player2,
+            ...gameState.battlefieldB.player1,
+            ...gameState.battlefieldB.player2,
+          ]
+          const validTargets = allBattlefieldCards.filter(card =>
+            isValidTargetForContext(gameState, card.id, pendingEffect!.targeting!, pendingEffect!.owner)
+          )
+          if (validTargets.length === 0) {
+            alert('No valid targets available.')
+            setPendingEffect(null)
+            setTemporaryZone(null)
+            setSelectedCardId(null)
+            return
+          }
+          console.log('[spell-targeting] base valid targets', {
+            count: validTargets.length,
+            names: validTargets.map(card => card.name),
+          })
+          const templateId = getTemplateId(spellCard.id)
+          setTemporaryZone({
+            type: 'target_select',
+            title: spellCard.name,
+            description: templateId === 'black-sig-shadow-strike'
+              ? 'Choose a target with 4 or less health.'
+              : 'Choose a valid target.',
+            owner: pendingEffect.owner,
+            selectableCards: validTargets.map(card => ({ id: card.id, name: card.name })),
+          })
+        } else {
+          setTemporaryZone(pendingEffect?.temporaryZone || null)
+        }
       }
 
       setSelectedCardId(null)
@@ -367,6 +416,83 @@ export function useDeployment() {
 
     // Spells can be cast onto a battlefield without occupying a slot
     if (selectedCard.cardType === 'spell' && (location === 'battlefieldA' || location === 'battlefieldB')) {
+      console.log('[spell-targeting] casting spell onto battlefield', {
+        spellId: selectedCard.id,
+        spellName: selectedCard.name,
+        location,
+      })
+      
+      const spellCard = selectedCard as SpellCard
+      
+      // Check for targeting BEFORE paying costs (synchronously)
+      const preCheckResult = resolveSpellEffect({
+        gameState: gameState,
+        spell: spellCard,
+        owner: spellCard.owner,
+      })
+      
+      console.log('[spell-targeting] pre-check result', {
+        hasPendingEffect: Boolean(preCheckResult.pendingEffect),
+        targeting: preCheckResult.pendingEffect?.targeting || null,
+      })
+      
+      // If spell needs targeting, show modal BEFORE paying costs
+      if (preCheckResult.pendingEffect?.targeting) {
+        const battlefieldCards = location === 'battlefieldA'
+          ? [...gameState.battlefieldA.player1, ...gameState.battlefieldA.player2]
+          : [...gameState.battlefieldB.player1, ...gameState.battlefieldB.player2]
+        
+        const targeting = {
+          ...preCheckResult.pendingEffect.targeting,
+          allowBattlefield: location,
+        }
+        
+        const validTargets = battlefieldCards.filter(card =>
+          isValidTargetForContext(gameState, card.id, targeting, preCheckResult.pendingEffect!.owner)
+        )
+        
+        console.log('[spell-targeting] valid targets in lane', {
+          count: validTargets.length,
+          names: validTargets.map(card => card.name),
+        })
+        
+        if (validTargets.length === 0) {
+          alert('No valid targets in this lane.')
+          setSelectedCardId(null)
+          return
+        }
+        
+        // Store the pending effect with spell info for later resolution
+        const pendingEffect: PendingEffect = {
+          ...preCheckResult.pendingEffect,
+          cardId: getTemplateId(spellCard.id),
+          instanceId: spellCard.id, // Full instance ID for removal
+          targeting,
+          spellData: {
+            manaCost: spellCard.manaCost,
+            colors: spellCard.colors,
+            consumesRunes: spellCard.consumesRunes,
+            refundMana: spellCard.refundMana,
+          },
+        }
+        setPendingEffect(pendingEffect)
+        
+        const templateId = getTemplateId(spellCard.id)
+        setTemporaryZone({
+          type: 'target_select',
+          title: spellCard.name,
+          description: templateId === 'black-sig-shadow-strike'
+            ? 'Choose a target with 4 or less health in this lane.'
+            : 'Choose a valid target in this lane.',
+          owner: pendingEffect.owner,
+          selectableCards: validTargets.map(card => ({ id: card.id, name: card.name })),
+        })
+        
+        // Don't clear selection or pay costs yet - wait for target selection
+        return
+      }
+      
+      // No targeting needed - proceed with normal spell resolution
       setGameState(prev => {
         const runePoolKey = `${selectedCard.owner}RunePool` as keyof GameMetadata
         const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
@@ -400,7 +526,6 @@ export function useDeployment() {
       })
 
       if (isPlayPhase) {
-        const spellCard = selectedCard as SpellCard
         if (spellCard.effect.type === 'create_tokens' || spellCard.effect.type === 'tokenize') {
           const tokens = buildTokenDefinitions(spellCard)
           const templateId = getTemplateId(spellCard.id)
@@ -421,19 +546,6 @@ export function useDeployment() {
           setSelectedCardId(null)
           return
         }
-
-        let pendingEffect: PendingEffect | null = null
-        setGameState(prev => {
-          const result = resolveSpellEffect({
-            gameState: prev,
-            spell: spellCard,
-            owner: spellCard.owner,
-          })
-          pendingEffect = result.pendingEffect
-          return result.nextState
-        })
-        setPendingEffect(pendingEffect)
-        setTemporaryZone(pendingEffect?.temporaryZone || null)
       }
 
       setSelectedCardId(null)

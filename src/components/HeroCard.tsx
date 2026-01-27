@@ -302,22 +302,26 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
         }}>
           {card.cardType}
         </div>
-        {/* Color indicators */}
+        {/* Rune cost bubbles (transparent if no rune cost) */}
         {cardColors.length > 0 && (
           <div style={{ display: 'flex', gap: '2px' }}>
-            {cardColors.map((colorVal, idx) => (
-              <div
-                key={idx}
-                style={{
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '50%',
-                  backgroundColor: COLOR_MAP[colorVal],
-                  border: '1px solid rgba(0,0,0,0.2)',
-                }}
-                title={colorVal}
-              />
-            ))}
+            {cardColors.map((colorVal, idx) => {
+              const hasRuneCost = Boolean(card.consumesRunes)
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '50%',
+                    backgroundColor: hasRuneCost ? COLOR_MAP[colorVal] : 'transparent',
+                    border: `1px solid ${COLOR_MAP[colorVal]}`,
+                    opacity: hasRuneCost ? 1 : 0.35,
+                  }}
+                  title={hasRuneCost ? `${colorVal} rune` : `${colorVal} identity`}
+                />
+              )
+            })}
           </div>
         )}
       </div>

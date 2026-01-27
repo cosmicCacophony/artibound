@@ -1001,16 +1001,17 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'black-sig-shadow-strike',
     name: 'Shadow Strike',
-    description: 'Destroy target unit with 4 or less health. Costs 3B, refunds 3 mana.',
+    description: 'Destroy target unit or hero with 4 or less health. Costs 3B, refunds 3 mana.',
     cardType: 'spell',
     colors: ['black'],
     manaCost: 3,
+    consumesRunes: true,
     refundMana: 3, // Free spell mechanic
     effect: {
       type: 'targeted_damage',
       damage: 999, // High damage to ensure kill of units with 4 or less health
       affectsUnits: true,
-      affectsHeroes: false,
+      affectsHeroes: true,
     },
     initiative: true,
   },

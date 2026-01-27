@@ -427,11 +427,18 @@ export interface TemporaryZone {
 
 export interface PendingEffect {
   cardId: string
+  instanceId?: string // The full instance ID of the card (for removal from hand)
   owner: PlayerId
   effect: SpellEffect
   targeting?: TargetingContext
   selectedTargetIds?: string[]
   temporaryZone?: TemporaryZone
+  spellData?: {
+    manaCost?: number
+    colors?: Color[]
+    consumesRunes?: boolean
+    refundMana?: number
+  }
 }
 
 export interface SpellCard extends BaseCard {
