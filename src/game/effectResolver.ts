@@ -66,6 +66,27 @@ const getTargetingContextForSpell = (spell: SpellCard): TargetingContext | null 
       maxHealth: 4,
     }
   }
+  // Data-driven targeting based on spell.effect attributes
+  if (spell.effect?.type === 'targeted_damage') {
+    const hasDamage = (spell.effect.damage || 0) > 0
+    const hasDebuff = (spell.effect.debuffAttack || 0) > 0
+    const affectsUnits = Boolean(spell.effect.affectsUnits)
+    const affectsHeroes = Boolean(spell.effect.affectsHeroes)
+    
+    // Spells with only towerDamage and no unit/hero targeting don't need targeting UI
+    if (spell.effect.towerDamage && !affectsUnits && !affectsHeroes && !hasDamage && !hasDebuff) {
+      return null
+    }
+    
+    // Spells that affect units or heroes need targeting
+    if ((hasDamage || hasDebuff) && (affectsUnits || affectsHeroes)) {
+      return {
+        targetType: affectsUnits && affectsHeroes ? 'any' : (affectsUnits ? 'unit' : 'hero'),
+        targetSide: 'enemy',
+        maxHealth: spell.effect.maxTargetHealth, // Optional health restriction
+      }
+    }
+  }
   return null
 }
 
@@ -302,6 +323,11 @@ const applyDamageToOwnTowers = (state: GameState, owner: PlayerId, damage: numbe
   }
 }
 
+const applyDamageToOpponentTowers = (state: GameState, owner: PlayerId, damage: number): GameState => {
+  const opponent: PlayerId = owner === 'player1' ? 'player2' : 'player1'
+  return applyDamageToOwnTowers(state, opponent, damage)
+}
+
 const applyDamageToTower = (state: GameState, battlefieldId: 'battlefieldA' | 'battlefieldB', owner: PlayerId, damage: number): GameState => {
   const towerKey = battlefieldId === 'battlefieldA'
     ? (owner === 'player1' ? 'towerA_player1_HP' : 'towerA_player2_HP')
@@ -316,6 +342,13 @@ const applyDamageToTower = (state: GameState, battlefieldId: 'battlefieldA' | 'b
   }
 }
 
+const getBattlefieldCards = (state: GameState): Card[] => ([
+  ...state.battlefieldA.player1,
+  ...state.battlefieldA.player2,
+  ...state.battlefieldB.player1,
+  ...state.battlefieldB.player2,
+])
+
 const applyBarrierToTarget = (state: GameState, target: Card): GameState => {
   return {
     ...state,
@@ -325,6 +358,32 @@ const applyBarrierToTarget = (state: GameState, target: Card): GameState => {
         ...state.metadata.barrierUnits,
         [target.id]: state.metadata.currentTurn,
       },
+    },
+  }
+}
+
+const applyDebuffToTarget = (state: GameState, targetId: string, attackDebuff: number, healthDebuff: number): GameState => {
+  const updateCard = (card: Card): Card => {
+    if (card.id !== targetId) return card
+    if (!('attack' in card)) return card
+    const newAttack = Math.max(0, (card.attack || 0) - attackDebuff)
+    const newHealth = 'currentHealth' in card ? Math.max(1, (card.currentHealth || 0) - healthDebuff) : undefined
+    return {
+      ...card,
+      attack: newAttack,
+      ...(newHealth !== undefined ? { currentHealth: newHealth } : {}),
+    }
+  }
+  
+  return {
+    ...state,
+    battlefieldA: {
+      player1: state.battlefieldA.player1.map(updateCard),
+      player2: state.battlefieldA.player2.map(updateCard),
+    },
+    battlefieldB: {
+      player1: state.battlefieldB.player1.map(updateCard),
+      player2: state.battlefieldB.player2.map(updateCard),
     },
   }
 }
@@ -418,6 +477,20 @@ export const resolveSpellEffect = ({
 
   let nextState = gameState
 
+  // ========================================
+  // DATA-DRIVEN EFFECT RESOLUTION
+  // ========================================
+
+  // Handle direct tower damage (non-targeted, hits opponent's towers)
+  if (spell.effect.towerDamage) {
+    nextState = applyDamageToOpponentTowers(nextState, owner, spell.effect.towerDamage)
+  }
+
+  // Handle card draw (generic - works for any spell with drawCount)
+  if (spell.effect.drawCount && spell.effect.type !== 'draw_and_heal') {
+    nextState = drawCards(nextState, owner, spell.effect.drawCount)
+  }
+
   if (spell.effect.type === 'draw_and_heal') {
     if (templateId === 'black-spell-3b-draw') {
       nextState = drawCards(nextState, owner, spell.effect.drawCount || 0)
@@ -440,8 +513,38 @@ export const resolveSpellEffect = ({
   if (spell.effect.type === 'targeted_damage' && targetId) {
     const target = findCardById(nextState, targetId)
     if (target) {
-      nextState = applyDamageToTarget(nextState, target, spell.effect.damage || 0)
+      // Apply damage if present
+      if (spell.effect.damage) {
+        nextState = applyDamageToTarget(nextState, target, spell.effect.damage)
+      }
+      // Apply attack debuff if present
+      if (spell.effect.debuffAttack) {
+        nextState = applyDebuffToTarget(nextState, target.id, spell.effect.debuffAttack, 0)
+      }
     }
+  }
+
+  if (spell.effect.type === 'aoe_damage') {
+    const affectsUnits = Boolean(spell.effect.affectsUnits)
+    const affectsHeroes = Boolean(spell.effect.affectsHeroes)
+    const affectsOwn = spell.effect.affectsOwnUnits ?? true
+    const affectsEnemy = spell.effect.affectsEnemyUnits ?? true
+    const targets = getBattlefieldCards(nextState).filter(card => {
+      if (!('currentHealth' in card)) return false
+      if (card.cardType === 'hero' && !affectsHeroes) return false
+      if (card.cardType !== 'hero' && !affectsUnits) return false
+      if (card.owner === owner && !affectsOwn) return false
+      if (card.owner !== owner && !affectsEnemy) return false
+      return true
+    }).map(card => card.id)
+
+    targets.forEach(cardId => {
+      const target = findCardById(nextState, cardId)
+      if (target) {
+        nextState = applyDamageToTarget(nextState, target, spell.effect.damage || 0)
+      }
+    })
+    // Note: towerDamage for AOE spells is handled above in the generic towerDamage block
   }
 
   if (spell.effect.type === 'return_to_base' && targetId) {

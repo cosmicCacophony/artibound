@@ -1073,7 +1073,7 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     manaCost: 1,
     effect: {
       type: 'targeted_damage',
-      damage: 1,
+      towerDamage: 1, // Direct tower damage (both lanes)
       drawCount: 1,
     },
     initiative: true,
@@ -1110,6 +1110,7 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 2,
       affectsUnits: true,
       affectsHeroes: true,
+      canTargetTowers: true, // Can also target towers
     },
     initiative: true,
   },
@@ -1143,6 +1144,7 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       drawCount: 1, // Conditional on 2+ spells
       affectsUnits: true,
       affectsHeroes: false,
+      maxTargetHealth: 3, // Only targets with 3 or less health
     },
     initiative: true,
   },
@@ -1155,7 +1157,7 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     manaCost: 1,
     effect: {
       type: 'targeted_damage',
-      damage: 0, // No immediate damage, debuff effect
+      debuffAttack: 2, // -2 attack
       affectsUnits: true,
       affectsHeroes: false,
     },
@@ -1173,6 +1175,7 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 1,
       affectsUnits: true,
       affectsHeroes: true,
+      towerDamage: 1, // Also deals 1 to opponent towers
     },
     initiative: true,
   },

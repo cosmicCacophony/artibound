@@ -371,6 +371,14 @@ export interface SpellEffect {
   // Draw and heal effects
   drawCount?: number // Number of cards to draw
   healAmount?: number // Amount of life to gain
+  // Tower damage (direct, non-targeted)
+  towerDamage?: number // Direct damage to opponent's towers (both lanes)
+  canTargetTowers?: boolean // For targeted spells: can target towers instead of units
+  // Debuff effects
+  debuffAttack?: number // Reduce target's attack by this amount
+  debuffHealth?: number // Reduce target's health by this amount (permanent damage)
+  // Conditional targeting
+  maxTargetHealth?: number // Only target units/heroes with this health or less
   // Tokenize and temporary zone effects
   tokenCount?: number
   tokenPower?: number
