@@ -6,6 +6,7 @@ import { canAffordCard, consumeRunesForCard, addRunesFromHero, removeRunesFromHe
 import { canPlayCardInLane } from '../game/colorSystem'
 import { buildTokenDefinitions, getTemplateId, resolveSpellEffect, isValidTargetForContext } from '../game/effectResolver'
 import { canDeployHeroThisTurn, getActivePlayerForTurn1Phase, hasDeployableHero, normalizeTurnNumber, shouldEndDeployPhase, validateTurn1Deployment } from '../game/deploymentRules'
+import { onSpellCast } from '../game/spellcasterSystem'
 
 export function useDeployment() {
   const { gameState, setGameState, selectedCard, selectedCardId, setSelectedCardId, getAvailableSlots, setPendingEffect, setTemporaryZone } = useGameContext()
@@ -304,6 +305,7 @@ export function useDeployment() {
         spellId: selectedCard.id,
         spellName: selectedCard.name,
       })
+      const spellCard = selectedCard as SpellCard
       setGameState(prev => {
         const runePoolKey = `${selectedCard.owner}RunePool` as keyof GameMetadata
         const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
@@ -316,9 +318,9 @@ export function useDeployment() {
         const { newPool } = consumeRunesForCardWithTracking(cardTemplate, updatedRunePool)
         updatedRunePool = newPool
 
-        const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
+        const otherPlayer: 'player1' | 'player2' = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
 
-        return {
+        const updatedState = {
           ...prev,
           [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
           [`${selectedCard.owner}Base`]: removeFromLocation(prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[]),
@@ -334,6 +336,8 @@ export function useDeployment() {
             player2Passed: false,
           },
         }
+
+        return onSpellCast(selectedCard.owner, spellCard, updatedState, location)
       })
 
       if (isPlayPhase) {
@@ -505,9 +509,9 @@ export function useDeployment() {
         const { newPool } = consumeRunesForCardWithTracking(cardTemplate, updatedRunePool)
         updatedRunePool = newPool
 
-        const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
+        const otherPlayer: 'player1' | 'player2' = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
 
-        return {
+        const updatedState = {
           ...prev,
           [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
           [`${selectedCard.owner}Base`]: removeFromLocation(prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[]),
@@ -523,6 +527,8 @@ export function useDeployment() {
             player2Passed: false,
           },
         }
+
+        return onSpellCast(selectedCard.owner, spellCard, updatedState, location)
       })
 
       if (isPlayPhase) {

@@ -67,8 +67,6 @@ export const stockDecks: StockDeck[] = [
       'black-sig-shadow-strike',
       'red-sig-fury-strike',
       // Artifacts
-      'red-artifact-tower-damage-tracker',
-      'black-artifact-spell-velocity-tracker',
       'artifact-red-seal',
       'artifact-black-seal',
     ]),

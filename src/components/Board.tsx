@@ -10,6 +10,7 @@ import { CombatPreviewOverlay } from './CombatPreviewOverlay'
 import { TemporaryGameZone } from './TemporaryGameZone'
 import { drawCards, resolveSpellEffect } from '../game/effectResolver'
 import { PlayerId } from '../game/types'
+import { onSpellCast } from '../game/spellcasterSystem'
 
 export function Board() {
   const { 
@@ -139,8 +140,13 @@ export function Board() {
                   updatedMana = updatedMana + spell.refundMana
                 }
                 
-                const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
+                const otherPlayer: PlayerId = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
                 
+                const castLocation = pendingEffect.targeting?.allowBattlefield
+                const laneLocation = castLocation === 'battlefieldA' || castLocation === 'battlefieldB'
+                  ? castLocation
+                  : undefined
+
                 // Resolve the spell effect with target
                 const result = resolveSpellEffect({
                   gameState: prev,
@@ -180,7 +186,7 @@ export function Board() {
                   player2BaseCount: (finalState.player2Base as import('../game/types').Card[]).length,
                 })
                 
-                return finalState
+                return onSpellCast(pendingEffect.owner, spell, finalState, laneLocation)
               })
               setPendingEffect(null)
               setTemporaryZone(null)

@@ -1,4 +1,4 @@
-import { GameState, PlayerId, SpellCard, Hero } from './types'
+import { GameState, PlayerId, SpellCard, Hero, Location, Card } from './types'
 
 /**
  * Spellcaster System - Handles spell synergies (cost reduction, mana restore, damage bonuses)
@@ -18,9 +18,10 @@ import { GameState, PlayerId, SpellCard, Hero } from './types'
 export function onSpellCast(
   player: PlayerId,
   spell: SpellCard,
-  gameState: GameState
+  gameState: GameState,
+  castLocation?: Location
 ): GameState {
-  const newState = { ...gameState }
+  let newState = { ...gameState }
 
   // Increment spell counter
   if (player === 'player1') {
@@ -30,7 +31,7 @@ export function onSpellCast(
   }
 
   // Trigger hero abilities (on_spell_cast triggers)
-  newState = triggerSpellcastHeroAbilities(player, newState)
+  newState = triggerSpellcastHeroAbilities(player, newState, castLocation)
 
   return newState
 }
@@ -41,9 +42,22 @@ export function onSpellCast(
  */
 function triggerSpellcastHeroAbilities(
   player: PlayerId,
-  gameState: GameState
+  gameState: GameState,
+  castLocation?: Location
 ): GameState {
-  const newState = { ...gameState }
+  let newState = { ...gameState }
+  
+  const getTemplateId = (cardId: string): string => {
+    const ownerIndex = cardId.indexOf('-player1-')
+    if (ownerIndex !== -1) {
+      return cardId.slice(0, ownerIndex)
+    }
+    const ownerIndex2 = cardId.indexOf('-player2-')
+    if (ownerIndex2 !== -1) {
+      return cardId.slice(0, ownerIndex2)
+    }
+    return cardId
+  }
   
   // Get player's heroes
   const playerBase = player === 'player1' ? newState.player1Base : newState.player2Base
@@ -51,16 +65,26 @@ function triggerSpellcastHeroAbilities(
   const playerBfA = player === 'player1' ? newState.battlefieldA.player1 : newState.battlefieldA.player2
   const playerBfB = player === 'player1' ? newState.battlefieldB.player1 : newState.battlefieldB.player2
   
-  const allHeroes = [
-    ...playerBase,
-    ...playerDeployZone,
-    ...playerBfA,
-    ...playerBfB,
-  ].filter(card => card.cardType === 'hero') as Hero[]
+  const lane = castLocation === 'battlefieldA' || castLocation === 'battlefieldB'
+    ? castLocation
+    : null
+  const allHeroes = (
+    lane === 'battlefieldA'
+      ? playerBfA
+      : lane === 'battlefieldB'
+        ? playerBfB
+        : [
+            ...playerBase,
+            ...playerDeployZone,
+            ...playerBfA,
+            ...playerBfB,
+          ]
+  ).filter(card => card.cardType === 'hero') as Hero[]
 
   // Check for spellcast triggers
   for (const hero of allHeroes) {
     if (hero.ability && hero.ability.trigger === 'on_spell_cast') {
+      const heroTemplateId = getTemplateId(hero.id)
       // Mana restoration (once per turn)
       if (hero.ability.manaRestore) {
         const spellsCast = player === 'player1' 
@@ -83,12 +107,72 @@ function triggerSpellcastHeroAbilities(
         }
       }
 
+      if (heroTemplateId === 'red-hero-spell-slinger' && lane) {
+        newState = applyHeroTemporaryAttack(newState, hero.id, 2)
+      }
+
+      if (heroTemplateId === 'red-hero-pyromancer' && lane) {
+        const opponent: PlayerId = player === 'player1' ? 'player2' : 'player1'
+        newState = applyLaneTowerDamage(newState, lane, opponent, 1)
+      }
+
       // Other on-cast effects can be added here
       // (e.g., tower armor, card draw, etc.)
     }
   }
 
   return newState
+}
+
+function applyHeroTemporaryAttack(
+  state: GameState,
+  heroId: string,
+  bonusAttack: number
+): GameState {
+  const applyToCards = (cards: Card[]) =>
+    cards.map(card =>
+      card.cardType !== 'hero' || card.id !== heroId
+        ? card
+        : {
+            ...card,
+            temporaryAttack: (card.temporaryAttack || 0) + bonusAttack,
+          }
+    )
+
+  return {
+    ...state,
+    player1Base: applyToCards(state.player1Base),
+    player2Base: applyToCards(state.player2Base),
+    player1DeployZone: applyToCards(state.player1DeployZone),
+    player2DeployZone: applyToCards(state.player2DeployZone),
+    battlefieldA: {
+      player1: applyToCards(state.battlefieldA.player1),
+      player2: applyToCards(state.battlefieldA.player2),
+    },
+    battlefieldB: {
+      player1: applyToCards(state.battlefieldB.player1),
+      player2: applyToCards(state.battlefieldB.player2),
+    },
+  }
+}
+
+function applyLaneTowerDamage(
+  state: GameState,
+  battlefieldId: 'battlefieldA' | 'battlefieldB',
+  owner: PlayerId,
+  damage: number
+): GameState {
+  const towerKey = battlefieldId === 'battlefieldA'
+    ? (owner === 'player1' ? 'towerA_player1_HP' : 'towerA_player2_HP')
+    : (owner === 'player1' ? 'towerB_player1_HP' : 'towerB_player2_HP')
+
+  return {
+    ...state,
+    metadata: {
+      ...state.metadata,
+      [towerKey]: Math.max(0, (state.metadata as any)[towerKey] - damage),
+    },
+  }
 }
 
 /**
