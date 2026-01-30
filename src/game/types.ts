@@ -436,6 +436,7 @@ export interface TemporaryZone {
 export interface PendingEffect {
   cardId: string
   instanceId?: string // The full instance ID of the card (for removal from hand)
+  sourceId?: string // Card instance that created this pending effect
   owner: PlayerId
   effect: SpellEffect
   targeting?: TargetingContext

@@ -8,7 +8,7 @@ import { CombatSummaryModal } from './CombatSummaryModal'
 import { TopBar } from './TopBar'
 import { CombatPreviewOverlay } from './CombatPreviewOverlay'
 import { TemporaryGameZone } from './TemporaryGameZone'
-import { drawCards, resolveSpellEffect } from '../game/effectResolver'
+import { drawCards, getTemplateId, resolveSpellEffect } from '../game/effectResolver'
 import { PlayerId } from '../game/types'
 import { onSpellCast } from '../game/spellcasterSystem'
 
@@ -78,12 +78,194 @@ export function Board() {
               setTemporaryZone(null)
               return
             }
+            if (temporaryZone?.type === 'target_select' && pendingEffect?.cardId === 'rb-unit-artifact-forger' && selection) {
+              const forgerId = pendingEffect.sourceId
+              const owner = pendingEffect.owner
+              const forgerInA = forgerId
+                ? gameState.battlefieldA[owner].some(card => card.id === forgerId)
+                : false
+              const forgerInB = forgerId
+                ? gameState.battlefieldB[owner].some(card => card.id === forgerId)
+                : false
+
+              if (!forgerId || (!forgerInA && !forgerInB)) {
+                setPendingEffect(null)
+                setTemporaryZone(null)
+                return
+              }
+
+              const lane = forgerInA ? 'battlefieldA' : 'battlefieldB'
+              const laneCards = lane === 'battlefieldA'
+                ? gameState.battlefieldA[owner]
+                : gameState.battlefieldB[owner]
+              const occupiedSlots = laneCards
+                .map(card => ('slot' in card ? card.slot : undefined))
+                .filter((slot): slot is number => typeof slot === 'number')
+              const availableSlot = [1, 2, 3, 4, 5].find(slot => !occupiedSlots.includes(slot))
+
+              if (!availableSlot) {
+                alert('No space available in this lane for the forged token.')
+                return
+              }
+
+              setGameState(prev => {
+                const tokenId = `artifact-forger-token-${Date.now()}-${Math.random()}`
+                const token = {
+                  id: tokenId,
+                  name: 'Forged Token',
+                  description: 'Forged token',
+                  cardType: 'generic',
+                  colors: [],
+                  manaCost: 0,
+                  attack: 5,
+                  health: 1,
+                  maxHealth: 1,
+                  currentHealth: 1,
+                  location: lane,
+                  owner,
+                  slot: availableSlot,
+                } as import('../game/types').Card
+
+                const baseKey = `${owner}Base` as keyof typeof prev
+                const updatedBase = (prev[baseKey] as import('../game/types').Card[]).filter(card => card.id !== selection)
+
+                return {
+                  ...prev,
+                  [baseKey]: updatedBase,
+                  [lane]: {
+                    ...prev[lane],
+                    [owner]: [...prev[lane][owner], token].sort((a, b) => {
+                      const aSlot = 'slot' in a && typeof a.slot === 'number' ? a.slot : 0
+                      const bSlot = 'slot' in b && typeof b.slot === 'number' ? b.slot : 0
+                      return aSlot - bSlot
+                    }),
+                  },
+                }
+              })
+
+              setPendingEffect(null)
+              setTemporaryZone(null)
+              return
+            }
             if (temporaryZone?.type === 'target_select' && pendingEffect?.targeting && selection) {
               if (pendingEffect.cardId === 'black-sig-shadow-strike') {
                 const confirmed = window.confirm('Cast Shadow Strike on this target?')
                 if (!confirmed) {
                   return
                 }
+              }
+              const isMultiTarget = pendingEffect.effect.type === 'multi_target_damage'
+              if (isMultiTarget) {
+                const previousTargets = pendingEffect.selectedTargetIds || []
+                if (previousTargets.includes(selection)) {
+                  return
+                }
+                const maxTargets = pendingEffect.effect.maxTargets || 1
+                const nextTargets = [...previousTargets, selection]
+                const isFirstTarget = previousTargets.length === 0
+
+                setGameState(prev => {
+                  const spellData = pendingEffect.spellData || {}
+                  const spell = {
+                    id: pendingEffect.cardId,
+                    name: pendingEffect.cardId,
+                    description: '',
+                    cardType: 'spell',
+                    location: 'base',
+                    owner: pendingEffect.owner,
+                    effect: pendingEffect.effect,
+                    colors: spellData.colors || [],
+                    consumesRunes: spellData.consumesRunes || false,
+                    manaCost: spellData.manaCost || 0,
+                    refundMana: spellData.refundMana || 0,
+                  } as import('../game/types').SpellCard
+
+                  const result = resolveSpellEffect({
+                    gameState: prev,
+                    spell,
+                    owner: pendingEffect.owner,
+                    targetId: selection,
+                  })
+
+                  if (!isFirstTarget) {
+                    return result.nextState
+                  }
+
+                  const instanceId = pendingEffect.instanceId
+                  const removeSpellFromZones = (cards: import('../game/types').Card[]) =>
+                    cards.filter(card => card.id !== instanceId)
+
+                  const runePoolKey = `${pendingEffect.owner}RunePool` as keyof typeof prev.metadata
+                  const manaKey = `${pendingEffect.owner}Mana` as keyof typeof prev.metadata
+                  let updatedRunePool = prev.metadata[runePoolKey] as import('../game/types').RunePool
+                  let updatedMana = prev.metadata[manaKey] as number
+
+                  if (spell.manaCost) {
+                    updatedMana = updatedMana - spell.manaCost
+                  }
+
+                  if (spell.consumesRunes && spell.colors) {
+                    const newTempRunes = [...(updatedRunePool.temporaryRunes || [])]
+                    const newPermRunes = [...updatedRunePool.runes]
+                    for (const color of spell.colors) {
+                      const tempIdx = newTempRunes.indexOf(color as import('../game/types').RuneColor)
+                      if (tempIdx !== -1) {
+                        newTempRunes.splice(tempIdx, 1)
+                      } else {
+                        const permIdx = newPermRunes.indexOf(color as import('../game/types').RuneColor)
+                        if (permIdx !== -1) {
+                          newPermRunes.splice(permIdx, 1)
+                        }
+                      }
+                    }
+                    updatedRunePool = { runes: newPermRunes, temporaryRunes: newTempRunes }
+                  }
+
+                  const refundTemplateId = getTemplateId(spell.id)
+                  const isConditionalRefund = refundTemplateId === 'rb-spell-spell-storm'
+                  if (spell.refundMana && !isConditionalRefund) {
+                    updatedMana = updatedMana + spell.refundMana
+                  }
+
+                  const otherPlayer: PlayerId = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
+                  const castLocation = pendingEffect.targeting?.allowBattlefield
+                  const laneLocation = castLocation === 'battlefieldA' || castLocation === 'battlefieldB'
+                    ? castLocation
+                    : undefined
+
+                  const finalState = {
+                    ...result.nextState,
+                    [`${pendingEffect.owner}Hand`]: removeSpellFromZones(result.nextState[`${pendingEffect.owner}Hand` as keyof typeof result.nextState] as import('../game/types').Card[]),
+                    [`${pendingEffect.owner}Base`]: removeSpellFromZones(result.nextState[`${pendingEffect.owner}Base` as keyof typeof result.nextState] as import('../game/types').Card[]),
+                    [`${pendingEffect.owner}DeployZone`]: removeSpellFromZones(result.nextState[`${pendingEffect.owner}DeployZone` as keyof typeof result.nextState] as import('../game/types').Card[]),
+                    metadata: {
+                      ...result.nextState.metadata,
+                      [runePoolKey]: updatedRunePool,
+                      [manaKey]: updatedMana,
+                      actionPlayer: otherPlayer,
+                      initiativePlayer: otherPlayer,
+                      activePlayer: otherPlayer,
+                      player1Passed: false,
+                      player2Passed: false,
+                    },
+                  }
+
+                  return onSpellCast(pendingEffect.owner, spell, finalState, laneLocation)
+                })
+
+                const remainingCards = temporaryZone?.selectableCards
+                  ? temporaryZone.selectableCards.filter(card => !nextTargets.includes(card.id))
+                  : []
+
+                if (nextTargets.length < maxTargets && remainingCards.length > 0) {
+                  setPendingEffect({ ...pendingEffect, selectedTargetIds: nextTargets })
+                  setTemporaryZone(temporaryZone ? { ...temporaryZone, selectableCards: remainingCards } : null)
+                  return
+                }
+
+                setPendingEffect(null)
+                setTemporaryZone(null)
+                return
               }
               setGameState(prev => {
                 const spellData = pendingEffect.spellData || {}
@@ -136,7 +318,9 @@ export function Board() {
                 }
                 
                 // Apply refund
-                if (spell.refundMana) {
+                const refundTemplateId = getTemplateId(spell.id)
+                const isConditionalRefund = refundTemplateId === 'rb-spell-spell-storm'
+                if (spell.refundMana && !isConditionalRefund) {
                   updatedMana = updatedMana + spell.refundMana
                 }
                 

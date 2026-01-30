@@ -1,4 +1,5 @@
 import { GameState, PlayerId, SpellCard, Hero, Location, Card } from './types'
+import { drawCards } from './effectResolver'
 
 /**
  * Spellcaster System - Handles spell synergies (cost reduction, mana restore, damage bonuses)
@@ -22,6 +23,7 @@ export function onSpellCast(
   castLocation?: Location
 ): GameState {
   let newState = { ...gameState }
+  const spellTemplateId = getTemplateId(spell.id)
 
   // Increment spell counter
   if (player === 'player1') {
@@ -30,8 +32,15 @@ export function onSpellCast(
     newState.metadata.player2SpellsCastThisTurn++
   }
 
+  const spellsCastThisTurn = player === 'player1'
+    ? newState.metadata.player1SpellsCastThisTurn
+    : newState.metadata.player2SpellsCastThisTurn
+
   // Trigger hero abilities (on_spell_cast triggers)
   newState = triggerSpellcastHeroAbilities(player, newState, castLocation)
+
+  newState = triggerSpellcastUnitAbilities(player, newState, spellsCastThisTurn)
+  newState = applySpellConditionalEffects(player, spellTemplateId, spell, newState, spellsCastThisTurn)
 
   return newState
 }
@@ -46,18 +55,6 @@ function triggerSpellcastHeroAbilities(
   castLocation?: Location
 ): GameState {
   let newState = { ...gameState }
-  
-  const getTemplateId = (cardId: string): string => {
-    const ownerIndex = cardId.indexOf('-player1-')
-    if (ownerIndex !== -1) {
-      return cardId.slice(0, ownerIndex)
-    }
-    const ownerIndex2 = cardId.indexOf('-player2-')
-    if (ownerIndex2 !== -1) {
-      return cardId.slice(0, ownerIndex2)
-    }
-    return cardId
-  }
   
   // Get player's heroes
   const playerBase = player === 'player1' ? newState.player1Base : newState.player2Base
@@ -124,6 +121,76 @@ function triggerSpellcastHeroAbilities(
   return newState
 }
 
+function triggerSpellcastUnitAbilities(
+  player: PlayerId,
+  gameState: GameState,
+  spellsCastThisTurn: number
+): GameState {
+  let newState = { ...gameState }
+  const opponent: PlayerId = player === 'player1' ? 'player2' : 'player1'
+
+  newState = applyUnitTemporaryAttackByTemplate(newState, player, 'rb-unit-spell-fencer', 1)
+
+  const towerBurnerDamage = countUnitsInLane(newState, player, 'battlefieldA', 'red-unit-tower-burner')
+  if (towerBurnerDamage > 0) {
+    newState = applyLaneTowerDamage(newState, 'battlefieldA', opponent, towerBurnerDamage)
+  }
+  const towerBurnerDamageB = countUnitsInLane(newState, player, 'battlefieldB', 'red-unit-tower-burner')
+  if (towerBurnerDamageB > 0) {
+    newState = applyLaneTowerDamage(newState, 'battlefieldB', opponent, towerBurnerDamageB)
+  }
+
+  if (spellsCastThisTurn === 2) {
+    const velocityDamageA = countUnitsInLane(newState, player, 'battlefieldA', 'rb-unit-velocity-enforcer') * 2
+    if (velocityDamageA > 0) {
+      newState = applyLaneTowerDamage(newState, 'battlefieldA', opponent, velocityDamageA)
+    }
+    const velocityDamageB = countUnitsInLane(newState, player, 'battlefieldB', 'rb-unit-velocity-enforcer') * 2
+    if (velocityDamageB > 0) {
+      newState = applyLaneTowerDamage(newState, 'battlefieldB', opponent, velocityDamageB)
+    }
+  }
+
+  return newState
+}
+
+function applySpellConditionalEffects(
+  player: PlayerId,
+  spellTemplateId: string,
+  spell: SpellCard,
+  gameState: GameState,
+  spellsCastThisTurn: number
+): GameState {
+  let newState = { ...gameState }
+  const manaKey = player === 'player1' ? 'player1Mana' : 'player2Mana'
+
+  if (spellsCastThisTurn >= 2) {
+    if (spellTemplateId === 'rb-spell-double-strike' || spellTemplateId === 'black-spell-execute-weakness') {
+      newState = drawCards(newState, player, 1)
+    }
+    if (spellTemplateId === 'rb-spell-spell-storm' && spell.refundMana) {
+      newState = {
+        ...newState,
+        metadata: {
+          ...newState.metadata,
+          [manaKey]: (newState.metadata as any)[manaKey] + spell.refundMana,
+        },
+      }
+    }
+    if (spellTemplateId === 'red-spell-quickfire-bolt') {
+      newState = {
+        ...newState,
+        metadata: {
+          ...newState.metadata,
+          [manaKey]: (newState.metadata as any)[manaKey] + 1,
+        },
+      }
+    }
+  }
+
+  return newState
+}
+
 function applyHeroTemporaryAttack(
   state: GameState,
   heroId: string,
@@ -156,6 +223,47 @@ function applyHeroTemporaryAttack(
   }
 }
 
+function applyUnitTemporaryAttackByTemplate(
+  state: GameState,
+  owner: PlayerId,
+  templateId: string,
+  bonusAttack: number
+): GameState {
+  const applyToCards = (cards: Card[]) =>
+    cards.map(card =>
+      card.owner === owner &&
+      card.cardType === 'generic' &&
+      getTemplateId(card.id) === templateId
+        ? {
+            ...card,
+            temporaryAttack: (card.temporaryAttack || 0) + bonusAttack,
+          }
+        : card
+    )
+
+  return {
+    ...state,
+    battlefieldA: {
+      player1: applyToCards(state.battlefieldA.player1),
+      player2: applyToCards(state.battlefieldA.player2),
+    },
+    battlefieldB: {
+      player1: applyToCards(state.battlefieldB.player1),
+      player2: applyToCards(state.battlefieldB.player2),
+    },
+  }
+}
+
+function countUnitsInLane(
+  state: GameState,
+  owner: PlayerId,
+  lane: 'battlefieldA' | 'battlefieldB',
+  templateId: string
+): number {
+  const cards = state[lane][owner]
+  return cards.filter(card => card.cardType === 'generic' && getTemplateId(card.id) === templateId).length
+}
+
 function applyLaneTowerDamage(
   state: GameState,
   battlefieldId: 'battlefieldA' | 'battlefieldB',
@@ -173,6 +281,18 @@ function applyLaneTowerDamage(
       [towerKey]: Math.max(0, (state.metadata as any)[towerKey] - damage),
     },
   }
+}
+
+const getTemplateId = (cardId: string): string => {
+  const ownerIndex = cardId.indexOf('-player1-')
+  if (ownerIndex !== -1) {
+    return cardId.slice(0, ownerIndex)
+  }
+  const ownerIndex2 = cardId.indexOf('-player2-')
+  if (ownerIndex2 !== -1) {
+    return cardId.slice(0, ownerIndex2)
+  }
+  return cardId
 }
 
 /**

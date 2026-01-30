@@ -6,7 +6,7 @@ import { useTurnManagement } from '../hooks/useTurnManagement'
 import { HeroCard } from './HeroCard'
 import { HeroAbilityEditor } from './HeroAbilityEditor'
 import { KeywordBadge } from './KeywordBadge'
-import { isValidTargetForContext, resolveSpellEffect } from '../game/effectResolver'
+import { getTemplateId, isValidTargetForContext, resolveSpellEffect } from '../game/effectResolver'
 import { getTribeBuff } from '../game/combatSystem'
 import { RunePoolDisplay } from './RunePoolDisplay'
 
@@ -295,6 +295,31 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
       }
     }
     const battlefieldCards = [...gameState.battlefieldA.player1, ...gameState.battlefieldA.player2, ...gameState.battlefieldB.player1, ...gameState.battlefieldB.player2]
+    const clickedCard = battlefieldCards.find(card => card.id === cardId)
+    if (clickedCard && clickedCard.cardType === 'generic' && getTemplateId(clickedCard.id) === 'rb-unit-artifact-forger') {
+      const ownerBase = clickedCard.owner === 'player1' ? gameState.player1Base : gameState.player2Base
+      const artifacts = ownerBase.filter(card => card.cardType === 'artifact')
+      if (artifacts.length === 0) {
+        alert('No artifacts available to sacrifice.')
+        return
+      }
+      setPendingEffect({
+        cardId: 'rb-unit-artifact-forger',
+        sourceId: clickedCard.id,
+        owner: clickedCard.owner,
+        effect: {
+          type: 'tokenize',
+        },
+      })
+      setTemporaryZone({
+        type: 'target_select',
+        title: 'Artifact Forger',
+        description: 'Choose an artifact to sacrifice.',
+        owner: clickedCard.owner,
+        selectableCards: artifacts.map(card => ({ id: card.id, name: card.name })),
+      })
+      return
+    }
     const ritualToken = battlefieldCards.find(card => card.id === cardId && card.cardType === 'generic' && card.name === 'Ritual Token')
     if (ritualToken) {
       if (metadata.currentPhase !== 'play') {

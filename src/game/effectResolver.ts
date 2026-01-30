@@ -87,6 +87,14 @@ const getTargetingContextForSpell = (spell: SpellCard): TargetingContext | null 
       }
     }
   }
+  if (spell.effect?.type === 'multi_target_damage') {
+    const affectsUnits = Boolean(spell.effect.affectsUnits)
+    const affectsHeroes = Boolean(spell.effect.affectsHeroes)
+    return {
+      targetType: affectsUnits && affectsHeroes ? 'any' : (affectsUnits ? 'unit' : 'hero'),
+      targetSide: 'enemy',
+    }
+  }
   return null
 }
 
@@ -487,7 +495,15 @@ export const resolveSpellEffect = ({
   }
 
   // Handle card draw (generic - works for any spell with drawCount)
-  if (spell.effect.drawCount && spell.effect.type !== 'draw_and_heal') {
+  const conditionalDrawSpells = new Set([
+    'rb-spell-double-strike',
+    'black-spell-execute-weakness',
+  ])
+  if (
+    spell.effect.drawCount &&
+    spell.effect.type !== 'draw_and_heal' &&
+    !conditionalDrawSpells.has(templateId)
+  ) {
     nextState = drawCards(nextState, owner, spell.effect.drawCount)
   }
 
@@ -521,6 +537,13 @@ export const resolveSpellEffect = ({
       if (spell.effect.debuffAttack) {
         nextState = applyDebuffToTarget(nextState, target.id, spell.effect.debuffAttack, 0)
       }
+    }
+  }
+
+  if (spell.effect.type === 'multi_target_damage' && targetId) {
+    const target = findCardById(nextState, targetId)
+    if (target && spell.effect.damage) {
+      nextState = applyDamageToTarget(nextState, target, spell.effect.damage)
     }
   }
 

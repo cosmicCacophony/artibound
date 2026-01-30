@@ -870,6 +870,9 @@ export function createCardFromTemplate(
         effect: (template as any).effect,
         initiative: (template as any).initiative,
         colors: template.colors,
+        refundMana: (template as any).refundMana,
+        discardCost: (template as any).discardCost,
+        specialEffects: (template as any).specialEffects,
       } as SpellCard
     }
     // Fallback to test deck spells
@@ -881,6 +884,9 @@ export function createCardFromTemplate(
         effect: spellCard.effect,
         initiative: spellCard.initiative,
         colors: spellCard.colors,
+        refundMana: (spellCard as any).refundMana,
+        discardCost: (spellCard as any).discardCost,
+        specialEffects: (spellCard as any).specialEffects,
       } as SpellCard
     }
   }

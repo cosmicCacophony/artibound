@@ -320,7 +320,7 @@ export function useDeployment() {
 
         const otherPlayer: 'player1' | 'player2' = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
 
-        const updatedState = {
+        let updatedState = {
           ...prev,
           [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
           [`${selectedCard.owner}Base`]: removeFromLocation(prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[]),
@@ -335,6 +335,15 @@ export function useDeployment() {
             player1Passed: false,
             player2Passed: false,
           },
+        }
+
+        if (spellCard.effect.type !== 'create_tokens' && spellCard.effect.type !== 'tokenize') {
+          const result = resolveSpellEffect({
+            gameState: updatedState,
+            spell: spellCard,
+            owner: selectedCard.owner,
+          })
+          updatedState = result.nextState
         }
 
         return onSpellCast(selectedCard.owner, spellCard, updatedState, location)
@@ -679,8 +688,10 @@ export function useDeployment() {
               updatedRunePool = addTemporaryRunes(updatedRunePool, spellEffect.runeColors as any)
             }
             
+            const refundTemplateId = getTemplateId(spellCard.id)
+            const isConditionalRefund = refundTemplateId === 'rb-spell-spell-storm'
             // Handle mana refund for "free spells" (Urza block inspired)
-            if (spellCard.refundMana && spellCard.refundMana > 0) {
+            if (spellCard.refundMana && spellCard.refundMana > 0 && !isConditionalRefund) {
               updatedMana = updatedMana + spellCard.refundMana
             }
           }
@@ -784,8 +795,10 @@ export function useDeployment() {
                     updatedRunePool = addTemporaryRunes(updatedRunePool, spellEffect.runeColors as any)
                   }
                   
+                  const refundTemplateId = getTemplateId(spellCard.id)
+                  const isConditionalRefund = refundTemplateId === 'rb-spell-spell-storm'
                   // Handle mana refund for "free spells" (Urza block inspired)
-                  if (spellCard.refundMana && spellCard.refundMana > 0) {
+                  if (spellCard.refundMana && spellCard.refundMana > 0 && !isConditionalRefund) {
                     updatedMana = updatedMana + spellCard.refundMana
                   }
                 }
@@ -852,8 +865,10 @@ export function useDeployment() {
               updatedRunePool = addTemporaryRunes(updatedRunePool, spellEffect.runeColors as any)
             }
             
+            const refundTemplateId = getTemplateId(spellCard.id)
+            const isConditionalRefund = refundTemplateId === 'rb-spell-spell-storm'
             // Handle mana refund for "free spells" (Urza block inspired)
-            if (spellCard.refundMana && spellCard.refundMana > 0) {
+            if (spellCard.refundMana && spellCard.refundMana > 0 && !isConditionalRefund) {
               updatedMana = updatedMana + spellCard.refundMana
             }
           }
