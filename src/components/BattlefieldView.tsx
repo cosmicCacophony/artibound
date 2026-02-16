@@ -509,7 +509,7 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
         return
       }
       
-        // Use the same deployment logic as clicking via handleDeploy
+        // Use direct deployment for heroes (we have the card); fallback to handleDeploy for others
         if (droppedCard.owner === player) {
           console.log(`[BattlefieldView] handleDrop - Card owner matches, proceeding with deployment`)
           console.log(`[BattlefieldView] handleDrop - droppedCard.location:`, droppedCard.location, 'battlefieldId:', battlefieldId)
@@ -523,16 +523,124 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
             return
           }
 
-          pendingDropRef.current = {
-            cardId,
-            battlefieldId,
-            slotNum,
+          // For heroes, deploy directly via setGameState (no async selectedCard dependency)
+          if (droppedCard.cardType === 'hero') {
+            const isDeployPhase = metadata.currentPhase === 'deploy'
+            const isPlayPhase = metadata.currentPhase === 'play'
+            if (!isDeployPhase && !isPlayPhase) {
+              alert(`Cannot deploy during ${metadata.currentPhase} phase!`)
+              return
+            }
+            const battlefieldKey = battlefieldId as 'battlefieldA' | 'battlefieldB'
+            const playerKey = player
+
+            if (isPlayPhase && metadata.currentTurn === 1) {
+              const deploymentPhase = metadata.turn1DeploymentPhase || 'p1_lane1'
+              if (deploymentPhase === 'p1_lane1' && (playerKey !== 'player1' || battlefieldKey !== 'battlefieldA')) {
+                if (playerKey !== 'player1') alert('Player 1 must deploy first hero to lane 1 (Battlefield A)')
+                else alert('Player 1 must deploy to lane 1 (Battlefield A) first')
+                return
+              }
+              if (deploymentPhase === 'p2_lane1' && playerKey === 'player2' && battlefieldKey !== 'battlefieldA') {
+                alert('Player 2 can only counter-deploy to lane 1 (Battlefield A) or pass')
+                return
+              }
+              if (deploymentPhase === 'p2_lane2' && (playerKey !== 'player2' || battlefieldKey !== 'battlefieldB')) {
+                if (playerKey !== 'player2') alert('Player 2 must deploy hero to lane 2 (Battlefield B)')
+                else alert('Player 2 must deploy to lane 2 (Battlefield B)')
+                return
+              }
+              if (deploymentPhase === 'p1_lane2' && playerKey === 'player1' && battlefieldKey !== 'battlefieldB') {
+                alert('Player 1 can only counter-deploy to lane 2 (Battlefield B) or pass')
+                return
+              }
+            } else if (isPlayPhase && metadata.actionPlayer !== playerKey) {
+              alert("It's not your turn to act!")
+              return
+            }
+
+            if (isDeployPhase && (droppedCard.location === 'base' || droppedCard.location === 'deployZone')) {
+              const cooldownCounter = metadata.deathCooldowns[droppedCard.id]
+              if (cooldownCounter !== undefined && cooldownCounter > 0) {
+                alert(`Hero is on cooldown! ${cooldownCounter} turn${cooldownCounter !== 1 ? 's' : ''} remaining.`)
+                return
+              }
+            }
+
+            setGameState(prev => {
+              const battlefield = prev[battlefieldKey][playerKey]
+              const existingHeroInSlot = battlefield.find((c: Card) => (c as { slot?: number }).slot === slotNum && c.cardType === 'hero') as Hero | undefined
+              const newHand = (prev[`${playerKey}Hand` as keyof typeof prev] as Card[]).filter(c => c.id !== droppedCard.id)
+              const newBase = (prev[`${playerKey}Base` as keyof typeof prev] as Card[]).filter(c => c.id !== droppedCard.id)
+              const newDeployZone = (prev[`${playerKey}DeployZone` as keyof typeof prev] as Card[]).filter(c => c.id !== droppedCard.id)
+              const otherBattlefieldKey = battlefieldKey === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
+              const otherBattlefield = prev[otherBattlefieldKey][playerKey].filter(c => c.id !== droppedCard.id)
+              let updatedBase = newBase
+              const updatedCooldowns = { ...prev.metadata.deathCooldowns }
+              if (existingHeroInSlot) {
+                updatedBase = [...updatedBase, { ...existingHeroInSlot, location: 'base' as const, slot: undefined }]
+                updatedCooldowns[existingHeroInSlot.id] = 1
+              }
+              const heroColors = (droppedCard as Hero).colors || []
+              const currentRunePool = prev.metadata[`${playerKey}RunePool` as keyof typeof prev.metadata] as { runes: string[]; temporaryRunes?: string[] } | undefined
+              const updatedRunePool = {
+                runes: [...(currentRunePool?.runes ?? []), ...heroColors],
+                temporaryRunes: currentRunePool?.temporaryRunes ?? [],
+              }
+              const updatedBattlefield = battlefield
+                .filter(c => c.id !== droppedCard.id && (existingHeroInSlot ? c.id !== existingHeroInSlot.id : true))
+              const deployedHero = { ...droppedCard, location: battlefieldKey, slot: slotNum } as Hero
+              let newDeploymentPhase = prev.metadata.turn1DeploymentPhase || 'p1_lane1'
+              let updatedActionPlayer = prev.metadata.actionPlayer
+              let updatedInitiativePlayer = prev.metadata.initiativePlayer
+              if (prev.metadata.currentTurn === 1) {
+                const dp = prev.metadata.turn1DeploymentPhase || 'p1_lane1'
+                if (dp === 'p1_lane1') newDeploymentPhase = 'p2_lane1'
+                else if (dp === 'p2_lane1' && playerKey === 'player2') newDeploymentPhase = 'p2_lane2'
+                else if (dp === 'p2_lane2') newDeploymentPhase = 'p1_lane2'
+                else if (dp === 'p1_lane2' && playerKey === 'player1') newDeploymentPhase = 'complete'
+                if (newDeploymentPhase === 'complete') {
+                  updatedActionPlayer = 'player1'
+                  updatedInitiativePlayer = 'player1'
+                } else {
+                  updatedActionPlayer = null
+                  updatedInitiativePlayer = null
+                }
+              } else {
+                const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
+                updatedActionPlayer = otherPlayer
+                updatedInitiativePlayer = otherPlayer
+              }
+              return {
+                ...prev,
+                [battlefieldKey]: { ...prev[battlefieldKey], [playerKey]: [...updatedBattlefield, deployedHero].sort((a, b) => ((a as { slot?: number }).slot || 0) - ((b as { slot?: number }).slot || 0)) },
+                [`${playerKey}Hand`]: newHand,
+                [`${playerKey}Base`]: updatedBase,
+                [`${playerKey}DeployZone`]: newDeployZone,
+                [otherBattlefieldKey]: { ...prev[otherBattlefieldKey], [playerKey]: otherBattlefield },
+                metadata: {
+                  ...prev.metadata,
+                  [`${playerKey}RunePool`]: updatedRunePool,
+                  deathCooldowns: updatedCooldowns,
+                  [`${playerKey}HeroesDeployedThisTurn`]: ((prev.metadata[`${playerKey}HeroesDeployedThisTurn` as keyof typeof prev.metadata] as number) || 0) + 1,
+                  turn1DeploymentPhase: newDeploymentPhase,
+                  actionPlayer: updatedActionPlayer,
+                  initiativePlayer: updatedInitiativePlayer,
+                  player1Passed: false,
+                  player2Passed: false,
+                  currentPhase: newDeploymentPhase === 'complete' ? 'play' : prev.metadata.currentPhase,
+                },
+              }
+            })
+            setSelectedCardId(null)
+            return
           }
+
+          pendingDropRef.current = { cardId, battlefieldId, slotNum }
           setSelectedCardId(cardId)
-        
-      } else {
-        console.log(`[BattlefieldView] handleDrop - ERROR: Card owner doesn't match! droppedCard.owner:`, droppedCard.owner, 'expected:', player)
-      }
+        } else {
+          console.log(`[BattlefieldView] handleDrop - ERROR: Card owner doesn't match! droppedCard.owner:`, droppedCard.owner, 'expected:', player)
+        }
     }
 
     const handleDragOver = (e: React.DragEvent) => {

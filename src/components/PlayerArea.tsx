@@ -320,56 +320,7 @@ export function PlayerArea({ player, mode = 'expanded', showDebugControls = fals
         </div>
       )}
       
-      {/* Deploy Zone - Heroes ready to deploy */}
-      <div style={{ marginBottom: '20px', border: `2px solid ${playerColor}`, borderRadius: '8px', padding: '15px', backgroundColor: '#f5f5f5' }}>
-        <h3 style={{ marginTop: 0, color: playerTitleColor }}>Deploy Zone ({playerDeployZone.length})</h3>
-        <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px' }}>Heroes ready to deploy to battlefields</p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '60px' }}>
-          {playerDeployZone.length > 0 ? (
-            playerDeployZone.map(card => (
-              <HeroCard
-                key={card.id}
-                card={card}
-                onClick={(e) => handleCardClick(card.id, e)}
-                isSelected={selectedCardId === card.id}
-                showStats={true}
-                isDead={!!metadata.deathCooldowns[card.id]}
-                cooldownCounter={metadata.deathCooldowns[card.id]}
-                isPlayed={!!metadata.playedSpells[card.id]}
-                onTogglePlayed={() => handleToggleSpellPlayed(card)}
-                isStunned={card.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[card.id])}
-                onToggleStun={card.cardType === 'hero' ? () => handleToggleStun(card) : undefined}
-                onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, card.owner)}
-                draggable={true}
-                isDragging={draggedCardId === card.id}
-                onDragStart={(e) => {
-                  // Allow drag for battlefield-playable cards (heroes, units, items).
-                  if (card.cardType === 'spell' || card.cardType === 'artifact') {
-                    console.log('Preventing drag for non-draggable card type', card.cardType)
-                    e.preventDefault()
-                    return
-                  }
-                  e.stopPropagation()
-                  console.log('[PlayerArea] onDragStart - Setting draggedCardId:', card.id, card.name)
-                  setDraggedCardId(card.id)
-                  e.dataTransfer.effectAllowed = 'move'
-                  // Set data in both formats
-                  e.dataTransfer.setData('text/plain', card.id)
-                  e.dataTransfer.setData('cardId', card.id)
-                  console.log('[PlayerArea] onDragStart - dataTransfer types:', Array.from(e.dataTransfer.types))
-                }}
-                onDragEnd={(e) => {
-                  setDraggedCardId(null)
-                }}
-              />
-            ))
-          ) : (
-            <p style={{ color: '#999' }}>Empty</p>
-          )}
-        </div>
-      )}
-      
-      {/* Deploy Zone - Compact with hover */}
+      {/* Deploy Zone - Compact only (drag from minimized names onto battlefields) */}
       <div style={{ marginBottom: '0', padding: '1px 2px', backgroundColor: '#f5f5f5', borderRadius: '1px', fontSize: '8px' }}>
         <strong style={{ color: playerTitleColor, fontSize: '7px' }}>D({playerDeployZone.length}):</strong>{' '}
         {playerDeployZone.length > 0 ? (

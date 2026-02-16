@@ -7,6 +7,12 @@ import { tier1Items, createCardFromTemplate } from '../game/sampleData'
 import { applyLaneNexusPostTowerDamage, checkWinCondition } from '../game/winCondition'
 import { getSpellTargetOptions, maxTargetCount, requiresTargets, resolveSpellCast } from '../game/spellResolution'
 
+/** Ensure turn is a valid number >= 1 (handles undefined/null/NaN from metadata). */
+function normalizeTurnNumber(turn: number | undefined | null): number {
+  const n = Number(turn)
+  return Number.isFinite(n) && n >= 1 ? n : 1
+}
+
 export function useTurnManagement() {
   const { 
     gameState, 
