@@ -1,10 +1,11 @@
 import { useCallback, useEffect } from 'react'
-import { TurnPhase, Card, GameMetadata, ShopItem, Hero, BaseCard, PlayerId } from '../game/types'
+import { TurnPhase, Card, GameMetadata, ShopItem, Hero, BaseCard, PlayerId, GameState } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { getDefaultTargets, resolveCombat, resolveSimultaneousCombat, resolveRangedAttacks } from '../game/combatSystem'
-import { removeRunesFromHero } from '../game/runeSystem'
+import { addRunesFromHero, canAffordCard, consumeRunesForCardWithTracking, removeRunesFromHero } from '../game/runeSystem'
 import { tier1Items, createCardFromTemplate } from '../game/sampleData'
-import { calculateNextTurn, getTurn1PhaseAfterPass, hasDeployableHero, normalizeTurnNumber, shouldEndDeployPhase } from '../game/deploymentRules'
+import { applyLaneNexusPostTowerDamage, checkWinCondition } from '../game/winCondition'
+import { getSpellTargetOptions, maxTargetCount, requiresTargets, resolveSpellCast } from '../game/spellResolution'
 
 export function useTurnManagement() {
   const { 
@@ -26,6 +27,10 @@ export function useTurnManagement() {
   // Combat is now resolved automatically when both players pass, no separate combat phases
 
   const handleNextPhase = useCallback(() => {
+    if (metadata.gameOver) {
+      return
+    }
+
     const player = metadata.activePlayer
     const currentPhase = metadata.currentPhase
     
@@ -218,10 +223,62 @@ export function useTurnManagement() {
           },
         }
 
-      const allCardsToDraw = {
-        player1: [] as Card[],
-        player2: [] as Card[],
-      }
+        let updatedMetadata: GameMetadata = {
+          ...prev.metadata,
+          towerA_player1_HP: rangedResult.updatedTowerHP.towerA_player1,
+          towerA_player2_HP: rangedResult.updatedTowerHP.towerA_player2,
+          towerB_player1_HP: rangedResult.updatedTowerHP.towerB_player1,
+          towerB_player2_HP: rangedResult.updatedTowerHP.towerB_player2,
+          // Apply overflow damage to nexus (sum from both battlefields + ranged attacks)
+          player1NexusHP: Math.max(0, newP1NexusHP - (rangedResult.overflowDamage.player2)),
+          player2NexusHP: Math.max(0, newP2NexusHP - (rangedResult.overflowDamage.player1)),
+          deathCooldowns: newCooldownsB,
+          player1RunePool: updatedP1RunePool,
+          player2RunePool: updatedP2RunePool,
+          laneMomentum: updatedLaneMomentum,
+        }
+
+        // Track post-tower nexus damage by lane for win condition B.
+        updatedMetadata = applyLaneNexusPostTowerDamage(
+          updatedMetadata,
+          'player1',
+          'battlefieldA',
+          resultA.overflowDamage.player1 + rangedResult.overflowDamageByLane.player1.battlefieldA
+        )
+        updatedMetadata = applyLaneNexusPostTowerDamage(
+          updatedMetadata,
+          'player1',
+          'battlefieldB',
+          resultB.overflowDamage.player1 + rangedResult.overflowDamageByLane.player1.battlefieldB
+        )
+        updatedMetadata = applyLaneNexusPostTowerDamage(
+          updatedMetadata,
+          'player2',
+          'battlefieldA',
+          resultA.overflowDamage.player2 + rangedResult.overflowDamageByLane.player2.battlefieldA
+        )
+        updatedMetadata = applyLaneNexusPostTowerDamage(
+          updatedMetadata,
+          'player2',
+          'battlefieldB',
+          resultB.overflowDamage.player2 + rangedResult.overflowDamageByLane.player2.battlefieldB
+        )
+
+        const winResult = checkWinCondition(updatedMetadata)
+        if (winResult.winner) {
+          console.log('[win-condition] winner', {
+            winner: winResult.winner,
+            reason: winResult.reason,
+            p1LaneDamage: updatedMetadata.player1LaneNexusDamageAfterTower,
+            p2LaneDamage: updatedMetadata.player2LaneNexusDamageAfterTower,
+          })
+          updatedMetadata = {
+            ...updatedMetadata,
+            gameOver: true,
+            winner: winResult.winner,
+            winReason: winResult.reason,
+          }
+        }
 
         return {
           ...prev,
@@ -229,23 +286,9 @@ export function useTurnManagement() {
           battlefieldB: resultB.updatedBattlefield,
           player1Base: newP1BaseB,
           player2Base: newP2BaseB,
-          // Add drawn cards to hands
-          player1Hand: [...(prev.player1Hand || []), ...allCardsToDraw.player1],
-          player2Hand: [...(prev.player2Hand || []), ...allCardsToDraw.player2],
-          metadata: {
-            ...prev.metadata,
-            towerA_player1_HP: rangedResult.updatedTowerHP.towerA_player1,
-            towerA_player2_HP: rangedResult.updatedTowerHP.towerA_player2,
-            towerB_player1_HP: rangedResult.updatedTowerHP.towerB_player1,
-            towerB_player2_HP: rangedResult.updatedTowerHP.towerB_player2,
-            // Apply overflow damage to nexus (sum from both battlefields + ranged attacks)
-            player1NexusHP: Math.max(0, newP1NexusHP - (rangedResult.overflowDamage.player2)),
-            player2NexusHP: Math.max(0, newP2NexusHP - (rangedResult.overflowDamage.player1)),
-            deathCooldowns: newCooldownsB,
-            player1RunePool: updatedP1RunePool,
-            player2RunePool: updatedP2RunePool,
-            laneMomentum: updatedLaneMomentum,
-          },
+          player1Hand: prev.player1Hand,
+          player2Hand: prev.player2Hand,
+          metadata: updatedMetadata,
         }
       })
       
@@ -277,6 +320,16 @@ export function useTurnManagement() {
         },
       })
       setShowCombatSummary(true)
+
+      if ((gameState.metadata.gameOver ?? false) || checkWinCondition({
+        ...gameState.metadata,
+        towerA_player1_HP: rangedResult.updatedTowerHP.towerA_player1,
+        towerA_player2_HP: rangedResult.updatedTowerHP.towerA_player2,
+        towerB_player1_HP: rangedResult.updatedTowerHP.towerB_player1,
+        towerB_player2_HP: rangedResult.updatedTowerHP.towerB_player2,
+      }).winner) {
+        return
+      }
       
       // End turn - after combat, ALWAYS increment turn and go to deploy phase
       // Combat happens when both players pass, so turn should always advance
@@ -292,6 +345,13 @@ export function useTurnManagement() {
       
       // Decrement cooldowns and move heroes from base to deployZone when cooldown expires
       setGameState(prev => {
+        const clearTemporaryModifiers = (cards: Card[]): Card[] =>
+          cards.map(card => {
+            if (card.cardType !== 'hero' && card.cardType !== 'generic') return card
+            const { temporaryAttack, temporaryHP, ...rest } = card as any
+            return { ...rest, temporaryAttack: 0, temporaryHP: 0 } as Card
+          })
+
         const processCooldowns = (player: 'player1' | 'player2') => {
           const base = prev[`${player}Base` as keyof typeof prev] as Card[]
           const deployZone = prev[`${player}DeployZone` as keyof typeof prev] as Card[]
@@ -366,9 +426,19 @@ export function useTurnManagement() {
           player1DeployZone: p1Result.newDeployZone,
           player2Base: p2Result.newBase,
           player2DeployZone: p2Result.newDeployZone,
+          battlefieldA: {
+            player1: clearTemporaryModifiers(prev.battlefieldA.player1),
+            player2: clearTemporaryModifiers(prev.battlefieldA.player2),
+          },
+          battlefieldB: {
+            player1: clearTemporaryModifiers(prev.battlefieldB.player1),
+            player2: clearTemporaryModifiers(prev.battlefieldB.player2),
+          },
           metadata: {
             ...prev.metadata,
             deathCooldowns: { ...p1Result.newCooldowns, ...p2Result.newCooldowns },
+            player1SpellsCastThisTurn: 0,
+            player2SpellsCastThisTurn: 0,
           },
         }
       })
@@ -495,6 +565,9 @@ export function useTurnManagement() {
   }, [metadata.currentPhase, metadata.player1Passed, metadata.player2Passed, handleNextPhase])
 
   const handleToggleSpellPlayed = useCallback((card: Card) => {
+    if (metadata.gameOver) {
+      return
+    }
     // Allow any card type to be marked as played (spells, units, heroes)
     if (card.location !== 'base') return
     
@@ -532,10 +605,13 @@ export function useTurnManagement() {
         }
       }
     })
-  }, [setGameState])
+  }, [metadata.gameOver, setGameState])
 
   // Spawn a 1/1 creep for generic unit token generation
   const handleSpawnCreep = useCallback((battlefieldId: 'battlefieldA' | 'battlefieldB', player: 'player1' | 'player2') => {
+    if (metadata.gameOver) {
+      return
+    }
     setGameState(prev => {
       const battlefield = prev[battlefieldId]
       const playerUnits = battlefield[player]
@@ -581,9 +657,12 @@ export function useTurnManagement() {
         },
       }
     })
-  }, [setGameState])
+  }, [metadata.gameOver, setGameState])
 
   const handleToggleStun = useCallback((hero: Card) => {
+    if (metadata.gameOver) {
+      return
+    }
     // Only heroes can be stunned
     if (hero.cardType !== 'hero') return
     
@@ -610,9 +689,12 @@ export function useTurnManagement() {
         },
       }
     })
-  }, [setGameState])
+  }, [metadata.gameOver, setGameState])
 
   const handleNextTurn = useCallback(() => {
+    if (metadata.gameOver) {
+      return
+    }
     setGameState(prev => {
       const newTurn = normalizeTurnNumber(prev.metadata.currentTurn) + 1
       
@@ -844,9 +926,12 @@ export function useTurnManagement() {
         },
       }
     })
-  }, [setGameState])
+  }, [metadata.gameOver, setGameState])
 
   const handlePass = useCallback((player: 'player1' | 'player2') => {
+    if (metadata.gameOver) {
+      return
+    }
     setGameState(prev => {
       // Handle turn 1 deployment passing (counter-deployment phases)
       if (prev.metadata.currentTurn === 1 && prev.metadata.turn1DeploymentPhase && 
@@ -902,9 +987,12 @@ export function useTurnManagement() {
         metadata: newMetadata,
       }
     })
-  }, [setGameState])
+  }, [metadata.gameOver, setGameState])
 
   const handleEndDeployPhase = useCallback(() => {
+    if (metadata.gameOver) {
+      return
+    }
     setGameState(prev => {
       if (prev.metadata.currentPhase !== 'deploy') {
         return prev
@@ -952,7 +1040,112 @@ export function useTurnManagement() {
         },
       }
     })
-  }, [setGameState])
+  }, [metadata.gameOver, setGameState])
+
+  // Minimal boss automation for RW slice opponent.
+  useEffect(() => {
+    if (metadata.gameOver) return
+    if (metadata.currentPhase !== 'play') return
+    if (metadata.actionPlayer !== 'player2') return
+
+    const timer = setTimeout(() => {
+      setGameState(prev => {
+        if (prev.metadata.gameOver) return prev
+        if (prev.metadata.actionPlayer !== 'player2' || prev.metadata.currentPhase !== 'play') return prev
+
+        const hand = prev.player2Hand
+        const runePool = prev.metadata.player2RunePool
+        const mana = prev.metadata.player2Mana
+
+        const playable = hand.find(card => {
+          const manaOk = !card.manaCost || card.manaCost <= mana
+          return manaOk && canAffordCard(card as BaseCard, mana, runePool)
+        })
+
+        if (!playable) {
+          return {
+            ...prev,
+            metadata: {
+              ...prev.metadata,
+              player2Passed: true,
+              actionPlayer: 'player1',
+            },
+          }
+        }
+
+        const runeResult = consumeRunesForCardWithTracking(playable as BaseCard, runePool)
+        const spentMana = playable.manaCost || 0
+        const nextMeta: GameMetadata = {
+          ...prev.metadata,
+          player2RunePool: runeResult.newPool,
+          player2Mana: Math.max(0, prev.metadata.player2Mana - spentMana),
+          actionPlayer: 'player1',
+          initiativePlayer: 'player1',
+          player1Passed: false,
+          player2Passed: false,
+        }
+
+        const removeFromHand = prev.player2Hand.filter(card => card.id !== playable.id)
+        const openSlotA = [1, 2, 3, 4, 5].find(slot => !prev.battlefieldA.player2.some(card => card.slot === slot))
+        const openSlotB = [1, 2, 3, 4, 5].find(slot => !prev.battlefieldB.player2.some(card => card.slot === slot))
+        const lane: 'battlefieldA' | 'battlefieldB' = openSlotA ? 'battlefieldA' : 'battlefieldB'
+        const slot = (openSlotA || openSlotB || 1) as number
+
+        if (playable.cardType === 'hero') {
+          const withRunes = addRunesFromHero(playable as Hero, nextMeta.player2RunePool)
+          return {
+            ...prev,
+            player2Hand: removeFromHand,
+            [lane]: {
+              ...prev[lane],
+              player2: [...prev[lane].player2, { ...playable, location: lane, slot }],
+            },
+            metadata: {
+              ...nextMeta,
+              player2RunePool: withRunes,
+            },
+          }
+        }
+
+        if (playable.cardType === 'artifact') {
+          return {
+            ...prev,
+            player2Hand: removeFromHand,
+            player2Base: [...prev.player2Base, { ...playable, location: 'base' }],
+            metadata: nextMeta,
+          }
+        }
+
+        if (playable.cardType === 'spell') {
+          const spell = { ...playable, owner: 'player2', location: 'hand' } as any
+          const targetIds = requiresTargets(spell)
+            ? getSpellTargetOptions(prev, spell, 'player2', lane)
+                .slice(0, maxTargetCount(spell))
+                .map(option => option.id)
+            : []
+          const afterRemove = {
+            ...prev,
+            player2Hand: removeFromHand,
+            metadata: nextMeta,
+          } as GameState
+          const afterSpell = resolveSpellCast(afterRemove, spell, 'player2', lane, targetIds)
+          return afterSpell
+        }
+
+        return {
+          ...prev,
+          player2Hand: removeFromHand,
+          [lane]: {
+            ...prev[lane],
+            player2: [...prev[lane].player2, { ...playable, location: lane, slot }],
+          },
+          metadata: nextMeta,
+        }
+      })
+    }, 350)
+
+    return () => clearTimeout(timer)
+  }, [metadata.actionPlayer, metadata.currentPhase, metadata.gameOver, setGameState])
 
   useEffect(() => {
     if (metadata.currentPhase === 'play' && metadata.player1Passed && metadata.player2Passed) {

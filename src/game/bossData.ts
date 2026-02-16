@@ -72,14 +72,11 @@ export const boss1ValiantLegion: Boss = {
   
   // 4 Artifacts - Core synergies
   artifacts: [
-    // War Banner: +1 attack to all units (CORE SYNERGY)
-    rwArtifacts.find(a => a.id === 'rw-artifact-war-banner')!,
-    // Legion Generator: RW rune generation (for token spells)
-    rwArtifacts.find(a => a.id === 'rw-artifact-dual-generator')!,
-    // Vanguard Generator: R rune generation (for red runes)
-    rwArtifacts.find(a => a.id === 'rw-artifact-vanguard-generator')!,
-    // Rally Banner: +1/+1 to all units (additional synergy)
+    // Existing RW artifact set
+    rwArtifacts.find(a => a.id === 'rw-artifact-legion-standard')!,
     rwArtifacts.find(a => a.id === 'rw-artifact-rally-banner')!,
+    rwArtifacts.find(a => a.id === 'rw-artifact-glorious-banner')!,
+    rwArtifacts.find(a => a.id === 'rw-artifact-legion-barracks')!,
   ],
   
   // 7 Spells - Token generators and buffs
@@ -103,12 +100,12 @@ export const boss1ValiantLegion: Boss = {
   // 9 Units - Legion synergy and curve
   units: [
     // Early Game (2-3 mana)
-    rwCards.find(u => u.id === 'rw-bounce-war-banner-carrier')!, // 2R: Bounce utility
+    rwCards.find(u => u.id === 'rw-unit-legion-vanguard')!, // 4RW: token support
     rwCards.find(u => u.id === 'rw-unit-legion-archers')!, // 3RW: Ranged pressure
     
     // Mid Game (4 mana)
     rwCards.find(u => u.id === 'rw-legion-champion')!, // 4RW: Legion synergy
-    rwCards.find(u => u.id === 'rw-sig-captain-2')!, // 4R: Battle Standard (+1 attack)
+    rwCards.find(u => u.id === 'rw-unit-legion-vanguard')!, // 4RW: token support
     
     // Late Game (5 mana)
     rwCards.find(u => u.id === 'rw-unit-legion-general')!, // 5RW: +2/+2 to Legion
@@ -116,8 +113,8 @@ export const boss1ValiantLegion: Boss = {
     // Additional pressure
     rwCards.find(u => u.id === 'rw-unit-legion-archers')!, // 3RW: Duplicate for consistency
     rwCards.find(u => u.id === 'rw-legion-champion')!, // 4RW: Duplicate for consistency
-    rwCards.find(u => u.id === 'rw-sig-captain-2')!, // 4R: Duplicate for consistency
-    rwCards.find(u => u.id === 'rw-bounce-war-banner-carrier')!, // 2R: Duplicate for consistency
+    rwCards.find(u => u.id === 'rw-unit-legion-vanguard')!, // 4RW: Duplicate for consistency
+    rwCards.find(u => u.id === 'rw-unit-legion-general')!, // 5RW: Duplicate for consistency
   ],
   
   // No buffs needed - deck is strong enough with optimal composition

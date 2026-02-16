@@ -23,7 +23,6 @@ export function onSpellCast(
   castLocation?: Location
 ): GameState {
   let newState = { ...gameState }
-  const spellTemplateId = getTemplateId(spell.id)
 
   // Increment spell counter
   if (player === 'player1') {
@@ -37,11 +36,59 @@ export function onSpellCast(
     : newState.metadata.player2SpellsCastThisTurn
 
   // Trigger hero abilities (on_spell_cast triggers)
-  newState = triggerSpellcastHeroAbilities(player, newState, castLocation)
+  newState = triggerSpellcastHeroAbilities(player, newState)
+  // Trigger unit spell-synergy effects used by RB slice cards.
+  newState = triggerSpellcastUnitEffects(player, newState)
 
-  newState = triggerSpellcastUnitAbilities(player, newState, spellsCastThisTurn)
-  newState = applySpellConditionalEffects(player, spellTemplateId, spell, newState, spellsCastThisTurn)
+  return newState
+}
 
+function triggerSpellcastUnitEffects(player: PlayerId, gameState: GameState): GameState {
+  let newState = { ...gameState }
+  const spellsCast =
+    player === 'player1' ? newState.metadata.player1SpellsCastThisTurn : newState.metadata.player2SpellsCastThisTurn
+  const enemy = player === 'player1' ? 'player2' : 'player1'
+
+  const applyToLane = (lane: 'battlefieldA' | 'battlefieldB') => {
+    const units = newState[lane][player].filter(card => card.cardType === 'generic')
+    let laneState = newState
+    for (const unit of units) {
+      const specialEffects = (unit as any).specialEffects as string[] | undefined
+      if (!specialEffects || specialEffects.length === 0) continue
+
+      // Spell Fencer: +1 attack this turn whenever you cast a spell.
+      if (unit.id.startsWith('rb-unit-spell-fencer')) {
+        laneState = {
+          ...laneState,
+          [lane]: {
+            ...laneState[lane],
+            [player]: laneState[lane][player].map(card =>
+              card.id === unit.id ? { ...card, temporaryAttack: (card as any).temporaryAttack + 1 || 1 } : card
+            ),
+          },
+        }
+      }
+
+      // Velocity Enforcer: on 2nd spell each turn, deal 2 to enemy tower in this lane.
+      if (specialEffects.includes('multispell_tower_damage') && spellsCast >= 2) {
+        const towerKey =
+          lane === 'battlefieldA'
+            ? (enemy === 'player1' ? 'towerA_player1_HP' : 'towerA_player2_HP')
+            : (enemy === 'player1' ? 'towerB_player1_HP' : 'towerB_player2_HP')
+        laneState = {
+          ...laneState,
+          metadata: {
+            ...laneState.metadata,
+            [towerKey]: Math.max(0, (laneState.metadata[towerKey] as number) - 2),
+          },
+        }
+      }
+    }
+    newState = laneState
+  }
+
+  applyToLane('battlefieldA')
+  applyToLane('battlefieldB')
   return newState
 }
 

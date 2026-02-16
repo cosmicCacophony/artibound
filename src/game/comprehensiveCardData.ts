@@ -283,8 +283,9 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     colors: ['red', 'white'],
     manaCost: 4,
     effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect
-      damage: 0,
+      type: 'buff_until_end_of_turn',
+      buffAttack: 2,
+      buffHealth: 2,
     },
   },
   // Additional RW Legion Synergy Spells
@@ -310,8 +311,8 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     manaCost: 4,
     consumesRunes: true,
     effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect
-      damage: 0,
+      type: 'buff_until_end_of_turn',
+      buffAttack: 3,
     },
   },
   // RW Fight Spells - Hero combat initiation
@@ -365,8 +366,10 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     colors: ['red'],
     manaCost: 1,
     effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect for permanent buff
-      damage: 0,
+      type: 'buff_until_end_of_turn',
+      buffAttack: 3,
+      affectsUnits: true,
+      affectsHeroes: true,
     },
   },
   {
@@ -377,8 +380,11 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     colors: ['red', 'white'],
     manaCost: 2,
     effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect
-      damage: 0,
+      type: 'buff_until_end_of_turn',
+      buffAttack: 3,
+      buffHealth: 3,
+      affectsUnits: true,
+      affectsHeroes: true,
     },
   },
   {
@@ -389,8 +395,10 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     colors: ['red', 'white'],
     manaCost: 4,
     effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect
-      damage: 0,
+      type: 'buff_until_end_of_turn',
+      buffAttack: 1,
+      buffHealth: 1,
+      drawCount: 1,
     },
   },
   {
@@ -401,8 +409,8 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     colors: ['red'],
     manaCost: 2,
     effect: {
-      type: 'targeted_damage', // Placeholder - would need custom effect for buff
-      damage: 0,
+      type: 'buff_until_end_of_turn',
+      buffAttack: 1,
     },
   },
   // RW Token Generators - Require runes, create Legion tokens for go-wide synergy
@@ -466,8 +474,8 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     manaCost: 2,
     consumesRunes: true,
     effect: {
-      type: 'targeted_damage', // Placeholder - would be a conditional buff
-      damage: 0,
+      type: 'buff_until_end_of_turn',
+      buffAttack: 1,
     },
     initiative: false,
   },
@@ -1011,7 +1019,8 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       type: 'targeted_damage',
       damage: 999, // High damage to ensure kill of units with 4 or less health
       affectsUnits: true,
-      affectsHeroes: true,
+      affectsHeroes: false,
+      maxTargetHealth: 4,
     },
     initiative: true,
   },
@@ -1073,7 +1082,8 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     manaCost: 1,
     effect: {
       type: 'targeted_damage',
-      towerDamage: 1, // Direct tower damage (both lanes)
+      damage: 0,
+      towerDamage: 1,
       drawCount: 1,
     },
     initiative: true,
@@ -1092,6 +1102,7 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 2,
       affectsUnits: true,
       affectsHeroes: true,
+      canTargetTowers: true,
     },
     refundMana: 2, // Refunds 2 mana if 2nd+ spell
     specialEffects: ['multispell_refund'], // Refunds mana on 2nd+ spell
@@ -1144,7 +1155,7 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       drawCount: 1, // Conditional on 2+ spells
       affectsUnits: true,
       affectsHeroes: false,
-      maxTargetHealth: 3, // Only targets with 3 or less health
+      maxTargetHealth: 3,
     },
     initiative: true,
   },
@@ -1160,6 +1171,7 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       debuffAttack: 2, // -2 attack
       affectsUnits: true,
       affectsHeroes: false,
+      debuffAttack: 2,
     },
     initiative: true,
   },
@@ -1175,7 +1187,7 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       damage: 1,
       affectsUnits: true,
       affectsHeroes: true,
-      towerDamage: 1, // Also deals 1 to opponent towers
+      towerDamage: 1,
     },
     initiative: true,
   },

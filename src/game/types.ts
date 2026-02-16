@@ -209,6 +209,19 @@ export interface GameMetadata {
   player2CardTypesPlayedThisTurn: CardType[]
   // Hero counters: Track counters on specific heroes (e.g., WB hero life-spent counters)
   heroCounters?: Record<string, number> // Format: heroId -> counter count
+  // Game end state
+  gameOver?: boolean
+  winner?: PlayerId | null
+  winReason?: 'destroy_both_towers' | 'post_tower_nexus_damage'
+  // Post-tower nexus damage tracker by lane (damage dealt by each player)
+  player1LaneNexusDamageAfterTower?: {
+    battlefieldA: number
+    battlefieldB: number
+  }
+  player2LaneNexusDamageAfterTower?: {
+    battlefieldA: number
+    battlefieldB: number
+  }
 }
 
 // Hero Ability Types
@@ -347,11 +360,9 @@ export type SpellEffectType =
   | 'return_to_base' // Returns target card to its owner's base
   | 'draw_and_heal' // Draws cards and heals
   | 'steal_unit' // Take control of target enemy unit
-  | 'create_tokens' // Create token(s) via temporary zone
-  | 'tokenize' // Create token(s) in temporary zone
-  | 'scry' // Scry-style choice (top/bottom)
-  | 'buff_until_end_of_turn' // Grant temporary buffs/keywords
-  | 'conal_damage' // Conal damage based on units in front
+  | 'create_tokens' // Create one or more tokens
+  | 'tokenize' // Temporary zone token generation
+  | 'buff_until_end_of_turn' // Temporary buff
 
 export interface SpellEffect {
   type: SpellEffectType
@@ -372,82 +383,18 @@ export interface SpellEffect {
   drawCount?: number // Number of cards to draw
   healAmount?: number // Amount of life to gain
   // Tower damage (direct, non-targeted)
-  towerDamage?: number // Direct damage to opponent's towers (both lanes)
-  canTargetTowers?: boolean // For targeted spells: can target towers instead of units
-  // Debuff effects
-  debuffAttack?: number // Reduce target's attack by this amount
-  debuffHealth?: number // Reduce target's health by this amount (permanent damage)
+  towerDamage?: number
+  canTargetTowers?: boolean
   // Conditional targeting
-  maxTargetHealth?: number // Only target units/heroes with this health or less
-  // Tokenize and temporary zone effects
-  tokenCount?: number
-  tokenPower?: number
-  tokenHealth?: number
-  tokenKeywords?: string[]
-  tokenStats?: { attack: number; health: number }
-  tokenType?: string
-  // Conal effects
-  conalTotalDamage?: number // Total damage to distribute
-  conalMaxTargets?: number // Max units in front to include
-  // Buff effects
-  buffKeywords?: string[]
+  maxTargetHealth?: number
+  // Debuffs/Buffs
+  debuffAttack?: number
   buffAttack?: number
   buffHealth?: number
-}
-
-export type TargetType = 'unit' | 'hero' | 'tower' | 'any'
-export type TargetSide = 'friendly' | 'enemy' | 'any'
-
-export interface TargetingContext {
-  targetType: TargetType
-  targetSide: TargetSide
-  allowBattlefield?: 'battlefieldA' | 'battlefieldB' | 'any'
-  maxTargets?: number
-  minHealth?: number
-  maxHealth?: number
-  requireHeroCaster?: boolean
-}
-
-export interface TokenDefinition {
-  id: string
-  name: string
-  attack: number
-  health: number
-  keywords?: string[]
-  tribe?: string
-}
-
-export type TemporaryZoneType = 'tokenize' | 'scry' | 'sacrifice' | 'target_select' | 'spell_create' | 'ritualist_discard'
-
-export interface TemporaryZone {
-  type: TemporaryZoneType
-  title: string
-  description: string
-  owner: PlayerId
-  tokens?: TokenDefinition[]
-  spellCards?: SpellCard[]
-  scryCardId?: string
-  selectableCardIds?: string[]
-  selectableCards?: Array<{ id: string; name: string }>
-  confirmLabel?: string
-  tokenId?: string
-}
-
-export interface PendingEffect {
-  cardId: string
-  instanceId?: string // The full instance ID of the card (for removal from hand)
-  sourceId?: string // Card instance that created this pending effect
-  owner: PlayerId
-  effect: SpellEffect
-  targeting?: TargetingContext
-  selectedTargetIds?: string[]
-  temporaryZone?: TemporaryZone
-  spellData?: {
-    manaCost?: number
-    colors?: Color[]
-    consumesRunes?: boolean
-    refundMana?: number
-  }
+  // Token creation
+  tokenCount?: number
+  tokenStats?: { attack: number; health: number }
+  tokenType?: string
 }
 
 export interface SpellCard extends BaseCard {
@@ -603,7 +550,7 @@ export interface GameState {
 }
 
 export const BATTLEFIELD_SLOT_LIMIT = 5
-export const TOWER_HP = 15
+export const TOWER_HP = 20
 export const NEXUS_HP = 30
 export const STARTING_GOLD = 5
 

@@ -254,102 +254,93 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
     if (e) {
       e.stopPropagation()
     }
-    if (pendingEffect?.targeting) {
-      const isValidTarget = isValidTargetForContext(gameState, cardId, pendingEffect.targeting, pendingEffect.owner)
-      if (isValidTarget) {
-        if (pendingEffect.cardId === 'black-sig-shadow-strike') {
-          const battlefieldCards = [
-            ...gameState.battlefieldA.player1,
-            ...gameState.battlefieldA.player2,
-            ...gameState.battlefieldB.player1,
-            ...gameState.battlefieldB.player2,
-          ]
-          const targetCard = battlefieldCards.find(card => card.id === cardId)
-          const targetName = targetCard ? targetCard.name : 'this target'
-          const confirmed = window.confirm(`Cast Shadow Strike on ${targetName}?`)
-          if (!confirmed) {
-            return
-          }
-        }
-        setGameState(prev => {
-          const spell = {
-            id: pendingEffect.cardId,
-            name: pendingEffect.cardId,
-            description: '',
-            cardType: 'spell',
-            location: 'base',
-            owner: pendingEffect.owner,
-            effect: pendingEffect.effect,
-          } as import('../game/types').SpellCard
-          const result = resolveSpellEffect({
-            gameState: prev,
-            spell,
-            owner: pendingEffect.owner,
-            targetId: cardId,
+
+    const clickedCard = allCards.find(card => card.id === cardId)
+    if (clickedCard && clickedCard.owner === metadata.actionPlayer) {
+      // Artifact Forger: sacrifice artifact in base -> create 5/1 token in this lane.
+      if (clickedCard.id.startsWith('rb-unit-artifact-forger')) {
+        const ownerBase = clickedCard.owner === 'player1' ? gameState.player1Base : gameState.player2Base
+        const artifacts = ownerBase.filter(card => card.cardType === 'artifact')
+        if (artifacts.length === 0) {
+          alert('No artifact to sacrifice.')
+        } else if (window.confirm('Sacrifice an artifact to create a 5/1 token?')) {
+          const artifact = artifacts[0]
+          setGameState(prev => {
+            const owner = clickedCard.owner as 'player1' | 'player2'
+            const slot = [1, 2, 3, 4, 5].find(s => !prev[battlefieldId][owner].some(c => c.slot === s))
+            if (!slot) return prev
+            const token = {
+              id: `forged-token-${Date.now()}-${Math.random()}`,
+              name: 'Forged Token',
+              description: '5/1 token created by Artifact Forger',
+              cardType: 'generic' as const,
+              colors: [],
+              manaCost: 0,
+              attack: 5,
+              health: 1,
+              maxHealth: 1,
+              currentHealth: 1,
+              location: battlefieldId,
+              owner,
+              slot,
+            }
+            return {
+              ...prev,
+              [`${owner}Base`]: (prev[`${owner}Base` as keyof typeof prev] as Card[]).filter(c => c.id !== artifact.id),
+              [battlefieldId]: {
+                ...prev[battlefieldId],
+                [owner]: [...prev[battlefieldId][owner], token].sort((a, b) => (a.slot || 0) - (b.slot || 0)),
+              },
+            }
           })
-          return result.nextState
-        })
-        setPendingEffect(null)
-        setSelectedCardId(null)
-        return
+        }
+      }
+
+      // Token Ritualist: sacrifice a token in this lane -> create a 4-damage spell in hand.
+      if (clickedCard.id.startsWith('rb-unit-token-ritualist')) {
+        const owner = clickedCard.owner as 'player1' | 'player2'
+        const laneCards = gameState[battlefieldId][owner]
+        const token = laneCards.find(
+          card =>
+            card.cardType === 'generic' &&
+            card.id !== clickedCard.id &&
+            (card.name.toLowerCase().includes('token') || card.description.toLowerCase().includes('token'))
+        )
+        if (!token) {
+          alert('No token available to sacrifice in this lane.')
+        } else if (window.confirm('Sacrifice a token to create a free 4-damage spell in hand?')) {
+          setGameState(prev => {
+            const spell = {
+              id: `ritual-bolt-${Date.now()}-${Math.random()}`,
+              name: 'Ritual Bolt',
+              description: 'Deal 4 damage to target unit, hero, or tower.',
+              cardType: 'spell' as const,
+              colors: ['black'] as const,
+              manaCost: 0,
+              location: 'hand' as const,
+              owner,
+              effect: {
+                type: 'targeted_damage' as const,
+                damage: 4,
+                affectsUnits: true,
+                affectsHeroes: true,
+                canTargetTowers: true,
+              },
+              initiative: true,
+            }
+            return {
+              ...prev,
+              [battlefieldId]: {
+                ...prev[battlefieldId],
+                [owner]: prev[battlefieldId][owner].filter(card => card.id !== token.id),
+              },
+              [`${owner}Hand`]: [...(prev[`${owner}Hand` as keyof typeof prev] as Card[]), spell as Card],
+            }
+          })
+        }
       }
     }
-    const battlefieldCards = [...gameState.battlefieldA.player1, ...gameState.battlefieldA.player2, ...gameState.battlefieldB.player1, ...gameState.battlefieldB.player2]
-    const clickedCard = battlefieldCards.find(card => card.id === cardId)
-    if (clickedCard && clickedCard.cardType === 'generic' && getTemplateId(clickedCard.id) === 'rb-unit-artifact-forger') {
-      const ownerBase = clickedCard.owner === 'player1' ? gameState.player1Base : gameState.player2Base
-      const artifacts = ownerBase.filter(card => card.cardType === 'artifact')
-      if (artifacts.length === 0) {
-        alert('No artifacts available to sacrifice.')
-        return
-      }
-      setPendingEffect({
-        cardId: 'rb-unit-artifact-forger',
-        sourceId: clickedCard.id,
-        owner: clickedCard.owner,
-        effect: {
-          type: 'tokenize',
-        },
-      })
-      setTemporaryZone({
-        type: 'target_select',
-        title: 'Artifact Forger',
-        description: 'Choose an artifact to sacrifice.',
-        owner: clickedCard.owner,
-        selectableCards: artifacts.map(card => ({ id: card.id, name: card.name })),
-      })
-      return
-    }
-    const ritualToken = battlefieldCards.find(card => card.id === cardId && card.cardType === 'generic' && card.name === 'Ritual Token')
-    if (ritualToken) {
-      if (metadata.currentPhase !== 'play') {
-        alert('Ritual Token can only be used during the play phase.')
-        return
-      }
-      if (metadata.actionPlayer !== ritualToken.owner) {
-        alert('You do not have the action right now.')
-        return
-      }
-      const playerManaKey = ritualToken.owner === 'player1' ? 'player1Mana' : 'player2Mana'
-      if ((metadata as any)[playerManaKey] < 1) {
-        alert('Not enough mana! Need 1.')
-        return
-      }
-      const hand = ritualToken.owner === 'player1' ? gameState.player1Hand : gameState.player2Hand
-      if (hand.length === 0) {
-        alert('No cards to discard.')
-        return
-      }
-      setTemporaryZone({
-        type: 'ritualist_discard',
-        title: 'Ritual Token',
-        description: 'Discard a card to draw a card. The token is sacrificed.',
-        owner: ritualToken.owner,
-        selectableCards: hand.map(card => ({ id: card.id, name: card.name })),
-        tokenId: ritualToken.id,
-      })
-      return
-    }
+
     setSelectedCardId(selectedCardId === cardId ? null : cardId)
   }
 

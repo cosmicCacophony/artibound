@@ -4,9 +4,7 @@ import { useGameContext } from '../context/GameContext'
 import { tier1Items } from '../game/sampleData'
 import { canAffordCard, consumeRunesForCard, addRunesFromHero, removeRunesFromHero, addTemporaryRunes, consumeRunesForCardWithTracking } from '../game/runeSystem'
 import { canPlayCardInLane } from '../game/colorSystem'
-import { buildTokenDefinitions, getTemplateId, resolveSpellEffect, isValidTargetForContext } from '../game/effectResolver'
-import { canDeployHeroThisTurn, getActivePlayerForTurn1Phase, hasDeployableHero, normalizeTurnNumber, shouldEndDeployPhase, validateTurn1Deployment } from '../game/deploymentRules'
-import { onSpellCast } from '../game/spellcasterSystem'
+import { getSpellTargetOptions, maxTargetCount, requiresTargets, resolveSpellCast } from '../game/spellResolution'
 
 export function useDeployment() {
   const { gameState, setGameState, selectedCard, selectedCardId, setSelectedCardId, getAvailableSlots, setPendingEffect, setTemporaryZone } = useGameContext()
@@ -299,269 +297,91 @@ export function useDeployment() {
       }
     }
 
-    // Spells can be cast onto a base without occupying a slot
-    if (selectedCard.cardType === 'spell' && location === 'base') {
-      console.log('[spell-targeting] casting spell from base', {
-        spellId: selectedCard.id,
-        spellName: selectedCard.name,
-      })
+    // Spell casting path (spells resolve immediately and are not deployed as units).
+    if (isSpell && (location === 'battlefieldA' || location === 'battlefieldB')) {
       const spellCard = selectedCard as SpellCard
-      setGameState(prev => {
-        const runePoolKey = `${selectedCard.owner}RunePool` as keyof GameMetadata
-        const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
-        let updatedRunePool = prev.metadata[runePoolKey] as any
-        let updatedMana = prev.metadata[manaKey] as number
+      const lane = location
+      let selectedTargets: string[] = []
 
-        if (cardTemplate.manaCost) {
-          updatedMana = updatedMana - cardTemplate.manaCost
-        }
-        const { newPool } = consumeRunesForCardWithTracking(cardTemplate, updatedRunePool)
-        updatedRunePool = newPool
-
-        const otherPlayer: 'player1' | 'player2' = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
-
-        let updatedState = {
-          ...prev,
-          [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
-          [`${selectedCard.owner}Base`]: removeFromLocation(prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[]),
-          [`${selectedCard.owner}DeployZone`]: removeFromLocation(prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[]),
-          metadata: {
-            ...prev.metadata,
-            [runePoolKey]: updatedRunePool,
-            [manaKey]: updatedMana,
-            actionPlayer: otherPlayer,
-            initiativePlayer: otherPlayer,
-            activePlayer: otherPlayer,
-            player1Passed: false,
-            player2Passed: false,
-          },
-        }
-
-        if (spellCard.effect.type !== 'create_tokens' && spellCard.effect.type !== 'tokenize') {
-          const result = resolveSpellEffect({
-            gameState: updatedState,
-            spell: spellCard,
-            owner: selectedCard.owner,
-          })
-          updatedState = result.nextState
-        }
-
-        return onSpellCast(selectedCard.owner, spellCard, updatedState, location)
-      })
-
-      if (isPlayPhase) {
-        const spellCard = selectedCard as SpellCard
-        if (spellCard.effect.type === 'create_tokens' || spellCard.effect.type === 'tokenize') {
-          const tokens = buildTokenDefinitions(spellCard)
-          const templateId = getTemplateId(spellCard.id)
-          const temporaryZone = {
-            type: 'tokenize' as const,
-            title: 'Token Creation',
-            description: 'Drag tokens onto the battlefield.',
-            owner: spellCard.owner,
-            tokens,
-          }
-          setPendingEffect({
-            cardId: templateId,
-            owner: spellCard.owner,
-            effect: spellCard.effect,
-            temporaryZone,
-          })
-          setTemporaryZone(temporaryZone)
-          setSelectedCardId(null)
+      if (requiresTargets(spellCard)) {
+        const options = getSpellTargetOptions(gameState, spellCard, selectedCard.owner, lane)
+        if (options.length === 0) {
+          alert('No legal targets available for this spell.')
           return
         }
 
-        let pendingEffect: PendingEffect | null = null
-        setGameState(prev => {
-          const result = resolveSpellEffect({
-            gameState: prev,
-            spell: spellCard,
-            owner: spellCard.owner,
-          })
-          pendingEffect = result.pendingEffect
-          return result.nextState
-        })
-        console.log('[spell-targeting] base resolve result', {
-          hasPendingEffect: Boolean(pendingEffect),
-          targeting: pendingEffect?.targeting || null,
-        })
-        setPendingEffect(pendingEffect)
-        if (pendingEffect?.targeting) {
-          const allBattlefieldCards = [
-            ...gameState.battlefieldA.player1,
-            ...gameState.battlefieldA.player2,
-            ...gameState.battlefieldB.player1,
-            ...gameState.battlefieldB.player2,
-          ]
-          const validTargets = allBattlefieldCards.filter(card =>
-            isValidTargetForContext(gameState, card.id, pendingEffect!.targeting!, pendingEffect!.owner)
-          )
-          if (validTargets.length === 0) {
-            alert('No valid targets available.')
-            setPendingEffect(null)
-            setTemporaryZone(null)
-            setSelectedCardId(null)
-            return
-          }
-          console.log('[spell-targeting] base valid targets', {
-            count: validTargets.length,
-            names: validTargets.map(card => card.name),
-          })
-          const templateId = getTemplateId(spellCard.id)
-          setTemporaryZone({
-            type: 'target_select',
-            title: spellCard.name,
-            description: templateId === 'black-sig-shadow-strike'
-              ? 'Choose a target with 4 or less health.'
-              : 'Choose a valid target.',
-            owner: pendingEffect.owner,
-            selectableCards: validTargets.map(card => ({ id: card.id, name: card.name })),
-          })
-        } else {
-          setTemporaryZone(pendingEffect?.temporaryZone || null)
-        }
-      }
-
-      setSelectedCardId(null)
-      return
-    }
-
-    // Spells can be cast onto a battlefield without occupying a slot
-    if (selectedCard.cardType === 'spell' && (location === 'battlefieldA' || location === 'battlefieldB')) {
-      console.log('[spell-targeting] casting spell onto battlefield', {
-        spellId: selectedCard.id,
-        spellName: selectedCard.name,
-        location,
-      })
-      
-      const spellCard = selectedCard as SpellCard
-      
-      // Check for targeting BEFORE paying costs (synchronously)
-      const preCheckResult = resolveSpellEffect({
-        gameState: gameState,
-        spell: spellCard,
-        owner: spellCard.owner,
-      })
-      
-      console.log('[spell-targeting] pre-check result', {
-        hasPendingEffect: Boolean(preCheckResult.pendingEffect),
-        targeting: preCheckResult.pendingEffect?.targeting || null,
-      })
-      
-      // If spell needs targeting, show modal BEFORE paying costs
-      if (preCheckResult.pendingEffect?.targeting) {
-        const battlefieldCards = location === 'battlefieldA'
-          ? [...gameState.battlefieldA.player1, ...gameState.battlefieldA.player2]
-          : [...gameState.battlefieldB.player1, ...gameState.battlefieldB.player2]
-        
-        const targeting = {
-          ...preCheckResult.pendingEffect.targeting,
-          allowBattlefield: location,
-        }
-        
-        const validTargets = battlefieldCards.filter(card =>
-          isValidTargetForContext(gameState, card.id, targeting, preCheckResult.pendingEffect!.owner)
+        const maxTargets = maxTargetCount(spellCard)
+        const lines = options.map((option, index) => `${index + 1}. ${option.label}`).join('\n')
+        const response = window.prompt(
+          `Choose ${maxTargets > 1 ? `up to ${maxTargets} target(s)` : 'a target'} for ${spellCard.name}.\n${lines}\nEnter number${maxTargets > 1 ? 's separated by commas' : ''}.`
         )
-        
-        console.log('[spell-targeting] valid targets in lane', {
-          count: validTargets.length,
-          names: validTargets.map(card => card.name),
-        })
-        
-        if (validTargets.length === 0) {
-          alert('No valid targets in this lane.')
-          setSelectedCardId(null)
+        if (!response) {
           return
         }
-        
-        // Store the pending effect with spell info for later resolution
-        const pendingEffect: PendingEffect = {
-          ...preCheckResult.pendingEffect,
-          cardId: getTemplateId(spellCard.id),
-          instanceId: spellCard.id, // Full instance ID for removal
-          targeting,
-          spellData: {
-            manaCost: spellCard.manaCost,
-            colors: spellCard.colors,
-            consumesRunes: spellCard.consumesRunes,
-            refundMana: spellCard.refundMana,
-          },
+
+        const pickedIndexes = response
+          .split(',')
+          .map(raw => Number(raw.trim()) - 1)
+          .filter(index => Number.isFinite(index) && index >= 0 && index < options.length)
+        const deduped = [...new Set(pickedIndexes)]
+        if (deduped.length === 0) {
+          alert('No valid target selected.')
+          return
         }
-        setPendingEffect(pendingEffect)
-        
-        const templateId = getTemplateId(spellCard.id)
-        setTemporaryZone({
-          type: 'target_select',
-          title: spellCard.name,
-          description: templateId === 'black-sig-shadow-strike'
-            ? 'Choose a target with 4 or less health in this lane.'
-            : 'Choose a valid target in this lane.',
-          owner: pendingEffect.owner,
-          selectableCards: validTargets.map(card => ({ id: card.id, name: card.name })),
-        })
-        
-        // Don't clear selection or pay costs yet - wait for target selection
-        return
+        if (deduped.length > maxTargets) {
+          alert(`Too many targets selected. Maximum: ${maxTargets}.`)
+          return
+        }
+        selectedTargets = deduped.map(index => options[index].id)
       }
-      
-      // No targeting needed - proceed with normal spell resolution
+
       setGameState(prev => {
-        const runePoolKey = `${selectedCard.owner}RunePool` as keyof GameMetadata
-        const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
+        const owner = selectedCard.owner
+        const runePoolKey = `${owner}RunePool` as keyof GameMetadata
+        const manaKey = `${owner}Mana` as keyof GameMetadata
         let updatedRunePool = prev.metadata[runePoolKey] as any
         let updatedMana = prev.metadata[manaKey] as number
 
         if (cardTemplate.manaCost) {
-          updatedMana = updatedMana - cardTemplate.manaCost
+          updatedMana -= cardTemplate.manaCost
         }
-        const { newPool } = consumeRunesForCardWithTracking(cardTemplate, updatedRunePool)
-        updatedRunePool = newPool
+        const runeResult = consumeRunesForCardWithTracking(cardTemplate, updatedRunePool)
+        updatedRunePool = runeResult.newPool
 
-        const otherPlayer: 'player1' | 'player2' = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
+        if (spellCard.effect.type === 'add_temporary_runes' && spellCard.effect.runeColors) {
+          updatedRunePool = addTemporaryRunes(updatedRunePool, spellCard.effect.runeColors as any)
+        }
 
-        const updatedState = {
+        if (spellCard.refundMana && spellCard.refundMana > 0) {
+          updatedMana += spellCard.refundMana
+        }
+
+        const baseState: any = {
           ...prev,
-          [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
-          [`${selectedCard.owner}Base`]: removeFromLocation(prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[]),
-          [`${selectedCard.owner}DeployZone`]: removeFromLocation(prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[]),
+          [`${owner}Hand`]: (prev[`${owner}Hand` as keyof typeof prev] as Card[]).filter(c => c.id !== selectedCard.id),
+          [`${owner}Base`]: (prev[`${owner}Base` as keyof typeof prev] as Card[]).filter(c => c.id !== selectedCard.id),
+          [`${owner}DeployZone`]: (prev[`${owner}DeployZone` as keyof typeof prev] as Card[]).filter(c => c.id !== selectedCard.id),
           metadata: {
             ...prev.metadata,
             [runePoolKey]: updatedRunePool,
             [manaKey]: updatedMana,
+          },
+        }
+
+        const resolved = resolveSpellCast(baseState, { ...spellCard, owner, location: 'hand' }, owner, lane, selectedTargets)
+
+        const otherPlayer: 'player1' | 'player2' = owner === 'player1' ? 'player2' : 'player1'
+        return {
+          ...resolved,
+          metadata: {
+            ...resolved.metadata,
             actionPlayer: otherPlayer,
             initiativePlayer: otherPlayer,
-            activePlayer: otherPlayer,
             player1Passed: false,
             player2Passed: false,
           },
         }
-
-        return onSpellCast(selectedCard.owner, spellCard, updatedState, location)
       })
-
-      if (isPlayPhase) {
-        if (spellCard.effect.type === 'create_tokens' || spellCard.effect.type === 'tokenize') {
-          const tokens = buildTokenDefinitions(spellCard)
-          const templateId = getTemplateId(spellCard.id)
-          const temporaryZone = {
-            type: 'tokenize' as const,
-            title: 'Token Creation',
-            description: 'Drag tokens onto the battlefield.',
-            owner: spellCard.owner,
-            tokens,
-          }
-          setPendingEffect({
-            cardId: templateId,
-            owner: spellCard.owner,
-            effect: spellCard.effect,
-            temporaryZone,
-          })
-          setTemporaryZone(temporaryZone)
-          setSelectedCardId(null)
-          return
-        }
-      }
 
       setSelectedCardId(null)
       return

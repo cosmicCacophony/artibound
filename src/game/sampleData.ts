@@ -1812,6 +1812,10 @@ export function createInitialGameState(): {
     player1CardTypesPlayedThisTurn: [],
     player2CardTypesPlayedThisTurn: [],
     heroCounters: {}, // Track counters on heroes (e.g., WB Life Channeler)
+    gameOver: false,
+    winner: null,
+    player1LaneNexusDamageAfterTower: { battlefieldA: 0, battlefieldB: 0 },
+    player2LaneNexusDamageAfterTower: { battlefieldA: 0, battlefieldB: 0 },
   }
 
   // Spawn initial 1/1 creeps in slot 1 for both players on both battlefields
@@ -2053,6 +2057,10 @@ export function createGameStateFromDraft(
     player1CardTypesPlayedThisTurn: [],
     player2CardTypesPlayedThisTurn: [],
     heroCounters: {}, // Track counters on heroes (e.g., WB Life Channeler)
+    gameOver: false,
+    winner: null,
+    player1LaneNexusDamageAfterTower: { battlefieldA: 0, battlefieldB: 0 },
+    player2LaneNexusDamageAfterTower: { battlefieldA: 0, battlefieldB: 0 },
   }
 
   // Battlefields removed - simplifying game to focus on color system and combat

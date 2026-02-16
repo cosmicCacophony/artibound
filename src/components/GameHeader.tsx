@@ -1,6 +1,7 @@
 import { useGameContext } from '../context/GameContext'
 import { useGamePersistence } from '../hooks/useGamePersistence'
 import { useTurnManagement } from '../hooks/useTurnManagement'
+import { getWinReasonLabel } from '../game/winCondition'
 
 export function GameHeader() {
   const { metadata, activePlayer, setShowCardLibrary, setGameState } = useGameContext()
@@ -10,9 +11,24 @@ export function GameHeader() {
   const activePlayerLabel = activePlayer === 'player1' ? 'P1' : 'P2'
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0', flexShrink: 0, padding: '1px 2px' }}>
-      <h1 style={{ margin: 0, fontSize: '12px', fontWeight: 'bold' }}>Artibound</h1>
-      <div style={{ display: 'flex', gap: '3px', alignItems: 'center', flexWrap: 'wrap', fontSize: '10px' }}>
+    <div style={{ marginBottom: '20px' }}>
+      {metadata.gameOver && metadata.winner && (
+        <div
+          style={{
+            marginBottom: '12px',
+            padding: '10px 14px',
+            borderRadius: '6px',
+            backgroundColor: metadata.winner === 'player1' ? '#ffebee' : '#e3f2fd',
+            border: `2px solid ${metadata.winner === 'player1' ? '#d32f2f' : '#1976d2'}`,
+            fontWeight: 'bold',
+          }}
+        >
+          Winner: {metadata.winner === 'player1' ? 'Player 1' : 'Player 2'} - {getWinReasonLabel(metadata.winReason)}
+        </div>
+      )}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <h1 style={{ margin: 0 }}>Artibound - Hero Card Game</h1>
+      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
         {/* Action Display - Prominent */}
         {metadata.actionPlayer && (
           <div style={{ 
@@ -58,25 +74,27 @@ export function GameHeader() {
         </div>
         {/* End Deploy Phase Button - Show during deploy phase */}
         {metadata.currentPhase === 'deploy' && (
-        <button
-          onClick={handleEndDeployPhase}
-          style={{
-            padding: '2px 4px',
-            backgroundColor: '#4caf50',
-            color: 'white',
-            border: 'none',
-            borderRadius: '2px',
-            cursor: 'pointer',
-            fontSize: '9px',
-            fontWeight: 'bold',
-          }}
-          title="End deployment phase"
-        >
-          End
-        </button>
+          <button
+            onClick={handleEndDeployPhase}
+            disabled={!!metadata.gameOver}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#4caf50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold',
+            }}
+            title="End deployment phase and begin play phase"
+          >
+            End Deploy Phase
+          </button>
         )}
         <button
           onClick={handleNextTurn}
+          disabled={!!metadata.gameOver}
           style={{
             padding: '2px 4px',
             backgroundColor: '#ff9800',
@@ -95,6 +113,7 @@ export function GameHeader() {
           (metadata.turn1DeploymentPhase === 'p2_lane1' || metadata.turn1DeploymentPhase === 'p1_lane2') && (
             <button
               onClick={() => handlePass(metadata.turn1DeploymentPhase === 'p2_lane1' ? 'player2' : 'player1')}
+              disabled={!!metadata.gameOver}
               style={{
                 padding: '2px 4px',
                 backgroundColor: '#ff9800',
@@ -116,6 +135,7 @@ export function GameHeader() {
          !(metadata.currentTurn === 1 && metadata.turn1DeploymentPhase && metadata.turn1DeploymentPhase !== 'complete') && (
           <button
             onClick={() => handlePass(metadata.actionPlayer!)}
+            disabled={!!metadata.gameOver}
             style={{
               padding: '2px 4px',
               backgroundColor: '#ff9800',
@@ -133,6 +153,7 @@ export function GameHeader() {
         )}
         <button
           onClick={handleNextPhase}
+          disabled={!!metadata.gameOver}
           style={{
             padding: '2px 4px',
             backgroundColor: '#4caf50',
@@ -178,6 +199,7 @@ export function GameHeader() {
           </select>
         )}
       </div>
+    </div>
     </div>
   )
 }

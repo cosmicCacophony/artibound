@@ -883,10 +883,18 @@ export function resolveRangedAttacks(
 ): {
   updatedTowerHP: { towerA_player1: number, towerA_player2: number, towerB_player1: number, towerB_player2: number }
   overflowDamage: { player1: number, player2: number }
+  overflowDamageByLane: {
+    player1: { battlefieldA: number; battlefieldB: number }
+    player2: { battlefieldA: number; battlefieldB: number }
+  }
   combatLog: CombatLogEntry[]
 } {
   let currentTowerHP = { ...initialTowerHP }
   let overflowDamage = { player1: 0, player2: 0 }
+  let overflowDamageByLane = {
+    player1: { battlefieldA: 0, battlefieldB: 0 },
+    player2: { battlefieldA: 0, battlefieldB: 0 },
+  }
   const combatLog: CombatLogEntry[] = []
   
   // Get ranged units from base and deploy zone for both players
@@ -926,9 +934,11 @@ export function resolveRangedAttacks(
         // Tower destroyed - calculate overflow
         const overflow = Math.max(0, damageToEach + remainder - towerAHPBefore)
         overflowDamage[player] += overflow
+        overflowDamageByLane[player].battlefieldA += overflow
       } else if (towerAHPBefore === 0) {
         // Tower already dead - all damage goes to nexus
         overflowDamage[player] += damageToEach + remainder
+        overflowDamageByLane[player].battlefieldA += damageToEach + remainder
       }
       
       currentTowerHP[towerAKey] = newTowerAHP
@@ -944,9 +954,11 @@ export function resolveRangedAttacks(
         // Tower destroyed - calculate overflow
         const overflow = Math.max(0, damageToEach - towerBHPBefore)
         overflowDamage[player] += overflow
+        overflowDamageByLane[player].battlefieldB += overflow
       } else if (towerBHPBefore === 0) {
         // Tower already dead - all damage goes to nexus
         overflowDamage[player] += damageToEach
+        overflowDamageByLane[player].battlefieldB += damageToEach
       }
       
       currentTowerHP[towerBKey] = newTowerBHP
@@ -964,6 +976,7 @@ export function resolveRangedAttacks(
   return {
     updatedTowerHP: currentTowerHP,
     overflowDamage,
+    overflowDamageByLane,
     combatLog,
   }
 }
