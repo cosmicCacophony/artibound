@@ -2,10 +2,20 @@ import { useCallback, useEffect } from 'react'
 import { TurnPhase, Card, GameMetadata, ShopItem, Hero, BaseCard, PlayerId, GameState } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { getDefaultTargets, resolveCombat, resolveSimultaneousCombat, resolveRangedAttacks } from '../game/combatSystem'
-import { addRunesFromHero, canAffordCard, consumeRunesForCardWithTracking, removeRunesFromHero } from '../game/runeSystem'
+import { canAffordCard, consumeRunesForCardWithTracking, removeRunesFromHero } from '../game/runeSystem'
 import { tier1Items, createCardFromTemplate } from '../game/sampleData'
 import { applyLaneNexusPostTowerDamage, checkWinCondition } from '../game/winCondition'
 import { getSpellTargetOptions, maxTargetCount, requiresTargets, resolveSpellCast } from '../game/spellResolution'
+import { getTurn1PhaseAfterPass, hasDeployableHero, shouldEndDeployPhase } from '../game/deploymentRules'
+import {
+  addRunes,
+  applyMirrorResonanceBuffs,
+  getHeroRuneTrigger,
+  getSharedResonanceColors,
+  grantHeroTriggerRune,
+  grantSeedRunes,
+  tickMirrorResonance,
+} from '../game/heroRuneSystem'
 
 /** Ensure turn is a valid number >= 1 (handles undefined/null/NaN from metadata). */
 function normalizeTurnNumber(turn: number | undefined | null): number {
@@ -114,7 +124,6 @@ export function useTurnManagement() {
         const newCooldowns = { ...deathCooldowns }
         let updatedP1RunePool = player1RunePool
         let updatedP2RunePool = player2RunePool
-        const blackHeroesDied: Array<{ player: PlayerId }> = []
         
         // Process player1 heroes
         originalBattlefield.player1.forEach(originalCard => {
@@ -130,9 +139,6 @@ export function useTurnManagement() {
               })
               newCooldowns[hero.id] = 2
               updatedP1RunePool = removeRunesFromHero(hero, updatedP1RunePool)
-              if (hero.colors?.includes('black')) {
-                blackHeroesDied.push({ player: 'player1' })
-              }
             }
           }
         })
@@ -151,17 +157,14 @@ export function useTurnManagement() {
               })
               newCooldowns[hero.id] = 2
               updatedP2RunePool = removeRunesFromHero(hero, updatedP2RunePool)
-              if (hero.colors?.includes('black')) {
-                blackHeroesDied.push({ player: 'player2' })
-              }
             }
           }
         })
 
-        return { newP1Base, newP2Base, newCooldowns, updatedP1RunePool, updatedP2RunePool, blackHeroesDied }
+        return { newP1Base, newP2Base, newCooldowns, updatedP1RunePool, updatedP2RunePool }
       }
       
-      const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA, updatedP1RunePool: updatedP1RunePoolA, updatedP2RunePool: updatedP2RunePoolA, blackHeroesDied: blackHeroesDiedA } = processKilledHeroes(
+      const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA, updatedP1RunePool: updatedP1RunePoolA, updatedP2RunePool: updatedP2RunePoolA } = processKilledHeroes(
         gameState.battlefieldA,
         resultA.updatedBattlefield,
         gameState.player1Base,
@@ -171,7 +174,7 @@ export function useTurnManagement() {
         metadata.player2RunePool
       )
       
-      const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB, updatedP1RunePool: updatedP1RunePoolB, updatedP2RunePool: updatedP2RunePoolB, blackHeroesDied: blackHeroesDiedB } = processKilledHeroes(
+      const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB, updatedP1RunePool: updatedP1RunePoolB, updatedP2RunePool: updatedP2RunePoolB } = processKilledHeroes(
         gameState.battlefieldB,
         resultB.updatedBattlefield,
         newP1BaseA,
@@ -180,9 +183,6 @@ export function useTurnManagement() {
         updatedP1RunePoolA,
         updatedP2RunePoolA
       )
-      
-      // Add B runes for black heroes that died
-      const allBlackHeroesDied = [...blackHeroesDiedA, ...blackHeroesDiedB]
       
       // Apply combat results from both battlefields
       // Calculate total overflow damage TO each player's nexus
@@ -195,23 +195,78 @@ export function useTurnManagement() {
         const newP1NexusHP = Math.max(0, prev.metadata.player1NexusHP - totalDamageToP1Nexus)
         const newP2NexusHP = Math.max(0, prev.metadata.player2NexusHP - totalDamageToP2Nexus)
         
-        // Add B runes for black heroes that died
         let updatedP1RunePool = updatedP1RunePoolB
         let updatedP2RunePool = updatedP2RunePoolB
-        
-        allBlackHeroesDied.forEach(({ player }) => {
-          if (player === 'player1') {
-            updatedP1RunePool = {
-              ...updatedP1RunePool,
-              runes: [...updatedP1RunePool.runes, 'black'],
-            }
+        let updatedTriggerState = { ...(prev.metadata.heroRuneTriggersThisTurn || {}) }
+
+        const grantTriggerForHero = (hero: Hero, owner: PlayerId, color: 'red' | 'black' | 'white') => {
+          const baseMetadata = { ...prev.metadata, heroRuneTriggersThisTurn: updatedTriggerState } as GameMetadata
+          if (owner === 'player1') {
+            const result = grantHeroTriggerRune(hero, updatedP1RunePool, baseMetadata, color)
+            updatedP1RunePool = result.updatedPool
+            updatedTriggerState = result.updatedTriggerState
           } else {
-            updatedP2RunePool = {
-              ...updatedP2RunePool,
-              runes: [...updatedP2RunePool.runes, 'black'],
-            }
+            const result = grantHeroTriggerRune(hero, updatedP2RunePool, baseMetadata, color)
+            updatedP2RunePool = result.updatedPool
+            updatedTriggerState = result.updatedTriggerState
           }
-        })
+        }
+
+        // Red trigger: hero deals combat damage to tower.
+        const combatLogs = [...resultA.combatLog, ...resultB.combatLog]
+        const allOriginalHeroes = [
+          ...gameState.battlefieldA.player1,
+          ...gameState.battlefieldA.player2,
+          ...gameState.battlefieldB.player1,
+          ...gameState.battlefieldB.player2,
+        ].filter(card => card.cardType === 'hero') as Hero[]
+
+        combatLogs
+          .filter(entry => entry.targetType === 'tower')
+          .forEach(entry => {
+            const attacker = allOriginalHeroes.find(hero => hero.id === entry.attackerId)
+            if (!attacker) return
+            if (getHeroRuneTrigger(attacker) !== 'red_tower_damage') return
+            grantTriggerForHero(attacker, attacker.owner, 'red')
+          })
+
+        // Lane-based triggers for deaths and combat survivors.
+        const applyLaneCombatTriggers = (
+          originalLane: { player1: Card[]; player2: Card[] },
+          updatedLane: { player1: Card[]; player2: Card[] }
+        ) => {
+          const deathsInLane =
+            (originalLane.player1.length - updatedLane.player1.length) +
+            (originalLane.player2.length - updatedLane.player2.length)
+
+          ;(['player1', 'player2'] as const).forEach(owner => {
+            const laneHeroes = originalLane[owner].filter(card => card.cardType === 'hero') as Hero[]
+
+            if (deathsInLane > 0) {
+              laneHeroes.forEach(hero => {
+                if (getHeroRuneTrigger(hero) === 'black_lane_death') {
+                  grantTriggerForHero(hero, owner, 'black')
+                }
+              })
+            }
+
+            const survivedFriendlyUnit = originalLane[owner].some(card => {
+              if (card.cardType === 'hero') return false
+              return updatedLane[owner].some(updated => updated.id === card.id)
+            })
+
+            if (survivedFriendlyUnit) {
+              laneHeroes.forEach(hero => {
+                if (getHeroRuneTrigger(hero) === 'white_friendly_survive_combat') {
+                  grantTriggerForHero(hero, owner, 'white')
+                }
+              })
+            }
+          })
+        }
+
+        applyLaneCombatTriggers(gameState.battlefieldA, resultA.updatedBattlefield)
+        applyLaneCombatTriggers(gameState.battlefieldB, resultB.updatedBattlefield)
         
         const existingLaneMomentum = prev.metadata.laneMomentum || {
           battlefieldA: { player1: 0, player2: 0 },
@@ -241,6 +296,7 @@ export function useTurnManagement() {
           deathCooldowns: newCooldownsB,
           player1RunePool: updatedP1RunePool,
           player2RunePool: updatedP2RunePool,
+          heroRuneTriggersThisTurn: updatedTriggerState,
           laneMomentum: updatedLaneMomentum,
         }
 
@@ -445,6 +501,7 @@ export function useTurnManagement() {
             deathCooldowns: { ...p1Result.newCooldowns, ...p2Result.newCooldowns },
             player1SpellsCastThisTurn: 0,
             player2SpellsCastThisTurn: 0,
+            heroRuneTriggersThisTurn: {},
           },
         }
       })
@@ -525,8 +582,7 @@ export function useTurnManagement() {
         })
 
         const resolvedPhase = shouldSkipDeploy ? 'play' : nextPhase
-
-        return {
+        let nextState: GameState = {
           ...prev,
           metadata: {
             ...prev.metadata,
@@ -541,6 +597,7 @@ export function useTurnManagement() {
             // Reset pass flags at start of new turn
             player1Passed: false,
             player2Passed: false,
+            heroRuneTriggersThisTurn: {},
             // Reset deploy counters when entering deploy phase
             ...(resolvedPhase === 'deploy' ? {
               player1HeroesDeployedThisTurn: 0,
@@ -550,6 +607,47 @@ export function useTurnManagement() {
             ...(shouldIncrementTurn && prev.metadata.currentTurn > 1 ? { turn1DeploymentPhase: 'complete' } : {}),
           },
         }
+
+        if (shouldIncrementTurn) {
+          const p1ResonanceColors = getSharedResonanceColors(nextState, 'player1')
+          const p2ResonanceColors = getSharedResonanceColors(nextState, 'player2')
+
+          let p1Pool = addRunes(nextState.metadata.player1RunePool, p1ResonanceColors)
+          let p2Pool = addRunes(nextState.metadata.player2RunePool, p2ResonanceColors)
+
+          const p1Mirror = tickMirrorResonance(nextState.metadata, nextState, 'player1')
+          const p2Mirror = tickMirrorResonance(nextState.metadata, nextState, 'player2')
+
+          // Mirror payoff: every 3 turns of mirrored survival grants 1 rune
+          // matching the mirrored hero's primary color in lane A.
+          p1Mirror.payoffSlots.forEach(slot => {
+            const hero = nextState.battlefieldA.player1.find(card => card.cardType === 'hero' && card.slot === slot) as Hero | undefined
+            if (!hero?.colors?.[0]) return
+            p1Pool = addRunes(p1Pool, [hero.colors[0]])
+          })
+          p2Mirror.payoffSlots.forEach(slot => {
+            const hero = nextState.battlefieldA.player2.find(card => card.cardType === 'hero' && card.slot === slot) as Hero | undefined
+            if (!hero?.colors?.[0]) return
+            p2Pool = addRunes(p2Pool, [hero.colors[0]])
+          })
+
+          nextState = {
+            ...nextState,
+            metadata: {
+              ...nextState.metadata,
+              player1RunePool: p1Pool,
+              player2RunePool: p2Pool,
+              mirrorResonanceTurns: {
+                ...p1Mirror.updatedTurns,
+                ...p2Mirror.updatedTurns,
+              },
+            },
+          }
+
+          nextState = applyMirrorResonanceBuffs(nextState)
+        }
+
+        return nextState
       })
       return
     }
@@ -928,7 +1026,8 @@ export function useTurnManagement() {
           player2HeroesDeployedThisTurn: 0,
           // Update rune pools (clear temp, generate from seals)
           player1RunePool: p1RuneResult.updatedPool,
-          player2RunePool: p2RuneResult.updatedPool
+          player2RunePool: p2RuneResult.updatedPool,
+          heroRuneTriggersThisTurn: {},
         },
       }
     })
@@ -1098,7 +1197,11 @@ export function useTurnManagement() {
         const slot = (openSlotA || openSlotB || 1) as number
 
         if (playable.cardType === 'hero') {
-          const withRunes = addRunesFromHero(playable as Hero, nextMeta.player2RunePool)
+          const seedResult = grantSeedRunes(
+            playable as Hero,
+            nextMeta.player2RunePool,
+            prev.metadata.heroSeedRunesGranted || {}
+          )
           return {
             ...prev,
             player2Hand: removeFromHand,
@@ -1108,7 +1211,11 @@ export function useTurnManagement() {
             },
             metadata: {
               ...nextMeta,
-              player2RunePool: withRunes,
+              player2RunePool: seedResult.updatedPool,
+              heroSeedRunesGranted: {
+                ...(prev.metadata.heroSeedRunesGranted || {}),
+                [playable.id]: true,
+              },
             },
           }
         }

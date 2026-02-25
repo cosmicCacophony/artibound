@@ -3791,6 +3791,16 @@ const isAllowedDraftColor = (colors?: Color[]): boolean => {
   return false
 }
 
+const inferRuneTriggerFromPrimaryColor = (colors?: Color[]) => {
+  const primary = colors?.[0]
+  if (primary === 'red') return 'red_tower_damage' as const
+  if (primary === 'blue') return 'blue_spell_cast' as const
+  if (primary === 'black') return 'black_lane_death' as const
+  if (primary === 'green') return 'green_friendly_deploy' as const
+  if (primary === 'white') return 'white_friendly_survive_combat' as const
+  return 'red_tower_damage' as const
+}
+
 export const allHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   ...rwHeroes,
   ...rgHeroes,
@@ -3809,7 +3819,13 @@ export const allHeroes: Omit<Hero, 'location' | 'owner'>[] = [
   // Rare heroes
   ...rareBlueHeroes,
   ...rareWUHeroes,
-].filter(hero => isAllowedDraftColor(hero.colors))
+]
+  .filter(hero => isAllowedDraftColor(hero.colors))
+  .map(hero => ({
+    ...hero,
+    runeTrigger: hero.runeTrigger || inferRuneTriggerFromPrimaryColor(hero.colors),
+    resonanceColors: hero.resonanceColors || hero.colors,
+  }))
 
 export const allCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
   ...rwCards,

@@ -12,6 +12,14 @@ export type Rarity = 'common' | 'uncommon' | 'rare'
 // Rune System Types - Simplified: Runes are just color requirements
 export type RuneColor = Color // R, W, U, B, G
 
+// Hero rune trigger identity (replaces bounce-based rune generation loops)
+export type HeroRuneTriggerType =
+  | 'red_tower_damage'
+  | 'blue_spell_cast'
+  | 'black_lane_death'
+  | 'green_friendly_deploy'
+  | 'white_friendly_survive_combat'
+
 export interface RunePool {
   runes: RuneColor[] // Array of permanent runes (e.g., ['red', 'red', 'white', 'white', 'blue', 'green', 'black'])
   temporaryRunes: RuneColor[] // Temporary runes that clear at end of turn (like Dark Ritual)
@@ -133,6 +141,12 @@ export interface GameMetadata {
   // Rune system
   player1RunePool: RunePool
   player2RunePool: RunePool
+  // One-time seed rune tracking per hero (granted on first deployment from base/deploy zone)
+  heroSeedRunesGranted: Record<string, boolean>
+  // Per-turn trigger cap tracking per hero (max 1 trigger rune per turn)
+  heroRuneTriggersThisTurn: Record<string, number>
+  // Cross-lane mirror resonance counters by player+slot key (e.g. "player1:3")
+  mirrorResonanceTurns: Record<string, number>
   // Seals - Permanent rune generators (like mana rocks)
   player1Seals: Seal[]
   player2Seals: Seal[]
@@ -285,6 +299,8 @@ export interface Hero extends BaseCard {
   signatureCardId?: string // ID of the signature card for this hero (2 copies added to deck)
   bonusVsHeroes?: number // Bonus damage when attacking heroes (e.g., +3 for assassins)
   ability?: HeroAbility // Hero's activated ability (mana cost + cooldown)
+  runeTrigger?: HeroRuneTriggerType // How this hero generates trigger runes
+  resonanceColors?: Color[] // Optional override for cross-lane color resonance
 }
 
 export interface SignatureCard extends BaseCard {

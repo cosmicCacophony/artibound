@@ -1801,6 +1801,9 @@ export function createInitialGameState(): {
     // Rune system
     player1RunePool: player1InitialRunePool,
     player2RunePool: player2InitialRunePool,
+    heroSeedRunesGranted: {},
+    heroRuneTriggersThisTurn: {},
+    mirrorResonanceTurns: {},
     // Seals (mana rocks)
     player1Seals: [],
     player2Seals: [],
@@ -2046,6 +2049,9 @@ export function createGameStateFromDraft(
     // Rune system - start with empty pools, runes added when heroes deploy
     player1RunePool: player1InitialRunePool,
     player2RunePool: player2InitialRunePool,
+    heroSeedRunesGranted: {},
+    heroRuneTriggersThisTurn: {},
+    mirrorResonanceTurns: {},
     // Seals (mana rocks)
     player1Seals: [],
     player2Seals: [],

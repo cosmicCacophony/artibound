@@ -1,10 +1,20 @@
 import { useCallback } from 'react'
-import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT, Hero, ItemCard, BaseCard, SpellCard, PendingEffect } from '../game/types'
+import { Card, Location, GenericUnit, GameMetadata, Hero, ItemCard, BaseCard, SpellCard } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { tier1Items } from '../game/sampleData'
-import { canAffordCard, consumeRunesForCard, addRunesFromHero, removeRunesFromHero, addTemporaryRunes, consumeRunesForCardWithTracking } from '../game/runeSystem'
+import { canAffordCard, removeRunesFromHero, addTemporaryRunes, consumeRunesForCardWithTracking } from '../game/runeSystem'
 import { canPlayCardInLane } from '../game/colorSystem'
 import { getSpellTargetOptions, maxTargetCount, requiresTargets, resolveSpellCast } from '../game/spellResolution'
+import { applyBlueSpellTrigger, getHeroRuneTrigger, grantHeroTriggerRune, grantSeedRunes } from '../game/heroRuneSystem'
+import { buildTokenDefinitions, getTemplateId, resolveSpellEffect } from '../game/effectResolver'
+import {
+  canDeployHeroThisTurn,
+  getActivePlayerForTurn1Phase,
+  hasDeployableHero,
+  normalizeTurnNumber,
+  shouldEndDeployPhase,
+  validateTurn1Deployment,
+} from '../game/deploymentRules'
 
 export function useDeployment() {
   const { gameState, setGameState, selectedCard, selectedCardId, setSelectedCardId, getAvailableSlots, setPendingEffect, setTemporaryZone } = useGameContext()
@@ -26,7 +36,7 @@ export function useDeployment() {
     const isPlayPhase = metadata.currentPhase === 'play'
     const isDeployPhase = metadata.currentPhase === 'deploy'
     
-    // Deploy phase: only heroes can be deployed, and bouncing is allowed
+    // Deploy phase: only heroes can be deployed.
     if (isDeployPhase) {
       let newDeploymentPhase = metadata.turn1DeploymentPhase || 'p1_lane1'
 
@@ -72,7 +82,7 @@ export function useDeployment() {
       
       // Turn 2+ restrictions are enforced via shouldEndDeployPhase
       
-      // Handle deploy phase deployment with bounce mechanic
+      // Deploy phase: no bouncing, heroes must deploy into open slots.
       setGameState(prev => {
         const battlefieldKey = location as 'battlefieldA' | 'battlefieldB'
         const playerKey = selectedCard.owner as 'player1' | 'player2'
@@ -88,10 +98,17 @@ export function useDeployment() {
             }
           }
         }
-        if (!finalSlot) finalSlot = 1 // Default to slot 1 if all full (will bounce)
+        if (!finalSlot) {
+          alert('Battlefield is full! Choose another lane.')
+          return prev
+        }
         
-        // Check if there's an existing hero in this slot
-        const existingHeroInSlot = battlefield.find(c => c.slot === finalSlot && c.cardType === 'hero') as Hero | undefined
+        // Bouncing is removed: occupied target slots are invalid deployments.
+        const slotOccupied = battlefield.some(c => c.slot === finalSlot)
+        if (slotOccupied) {
+          alert('That slot is occupied. Bouncing is disabled.')
+          return prev
+        }
         
         // Remove deploying hero from base or deploy zone
         const newBase = (prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[])
@@ -99,36 +116,25 @@ export function useDeployment() {
         const newDeployZone = (prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[])
           .filter(c => c.id !== selectedCard.id)
         
-        // If there's an existing hero, bounce it to base with 1 cooldown
-        let updatedBase = newBase
-        let updatedCooldowns = { ...prev.metadata.deathCooldowns }
+        const updatedBase = newBase
+        const updatedCooldowns = { ...prev.metadata.deathCooldowns }
         let updatedRunePool = prev.metadata[`${selectedCard.owner}RunePool` as keyof typeof prev.metadata] as any
-        
-        if (existingHeroInSlot) {
-          // Bounce the existing hero to base
-          const bouncedHero = {
-            ...existingHeroInSlot,
-            location: 'base' as const,
-            slot: undefined,
-          }
-          updatedBase = [...updatedBase, bouncedHero]
-          // Add 1 turn cooldown to bounced hero
-          updatedCooldowns[existingHeroInSlot.id] = 1
-        }
-        
-        // Add runes from the deploying hero (if coming from base/deployZone, not already on battlefield)
+
+        // Seed runes: one-time per hero on first deployment from base/deployZone.
         const wasOnBattlefield = selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB'
         const isFromBaseOrDeployZone = selectedCard.location === 'base' || selectedCard.location === 'deployZone'
         if (!wasOnBattlefield && isFromBaseOrDeployZone && (selectedCard as Hero).colors) {
-          const heroColors = (selectedCard as Hero).colors || []
-          updatedRunePool = {
-            runes: [...updatedRunePool.runes, ...heroColors],
-          }
+          const seedResult = grantSeedRunes(
+            selectedCard as Hero,
+            updatedRunePool,
+            prev.metadata.heroSeedRunesGranted || {}
+          )
+          updatedRunePool = seedResult.updatedPool
         }
         
-        // Remove existing hero from battlefield if bounced, and remove the deploying hero from battlefield (if moving)
+        // Remove the deploying hero from battlefield (if moving lanes)
         const updatedBattlefield = battlefield
-          .filter(c => c.id !== selectedCard.id && (existingHeroInSlot ? c.id !== existingHeroInSlot.id : true))
+          .filter(c => c.id !== selectedCard.id)
         
         // Add the deploying hero to the battlefield
         const deployedHero = {
@@ -186,6 +192,12 @@ export function useDeployment() {
             ...prev.metadata,
             deathCooldowns: updatedCooldowns,
             [`${selectedCard.owner}RunePool`]: updatedRunePool,
+            ...(isFromBaseOrDeployZone ? {
+              heroSeedRunesGranted: {
+                ...(prev.metadata.heroSeedRunesGranted || {}),
+                [(selectedCard as Hero).id]: true,
+              },
+            } : {}),
             // Increment heroes deployed counter (only counts if deploying from base/deployZone, not moving between battlefields)
             ...(shouldCountDeployment ? {
               player1HeroesDeployedThisTurn: nextP1HeroesDeployed,
@@ -347,6 +359,13 @@ export function useDeployment() {
         }
         const runeResult = consumeRunesForCardWithTracking(cardTemplate, updatedRunePool)
         updatedRunePool = runeResult.newPool
+        const blueRuneTrigger = applyBlueSpellTrigger(
+          prev,
+          prev.metadata,
+          owner,
+          updatedRunePool
+        )
+        updatedRunePool = blueRuneTrigger.updatedPool
 
         if (spellCard.effect.type === 'add_temporary_runes' && spellCard.effect.runeColors) {
           updatedRunePool = addTemporaryRunes(updatedRunePool, spellCard.effect.runeColors as any)
@@ -365,6 +384,7 @@ export function useDeployment() {
             ...prev.metadata,
             [runePoolKey]: updatedRunePool,
             [manaKey]: updatedMana,
+            heroRuneTriggersThisTurn: blueRuneTrigger.updatedTriggerState,
           },
         }
 
@@ -487,8 +507,7 @@ export function useDeployment() {
         let updatedRunePool = prev.metadata[runePoolKey] as any
         let updatedMana = prev.metadata[manaKey] as number
         
-        // Heroes don't cost runes - they GIVE runes when deployed
-        // Bouncing heroes does NOT remove runes - bouncing should be strategic, not punishing
+        // Heroes don't cost runes.
         // Non-hero cards (including spells): pay mana and consume runes
         if (!isHeroCard) {
           // Pay mana cost
@@ -568,6 +587,10 @@ export function useDeployment() {
         // If target slot is occupied, swap positions
         if (finalTargetSlot) {
           const slotOccupied = battlefieldCards.some(c => c.id !== selectedCard.id && c.slot === finalTargetSlot)
+          if (slotOccupied && selectedCard.cardType === 'hero' && !isMovingFromBattlefield) {
+            alert('That slot is occupied. Bouncing is disabled.')
+            return prev
+          }
           if (slotOccupied) {
             const otherCard = battlefieldCards.find(c => c.slot === finalTargetSlot)
             if (otherCard) {
@@ -581,20 +604,22 @@ export function useDeployment() {
               let updatedMana = prev.metadata[manaKey] as number
               const isHeroCard = selectedCard.cardType === 'hero'
               
-        // If hero is deploying, add runes from that hero
+        // Seed runes for hero first deployment only.
         if (isHeroCard && (location === 'battlefieldA' || location === 'battlefieldB')) {
-          // Hero is deploying - add runes from that hero
           // Find the card in previous state to check its actual location
           const prevCard = [...prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[],
                             ...prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[],
                             ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
                             ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']]
                             .find(c => c.id === selectedCardId)
-          // Check if hero was previously on a battlefield (if so, don't add runes again)
           const wasOnBattlefield = prevCard && (prevCard.location === 'battlefieldA' || prevCard.location === 'battlefieldB')
           if (!wasOnBattlefield) {
-            // Hero is deploying for the first time (from base/hand) - add runes
-            updatedRunePool = addRunesFromHero(selectedCard as Hero, updatedRunePool)
+            const seedResult = grantSeedRunes(
+              selectedCard as Hero,
+              updatedRunePool,
+              prev.metadata.heroSeedRunesGranted || {}
+            )
+            updatedRunePool = seedResult.updatedPool
           }
         } else if (!isHeroCard) {
                 // Non-hero cards (including spells): pay mana and consume runes
@@ -647,6 +672,12 @@ export function useDeployment() {
                 metadata: {
                   ...prev.metadata,
                   [runePoolKey]: updatedRunePool,
+                  ...(isHeroCard ? {
+                    heroSeedRunesGranted: {
+                      ...(prev.metadata.heroSeedRunesGranted || {}),
+                      [selectedCard.id]: true,
+                    },
+                  } : {}),
                   ...(!isHeroCard ? { [manaKey]: updatedMana } : {}),
                 },
               }
@@ -661,6 +692,7 @@ export function useDeployment() {
         // Pay mana and consume runes if needed
         let updatedRunePool = prev.metadata[runePoolKey] as any
         let updatedMana = prev.metadata[manaKey] as number
+        let updatedTriggerState = prev.metadata.heroRuneTriggersThisTurn || {}
         
         // Check if this is a hero card
         const isHeroCard = selectedCard.cardType === 'hero'
@@ -695,21 +727,42 @@ export function useDeployment() {
           
         }
         
-        // If hero is deploying to a battlefield, add runes from that hero
+        // Seed runes for hero first deployment only.
         if (isHeroCard && (location === 'battlefieldA' || location === 'battlefieldB')) {
-          // Hero is deploying - add runes from that hero (one-time)
-          // Find the card in previous state to check its actual location
           const prevCard = [...prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[],
                             ...prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[],
                             ...prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[],
                             ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
                             ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']]
                             .find(c => c.id === selectedCardId)
-          // Check if hero was previously on a battlefield (if so, don't add runes again)
           const wasOnBattlefield = prevCard && (prevCard.location === 'battlefieldA' || prevCard.location === 'battlefieldB')
           if (!wasOnBattlefield) {
-            // Hero is deploying for the first time (from base/deployZone/hand) - add runes
-            updatedRunePool = addRunesFromHero(selectedCard as Hero, updatedRunePool)
+            const seedResult = grantSeedRunes(
+              selectedCard as Hero,
+              updatedRunePool,
+              prev.metadata.heroSeedRunesGranted || {}
+            )
+            updatedRunePool = seedResult.updatedPool
+          }
+        }
+
+        // Green trigger: deploying a friendly unit in lane generates green runes.
+        if (!isHeroCard && selectedCard.cardType === 'generic') {
+          const cameFromBattlefield = selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB'
+          if (!cameFromBattlefield) {
+            const laneHeroes = prev[battlefieldKey][selectedCard.owner as 'player1' | 'player2']
+              .filter(c => c.cardType === 'hero') as Hero[]
+            laneHeroes.forEach(hero => {
+              if (getHeroRuneTrigger(hero) !== 'green_friendly_deploy') return
+              const triggerResult = grantHeroTriggerRune(
+                hero,
+                updatedRunePool,
+                { ...prev.metadata, heroRuneTriggersThisTurn: updatedTriggerState } as GameMetadata,
+                'green'
+              )
+              updatedRunePool = triggerResult.updatedPool
+              updatedTriggerState = triggerResult.updatedTriggerState
+            })
           }
         }
         
@@ -735,6 +788,13 @@ export function useDeployment() {
           metadata: {
             ...prev.metadata,
             [runePoolKey]: updatedRunePool,
+            ...(isHeroCard ? {
+              heroSeedRunesGranted: {
+                ...(prev.metadata.heroSeedRunesGranted || {}),
+                [selectedCard.id]: true,
+              },
+            } : {}),
+            heroRuneTriggersThisTurn: updatedTriggerState,
             ...(!isHeroCard ? { [manaKey]: updatedMana } : {}),
           },
         }
@@ -829,7 +889,7 @@ export function useDeployment() {
         return
       }
 
-      let pendingEffect: PendingEffect | null = null
+      let pendingEffect: any = null
       setGameState(prev => {
         const result = resolveSpellEffect({
           gameState: prev,

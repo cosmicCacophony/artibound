@@ -9,6 +9,7 @@ import { KeywordBadge } from './KeywordBadge'
 import { getTemplateId, isValidTargetForContext, resolveSpellEffect } from '../game/effectResolver'
 import { getTribeBuff } from '../game/combatSystem'
 import { RunePoolDisplay } from './RunePoolDisplay'
+import { getMirrorCountdown, getMirroredHeroSlots, getSharedResonanceColors } from '../game/heroRuneSystem'
 
 interface BattlefieldViewProps {
   battlefieldId: 'battlefieldA' | 'battlefieldB'
@@ -249,6 +250,10 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
   const borderColor = battlefieldId === 'battlefieldA' ? '#4169e1' : '#daa520'
   const bgColor = battlefieldId === 'battlefieldA' ? '#e6f2ff' : '#fff8dc'
   const battlefieldName = battlefieldId === 'battlefieldA' ? 'A' : 'B'
+  const p1MirroredSlots = new Set(getMirroredHeroSlots(gameState, 'player1'))
+  const p2MirroredSlots = new Set(getMirroredHeroSlots(gameState, 'player2'))
+  const p1SharedResonance = getSharedResonanceColors(gameState, 'player1')
+  const p2SharedResonance = getSharedResonanceColors(gameState, 'player2')
 
   const handleCardClick = (cardId: string, e?: React.MouseEvent) => {
     if (e) {
@@ -359,6 +364,9 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
 
   const renderSlot = (slotNum: number, player: 'player1' | 'player2') => {
     const cardInSlot = battlefield[player].find(c => c.slot === slotNum)
+    const mirroredSlots = player === 'player1' ? p1MirroredSlots : p2MirroredSlots
+    const isMirroredHero = Boolean(cardInSlot && cardInSlot.cardType === 'hero' && mirroredSlots.has(slotNum))
+    const mirrorCountdown = isMirroredHero ? getMirrorCountdown(metadata, player, slotNum) : 0
     const isSelected = selectedCard && selectedCard.id === cardInSlot?.id
     const isTargetable = Boolean(
       pendingEffect?.targeting &&
@@ -523,116 +531,11 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
             return
           }
 
-          // For heroes, deploy directly via setGameState (no async selectedCard dependency)
+          // Always route hero deployment through useDeployment so cooldown,
+          // rune triggers, seed runes, and no-bounce rules stay consistent.
           if (droppedCard.cardType === 'hero') {
-            const isDeployPhase = metadata.currentPhase === 'deploy'
-            const isPlayPhase = metadata.currentPhase === 'play'
-            if (!isDeployPhase && !isPlayPhase) {
-              alert(`Cannot deploy during ${metadata.currentPhase} phase!`)
-              return
-            }
-            const battlefieldKey = battlefieldId as 'battlefieldA' | 'battlefieldB'
-            const playerKey = player
-
-            if (isPlayPhase && metadata.currentTurn === 1) {
-              const deploymentPhase = metadata.turn1DeploymentPhase || 'p1_lane1'
-              if (deploymentPhase === 'p1_lane1' && (playerKey !== 'player1' || battlefieldKey !== 'battlefieldA')) {
-                if (playerKey !== 'player1') alert('Player 1 must deploy first hero to lane 1 (Battlefield A)')
-                else alert('Player 1 must deploy to lane 1 (Battlefield A) first')
-                return
-              }
-              if (deploymentPhase === 'p2_lane1' && playerKey === 'player2' && battlefieldKey !== 'battlefieldA') {
-                alert('Player 2 can only counter-deploy to lane 1 (Battlefield A) or pass')
-                return
-              }
-              if (deploymentPhase === 'p2_lane2' && (playerKey !== 'player2' || battlefieldKey !== 'battlefieldB')) {
-                if (playerKey !== 'player2') alert('Player 2 must deploy hero to lane 2 (Battlefield B)')
-                else alert('Player 2 must deploy to lane 2 (Battlefield B)')
-                return
-              }
-              if (deploymentPhase === 'p1_lane2' && playerKey === 'player1' && battlefieldKey !== 'battlefieldB') {
-                alert('Player 1 can only counter-deploy to lane 2 (Battlefield B) or pass')
-                return
-              }
-            } else if (isPlayPhase && metadata.actionPlayer !== playerKey) {
-              alert("It's not your turn to act!")
-              return
-            }
-
-            if (isDeployPhase && (droppedCard.location === 'base' || droppedCard.location === 'deployZone')) {
-              const cooldownCounter = metadata.deathCooldowns[droppedCard.id]
-              if (cooldownCounter !== undefined && cooldownCounter > 0) {
-                alert(`Hero is on cooldown! ${cooldownCounter} turn${cooldownCounter !== 1 ? 's' : ''} remaining.`)
-                return
-              }
-            }
-
-            setGameState(prev => {
-              const battlefield = prev[battlefieldKey][playerKey]
-              const existingHeroInSlot = battlefield.find((c: Card) => (c as { slot?: number }).slot === slotNum && c.cardType === 'hero') as Hero | undefined
-              const newHand = (prev[`${playerKey}Hand` as keyof typeof prev] as Card[]).filter(c => c.id !== droppedCard.id)
-              const newBase = (prev[`${playerKey}Base` as keyof typeof prev] as Card[]).filter(c => c.id !== droppedCard.id)
-              const newDeployZone = (prev[`${playerKey}DeployZone` as keyof typeof prev] as Card[]).filter(c => c.id !== droppedCard.id)
-              const otherBattlefieldKey = battlefieldKey === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
-              const otherBattlefield = prev[otherBattlefieldKey][playerKey].filter(c => c.id !== droppedCard.id)
-              let updatedBase = newBase
-              const updatedCooldowns = { ...prev.metadata.deathCooldowns }
-              if (existingHeroInSlot) {
-                updatedBase = [...updatedBase, { ...existingHeroInSlot, location: 'base' as const, slot: undefined }]
-                updatedCooldowns[existingHeroInSlot.id] = 1
-              }
-              const heroColors = (droppedCard as Hero).colors || []
-              const currentRunePool = prev.metadata[`${playerKey}RunePool` as keyof typeof prev.metadata] as { runes: string[]; temporaryRunes?: string[] } | undefined
-              const updatedRunePool = {
-                runes: [...(currentRunePool?.runes ?? []), ...heroColors],
-                temporaryRunes: currentRunePool?.temporaryRunes ?? [],
-              }
-              const updatedBattlefield = battlefield
-                .filter(c => c.id !== droppedCard.id && (existingHeroInSlot ? c.id !== existingHeroInSlot.id : true))
-              const deployedHero = { ...droppedCard, location: battlefieldKey, slot: slotNum } as Hero
-              let newDeploymentPhase = prev.metadata.turn1DeploymentPhase || 'p1_lane1'
-              let updatedActionPlayer = prev.metadata.actionPlayer
-              let updatedInitiativePlayer = prev.metadata.initiativePlayer
-              if (prev.metadata.currentTurn === 1) {
-                const dp = prev.metadata.turn1DeploymentPhase || 'p1_lane1'
-                if (dp === 'p1_lane1') newDeploymentPhase = 'p2_lane1'
-                else if (dp === 'p2_lane1' && playerKey === 'player2') newDeploymentPhase = 'p2_lane2'
-                else if (dp === 'p2_lane2') newDeploymentPhase = 'p1_lane2'
-                else if (dp === 'p1_lane2' && playerKey === 'player1') newDeploymentPhase = 'complete'
-                if (newDeploymentPhase === 'complete') {
-                  updatedActionPlayer = 'player1'
-                  updatedInitiativePlayer = 'player1'
-                } else {
-                  updatedActionPlayer = null
-                  updatedInitiativePlayer = null
-                }
-              } else {
-                const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
-                updatedActionPlayer = otherPlayer
-                updatedInitiativePlayer = otherPlayer
-              }
-              return {
-                ...prev,
-                [battlefieldKey]: { ...prev[battlefieldKey], [playerKey]: [...updatedBattlefield, deployedHero].sort((a, b) => ((a as { slot?: number }).slot || 0) - ((b as { slot?: number }).slot || 0)) },
-                [`${playerKey}Hand`]: newHand,
-                [`${playerKey}Base`]: updatedBase,
-                [`${playerKey}DeployZone`]: newDeployZone,
-                [otherBattlefieldKey]: { ...prev[otherBattlefieldKey], [playerKey]: otherBattlefield },
-                metadata: {
-                  ...prev.metadata,
-                  [`${playerKey}RunePool`]: updatedRunePool,
-                  deathCooldowns: updatedCooldowns,
-                  [`${playerKey}HeroesDeployedThisTurn`]: ((prev.metadata[`${playerKey}HeroesDeployedThisTurn` as keyof typeof prev.metadata] as number) || 0) + 1,
-                  turn1DeploymentPhase: newDeploymentPhase,
-                  actionPlayer: updatedActionPlayer,
-                  initiativePlayer: updatedInitiativePlayer,
-                  player1Passed: false,
-                  player2Passed: false,
-                  currentPhase: newDeploymentPhase === 'complete' ? 'play' : prev.metadata.currentPhase,
-                },
-              }
-            })
-            setSelectedCardId(null)
+            pendingDropRef.current = { cardId, battlefieldId, slotNum }
+            setSelectedCardId(cardId)
             return
           }
 
@@ -803,8 +706,9 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
             <div
               className={`unit-card ${isSelected ? 'unit-card--selected' : ''}`}
               style={{
-                border: `2px solid ${isSelected ? '#ffd700' : isTargetable ? '#4caf50' : (cardInSlot.cardType === 'hero' ? ((cardInSlot as Hero).colors?.[0] === 'red' ? '#c41e3a' : (cardInSlot as Hero).colors?.[0] === 'blue' ? '#0078d4' : (cardInSlot as Hero).colors?.[0] === 'green' ? '#228b22' : (cardInSlot as Hero).colors?.[0] === 'black' ? '#2d2d2d' : (cardInSlot as Hero).colors?.[0] === 'white' ? '#f0e68c' : '#8b7355') : '#8b7355')}`,
+                border: `2px solid ${isMirroredHero ? '#8a2be2' : isSelected ? '#ffd700' : isTargetable ? '#4caf50' : (cardInSlot.cardType === 'hero' ? ((cardInSlot as Hero).colors?.[0] === 'red' ? '#c41e3a' : (cardInSlot as Hero).colors?.[0] === 'blue' ? '#0078d4' : (cardInSlot as Hero).colors?.[0] === 'green' ? '#228b22' : (cardInSlot as Hero).colors?.[0] === 'black' ? '#2d2d2d' : (cardInSlot as Hero).colors?.[0] === 'white' ? '#f0e68c' : '#8b7355') : '#8b7355')}`,
                 backgroundColor: isSelected ? '#fffacd' : '#f5f5dc',
+                boxShadow: isMirroredHero ? '0 0 10px rgba(138, 43, 226, 0.55)' : undefined,
               }}
               onClick={(e) => {
                 e.stopPropagation()
@@ -874,6 +778,24 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
                 handleDeploy(battlefieldId)
               }}
             >
+              {isMirroredHero && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '2px',
+                    right: '2px',
+                    fontSize: '9px',
+                    backgroundColor: '#8a2be2',
+                    color: '#fff',
+                    padding: '2px 4px',
+                    borderRadius: '8px',
+                    zIndex: 3,
+                  }}
+                  title="Mirror Resonance progress"
+                >
+                  Mirror {mirrorCountdown}/3
+                </div>
+              )}
               <div className="unit-card__name">
                 {cardInSlot.name}
               </div>
@@ -1031,6 +953,14 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
         <div className="battlefield-title">
           Battlefield {battlefieldName}
           <span className="battlefield-subtitle">({getAvailableSlots(allCards)})</span>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: '#444' }}>
+          <span title="Color resonance colors shared across both lanes for player 1">
+            P1 Resonance: {p1SharedResonance.length > 0 ? p1SharedResonance.join('/') : 'none'}
+          </span>
+          <span title="Color resonance colors shared across both lanes for player 2">
+            P2 Resonance: {p2SharedResonance.length > 0 ? p2SharedResonance.join('/') : 'none'}
+          </span>
         </div>
         {showDebugControls && metadata.currentPhase === 'play' && (
           <CreepSpawnMenu 
