@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
-import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, SpellCard, BattlefieldDefinition, FinalDraftSelection, Color, HEROES_REQUIRED, CARDS_REQUIRED, ShopItem, Archetype, GameMetadata, PendingEffect, TemporaryZone } from '../game/types'
+import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, SpellCard, BattlefieldDefinition, FinalDraftSelection, Color, HEROES_REQUIRED, CARDS_REQUIRED, ShopItem, Archetype, GameMetadata, PendingEffect, TemporaryZone, TurnStartSummary } from '../game/types'
 import { createInitialGameState, createCardLibrary, createGameStateFromDraft } from '../game/sampleData'
 import { allCards, allSpells, allArtifacts, allBattlefields, allHeroes } from '../game/cardData'
 import { rbCards, rbHeroes, rbSpells } from '../game/comprehensiveCardData'
@@ -59,8 +59,13 @@ interface GameContextType {
       towerHP: { player1: number, player2: number }
       overflowDamage: { player1: number, player2: number }
     }
+    runeSummary?: TurnStartSummary | null
   } | null
   setCombatSummaryData: (data: any) => void
+  showTurnStartSummary: boolean
+  setShowTurnStartSummary: (show: boolean) => void
+  turnStartSummary: TurnStartSummary | null
+  setTurnStartSummary: (summary: TurnStartSummary | null) => void
 
   // Pending effects (targeting or confirmation)
   pendingEffect: PendingEffect | null
@@ -135,7 +140,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
       towerHP: { player1: number, player2: number }
       overflowDamage: { player1: number, player2: number }
     }
+    runeSummary?: TurnStartSummary | null
   } | null>(null)
+  const [showTurnStartSummary, setShowTurnStartSummary] = useState(false)
+  const [turnStartSummary, setTurnStartSummary] = useState<TurnStartSummary | null>(null)
   const [pendingEffect, setPendingEffect] = useState<PendingEffect | null>(null)
   const [temporaryZone, setTemporaryZone] = useState<TemporaryZone | null>(null)
   
@@ -385,6 +393,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setShowCombatSummary,
     combatSummaryData,
     setCombatSummaryData,
+    showTurnStartSummary,
+    setShowTurnStartSummary,
+    turnStartSummary,
+    setTurnStartSummary,
     pendingEffect,
     setPendingEffect,
     temporaryZone,

@@ -1803,7 +1803,6 @@ export function createInitialGameState(): {
     player2RunePool: player2InitialRunePool,
     heroSeedRunesGranted: {},
     heroRuneTriggersThisTurn: {},
-    mirrorResonanceTurns: {},
     // Seals (mana rocks)
     player1Seals: [],
     player2Seals: [],
@@ -2051,7 +2050,6 @@ export function createGameStateFromDraft(
     player2RunePool: player2InitialRunePool,
     heroSeedRunesGranted: {},
     heroRuneTriggersThisTurn: {},
-    mirrorResonanceTurns: {},
     // Seals (mana rocks)
     player1Seals: [],
     player2Seals: [],

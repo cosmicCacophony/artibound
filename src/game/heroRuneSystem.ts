@@ -114,42 +114,43 @@ export function applyBlueSpellTrigger(
   return { updatedPool, updatedTriggerState }
 }
 
-export function getSharedResonanceColors(gameState: GameState, player: PlayerId): RuneColor[] {
-  const laneAColors = new Set(
-    getLaneHeroes(gameState, player, 'battlefieldA')
-      .flatMap(hero => (hero.resonanceColors || hero.colors || []) as RuneColor[])
-  )
-  const laneBColors = new Set(
-    getLaneHeroes(gameState, player, 'battlefieldB')
-      .flatMap(hero => (hero.resonanceColors || hero.colors || []) as RuneColor[])
-  )
-
-  const shared: RuneColor[] = []
-  laneAColors.forEach(color => {
-    if (laneBColors.has(color)) {
-      shared.push(color)
-    }
-  })
-  return shared
+export function getMirrorPartnerSlot(slot: number): number {
+  return 6 - slot
 }
 
 export function getMirroredHeroSlots(gameState: GameState, player: PlayerId): number[] {
-  const laneASlots = new Set(
-    getLaneHeroes(gameState, player, 'battlefieldA').map(hero => hero.slot).filter((slot): slot is number => slot !== undefined)
-  )
   const laneBSlots = new Set(
-    getLaneHeroes(gameState, player, 'battlefieldB').map(hero => hero.slot).filter((slot): slot is number => slot !== undefined)
+    getLaneHeroes(gameState, player, 'battlefieldB')
+      .map(hero => hero.slot)
+      .filter((slot): slot is number => slot !== undefined)
   )
 
-  return Array.from(laneASlots).filter(slot => laneBSlots.has(slot))
+  return getLaneHeroes(gameState, player, 'battlefieldA')
+    .map(hero => hero.slot)
+    .filter((slot): slot is number => slot !== undefined)
+    .filter(slot => laneBSlots.has(getMirrorPartnerSlot(slot)))
 }
 
-export function buildMirrorKey(player: PlayerId, slot: number): string {
-  return `${player}:${slot}`
-}
+export function getMirroredHeroRuneColors(gameState: GameState, player: PlayerId): RuneColor[] {
+  const laneBBySlot = new Map<number, Hero>(
+    getLaneHeroes(gameState, player, 'battlefieldB')
+      .filter(hero => hero.slot !== undefined)
+      .map(hero => [hero.slot as number, hero])
+  )
+  const runeColors: RuneColor[] = []
 
-export function getMirrorCountdown(metadata: GameMetadata, player: PlayerId, slot: number): number {
-  return metadata.mirrorResonanceTurns?.[buildMirrorKey(player, slot)] || 0
+  getLaneHeroes(gameState, player, 'battlefieldA').forEach(heroA => {
+    if (heroA.slot === undefined) return
+    const heroB = laneBBySlot.get(getMirrorPartnerSlot(heroA.slot))
+    if (!heroB) return
+
+    const colorA = heroA.colors?.[0] as RuneColor | undefined
+    const colorB = heroB.colors?.[0] as RuneColor | undefined
+    if (colorA) runeColors.push(colorA)
+    if (colorB) runeColors.push(colorB)
+  })
+
+  return runeColors
 }
 
 export function applyMirrorResonanceBuffs(gameState: GameState): GameState {
@@ -165,46 +166,20 @@ export function applyMirrorResonanceBuffs(gameState: GameState): GameState {
       }
     })
 
-  const p1Mirrored = new Set(getMirroredHeroSlots(gameState, 'player1'))
-  const p2Mirrored = new Set(getMirroredHeroSlots(gameState, 'player2'))
+  const p1MirroredA = new Set(getMirroredHeroSlots(gameState, 'player1'))
+  const p2MirroredA = new Set(getMirroredHeroSlots(gameState, 'player2'))
+  const p1MirroredB = new Set(Array.from(p1MirroredA).map(getMirrorPartnerSlot))
+  const p2MirroredB = new Set(Array.from(p2MirroredA).map(getMirrorPartnerSlot))
 
   return {
     ...gameState,
     battlefieldA: {
-      player1: buffHeroes(gameState.battlefieldA.player1, p1Mirrored),
-      player2: buffHeroes(gameState.battlefieldA.player2, p2Mirrored),
+      player1: buffHeroes(gameState.battlefieldA.player1, p1MirroredA),
+      player2: buffHeroes(gameState.battlefieldA.player2, p2MirroredA),
     },
     battlefieldB: {
-      player1: buffHeroes(gameState.battlefieldB.player1, p1Mirrored),
-      player2: buffHeroes(gameState.battlefieldB.player2, p2Mirrored),
+      player1: buffHeroes(gameState.battlefieldB.player1, p1MirroredB),
+      player2: buffHeroes(gameState.battlefieldB.player2, p2MirroredB),
     },
   }
-}
-
-export function tickMirrorResonance(
-  metadata: GameMetadata,
-  gameState: GameState,
-  player: PlayerId
-): { updatedTurns: Record<string, number>; payoffSlots: number[] } {
-  const activeSlots = new Set(getMirroredHeroSlots(gameState, player))
-  const existing = metadata.mirrorResonanceTurns || {}
-  const updated: Record<string, number> = {}
-  const payoffSlots: number[] = []
-
-  for (const [key, value] of Object.entries(existing)) {
-    if (!key.startsWith(`${player}:`)) {
-      updated[key] = value
-    }
-  }
-
-  activeSlots.forEach(slot => {
-    const key = buildMirrorKey(player, slot)
-    const next = (existing[key] || 0) + 1
-    updated[key] = next
-    if (next > 0 && next % 3 === 0) {
-      payoffSlots.push(slot)
-    }
-  })
-
-  return { updatedTurns: updated, payoffSlots }
 }

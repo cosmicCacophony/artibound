@@ -5,6 +5,7 @@ import { BattlefieldView } from './BattlefieldView'
 import { ItemShopModal } from './ItemShopModal'
 import { CardLibraryView } from './CardLibraryView'
 import { CombatSummaryModal } from './CombatSummaryModal'
+import { TurnStartSummaryModal } from './TurnStartSummaryModal'
 import { TopBar } from './TopBar'
 import { CombatPreviewOverlay } from './CombatPreviewOverlay'
 import { TemporaryGameZone } from './TemporaryGameZone'
@@ -18,6 +19,10 @@ export function Board() {
     showCombatSummary,
     setShowCombatSummary,
     combatSummaryData,
+    showTurnStartSummary,
+    setShowTurnStartSummary,
+    turnStartSummary,
+    setTurnStartSummary,
     selectedCardId,
     temporaryZone,
     setTemporaryZone,
@@ -423,8 +428,17 @@ export function Board() {
           onClose={() => setShowCombatSummary(false)}
           battlefieldA={combatSummaryData.battlefieldA}
           battlefieldB={combatSummaryData.battlefieldB}
+          runeSummary={combatSummaryData.runeSummary ?? undefined}
         />
       )}
+      <TurnStartSummaryModal
+        isOpen={showTurnStartSummary}
+        summary={turnStartSummary}
+        onClose={() => {
+          setShowTurnStartSummary(false)
+          setTurnStartSummary(null)
+        }}
+      />
 
       <div
         className={`player-zone player-zone--opponent ${isOpponentExpanded ? 'player-zone--expanded' : 'player-zone--collapsed'}`}

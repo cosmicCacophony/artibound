@@ -68,6 +68,7 @@ export interface BaseCard {
   manaCost?: number // Cost to play this card (uses mana)
   colors?: Color[] // Colors required to cast in lane with matching hero color
   consumesRunes?: boolean // If true, casting this card consumes runes from the pool
+  specialEffects?: string[] // Unit/item keywords and custom effects (e.g. cleave, rune_steal)
   tribe?: string
   tribeBuff?: {
     tribe: string
@@ -145,8 +146,6 @@ export interface GameMetadata {
   heroSeedRunesGranted: Record<string, boolean>
   // Per-turn trigger cap tracking per hero (max 1 trigger rune per turn)
   heroRuneTriggersThisTurn: Record<string, number>
-  // Cross-lane mirror resonance counters by player+slot key (e.g. "player1:3")
-  mirrorResonanceTurns: Record<string, number>
   // Seals - Permanent rune generators (like mana rocks)
   player1Seals: Seal[]
   player2Seals: Seal[]
@@ -563,6 +562,57 @@ export interface GameState {
   player2DraftedHeroes?: Hero[]
   player1Battlefields?: BattlefieldDefinition[]
   player2Battlefields?: BattlefieldDefinition[]
+}
+
+export interface TurnStartPlayerSummary {
+  resonanceEvents: string[]
+  triggerEvents: string[]
+  sealEvents: string[]
+  temporaryEvents: string[]
+  mirrorBuffEvents: string[]
+}
+
+export interface TurnStartSummary {
+  turn: number
+  player1: TurnStartPlayerSummary
+  player2: TurnStartPlayerSummary
+}
+
+export interface TokenDefinition {
+  id: string
+  name: string
+  attack: number
+  health: number
+  owner: PlayerId
+  keywords?: string[]
+  tribe?: string
+}
+
+export interface TargetingContext {
+  allowBattlefield?: 'battlefieldA' | 'battlefieldB'
+  allowTowers?: boolean
+  allowAllies?: boolean
+  allowEnemies?: boolean
+}
+
+export interface TemporaryZone {
+  type: string
+  owner: PlayerId
+  selectableCards?: Card[]
+  tokens?: TokenDefinition[]
+  tokenId?: string
+}
+
+export interface PendingEffect {
+  cardId: string
+  owner: PlayerId
+  effect: SpellEffect
+  targeting?: TargetingContext
+  instanceId?: string
+  sourceId?: string
+  spellData?: Partial<SpellCard>
+  selectedTargetIds?: string[]
+  temporaryZone?: TemporaryZone
 }
 
 export const BATTLEFIELD_SLOT_LIMIT = 5

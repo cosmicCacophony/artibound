@@ -1,4 +1,4 @@
-import { Card, AttackTarget, AttackTargetType, Battlefield, PlayerId, GameMetadata, GameState, GenericUnit } from './types'
+import { Card, AttackTarget, AttackTargetType, Battlefield, PlayerId, GameMetadata, GameState, GenericUnit, RuneColor } from './types'
 
 const LANE_MOMENTUM_THRESHOLD = 10
 const LANE_MOMENTUM_ATTACK_BONUS = 1
@@ -12,6 +12,41 @@ function getLaneMomentumBonus(
   if (!laneMomentum) return 0
   const totalDamage = laneMomentum[battlefieldId]?.[player] ?? 0
   return totalDamage >= LANE_MOMENTUM_THRESHOLD ? LANE_MOMENTUM_ATTACK_BONUS : 0
+}
+
+function stealRandomRuneOnTowerHit(gameState: GameState | undefined, attacker: Card): RuneColor | null {
+  if (!gameState || !attacker.specialEffects?.includes('rune_steal')) {
+    return null
+  }
+
+  const thiefOwner = attacker.owner
+  const victimOwner = thiefOwner === 'player1' ? 'player2' : 'player1'
+  const thiefPoolKey = `${thiefOwner}RunePool` as const
+  const victimPoolKey = `${victimOwner}RunePool` as const
+  const victimPool = gameState.metadata[victimPoolKey]
+  const victimRunes = victimPool?.runes || []
+  if (victimRunes.length === 0) {
+    return null
+  }
+
+  const runeIndex = Math.floor(Math.random() * victimRunes.length)
+  const stolenRune = victimRunes[runeIndex]
+  const victimRunesAfterSteal = victimRunes.filter((_, index) => index !== runeIndex)
+  const thiefPool = gameState.metadata[thiefPoolKey]
+
+  gameState.metadata = {
+    ...gameState.metadata,
+    [victimPoolKey]: {
+      ...victimPool,
+      runes: victimRunesAfterSteal,
+    },
+    [thiefPoolKey]: {
+      ...thiefPool,
+      runes: [...(thiefPool?.runes || []), stolenRune],
+    },
+  }
+
+  return stolenRune
 }
 
 /**
@@ -411,6 +446,19 @@ export function resolveCombat(
           // Tower was already dead - all damage goes to nexus
           overflowDamage += attackPowerForTower
         }
+
+        if (result.damageDealt > 0) {
+          const stolenRune = stealRandomRuneOnTowerHit(gameState, attacker)
+          if (stolenRune) {
+            combatLog.push({
+              attackerId: attacker.id,
+              attackerName: attacker.name,
+              targetType: 'tower',
+              targetName: `Stole ${stolenRune} rune`,
+              damage: 0,
+            })
+          }
+        }
       }
       
       // Update combat log
@@ -730,6 +778,19 @@ export function resolveSimultaneousCombat(
           // Tower was already dead - all damage goes to nexus
           overflowDamage.player1 += p1AttackPower
         }
+
+        if (result.damageDealt > 0) {
+          const stolenRune = stealRandomRuneOnTowerHit(gameState, p1Unit)
+          if (stolenRune) {
+            combatLog.push({
+              attackerId: p1Unit.id,
+              attackerName: p1Unit.name,
+              targetType: 'tower',
+              targetName: `Stole ${stolenRune} rune`,
+              damage: 0,
+            })
+          }
+        }
       }
 
       // Cross-Strike: if attacking an empty slot, strike the mirrored slot on the other battlefield
@@ -827,6 +888,19 @@ export function resolveSimultaneousCombat(
         } else {
           // Tower was already dead - all damage goes to nexus
           overflowDamage.player2 += p2AttackPower
+        }
+
+        if (result.damageDealt > 0) {
+          const stolenRune = stealRandomRuneOnTowerHit(gameState, p2Unit)
+          if (stolenRune) {
+            combatLog.push({
+              attackerId: p2Unit.id,
+              attackerName: p2Unit.name,
+              targetType: 'tower',
+              targetName: `Stole ${stolenRune} rune`,
+              damage: 0,
+            })
+          }
         }
       }
 

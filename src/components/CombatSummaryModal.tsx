@@ -1,4 +1,5 @@
 import { CombatLogEntry } from '../game/combatSystem'
+import { TurnStartSummary } from '../game/types'
 
 interface CombatSummaryModalProps {
   isOpen: boolean
@@ -15,13 +16,31 @@ interface CombatSummaryModalProps {
     towerHP: { player1: number, player2: number }
     overflowDamage: { player1: number, player2: number }
   }
+  runeSummary?: TurnStartSummary | null
+}
+
+function renderRuneEventList(title: string, events: string[], isTemporary: boolean = false) {
+  if (events.length === 0) return null
+  return (
+    <div style={{ marginBottom: '10px' }}>
+      <div style={{ fontWeight: 600, fontSize: '12px', marginBottom: '4px' }}>
+        {title} {isTemporary ? '(This Turn Only)' : '(Permanent)'}
+      </div>
+      {events.map((entry, index) => (
+        <div key={`${title}-${index}`} style={{ fontSize: '12px', color: '#333', marginBottom: '2px' }}>
+          - {entry}
+        </div>
+      ))}
+    </div>
+  )
 }
 
 export function CombatSummaryModal({ 
   isOpen, 
   onClose, 
   battlefieldA, 
-  battlefieldB 
+  battlefieldB,
+  runeSummary,
 }: CombatSummaryModalProps) {
   if (!isOpen) return null
 
@@ -176,6 +195,33 @@ export function CombatSummaryModal({
             </div>
             <div style={{ fontSize: '12px' }}>
               Player 2 Nexus: -{battlefieldA.overflowDamage.player2 + battlefieldB.overflowDamage.player2} HP
+            </div>
+          </div>
+        )}
+
+        {/* Rune summary (combat + turn start in one modal) */}
+        {runeSummary && (
+          <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #e0e0e0' }}>
+            <h3 style={{ margin: '0 0 12px 0', color: '#1976d2' }}>
+              Turn {runeSummary.turn} Rune Summary
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div style={{ background: '#f4f8ff', borderRadius: '8px', padding: '12px' }}>
+                <h4 style={{ marginTop: 0, marginBottom: '10px' }}>Player 1</h4>
+                {renderRuneEventList('Resonance Runes', runeSummary.player1.resonanceEvents)}
+                {renderRuneEventList('Trigger Runes', runeSummary.player1.triggerEvents)}
+                {renderRuneEventList('Seal Runes', runeSummary.player1.sealEvents)}
+                {renderRuneEventList('Temporary Runes', runeSummary.player1.temporaryEvents, true)}
+                {renderRuneEventList('Mirror Buffs', runeSummary.player1.mirrorBuffEvents)}
+              </div>
+              <div style={{ background: '#fff6f6', borderRadius: '8px', padding: '12px' }}>
+                <h4 style={{ marginTop: 0, marginBottom: '10px' }}>Player 2</h4>
+                {renderRuneEventList('Resonance Runes', runeSummary.player2.resonanceEvents)}
+                {renderRuneEventList('Trigger Runes', runeSummary.player2.triggerEvents)}
+                {renderRuneEventList('Seal Runes', runeSummary.player2.sealEvents)}
+                {renderRuneEventList('Temporary Runes', runeSummary.player2.temporaryEvents, true)}
+                {renderRuneEventList('Mirror Buffs', runeSummary.player2.mirrorBuffEvents)}
+              </div>
             </div>
           </div>
         )}

@@ -10,11 +10,11 @@ import { getTurn1PhaseAfterPass, hasDeployableHero, shouldEndDeployPhase } from 
 import {
   addRunes,
   applyMirrorResonanceBuffs,
+  getMirrorPartnerSlot,
+  getMirroredHeroRuneColors,
   getHeroRuneTrigger,
-  getSharedResonanceColors,
   grantHeroTriggerRune,
   grantSeedRunes,
-  tickMirrorResonance,
 } from '../game/heroRuneSystem'
 
 /** Ensure turn is a valid number >= 1 (handles undefined/null/NaN from metadata). */
@@ -33,6 +33,8 @@ export function useTurnManagement() {
     setCombatTargetsB,
     setShowCombatSummary,
     setCombatSummaryData,
+    setShowTurnStartSummary,
+    setTurnStartSummary,
     player1SidebarCards,
     player2SidebarCards,
     setPlayer1SidebarCards,
@@ -191,7 +193,17 @@ export function useTurnManagement() {
       const totalDamageToP1Nexus = resultA.overflowDamage.player2 + resultB.overflowDamage.player2
       const totalDamageToP2Nexus = resultA.overflowDamage.player1 + resultB.overflowDamage.player1
       
+      const triggerSummary: Record<PlayerId, string[]> = {
+        player1: [],
+        player2: [],
+      }
+
       setGameState(prev => {
+        // Reset trigger summary each invocation so React Strict Mode double-invoke
+        // doesn't duplicate display entries.
+        triggerSummary.player1 = []
+        triggerSummary.player2 = []
+
         const newP1NexusHP = Math.max(0, prev.metadata.player1NexusHP - totalDamageToP1Nexus)
         const newP2NexusHP = Math.max(0, prev.metadata.player2NexusHP - totalDamageToP2Nexus)
         
@@ -199,20 +211,31 @@ export function useTurnManagement() {
         let updatedP2RunePool = updatedP2RunePoolB
         let updatedTriggerState = { ...(prev.metadata.heroRuneTriggersThisTurn || {}) }
 
-        const grantTriggerForHero = (hero: Hero, owner: PlayerId, color: 'red' | 'black' | 'white') => {
+        const grantTriggerForHero = (
+          hero: Hero,
+          owner: PlayerId,
+          color: 'red' | 'black' | 'white',
+          reason: string
+        ) => {
           const baseMetadata = { ...prev.metadata, heroRuneTriggersThisTurn: updatedTriggerState } as GameMetadata
           if (owner === 'player1') {
             const result = grantHeroTriggerRune(hero, updatedP1RunePool, baseMetadata, color)
             updatedP1RunePool = result.updatedPool
             updatedTriggerState = result.updatedTriggerState
+            if (result.granted) {
+              triggerSummary.player1.push(`${hero.name}: +1 ${color} (${reason})`)
+            }
           } else {
             const result = grantHeroTriggerRune(hero, updatedP2RunePool, baseMetadata, color)
             updatedP2RunePool = result.updatedPool
             updatedTriggerState = result.updatedTriggerState
+            if (result.granted) {
+              triggerSummary.player2.push(`${hero.name}: +1 ${color} (${reason})`)
+            }
           }
         }
 
-        // Red trigger: hero deals combat damage to tower.
+        // Red trigger: hero hits tower at all — exactly 1 rune per hero per turn (any amount of damage).
         const combatLogs = [...resultA.combatLog, ...resultB.combatLog]
         const allOriginalHeroes = [
           ...gameState.battlefieldA.player1,
@@ -221,14 +244,17 @@ export function useTurnManagement() {
           ...gameState.battlefieldB.player2,
         ].filter(card => card.cardType === 'hero') as Hero[]
 
-        combatLogs
-          .filter(entry => entry.targetType === 'tower')
-          .forEach(entry => {
-            const attacker = allOriginalHeroes.find(hero => hero.id === entry.attackerId)
-            if (!attacker) return
-            if (getHeroRuneTrigger(attacker) !== 'red_tower_damage') return
-            grantTriggerForHero(attacker, attacker.owner, 'red')
-          })
+        const heroIdsThatHitTower = new Set(
+          combatLogs
+            .filter(entry => entry.targetType === 'tower')
+            .map(entry => entry.attackerId)
+        )
+        heroIdsThatHitTower.forEach(attackerId => {
+          const attacker = allOriginalHeroes.find(hero => hero.id === attackerId)
+          if (!attacker) return
+          if (getHeroRuneTrigger(attacker) !== 'red_tower_damage') return
+          grantTriggerForHero(attacker, attacker.owner, 'red', 'tower damage')
+        })
 
         // Lane-based triggers for deaths and combat survivors.
         const applyLaneCombatTriggers = (
@@ -245,7 +271,7 @@ export function useTurnManagement() {
             if (deathsInLane > 0) {
               laneHeroes.forEach(hero => {
                 if (getHeroRuneTrigger(hero) === 'black_lane_death') {
-                  grantTriggerForHero(hero, owner, 'black')
+                  grantTriggerForHero(hero, owner, 'black', 'lane death')
                 }
               })
             }
@@ -258,7 +284,7 @@ export function useTurnManagement() {
             if (survivedFriendlyUnit) {
               laneHeroes.forEach(hero => {
                 if (getHeroRuneTrigger(hero) === 'white_friendly_survive_combat') {
-                  grantTriggerForHero(hero, owner, 'white')
+                  grantTriggerForHero(hero, owner, 'white', 'friendly survived combat')
                 }
               })
             }
@@ -353,35 +379,6 @@ export function useTurnManagement() {
           metadata: updatedMetadata,
         }
       })
-      
-      // Show combat summary modal (include ranged attacks in combat log)
-      setCombatSummaryData({
-        battlefieldA: {
-          name: 'Battlefield A',
-          combatLog: [...resultA.combatLog, ...rangedResult.combatLog],
-          towerHP: {
-            player1: rangedResult.updatedTowerHP.towerA_player1,
-            player2: rangedResult.updatedTowerHP.towerA_player2,
-          },
-          overflowDamage: {
-            player1: resultA.overflowDamage.player1 + rangedResult.overflowDamage.player1,
-            player2: resultA.overflowDamage.player2 + rangedResult.overflowDamage.player2,
-          },
-        },
-        battlefieldB: {
-          name: 'Battlefield B',
-          combatLog: resultB.combatLog,
-          towerHP: {
-            player1: rangedResult.updatedTowerHP.towerB_player1,
-            player2: rangedResult.updatedTowerHP.towerB_player2,
-          },
-          overflowDamage: {
-            player1: resultB.overflowDamage.player1,
-            player2: resultB.overflowDamage.player2,
-          },
-        },
-      })
-      setShowCombatSummary(true)
 
       if ((gameState.metadata.gameOver ?? false) || checkWinCondition({
         ...gameState.metadata,
@@ -390,6 +387,34 @@ export function useTurnManagement() {
         towerB_player1_HP: rangedResult.updatedTowerHP.towerB_player1,
         towerB_player2_HP: rangedResult.updatedTowerHP.towerB_player2,
       }).winner) {
+        // Show combat summary only (no rune summary on game over)
+        setCombatSummaryData({
+          battlefieldA: {
+            name: 'Battlefield A',
+            combatLog: [...resultA.combatLog, ...rangedResult.combatLog],
+            towerHP: {
+              player1: rangedResult.updatedTowerHP.towerA_player1,
+              player2: rangedResult.updatedTowerHP.towerA_player2,
+            },
+            overflowDamage: {
+              player1: resultA.overflowDamage.player1 + rangedResult.overflowDamage.player1,
+              player2: resultA.overflowDamage.player2 + rangedResult.overflowDamage.player2,
+            },
+          },
+          battlefieldB: {
+            name: 'Battlefield B',
+            combatLog: resultB.combatLog,
+            towerHP: {
+              player1: rangedResult.updatedTowerHP.towerB_player1,
+              player2: rangedResult.updatedTowerHP.towerB_player2,
+            },
+            overflowDamage: {
+              player1: resultB.overflowDamage.player1,
+              player2: resultB.overflowDamage.player2,
+            },
+          },
+        })
+        setShowCombatSummary(true)
         return
       }
       
@@ -609,27 +634,43 @@ export function useTurnManagement() {
         }
 
         if (shouldIncrementTurn) {
-          const p1ResonanceColors = getSharedResonanceColors(nextState, 'player1')
-          const p2ResonanceColors = getSharedResonanceColors(nextState, 'player2')
+          const getMirrorEvents = (player: PlayerId): { runeEvents: string[]; buffEvents: string[] } => {
+            const laneAHeroes = nextState.battlefieldA[player]
+              .filter((card): card is Hero =>
+                card.cardType === 'hero' && 'slot' in card && typeof card.slot === 'number'
+              )
+            const laneBBySlot = new Map<number, Hero>(
+              nextState.battlefieldB[player]
+                .filter((card): card is Hero =>
+                  card.cardType === 'hero' && 'slot' in card && typeof card.slot === 'number'
+                )
+                .map(card => [card.slot as number, card])
+            )
 
-          let p1Pool = addRunes(nextState.metadata.player1RunePool, p1ResonanceColors)
-          let p2Pool = addRunes(nextState.metadata.player2RunePool, p2ResonanceColors)
+            const runeEvents: string[] = []
+            const buffEvents: string[] = []
+            laneAHeroes.forEach(heroA => {
+              const partnerSlot = getMirrorPartnerSlot(heroA.slot as number)
+              const heroB = laneBBySlot.get(partnerSlot)
+              if (!heroB) return
 
-          const p1Mirror = tickMirrorResonance(nextState.metadata, nextState, 'player1')
-          const p2Mirror = tickMirrorResonance(nextState.metadata, nextState, 'player2')
+              const heroAColor = heroA.colors?.[0]
+              const heroBColor = heroB.colors?.[0]
+              runeEvents.push(
+                `${heroA.name} (A${heroA.slot}) ↔ ${heroB.name} (B${partnerSlot}): +1 ${heroAColor}, +1 ${heroBColor}`
+              )
+              buffEvents.push(`${heroA.name} and ${heroB.name} gained +1/+1`)
+            })
+            return { runeEvents, buffEvents }
+          }
 
-          // Mirror payoff: every 3 turns of mirrored survival grants 1 rune
-          // matching the mirrored hero's primary color in lane A.
-          p1Mirror.payoffSlots.forEach(slot => {
-            const hero = nextState.battlefieldA.player1.find(card => card.cardType === 'hero' && card.slot === slot) as Hero | undefined
-            if (!hero?.colors?.[0]) return
-            p1Pool = addRunes(p1Pool, [hero.colors[0]])
-          })
-          p2Mirror.payoffSlots.forEach(slot => {
-            const hero = nextState.battlefieldA.player2.find(card => card.cardType === 'hero' && card.slot === slot) as Hero | undefined
-            if (!hero?.colors?.[0]) return
-            p2Pool = addRunes(p2Pool, [hero.colors[0]])
-          })
+          const p1MirrorRunes = getMirroredHeroRuneColors(nextState, 'player1')
+          const p2MirrorRunes = getMirroredHeroRuneColors(nextState, 'player2')
+          const p1MirrorEvents = getMirrorEvents('player1')
+          const p2MirrorEvents = getMirrorEvents('player2')
+
+          const p1Pool = addRunes(nextState.metadata.player1RunePool, p1MirrorRunes)
+          const p2Pool = addRunes(nextState.metadata.player2RunePool, p2MirrorRunes)
 
           nextState = {
             ...nextState,
@@ -637,14 +678,66 @@ export function useTurnManagement() {
               ...nextState.metadata,
               player1RunePool: p1Pool,
               player2RunePool: p2Pool,
-              mirrorResonanceTurns: {
-                ...p1Mirror.updatedTurns,
-                ...p2Mirror.updatedTurns,
-              },
             },
           }
 
           nextState = applyMirrorResonanceBuffs(nextState)
+
+          const p1SealEvents = (nextState.metadata.player1Seals || []).map(seal => `+1 ${seal.color} from ${seal.name}`)
+          const p2SealEvents = (nextState.metadata.player2Seals || []).map(seal => `+1 ${seal.color} from ${seal.name}`)
+          const p1TempEvents = (nextState.metadata.player1RunePool.temporaryRunes || []).map(color => `+1 ${color} (this turn only)`)
+          const p2TempEvents = (nextState.metadata.player2RunePool.temporaryRunes || []).map(color => `+1 ${color} (this turn only)`)
+
+          const turnSummary: import('../game/types').TurnStartSummary = {
+            turn: nextTurnNumber,
+            player1: {
+              resonanceEvents: p1MirrorEvents.runeEvents,
+              triggerEvents: triggerSummary.player1,
+              sealEvents: p1SealEvents,
+              temporaryEvents: p1TempEvents,
+              mirrorBuffEvents: p1MirrorEvents.buffEvents,
+            },
+            player2: {
+              resonanceEvents: p2MirrorEvents.runeEvents,
+              triggerEvents: triggerSummary.player2,
+              sealEvents: p2SealEvents,
+              temporaryEvents: p2TempEvents,
+              mirrorBuffEvents: p2MirrorEvents.buffEvents,
+            },
+          }
+
+          // Show single combined modal: combat summary + rune summary (same as turn start).
+          const combatPayload = {
+            battlefieldA: {
+              name: 'Battlefield A',
+              combatLog: [...resultA.combatLog, ...rangedResult.combatLog],
+              towerHP: {
+                player1: rangedResult.updatedTowerHP.towerA_player1,
+                player2: rangedResult.updatedTowerHP.towerA_player2,
+              },
+              overflowDamage: {
+                player1: resultA.overflowDamage.player1 + rangedResult.overflowDamage.player1,
+                player2: resultA.overflowDamage.player2 + rangedResult.overflowDamage.player2,
+              },
+            },
+            battlefieldB: {
+              name: 'Battlefield B',
+              combatLog: resultB.combatLog,
+              towerHP: {
+                player1: rangedResult.updatedTowerHP.towerB_player1,
+                player2: rangedResult.updatedTowerHP.towerB_player2,
+              },
+              overflowDamage: {
+                player1: resultB.overflowDamage.player1,
+                player2: resultB.overflowDamage.player2,
+              },
+            },
+            runeSummary: turnSummary,
+          }
+          queueMicrotask(() => {
+            setCombatSummaryData(combatPayload)
+            setShowCombatSummary(true)
+          })
         }
 
         return nextState
@@ -660,7 +753,19 @@ export function useTurnManagement() {
         currentPhase: nextPhase,
       },
     }))
-  }, [metadata, gameState, combatTargetsA, combatTargetsB, setGameState, setCombatTargetsA, setCombatTargetsB])
+  }, [
+    metadata,
+    gameState,
+    combatTargetsA,
+    combatTargetsB,
+    setGameState,
+    setCombatTargetsA,
+    setCombatTargetsB,
+    setShowCombatSummary,
+    setCombatSummaryData,
+    setShowTurnStartSummary,
+    setTurnStartSummary,
+  ])
 
   useEffect(() => {
     if (metadata.currentPhase === 'play' && metadata.player1Passed && metadata.player2Passed) {

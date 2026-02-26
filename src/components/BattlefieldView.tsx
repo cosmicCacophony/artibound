@@ -9,7 +9,7 @@ import { KeywordBadge } from './KeywordBadge'
 import { getTemplateId, isValidTargetForContext, resolveSpellEffect } from '../game/effectResolver'
 import { getTribeBuff } from '../game/combatSystem'
 import { RunePoolDisplay } from './RunePoolDisplay'
-import { getMirrorCountdown, getMirroredHeroSlots, getSharedResonanceColors } from '../game/heroRuneSystem'
+import { getMirrorPartnerSlot, getMirroredHeroSlots } from '../game/heroRuneSystem'
 
 interface BattlefieldViewProps {
   battlefieldId: 'battlefieldA' | 'battlefieldB'
@@ -250,10 +250,14 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
   const borderColor = battlefieldId === 'battlefieldA' ? '#4169e1' : '#daa520'
   const bgColor = battlefieldId === 'battlefieldA' ? '#e6f2ff' : '#fff8dc'
   const battlefieldName = battlefieldId === 'battlefieldA' ? 'A' : 'B'
-  const p1MirroredSlots = new Set(getMirroredHeroSlots(gameState, 'player1'))
-  const p2MirroredSlots = new Set(getMirroredHeroSlots(gameState, 'player2'))
-  const p1SharedResonance = getSharedResonanceColors(gameState, 'player1')
-  const p2SharedResonance = getSharedResonanceColors(gameState, 'player2')
+  const p1MirroredSlotsA = new Set(getMirroredHeroSlots(gameState, 'player1'))
+  const p2MirroredSlotsA = new Set(getMirroredHeroSlots(gameState, 'player2'))
+  const p1MirroredSlots = battlefieldId === 'battlefieldA'
+    ? p1MirroredSlotsA
+    : new Set(Array.from(p1MirroredSlotsA).map(getMirrorPartnerSlot))
+  const p2MirroredSlots = battlefieldId === 'battlefieldA'
+    ? p2MirroredSlotsA
+    : new Set(Array.from(p2MirroredSlotsA).map(getMirrorPartnerSlot))
 
   const handleCardClick = (cardId: string, e?: React.MouseEvent) => {
     if (e) {
@@ -366,7 +370,6 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
     const cardInSlot = battlefield[player].find(c => c.slot === slotNum)
     const mirroredSlots = player === 'player1' ? p1MirroredSlots : p2MirroredSlots
     const isMirroredHero = Boolean(cardInSlot && cardInSlot.cardType === 'hero' && mirroredSlots.has(slotNum))
-    const mirrorCountdown = isMirroredHero ? getMirrorCountdown(metadata, player, slotNum) : 0
     const isSelected = selectedCard && selectedCard.id === cardInSlot?.id
     const isTargetable = Boolean(
       pendingEffect?.targeting &&
@@ -791,9 +794,9 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
                     borderRadius: '8px',
                     zIndex: 3,
                   }}
-                  title="Mirror Resonance progress"
+                  title="Mirror Resonance active"
                 >
-                  Mirror {mirrorCountdown}/3
+                  Mirror +1/+1
                 </div>
               )}
               <div className="unit-card__name">
@@ -955,11 +958,8 @@ export function BattlefieldView({ battlefieldId, showDebugControls = false, onHo
           <span className="battlefield-subtitle">({getAvailableSlots(allCards)})</span>
         </div>
         <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: '#444' }}>
-          <span title="Color resonance colors shared across both lanes for player 1">
-            P1 Resonance: {p1SharedResonance.length > 0 ? p1SharedResonance.join('/') : 'none'}
-          </span>
-          <span title="Color resonance colors shared across both lanes for player 2">
-            P2 Resonance: {p2SharedResonance.length > 0 ? p2SharedResonance.join('/') : 'none'}
+          <span title="Resonance now comes from mirrored slots (outer-in pairing)">
+            Mirror Resonance: position-based
           </span>
         </div>
         {showDebugControls && metadata.currentPhase === 'play' && (
