@@ -3,13 +3,20 @@ import { useGamePersistence } from '../hooks/useGamePersistence'
 import { useTurnManagement } from '../hooks/useTurnManagement'
 
 export function GameHeader() {
-  const { metadata, activePlayer, setShowCardLibrary, setGameState } = useGameContext()
+  const { metadata, activePlayer, setShowCardLibrary } = useGameContext()
   const { savedStates, exportGameState, importGameState } = useGamePersistence()
   const { handleNextPhase, handleNextTurn, handlePass, handleEndDeployPhase } = useTurnManagement()
 
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-      <h1 style={{ margin: 0 }}>Artibound - Hero Card Game</h1>
+      <h1 style={{ margin: 0 }}>
+        Artibound
+        {metadata.isRunePrototype && (
+          <span style={{ fontSize: '14px', color: '#E91E63', marginLeft: '12px', fontWeight: 'normal' }}>
+            RUNE PROTOTYPE — BR vs GWu
+          </span>
+        )}
+      </h1>
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
         {/* Action Display - Prominent */}
         {metadata.actionPlayer && (

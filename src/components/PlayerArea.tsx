@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { PlayerId, Hero, HeroAbility } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { RunePoolDisplay } from './RunePoolDisplay'
+import { LaneRuneDisplay } from './LaneRuneDisplay'
 import { useDeployment } from '../hooks/useDeployment'
 import { useTurnManagement } from '../hooks/useTurnManagement'
 import { useItemShop } from '../hooks/useItemShop'
@@ -73,13 +74,26 @@ export function PlayerArea({ player }: PlayerAreaProps) {
           )}
         </h2>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
-          {/* Rune Pool Display */}
-          <RunePoolDisplay 
-            runePool={player === 'player1' ? metadata.player1RunePool : metadata.player2RunePool}
-            playerName={player === 'player1' ? 'Player 1' : 'Player 2'}
-            player={player}
-            seals={player === 'player1' ? (metadata.player1Seals || []) : (metadata.player2Seals || [])}
-          />
+          {/* Rune Display: lane-specific for prototype, global pool otherwise */}
+          {metadata.isRunePrototype && metadata.laneRunes ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <LaneRuneDisplay
+                laneRunes={metadata.laneRunes.battlefieldA[player]}
+                laneName="Lane A"
+              />
+              <LaneRuneDisplay
+                laneRunes={metadata.laneRunes.battlefieldB[player]}
+                laneName="Lane B"
+              />
+            </div>
+          ) : (
+            <RunePoolDisplay 
+              runePool={player === 'player1' ? metadata.player1RunePool : metadata.player2RunePool}
+              playerName={player === 'player1' ? 'Player 1' : 'Player 2'}
+              player={player}
+              seals={player === 'player1' ? (metadata.player1Seals || []) : (metadata.player2Seals || [])}
+            />
+          )}
           
           {/* Legacy Mana Display (for backward compatibility) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

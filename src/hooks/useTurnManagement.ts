@@ -1,9 +1,9 @@
 import { useCallback, useEffect } from 'react'
-import { TurnPhase, Card, GameMetadata, ShopItem, Hero, BaseCard, PlayerId } from '../game/types'
+import { TurnPhase, Card, GameMetadata, Hero, BaseCard, PlayerId } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { getDefaultTargets, resolveCombat, resolveSimultaneousCombat, resolveRangedAttacks } from '../game/combatSystem'
 import { removeRunesFromHero } from '../game/runeSystem'
-import { tier1Items, createCardFromTemplate } from '../game/sampleData'
+import { createCardFromTemplate } from '../game/sampleData'
 
 export function useTurnManagement() {
   const { 
@@ -28,12 +28,7 @@ export function useTurnManagement() {
     const player = metadata.activePlayer
     const currentPhase = metadata.currentPhase
     
-    // Phase progression: play -> play (next player) - combat happens automatically when both pass
-    let nextPhase: TurnPhase = 'play'
-    let nextPlayer: 'player1' | 'player2' = player
-    let shouldIncrementTurn = false
-    
-    // Resolve combat simultaneously on both battlefields when leaving play phase
+    // Resolve combat simultaneously on both battlefields when both players pass
     if (currentPhase === 'play' && metadata.player1Passed && metadata.player2Passed) {
       // Resolve simultaneous combat for both battlefields
       const initialTowerHP = {
@@ -171,6 +166,7 @@ export function useTurnManagement() {
       
       // Add B runes for black heroes that died
       const allBlackHeroesDied = [...blackHeroesDiedA, ...blackHeroesDiedB]
+      const allCardsToDraw: { player1: Card[]; player2: Card[] } = { player1: [], player2: [] }
       
       // Apply combat results from both battlefields
       // Calculate total overflow damage TO each player's nexus
@@ -271,51 +267,46 @@ export function useTurnManagement() {
         },
       })
       setShowCombatSummary(true)
-      
-      // End turn - switch player and reset to play phase
-      nextPlayer = player === 'player1' ? 'player2' : 'player1'
-      nextPhase = 'play'
-      shouldIncrementTurn = nextPlayer === 'player1'
-      
-      // Reset pass flags at start of new turn
-      const resetPassFlags = true
+
+      // Start-of-turn draw: draw 2 cards for each player
+      const p1TemplatesToDraw = player1SidebarCards.slice(0, 2)
+      const p2TemplatesToDraw = player2SidebarCards.slice(0, 2)
+      const p1CardsToDraw = p1TemplatesToDraw.map(template => createCardFromTemplate(template, 'player1', 'hand'))
+      const p2CardsToDraw = p2TemplatesToDraw.map(template => createCardFromTemplate(template, 'player2', 'hand'))
+
+      if (p1TemplatesToDraw.length > 0) setPlayer1SidebarCards(player1SidebarCards.slice(p1TemplatesToDraw.length))
+      if (p2TemplatesToDraw.length > 0) setPlayer2SidebarCards(player2SidebarCards.slice(p2TemplatesToDraw.length))
       
       // Decrement cooldowns and move heroes from base to deployZone when cooldown expires
       setGameState(prev => {
-        const processCooldowns = (player: 'player1' | 'player2') => {
-          const base = prev[`${player}Base` as keyof typeof prev] as Card[]
-          const deployZone = prev[`${player}DeployZone` as keyof typeof prev] as Card[]
+        const processCooldowns = (playerKey: 'player1' | 'player2') => {
+          const base = prev[`${playerKey}Base` as keyof typeof prev] as Card[]
+          const deployZone = prev[`${playerKey}DeployZone` as keyof typeof prev] as Card[]
           const cooldowns = { ...prev.metadata.deathCooldowns }
           
           const heroesToMove: Card[] = []
           const heroesToKeep: Card[] = []
           
-          // Decrement all cooldowns and process heroes
           base.forEach(card => {
             if (card.cardType === 'hero') {
               const currentCooldown = cooldowns[card.id] || 0
               if (currentCooldown > 0) {
-                // Decrement cooldown
                 cooldowns[card.id] = currentCooldown - 1
               }
               
               const newCooldown = cooldowns[card.id] || 0
               if (newCooldown === 0) {
-                // Cooldown expired - move to deployZone and heal to full
                 const hero = card as import('../game/types').Hero
                 heroesToMove.push({ 
                   ...hero, 
                   location: 'deployZone' as const,
-                  currentHealth: hero.maxHealth, // Heal to full when ready to deploy
+                  currentHealth: hero.maxHealth,
                 })
-                // Remove from cooldowns when moved to deployZone
                 delete cooldowns[card.id]
               } else {
-                // Still on cooldown - keep in base
                 heroesToKeep.push(card)
               }
             } else {
-              // Non-hero cards (artifacts) stay in base
               heroesToKeep.push(card)
             }
           })
@@ -329,81 +320,51 @@ export function useTurnManagement() {
         
         const p1Result = processCooldowns('player1')
         const p2Result = processCooldowns('player2')
-        
+
+        const initiativePlayer = prev.metadata.initiativePlayer || 'player1'
+
+        // Restore mana to max for BOTH players
+        const p1MaxMana = prev.metadata.player1MaxMana
+        const p2MaxMana = prev.metadata.player2MaxMana
+
         return {
           ...prev,
           player1Base: p1Result.newBase,
           player1DeployZone: p1Result.newDeployZone,
           player2Base: p2Result.newBase,
           player2DeployZone: p2Result.newDeployZone,
+          player1Hand: [...(prev.player1Hand || []), ...p1CardsToDraw],
+          player2Hand: [...(prev.player2Hand || []), ...p2CardsToDraw],
           metadata: {
             ...prev.metadata,
             deathCooldowns: { ...p1Result.newCooldowns, ...p2Result.newCooldowns },
+            currentTurn: prev.metadata.currentTurn + 1,
+            currentPhase: 'deploy' as TurnPhase,
+            activePlayer: initiativePlayer,
+            actionPlayer: initiativePlayer,
+            player1Mana: p1MaxMana,
+            player2Mana: p2MaxMana,
+            player1Passed: false,
+            player2Passed: false,
+            turn1DeploymentPhase: 'complete',
+            resourceChoicesMade: { player1: false, player2: false },
+            player1HeroesDeployedThisTurn: 0,
+            player2HeroesDeployedThisTurn: 0,
           },
         }
       })
-      
-      // Regenerate mana for next player (+1 max mana, restore to max)
-      const nextPlayerMaxMana = Math.min(
-        (nextPlayer === 'player1' ? metadata.player1MaxMana : metadata.player2MaxMana) + 1,
-        10 // Cap at 10
-      )
-      
-      // Calculate gold per turn (base + items)
-      const baseGoldPerTurn = 3
-      let goldPerTurnFromItems = 0
-      
-      // Check all heroes for gold per turn items
-      const allPlayerCards = [
-        ...gameState[`${player}Hand` as keyof typeof gameState] as Card[],
-        ...gameState.battlefieldA[player as 'player1' | 'player2'],
-        ...gameState.battlefieldB[player as 'player1' | 'player2'],
-      ]
-      
-      allPlayerCards.forEach(card => {
-        if (card.cardType === 'hero') {
-          const hero = card as import('../game/types').Hero
-          const equippedItems = hero.equippedItems || []
-          equippedItems.forEach(itemId => {
-            const item = tier1Items.find(i => i.id === itemId)
-            if (item && item.goldPerTurn) {
-              goldPerTurnFromItems += item.goldPerTurn
-            }
-          })
-        }
-      })
-
-      const totalGoldThisTurn = baseGoldPerTurn + goldPerTurnFromItems
-
-      setGameState(prev => ({
-        ...prev,
-        metadata: {
-          ...prev.metadata,
-          [`${player}Gold`]: (prev.metadata[`${player}Gold` as keyof GameMetadata] as number) + totalGoldThisTurn,
-          currentTurn: prev.metadata.currentTurn + (shouldIncrementTurn ? 1 : 0),
-          activePlayer: nextPlayer,
-          currentPhase: nextPhase,
-          [`${nextPlayer}MaxMana`]: nextPlayerMaxMana,
-          [`${nextPlayer}Mana`]: nextPlayerMaxMana, // Restore to max
-          // Reset pass flags at start of new turn
-          player1Passed: false,
-          player2Passed: false,
-          // Reset turn 1 deployment phase if we're past turn 1
-          ...(shouldIncrementTurn && prev.metadata.currentTurn > 1 ? { turn1DeploymentPhase: 'complete' } : {}),
-        },
-      }))
       return
     }
     
-    // Just advance phase
+    // Fallback: advance to play phase
     setGameState(prev => ({
       ...prev,
       metadata: {
         ...prev.metadata,
-        currentPhase: nextPhase,
+        currentPhase: 'play' as TurnPhase,
       },
     }))
-  }, [metadata, gameState, combatTargetsA, combatTargetsB, setGameState, setCombatTargetsA, setCombatTargetsB])
+  }, [metadata, gameState, combatTargetsA, combatTargetsB, setGameState, setCombatTargetsA, setCombatTargetsB, player1SidebarCards, player2SidebarCards, setPlayer1SidebarCards, setPlayer2SidebarCards])
 
   const handleToggleSpellPlayed = useCallback((card: Card) => {
     // Allow any card type to be marked as played (spells, units, heroes)
@@ -524,12 +485,24 @@ export function useTurnManagement() {
   }, [setGameState])
 
   const handleNextTurn = useCallback(() => {
+    const p1TemplatesToDraw = player1SidebarCards.slice(0, 2)
+    const p2TemplatesToDraw = player2SidebarCards.slice(0, 2)
+    const p1CardsToDraw = p1TemplatesToDraw.map(template => createCardFromTemplate(template, 'player1', 'hand'))
+    const p2CardsToDraw = p2TemplatesToDraw.map(template => createCardFromTemplate(template, 'player2', 'hand'))
+
+    setPlayer1SidebarCards(player1SidebarCards.slice(p1TemplatesToDraw.length))
+    setPlayer2SidebarCards(player2SidebarCards.slice(p2TemplatesToDraw.length))
+
     setGameState(prev => {
       const newTurn = prev.metadata.currentTurn + 1
       
-      // Increase max mana for both players (+1 per turn, capped at 10)
-      const newPlayer1MaxMana = Math.min(prev.metadata.player1MaxMana + 1, 10)
-      const newPlayer2MaxMana = Math.min(prev.metadata.player2MaxMana + 1, 10)
+      // Increase max mana: in rune prototype, mana only grows via resource choices
+      const newPlayer1MaxMana = prev.metadata.isRunePrototype
+        ? prev.metadata.player1MaxMana
+        : Math.min(prev.metadata.player1MaxMana + 1, 10)
+      const newPlayer2MaxMana = prev.metadata.isRunePrototype
+        ? prev.metadata.player2MaxMana
+        : Math.min(prev.metadata.player2MaxMana + 1, 10)
       
       // Decrease death cooldown counters by 1 each turn
       const newDeathCooldowns: Record<string, number> = {}
@@ -692,8 +665,8 @@ export function useTurnManagement() {
         ...prev,
         battlefieldA: finalBattlefieldA,
         battlefieldB: finalBattlefieldB,
-        player1Hand: prev.player1Hand,
-        player2Hand: prev.player2Hand,
+        player1Hand: [...prev.player1Hand, ...p1CardsToDraw],
+        player2Hand: [...prev.player2Hand, ...p2CardsToDraw],
         player1Base: finalP1Base.map(c => healHeroInBase(c)),
         player2Base: finalP2Base.map(c => healHeroInBase(c)),
         metadata: {
@@ -723,13 +696,17 @@ export function useTurnManagement() {
           player2HeroesDeployedThisTurn: 0,
           // Update rune pools (clear temp, generate from seals)
           player1RunePool: p1RuneResult.updatedPool,
-          player2RunePool: p2RuneResult.updatedPool
+          player2RunePool: p2RuneResult.updatedPool,
+          // Reset resource choices for rune prototype
+          ...(prev.metadata.isRunePrototype ? { resourceChoicesMade: { player1: false, player2: false } } : {}),
         },
       }
     })
-  }, [setGameState])
+  }, [setGameState, player1SidebarCards, player2SidebarCards, setPlayer1SidebarCards, setPlayer2SidebarCards])
 
   const handlePass = useCallback((player: 'player1' | 'player2') => {
+    const otherAlreadyPassed = player === 'player1' ? metadata.player2Passed : metadata.player1Passed
+
     setGameState(prev => {
       // Handle turn 1 deployment passing (counter-deployment phases)
       if (prev.metadata.currentTurn === 1 && prev.metadata.turn1DeploymentPhase && 
@@ -764,7 +741,6 @@ export function useTurnManagement() {
       }
       
       // Normal turn passing (play phase)
-      const currentPlayerPassed = player === 'player1' ? prev.metadata.player1Passed : prev.metadata.player2Passed
       const otherPlayerPassed = player === 'player1' ? prev.metadata.player2Passed : prev.metadata.player1Passed
       
       // Mark this player as passed
@@ -789,19 +765,29 @@ export function useTurnManagement() {
         metadata: newMetadata,
       }
     })
-  }, [setGameState])
+    
+    // Auto-resolve combat immediately when the second player passes
+    if (metadata.currentPhase === 'play' && otherAlreadyPassed) {
+      setTimeout(() => {
+        handleNextPhase()
+      }, 0)
+    }
+  }, [setGameState, metadata.currentPhase, metadata.player1Passed, metadata.player2Passed, handleNextPhase])
 
   const handleEndDeployPhase = useCallback(() => {
+    // In prototype mode: deploy -> resource (resource choices) -> play
     setGameState(prev => {
       if (prev.metadata.currentPhase !== 'deploy') {
         return prev
       }
       
+      const nextPhase: TurnPhase = prev.metadata.isRunePrototype ? 'resource' : 'play'
+      
       return {
         ...prev,
         metadata: {
           ...prev.metadata,
-          currentPhase: 'play',
+          currentPhase: nextPhase,
         },
       }
     })

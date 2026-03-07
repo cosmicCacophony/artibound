@@ -6,6 +6,7 @@ import { ubHeroes } from '../game/comprehensiveCardData'
 import { boss1ValiantLegion } from '../game/bossData'
 import { heroMatchesArchetype, cardMatchesArchetype } from '../game/archetypeUtils'
 import { saveDraft, getPreviousDraft } from '../game/draftStorage'
+import { createRunePrototypeGameState } from '../game/runePrototypeData'
 
 interface GameContextType {
   // Game State
@@ -72,6 +73,7 @@ interface GameContextType {
   initializeGameFromDraft: (player1Selection: FinalDraftSelection, player2Selection: FinalDraftSelection) => void
   initializeRandomGame: () => void
   initializeDraftGame: (player1Selection: FinalDraftSelection) => void
+  initializeRunePrototype: () => void
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
@@ -377,6 +379,24 @@ export function GameProvider({ children }: { children: ReactNode }) {
     initializeGameFromDraft(player1Selection, player2Selection)
   }, [initializeGameFromDraft])
 
+  const initializeRunePrototype = useCallback(() => {
+    const protoState = createRunePrototypeGameState()
+    setGameState({
+      player1Hand: protoState.player1Hand,
+      player2Hand: protoState.player2Hand,
+      player1Base: protoState.player1Base,
+      player2Base: protoState.player2Base,
+      player1DeployZone: protoState.player1DeployZone,
+      player2DeployZone: protoState.player2DeployZone,
+      battlefieldA: protoState.battlefieldA,
+      battlefieldB: protoState.battlefieldB,
+      cardLibrary: [],
+      metadata: protoState.metadata,
+    })
+    setPlayer1SidebarCards(protoState.player1Library as BaseCard[])
+    setPlayer2SidebarCards(protoState.player2Library as BaseCard[])
+  }, [setGameState, setPlayer1SidebarCards, setPlayer2SidebarCards])
+
   const initializeDraftGame = useCallback((player1Selection: FinalDraftSelection) => {
     // Save the current draft to localStorage (this will shift previous drafts)
     // After saving: current draft is at index 0, previous draft (if exists) is at index 1
@@ -458,6 +478,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     initializeGameFromDraft,
     initializeRandomGame,
     initializeDraftGame,
+    initializeRunePrototype,
   }
   
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useGameContext } from '../context/GameContext'
 import { GameHeader } from './GameHeader'
 import { PlayerArea } from './PlayerArea'
@@ -6,9 +7,11 @@ import { ItemShopModal } from './ItemShopModal'
 import { CardLibrarySidebar } from './CardLibrarySidebar'
 import { CardLibraryView } from './CardLibraryView'
 import { CombatSummaryModal } from './CombatSummaryModal'
+import { ResourceChoiceModal } from './ResourceChoiceModal'
 
 export function Board() {
   const { 
+    setGameState,
     player1SidebarCards, 
     setPlayer1SidebarCards, 
     player2SidebarCards, 
@@ -16,7 +19,30 @@ export function Board() {
     showCombatSummary,
     setShowCombatSummary,
     combatSummaryData,
+    metadata,
   } = useGameContext()
+
+  const isPrototype = metadata.isRunePrototype
+  const resourceChoices = metadata.resourceChoicesMade || { player1: false, player2: false }
+  const actionPlayer = metadata.actionPlayer
+  const showResourceModal = isPrototype
+    && metadata.currentPhase === 'resource'
+    && actionPlayer
+    && !resourceChoices[actionPlayer]
+
+  // Auto-advance from resource phase to play phase when both players have made choices
+  useEffect(() => {
+    if (isPrototype && metadata.currentPhase === 'resource' &&
+        resourceChoices.player1 && resourceChoices.player2) {
+      setGameState(prev => ({
+        ...prev,
+        metadata: {
+          ...prev.metadata,
+          currentPhase: 'play',
+        },
+      }))
+    }
+  }, [isPrototype, metadata.currentPhase, resourceChoices.player1, resourceChoices.player2, setGameState])
   
   return (
     <div style={{ display: 'flex', fontFamily: 'Arial, sans-serif', height: '100vh' }}>
@@ -33,6 +59,25 @@ export function Board() {
 
         <ItemShopModal />
         <CardLibraryView />
+        
+        {showResourceModal && actionPlayer && (
+          <ResourceChoiceModal
+            player={actionPlayer}
+            onComplete={() => {
+              // After this player's choice, if opponent hasn't chosen yet, pass to them
+              const other = actionPlayer === 'player1' ? 'player2' : 'player1'
+              if (!resourceChoices[other]) {
+                setGameState(prev => ({
+                  ...prev,
+                  metadata: {
+                    ...prev.metadata,
+                    actionPlayer: other,
+                  },
+                }))
+              }
+            }}
+          />
+        )}
         {combatSummaryData && (
           <CombatSummaryModal
             isOpen={showCombatSummary}

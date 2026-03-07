@@ -1,12 +1,24 @@
 import { useCallback } from 'react'
 import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT, Hero, ItemCard, BaseCard, SpellCard } from '../game/types'
 import { useGameContext } from '../context/GameContext'
-import { tier1Items } from '../game/sampleData'
+import { createCardFromTemplate, tier1Items } from '../game/sampleData'
 import { canAffordCard, consumeRunesForCard, addRunesFromHero, removeRunesFromHero, addTemporaryRunes, consumeRunesForCardWithTracking } from '../game/runeSystem'
 import { canPlayCardInLane } from '../game/colorSystem'
+import { applyRuneScalingToSpell, applyRuneScalingToUnit } from '../game/runePrototypeData'
 
 export function useDeployment() {
-  const { gameState, setGameState, selectedCard, selectedCardId, setSelectedCardId, getAvailableSlots } = useGameContext()
+  const {
+    gameState,
+    setGameState,
+    selectedCard,
+    selectedCardId,
+    setSelectedCardId,
+    getAvailableSlots,
+    player1SidebarCards,
+    player2SidebarCards,
+    setPlayer1SidebarCards,
+    setPlayer2SidebarCards,
+  } = useGameContext()
   const metadata = gameState.metadata
 
   const handleDeploy = useCallback((location: Location, targetSlot?: number) => {
@@ -32,7 +44,15 @@ export function useDeployment() {
         return
       }
       
-      // No turn 2 restriction - players can deploy any number of heroes
+      // Deploy phase cap: each player can deploy one new hero per turn (from base/deploy zone)
+      if (selectedCard.location === 'base' || selectedCard.location === 'deployZone') {
+        const deployedKey = `${selectedCard.owner}HeroesDeployedThisTurn` as keyof GameMetadata
+        const deployedThisTurn = (metadata[deployedKey] as number) || 0
+        if (deployedThisTurn >= 1) {
+          alert(`Only one hero can be deployed by ${selectedCard.owner === 'player1' ? 'Player 1' : 'Player 2'} during deploy phase.`)
+          return
+        }
+      }
       
       // Handle deploy phase deployment with bounce mechanic
       setGameState(prev => {
@@ -84,6 +104,7 @@ export function useDeployment() {
         if (!wasOnBattlefield && isFromBaseOrDeployZone && (selectedCard as Hero).colors) {
           const heroColors = (selectedCard as Hero).colors || []
           updatedRunePool = {
+            ...updatedRunePool,
             runes: [...updatedRunePool.runes, ...heroColors],
           }
         }
@@ -220,6 +241,24 @@ export function useDeployment() {
       const cooldownCounter = metadata.deathCooldowns[selectedCard.id]
       if (cooldownCounter !== undefined && cooldownCounter > 0) {
         alert(`Hero is on cooldown! ${cooldownCounter} turn${cooldownCounter !== 1 ? 's' : ''} remaining.`)
+        return
+      }
+    }
+
+    // Prototype hero progression:
+    // - Turn 2: each player can deploy only 1 new hero (their 3rd)
+    // - Turn 3: each player can deploy only 1 new hero (their 4th)
+    // - Turn 4+: no per-turn cap (cooldown still applies)
+    if (
+      selectedCard.cardType === 'hero' &&
+      (selectedCard.location === 'deployZone' || selectedCard.location === 'base') &&
+      metadata.currentTurn >= 2 &&
+      metadata.currentTurn <= 3
+    ) {
+      const deployedKey = `${selectedCard.owner}HeroesDeployedThisTurn` as keyof GameMetadata
+      const deployedThisTurn = (metadata[deployedKey] as number) || 0
+      if (deployedThisTurn >= 1) {
+        alert(`Only one new hero can be deployed by ${selectedCard.owner === 'player1' ? 'Player 1' : 'Player 2'} on turn ${metadata.currentTurn}.`)
         return
       }
     }
@@ -585,13 +624,23 @@ export function useDeployment() {
             ...prev[otherBattlefieldKey],
             [selectedCard.owner]: removeFromLocation(prev[otherBattlefieldKey][selectedCard.owner as 'player1' | 'player2']),
           },
-          // Add to the target battlefield
+          // Add to the target battlefield (apply rune scaling in prototype mode)
           [battlefieldKey]: {
             ...prev[battlefieldKey],
             [selectedCard.owner]: [
-              // Remove from this battlefield first (in case it's already here and we're just repositioning)
               ...prev[battlefieldKey][selectedCard.owner as 'player1' | 'player2'].filter(c => c.id !== selectedCard.id),
-              { ...selectedCard, location, slot: finalTargetSlot || 1 }
+              (() => {
+                let deployedCard = { ...selectedCard, location, slot: finalTargetSlot || 1 }
+                if (prev.metadata.isRunePrototype && prev.metadata.laneRunes && selectedCard.cardType === 'generic') {
+                  const laneRunes = prev.metadata.laneRunes[battlefieldKey as 'battlefieldA' | 'battlefieldB'][selectedCard.owner as 'player1' | 'player2']
+                  const unit = selectedCard as GenericUnit
+                  if (unit.runeScaling) {
+                    const scaled = applyRuneScalingToUnit(unit, laneRunes)
+                    deployedCard = { ...deployedCard, attack: scaled.attack, health: scaled.health, maxHealth: scaled.maxHealth, currentHealth: scaled.currentHealth } as any
+                  }
+                }
+                return deployedCard
+              })()
             ].sort((a, b) => (a.slot || 0) - (b.slot || 0)),
           },
           metadata: {
@@ -645,8 +694,74 @@ export function useDeployment() {
       }
     })
     
+    // Prototype spell draw/heal handling (e.g., Tidecall) when cast from hand
+    if (selectedCard.cardType === 'spell' && selectedCard.location === 'hand') {
+      const spell = selectedCard as SpellCard
+      const effect = spell.effect
+      const owner = selectedCard.owner as 'player1' | 'player2'
+
+      let drawCount = effect.type === 'draw_and_heal' ? (effect.drawCount || 0) : 0
+      let healAmount = effect.type === 'draw_and_heal' ? (effect.healAmount || 0) : 0
+
+      if (metadata.isRunePrototype && (location === 'battlefieldA' || location === 'battlefieldB')) {
+        const laneRunes = metadata.laneRunes?.[location]?.[owner] || []
+        const scaled = applyRuneScalingToSpell(spell, laneRunes)
+        drawCount += scaled.drawCards
+        healAmount += scaled.healTower
+      }
+
+      if (drawCount > 0) {
+        const sidebar = owner === 'player1' ? player1SidebarCards : player2SidebarCards
+        const templatesToDraw = sidebar.slice(0, drawCount)
+        const remaining = sidebar.slice(templatesToDraw.length)
+        const drawnCards = templatesToDraw.map(template => createCardFromTemplate(template, owner, 'hand'))
+
+        if (owner === 'player1') {
+          setPlayer1SidebarCards(remaining)
+        } else {
+          setPlayer2SidebarCards(remaining)
+        }
+
+        if (drawnCards.length > 0 || healAmount !== 0) {
+          setGameState(prev => {
+            const handKey = `${owner}Hand` as keyof typeof prev
+            const updatedHand = [...(prev[handKey] as Card[]), ...drawnCards]
+
+            if (location === 'battlefieldA') {
+              const towerKey = owner === 'player1' ? 'towerA_player1_HP' : 'towerA_player2_HP'
+              return {
+                ...prev,
+                [handKey]: updatedHand,
+                metadata: {
+                  ...prev.metadata,
+                  [towerKey]: Math.min(30, (prev.metadata[towerKey as keyof GameMetadata] as number) + healAmount),
+                },
+              }
+            }
+
+            if (location === 'battlefieldB') {
+              const towerKey = owner === 'player1' ? 'towerB_player1_HP' : 'towerB_player2_HP'
+              return {
+                ...prev,
+                [handKey]: updatedHand,
+                metadata: {
+                  ...prev.metadata,
+                  [towerKey]: Math.min(30, (prev.metadata[towerKey as keyof GameMetadata] as number) + healAmount),
+                },
+              }
+            }
+
+            return {
+              ...prev,
+              [handKey]: updatedHand,
+            }
+          })
+        }
+      }
+    }
+
     setSelectedCardId(null)
-  }, [selectedCard, selectedCardId, gameState, metadata, getAvailableSlots, setGameState, setSelectedCardId])
+  }, [selectedCard, selectedCardId, gameState, metadata, getAvailableSlots, setGameState, setSelectedCardId, player1SidebarCards, player2SidebarCards, setPlayer1SidebarCards, setPlayer2SidebarCards])
 
   const handleChangeSlot = useCallback((card: Card, newSlot: number, location: 'battlefieldA' | 'battlefieldB') => {
     if (newSlot < 1 || newSlot > 5) return

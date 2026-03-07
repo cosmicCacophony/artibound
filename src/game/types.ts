@@ -51,6 +51,18 @@ export type Archetype =
   | 'ubg-control'
   | 'all'
 
+// Rune scaling: cards can have tiered effects based on lane rune accumulation
+export interface RuneScalingTier {
+  runeRequirement: RuneColor[]
+  attackBonus?: number
+  healthBonus?: number
+  damageBonus?: number
+  description: string
+  drawCards?: number
+  healTower?: number
+  keywords?: string[]
+}
+
 export interface BaseCard {
   id: string
   name: string
@@ -60,6 +72,7 @@ export interface BaseCard {
   manaCost?: number // Cost to play this card (uses mana)
   colors?: Color[] // Colors required to cast in lane with matching hero color
   consumesRunes?: boolean // If true, casting this card consumes runes from the pool
+  runeScaling?: RuneScalingTier[] // Tiered effects based on lane runes (sorted weakest to strongest)
 }
 
 export interface Item {
@@ -95,7 +108,7 @@ export interface BattlefieldBuff {
 // Shop item type - can be either a hero item or a battlefield buff template
 export type ShopItem = Item | (Omit<BattlefieldBuff, 'id' | 'battlefieldId' | 'playerId'> & { type: 'battlefieldBuff' })
 
-export type TurnPhase = 'deploy' | 'play' | 'combatA' | 'adjust' | 'combatB'
+export type TurnPhase = 'deploy' | 'resource' | 'play' | 'combatA' | 'adjust' | 'combatB'
 
 // Combat System Types
 export type AttackTargetType = 'unit' | 'tower'
@@ -202,6 +215,15 @@ export interface GameMetadata {
   player2CardTypesPlayedThisTurn: CardType[]
   // Hero counters: Track counters on specific heroes (e.g., WB hero life-spent counters)
   heroCounters?: Record<string, number> // Format: heroId -> counter count
+  // Lane-specific runes (prototype): permanent runes accumulated per lane per player
+  laneRunes?: {
+    battlefieldA: { player1: RuneColor[], player2: RuneColor[] }
+    battlefieldB: { player1: RuneColor[], player2: RuneColor[] }
+  }
+  // Resource choice tracking: has each player made their resource choices this turn?
+  resourceChoicesMade?: { player1: boolean, player2: boolean }
+  // Is this a rune prototype game? (controls which UI/logic paths to use)
+  isRunePrototype?: boolean
 }
 
 // Hero Ability Types

@@ -8,10 +8,15 @@ import './App.css'
 
 function AppContent() {
   const [view, setView] = useState<'game' | 'roguelike' | 'heroes' | 'cards'>('roguelike')
-  const { initializeRandomGame } = useGameContext()
+  const { initializeRandomGame, initializeRunePrototype } = useGameContext()
 
   const handleStartRandomGame = () => {
     initializeRandomGame()
+    setView('game')
+  }
+
+  const handleStartRunePrototype = () => {
+    initializeRunePrototype()
     setView('game')
   }
 
@@ -85,6 +90,22 @@ function AppContent() {
             title="Start a game with randomly generated decks (for quick testing)"
           >
             🎲 Start Random Game
+          </button>
+          <button
+            onClick={handleStartRunePrototype}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#E91E63',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              marginLeft: '8px',
+            }}
+            title="Start simplified BR vs GWu rune prototype (hotseat, both sides playable)"
+          >
+            Rune Prototype (BR vs GWu)
           </button>
         </div>
       </div>
