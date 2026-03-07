@@ -8,6 +8,7 @@ import { CardLibrarySidebar } from './CardLibrarySidebar'
 import { CardLibraryView } from './CardLibraryView'
 import { CombatSummaryModal } from './CombatSummaryModal'
 import { ResourceChoiceModal } from './ResourceChoiceModal'
+import { getNextPhase } from '../game/turnStateMachine'
 
 export function Board() {
   const { 
@@ -34,11 +35,12 @@ export function Board() {
   useEffect(() => {
     if (isPrototype && metadata.currentPhase === 'resource' &&
         resourceChoices.player1 && resourceChoices.player2) {
+      const nextPhase = getNextPhase('resource', 'RESOURCE_COMPLETE', true)
       setGameState(prev => ({
         ...prev,
         metadata: {
           ...prev.metadata,
-          currentPhase: 'play',
+          currentPhase: nextPhase,
         },
       }))
     }

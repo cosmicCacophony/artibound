@@ -1,9 +1,10 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback } from 'react'
 import { TurnPhase, Card, GameMetadata, Hero, BaseCard, PlayerId } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { getDefaultTargets, resolveCombat, resolveSimultaneousCombat, resolveRangedAttacks } from '../game/combatSystem'
 import { removeRunesFromHero } from '../game/runeSystem'
 import { createCardFromTemplate } from '../game/sampleData'
+import { getNextPhase } from '../game/turnStateMachine'
 
 export function useTurnManagement() {
   const { 
@@ -22,15 +23,11 @@ export function useTurnManagement() {
   } = useGameContext()
   const metadata = gameState.metadata
 
-  // Combat is now resolved automatically when both players pass, no separate combat phases
-
   const handleNextPhase = useCallback(() => {
-    const player = metadata.activePlayer
     const currentPhase = metadata.currentPhase
     
     // Resolve combat simultaneously on both battlefields when both players pass
     if (currentPhase === 'play' && metadata.player1Passed && metadata.player2Passed) {
-      // Resolve simultaneous combat for both battlefields
       const initialTowerHP = {
         towerA_player1: metadata.towerA_player1_HP,
         towerA_player2: metadata.towerA_player2_HP,
@@ -54,7 +51,6 @@ export function useTurnManagement() {
         gameState
       )
       
-      // Use updated tower HP from A for B's combat
       const resultB = resolveSimultaneousCombat(
         gameState.battlefieldB,
         'battlefieldB',
@@ -64,7 +60,6 @@ export function useTurnManagement() {
         gameState
       )
       
-      // Resolve ranged attacks from base/deploy zone (after battlefield combat)
       const rangedResult = resolveRangedAttacks(
         gameState,
         resultB.updatedTowerHP,
@@ -82,7 +77,6 @@ export function useTurnManagement() {
         },
       }
       
-      // Process killed heroes (same logic as in BattlefieldView) - separate by player
       const processKilledHeroes = (
         originalBattlefield: typeof gameState.battlefieldA,
         updatedBattlefield: typeof gameState.battlefieldA,
@@ -99,7 +93,6 @@ export function useTurnManagement() {
         let updatedP2RunePool = player2RunePool
         const blackHeroesDied: Array<{ player: PlayerId }> = []
         
-        // Process player1 heroes
         originalBattlefield.player1.forEach(originalCard => {
           if (originalCard.cardType === 'hero') {
             const stillAlive = updatedBattlefield.player1.some(c => c.id === originalCard.id)
@@ -120,7 +113,6 @@ export function useTurnManagement() {
           }
         })
         
-        // Process player2 heroes
         originalBattlefield.player2.forEach(originalCard => {
           if (originalCard.cardType === 'hero') {
             const stillAlive = updatedBattlefield.player2.some(c => c.id === originalCard.id)
@@ -164,82 +156,22 @@ export function useTurnManagement() {
         updatedP2RunePoolA
       )
       
-      // Add B runes for black heroes that died
       const allBlackHeroesDied = [...blackHeroesDiedA, ...blackHeroesDiedB]
-      const allCardsToDraw: { player1: Card[]; player2: Card[] } = { player1: [], player2: [] }
       
-      // Apply combat results from both battlefields
-      // Calculate total overflow damage TO each player's nexus
-      // overflowDamage.player1 = damage dealt BY player1 (goes TO player2's nexus)
-      // overflowDamage.player2 = damage dealt BY player2 (goes TO player1's nexus)
       const totalDamageToP1Nexus = resultA.overflowDamage.player2 + resultB.overflowDamage.player2
       const totalDamageToP2Nexus = resultA.overflowDamage.player1 + resultB.overflowDamage.player1
-      
-      setGameState(prev => {
-        const newP1NexusHP = Math.max(0, prev.metadata.player1NexusHP - totalDamageToP1Nexus)
-        const newP2NexusHP = Math.max(0, prev.metadata.player2NexusHP - totalDamageToP2Nexus)
-        
-        // Add B runes for black heroes that died
-        let updatedP1RunePool = updatedP1RunePoolB
-        let updatedP2RunePool = updatedP2RunePoolB
-        
-        allBlackHeroesDied.forEach(({ player }) => {
-          if (player === 'player1') {
-            updatedP1RunePool = {
-              ...updatedP1RunePool,
-              runes: [...updatedP1RunePool.runes, 'black'],
-            }
-          } else {
-            updatedP2RunePool = {
-              ...updatedP2RunePool,
-              runes: [...updatedP2RunePool.runes, 'black'],
-            }
-          }
-        })
-        
-        const existingLaneMomentum = prev.metadata.laneMomentum || {
-          battlefieldA: { player1: 0, player2: 0 },
-          battlefieldB: { player1: 0, player2: 0 },
-        }
 
-        const updatedLaneMomentum = {
-          battlefieldA: {
-            player1: existingLaneMomentum.battlefieldA.player1 + laneMomentumDelta.battlefieldA.player1,
-            player2: existingLaneMomentum.battlefieldA.player2 + laneMomentumDelta.battlefieldA.player2,
-          },
-          battlefieldB: {
-            player1: existingLaneMomentum.battlefieldB.player1 + laneMomentumDelta.battlefieldB.player1,
-            player2: existingLaneMomentum.battlefieldB.player2 + laneMomentumDelta.battlefieldB.player2,
-          },
-        }
+      // Draw 2 cards for each player (turn 2+ only; turn 1 uses starting hands)
+      const shouldDraw = metadata.currentTurn >= 1
+      const p1TemplatesToDraw = shouldDraw ? player1SidebarCards.slice(0, 2) : []
+      const p2TemplatesToDraw = shouldDraw ? player2SidebarCards.slice(0, 2) : []
+      const p1CardsToDraw = p1TemplatesToDraw.map(template => createCardFromTemplate(template, 'player1', 'hand'))
+      const p2CardsToDraw = p2TemplatesToDraw.map(template => createCardFromTemplate(template, 'player2', 'hand'))
 
-        return {
-          ...prev,
-          battlefieldA: resultA.updatedBattlefield,
-          battlefieldB: resultB.updatedBattlefield,
-          player1Base: newP1BaseB,
-          player2Base: newP2BaseB,
-          // Add drawn cards to hands
-          player1Hand: [...(prev.player1Hand || []), ...allCardsToDraw.player1],
-          player2Hand: [...(prev.player2Hand || []), ...allCardsToDraw.player2],
-          metadata: {
-            ...prev.metadata,
-            towerA_player1_HP: rangedResult.updatedTowerHP.towerA_player1,
-            towerA_player2_HP: rangedResult.updatedTowerHP.towerA_player2,
-            towerB_player1_HP: rangedResult.updatedTowerHP.towerB_player1,
-            towerB_player2_HP: rangedResult.updatedTowerHP.towerB_player2,
-            // Apply overflow damage to nexus (sum from both battlefields + ranged attacks)
-            player1NexusHP: Math.max(0, newP1NexusHP - (rangedResult.overflowDamage.player2)),
-            player2NexusHP: Math.max(0, newP2NexusHP - (rangedResult.overflowDamage.player1)),
-            deathCooldowns: newCooldownsB,
-            player1RunePool: updatedP1RunePool,
-            player2RunePool: updatedP2RunePool,
-            laneMomentum: updatedLaneMomentum,
-          },
-        }
-      })
-      
-      // Show combat summary modal (include ranged attacks in combat log)
+      if (p1TemplatesToDraw.length > 0) setPlayer1SidebarCards(player1SidebarCards.slice(p1TemplatesToDraw.length))
+      if (p2TemplatesToDraw.length > 0) setPlayer2SidebarCards(player2SidebarCards.slice(p2TemplatesToDraw.length))
+
+      // Show combat summary modal
       setCombatSummaryData({
         battlefieldA: {
           name: 'Battlefield A',
@@ -267,27 +199,53 @@ export function useTurnManagement() {
         },
       })
       setShowCombatSummary(true)
-
-      // Start-of-turn draw: draw 2 cards for each player
-      const p1TemplatesToDraw = player1SidebarCards.slice(0, 2)
-      const p2TemplatesToDraw = player2SidebarCards.slice(0, 2)
-      const p1CardsToDraw = p1TemplatesToDraw.map(template => createCardFromTemplate(template, 'player1', 'hand'))
-      const p2CardsToDraw = p2TemplatesToDraw.map(template => createCardFromTemplate(template, 'player2', 'hand'))
-
-      if (p1TemplatesToDraw.length > 0) setPlayer1SidebarCards(player1SidebarCards.slice(p1TemplatesToDraw.length))
-      if (p2TemplatesToDraw.length > 0) setPlayer2SidebarCards(player2SidebarCards.slice(p2TemplatesToDraw.length))
       
-      // Decrement cooldowns and move heroes from base to deployZone when cooldown expires
+      // SINGLE atomic setGameState: combat results + cooldowns + card draw + new turn
       setGameState(prev => {
-        const processCooldowns = (playerKey: 'player1' | 'player2') => {
-          const base = prev[`${playerKey}Base` as keyof typeof prev] as Card[]
+        const newP1NexusHP = Math.max(0, prev.metadata.player1NexusHP - totalDamageToP1Nexus)
+        const newP2NexusHP = Math.max(0, prev.metadata.player2NexusHP - totalDamageToP2Nexus)
+        
+        let updatedP1RunePool = updatedP1RunePoolB
+        let updatedP2RunePool = updatedP2RunePoolB
+        
+        allBlackHeroesDied.forEach(({ player }) => {
+          if (player === 'player1') {
+            updatedP1RunePool = {
+              ...updatedP1RunePool,
+              runes: [...updatedP1RunePool.runes, 'black'],
+            }
+          } else {
+            updatedP2RunePool = {
+              ...updatedP2RunePool,
+              runes: [...updatedP2RunePool.runes, 'black'],
+            }
+          }
+        })
+        
+        const existingLaneMomentum = prev.metadata.laneMomentum || {
+          battlefieldA: { player1: 0, player2: 0 },
+          battlefieldB: { player1: 0, player2: 0 },
+        }
+        const updatedLaneMomentum = {
+          battlefieldA: {
+            player1: existingLaneMomentum.battlefieldA.player1 + laneMomentumDelta.battlefieldA.player1,
+            player2: existingLaneMomentum.battlefieldA.player2 + laneMomentumDelta.battlefieldA.player2,
+          },
+          battlefieldB: {
+            player1: existingLaneMomentum.battlefieldB.player1 + laneMomentumDelta.battlefieldB.player1,
+            player2: existingLaneMomentum.battlefieldB.player2 + laneMomentumDelta.battlefieldB.player2,
+          },
+        }
+
+        // Process cooldowns
+        const processCooldowns = (playerKey: 'player1' | 'player2', baseCards: Card[]) => {
           const deployZone = prev[`${playerKey}DeployZone` as keyof typeof prev] as Card[]
-          const cooldowns = { ...prev.metadata.deathCooldowns }
+          const cooldowns = { ...newCooldownsB }
           
           const heroesToMove: Card[] = []
           const heroesToKeep: Card[] = []
           
-          base.forEach(card => {
+          baseCards.forEach(card => {
             if (card.cardType === 'hero') {
               const currentCooldown = cooldowns[card.id] || 0
               if (currentCooldown > 0) {
@@ -318,28 +276,38 @@ export function useTurnManagement() {
           }
         }
         
-        const p1Result = processCooldowns('player1')
-        const p2Result = processCooldowns('player2')
+        const p1CooldownResult = processCooldowns('player1', newP1BaseB)
+        const p2CooldownResult = processCooldowns('player2', newP2BaseB)
 
         const initiativePlayer = prev.metadata.initiativePlayer || 'player1'
-
-        // Restore mana to max for BOTH players
         const p1MaxMana = prev.metadata.player1MaxMana
         const p2MaxMana = prev.metadata.player2MaxMana
+        const nextPhase = getNextPhase('play', 'COMBAT_RESOLVED', !!prev.metadata.isRunePrototype)
 
         return {
           ...prev,
-          player1Base: p1Result.newBase,
-          player1DeployZone: p1Result.newDeployZone,
-          player2Base: p2Result.newBase,
-          player2DeployZone: p2Result.newDeployZone,
+          battlefieldA: resultA.updatedBattlefield,
+          battlefieldB: resultB.updatedBattlefield,
+          player1Base: p1CooldownResult.newBase,
+          player1DeployZone: p1CooldownResult.newDeployZone,
+          player2Base: p2CooldownResult.newBase,
+          player2DeployZone: p2CooldownResult.newDeployZone,
           player1Hand: [...(prev.player1Hand || []), ...p1CardsToDraw],
           player2Hand: [...(prev.player2Hand || []), ...p2CardsToDraw],
           metadata: {
             ...prev.metadata,
-            deathCooldowns: { ...p1Result.newCooldowns, ...p2Result.newCooldowns },
+            towerA_player1_HP: rangedResult.updatedTowerHP.towerA_player1,
+            towerA_player2_HP: rangedResult.updatedTowerHP.towerA_player2,
+            towerB_player1_HP: rangedResult.updatedTowerHP.towerB_player1,
+            towerB_player2_HP: rangedResult.updatedTowerHP.towerB_player2,
+            player1NexusHP: Math.max(0, newP1NexusHP - (rangedResult.overflowDamage.player2)),
+            player2NexusHP: Math.max(0, newP2NexusHP - (rangedResult.overflowDamage.player1)),
+            deathCooldowns: { ...p1CooldownResult.newCooldowns, ...p2CooldownResult.newCooldowns },
+            player1RunePool: updatedP1RunePool,
+            player2RunePool: updatedP2RunePool,
+            laneMomentum: updatedLaneMomentum,
             currentTurn: prev.metadata.currentTurn + 1,
-            currentPhase: 'deploy' as TurnPhase,
+            currentPhase: nextPhase,
             activePlayer: initiativePlayer,
             actionPlayer: initiativePlayer,
             player1Mana: p1MaxMana,
@@ -364,7 +332,7 @@ export function useTurnManagement() {
         currentPhase: 'play' as TurnPhase,
       },
     }))
-  }, [metadata, gameState, combatTargetsA, combatTargetsB, setGameState, setCombatTargetsA, setCombatTargetsB, player1SidebarCards, player2SidebarCards, setPlayer1SidebarCards, setPlayer2SidebarCards])
+  }, [metadata, gameState, combatTargetsA, combatTargetsB, setGameState, setCombatTargetsA, setCombatTargetsB, player1SidebarCards, player2SidebarCards, setPlayer1SidebarCards, setPlayer2SidebarCards, setShowCombatSummary, setCombatSummaryData])
 
   const handleToggleSpellPlayed = useCallback((card: Card) => {
     // Allow any card type to be marked as played (spells, units, heroes)
@@ -705,7 +673,8 @@ export function useTurnManagement() {
   }, [setGameState, player1SidebarCards, player2SidebarCards, setPlayer1SidebarCards, setPlayer2SidebarCards])
 
   const handlePass = useCallback((player: 'player1' | 'player2') => {
-    const otherAlreadyPassed = player === 'player1' ? metadata.player2Passed : metadata.player1Passed
+    // Detect "both passed" inside the setGameState updater to avoid stale closures
+    let bothPassed = false
 
     setGameState(prev => {
       // Handle turn 1 deployment passing (counter-deployment phases)
@@ -713,9 +682,7 @@ export function useTurnManagement() {
           prev.metadata.turn1DeploymentPhase !== 'complete') {
         const phase = prev.metadata.turn1DeploymentPhase
         
-        // During counter-deployment phases, passing skips counter-deployment
         if (phase === 'p2_lane1' && player === 'player2') {
-          // Player 2 passes counter-deployment to lane 1, move to lane 2 deployment
           return {
             ...prev,
             metadata: {
@@ -724,7 +691,6 @@ export function useTurnManagement() {
             },
           }
         } else if (phase === 'p1_lane2' && player === 'player1') {
-          // Player 1 passes counter-deployment to lane 2, deployment complete
           return {
             ...prev,
             metadata: {
@@ -735,30 +701,22 @@ export function useTurnManagement() {
             },
           }
         } else {
-          // Wrong player trying to pass, or wrong phase
           return prev
         }
       }
       
-      // Normal turn passing (play phase)
       const otherPlayerPassed = player === 'player1' ? prev.metadata.player2Passed : prev.metadata.player1Passed
       
-      // Mark this player as passed
       const newMetadata = {
         ...prev.metadata,
         [`${player}Passed`]: true,
       }
       
-      // If other player hasn't passed, give them ACTION (but this player RETAINS initiative)
       if (!otherPlayerPassed) {
-        // Action goes to opponent
         newMetadata.actionPlayer = player === 'player1' ? 'player2' : 'player1'
-        // Initiative STAYS with the player who passed (they locked it in)
-        // Don't change initiativePlayer - it stays with the player who passed
+      } else if (prev.metadata.currentPhase === 'play') {
+        bothPassed = true
       }
-      
-      // Note: Combat will be resolved automatically in handleNextPhase when both players have passed
-      // No need to change phase here
       
       return {
         ...prev,
@@ -766,22 +724,19 @@ export function useTurnManagement() {
       }
     })
     
-    // Auto-resolve combat immediately when the second player passes
-    if (metadata.currentPhase === 'play' && otherAlreadyPassed) {
-      setTimeout(() => {
-        handleNextPhase()
-      }, 0)
+    // The updater runs synchronously, so bothPassed is set reliably
+    if (bothPassed) {
+      handleNextPhase()
     }
-  }, [setGameState, metadata.currentPhase, metadata.player1Passed, metadata.player2Passed, handleNextPhase])
+  }, [setGameState, handleNextPhase])
 
   const handleEndDeployPhase = useCallback(() => {
-    // In prototype mode: deploy -> resource (resource choices) -> play
     setGameState(prev => {
       if (prev.metadata.currentPhase !== 'deploy') {
         return prev
       }
       
-      const nextPhase: TurnPhase = prev.metadata.isRunePrototype ? 'resource' : 'play'
+      const nextPhase = getNextPhase('deploy', 'END_DEPLOY', !!prev.metadata.isRunePrototype)
       
       return {
         ...prev,
