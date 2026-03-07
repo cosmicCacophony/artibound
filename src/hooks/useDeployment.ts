@@ -21,15 +21,17 @@ export function useDeployment() {
   } = useGameContext()
   const metadata = gameState.metadata
 
-  const handleDeploy = useCallback((location: Location, targetSlot?: number) => {
-    if (!selectedCardId || !selectedCard) return
+  const handleDeploy = useCallback((location: Location, targetSlot?: number, cardOverride?: Card) => {
+    const activeCard = cardOverride || selectedCard
+    const activeCardId = cardOverride?.id || selectedCardId
+    if (!activeCardId || !activeCard) return
     
     const isPlayPhase = metadata.currentPhase === 'play'
     const isDeployPhase = metadata.currentPhase === 'deploy'
     
     // Deploy phase: only heroes can be deployed, and bouncing is allowed
     if (isDeployPhase) {
-      if (selectedCard.cardType !== 'hero') {
+      if (activeCard.cardType !== 'hero') {
         alert('Only heroes can be deployed during the deploy phase!')
         return
       }
@@ -38,18 +40,18 @@ export function useDeployment() {
         return
       }
       // Check if hero is on cooldown
-      const cooldownCounter = metadata.deathCooldowns[selectedCard.id]
+      const cooldownCounter = metadata.deathCooldowns[activeCard.id]
       if (cooldownCounter !== undefined && cooldownCounter > 0) {
         alert(`Hero is on cooldown! ${cooldownCounter} turn${cooldownCounter !== 1 ? 's' : ''} remaining.`)
         return
       }
       
       // Deploy phase cap: each player can deploy one new hero per turn (from base/deploy zone)
-      if (selectedCard.location === 'base' || selectedCard.location === 'deployZone') {
-        const deployedKey = `${selectedCard.owner}HeroesDeployedThisTurn` as keyof GameMetadata
+      if (activeCard.location === 'base' || activeCard.location === 'deployZone') {
+        const deployedKey = `${activeCard.owner}HeroesDeployedThisTurn` as keyof GameMetadata
         const deployedThisTurn = (metadata[deployedKey] as number) || 0
         if (deployedThisTurn >= 1) {
-          alert(`Only one hero can be deployed by ${selectedCard.owner === 'player1' ? 'Player 1' : 'Player 2'} during deploy phase.`)
+          alert(`Only one hero can be deployed by ${activeCard.owner === 'player1' ? 'Player 1' : 'Player 2'} during deploy phase.`)
           return
         }
       }
@@ -57,7 +59,7 @@ export function useDeployment() {
       // Handle deploy phase deployment with bounce mechanic
       setGameState(prev => {
         const battlefieldKey = location as 'battlefieldA' | 'battlefieldB'
-        const playerKey = selectedCard.owner as 'player1' | 'player2'
+        const playerKey = activeCard.owner as 'player1' | 'player2'
         const battlefield = prev[battlefieldKey][playerKey]
         
         // Find slot - use target slot or first available
@@ -76,15 +78,15 @@ export function useDeployment() {
         const existingHeroInSlot = battlefield.find(c => c.slot === finalSlot && c.cardType === 'hero') as Hero | undefined
         
         // Remove deploying hero from base or deploy zone
-        const newBase = (prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[])
-          .filter(c => c.id !== selectedCard.id)
-        const newDeployZone = (prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[])
-          .filter(c => c.id !== selectedCard.id)
+        const newBase = (prev[`${activeCard.owner}Base` as keyof typeof prev] as Card[])
+          .filter(c => c.id !== activeCard.id)
+        const newDeployZone = (prev[`${activeCard.owner}DeployZone` as keyof typeof prev] as Card[])
+          .filter(c => c.id !== activeCard.id)
         
         // If there's an existing hero, bounce it to base with 1 cooldown
         let updatedBase = newBase
         let updatedCooldowns = { ...prev.metadata.deathCooldowns }
-        let updatedRunePool = prev.metadata[`${selectedCard.owner}RunePool` as keyof typeof prev.metadata] as any
+        let updatedRunePool = prev.metadata[`${activeCard.owner}RunePool` as keyof typeof prev.metadata] as any
         
         if (existingHeroInSlot) {
           // Bounce the existing hero to base
@@ -99,10 +101,10 @@ export function useDeployment() {
         }
         
         // Add runes from the deploying hero (if coming from base/deployZone, not already on battlefield)
-        const wasOnBattlefield = selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB'
-        const isFromBaseOrDeployZone = selectedCard.location === 'base' || selectedCard.location === 'deployZone'
-        if (!wasOnBattlefield && isFromBaseOrDeployZone && (selectedCard as Hero).colors) {
-          const heroColors = (selectedCard as Hero).colors || []
+        const wasOnBattlefield = activeCard.location === 'battlefieldA' || activeCard.location === 'battlefieldB'
+        const isFromBaseOrDeployZone = activeCard.location === 'base' || activeCard.location === 'deployZone'
+        if (!wasOnBattlefield && isFromBaseOrDeployZone && (activeCard as Hero).colors) {
+          const heroColors = (activeCard as Hero).colors || []
           updatedRunePool = {
             ...updatedRunePool,
             runes: [...updatedRunePool.runes, ...heroColors],
@@ -111,38 +113,38 @@ export function useDeployment() {
         
         // Remove existing hero from battlefield if bounced, and remove the deploying hero from battlefield (if moving)
         const updatedBattlefield = battlefield
-          .filter(c => c.id !== selectedCard.id && (existingHeroInSlot ? c.id !== existingHeroInSlot.id : true))
+          .filter(c => c.id !== activeCard.id && (existingHeroInSlot ? c.id !== existingHeroInSlot.id : true))
         
         // Add the deploying hero to the battlefield
         const deployedHero = {
-          ...selectedCard,
+          ...activeCard,
           location: battlefieldKey,
           slot: finalSlot,
         }
         
         return {
           ...prev,
-          [`${selectedCard.owner}Base`]: updatedBase,
-          [`${selectedCard.owner}DeployZone`]: newDeployZone,
+          [`${activeCard.owner}Base`]: updatedBase,
+          [`${activeCard.owner}DeployZone`]: newDeployZone,
           [battlefieldKey]: {
             ...prev[battlefieldKey],
             [playerKey]: [...updatedBattlefield, deployedHero].sort((a, b) => (a.slot || 0) - (b.slot || 0)),
           },
           // Also remove from other battlefield if hero was there
-          ...(selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB' ? {
-            [selectedCard.location]: {
-              ...prev[selectedCard.location as 'battlefieldA' | 'battlefieldB'],
-              [playerKey]: prev[selectedCard.location as 'battlefieldA' | 'battlefieldB'][playerKey]
-                .filter(c => c.id !== selectedCard.id),
+          ...(activeCard.location === 'battlefieldA' || activeCard.location === 'battlefieldB' ? {
+            [activeCard.location]: {
+              ...prev[activeCard.location as 'battlefieldA' | 'battlefieldB'],
+              [playerKey]: prev[activeCard.location as 'battlefieldA' | 'battlefieldB'][playerKey]
+                .filter(c => c.id !== activeCard.id),
             },
           } : {}),
           metadata: {
             ...prev.metadata,
             deathCooldowns: updatedCooldowns,
-            [`${selectedCard.owner}RunePool`]: updatedRunePool,
+            [`${activeCard.owner}RunePool`]: updatedRunePool,
             // Increment heroes deployed counter (only counts if deploying from base/deployZone, not moving between battlefields)
-            ...(selectedCard.location === 'base' || selectedCard.location === 'deployZone' ? {
-              [`${selectedCard.owner}HeroesDeployedThisTurn`]: ((prev.metadata[`${selectedCard.owner}HeroesDeployedThisTurn` as keyof typeof prev.metadata] as number) || 0) + 1,
+            ...(activeCard.location === 'base' || activeCard.location === 'deployZone' ? {
+              [`${activeCard.owner}HeroesDeployedThisTurn`]: ((prev.metadata[`${activeCard.owner}HeroesDeployedThisTurn` as keyof typeof prev.metadata] as number) || 0) + 1,
             } : {}),
           },
         }
@@ -161,12 +163,12 @@ export function useDeployment() {
     let shouldSkipInitiativePass = false
     let newDeploymentPhase = metadata.turn1DeploymentPhase || 'p1_lane1'
     
-    if (metadata.currentTurn === 1 && selectedCard.cardType === 'hero') {
+    if (metadata.currentTurn === 1 && activeCard.cardType === 'hero') {
       const deploymentPhase = metadata.turn1DeploymentPhase || 'p1_lane1'
       
       if (deploymentPhase === 'p1_lane1') {
         // Player 1 deploys hero to lane 1 (battlefieldA)
-        if (selectedCard.owner !== 'player1') {
+        if (activeCard.owner !== 'player1') {
           alert('Player 1 must deploy first hero to lane 1 (Battlefield A)')
           return
         }
@@ -179,22 +181,22 @@ export function useDeployment() {
       } else if (deploymentPhase === 'p2_lane1') {
         // Player 2 can counter-deploy to lane 1 (battlefieldA) OR pass
         // If deploying, must be to battlefieldA
-        if (selectedCard.owner === 'player2' && location !== 'battlefieldA') {
+        if (activeCard.owner === 'player2' && location !== 'battlefieldA') {
           alert('Player 2 can only counter-deploy to lane 1 (Battlefield A) or pass')
           return
         }
         // If player 2 is deploying, move to next phase
-        if (selectedCard.owner === 'player2') {
+        if (activeCard.owner === 'player2') {
           newDeploymentPhase = 'p2_lane2'
         }
         // If player 1 tries to deploy (shouldn't happen), block it
-        if (selectedCard.owner === 'player1') {
+        if (activeCard.owner === 'player1') {
           alert('Player 2 can counter-deploy to lane 1 or pass')
           return
         }
       } else if (deploymentPhase === 'p2_lane2') {
         // Player 2 deploys hero to lane 2 (battlefieldB)
-        if (selectedCard.owner !== 'player2') {
+        if (activeCard.owner !== 'player2') {
           alert('Player 2 must deploy hero to lane 2 (Battlefield B)')
           return
         }
@@ -207,38 +209,38 @@ export function useDeployment() {
       } else if (deploymentPhase === 'p1_lane2') {
         // Player 1 can counter-deploy to lane 2 (battlefieldB) OR pass
         // If deploying, must be to battlefieldB
-        if (selectedCard.owner === 'player1' && location !== 'battlefieldB') {
+        if (activeCard.owner === 'player1' && location !== 'battlefieldB') {
           alert('Player 1 can only counter-deploy to lane 2 (Battlefield B) or pass')
           return
         }
         // If player 1 is deploying, deployment is complete
-        if (selectedCard.owner === 'player1') {
+        if (activeCard.owner === 'player1') {
           newDeploymentPhase = 'complete'
         }
         // If player 2 tries to deploy (shouldn't happen), block it
-        if (selectedCard.owner === 'player2') {
+        if (activeCard.owner === 'player2') {
           alert('Player 1 can counter-deploy to lane 2 or pass')
           return
         }
       } else if (deploymentPhase === 'complete') {
         // Turn 1 deployment complete - normal action rules apply
         // Check action
-        if (metadata.actionPlayer !== selectedCard.owner) {
+        if (metadata.actionPlayer !== activeCard.owner) {
           alert('It\'s not your turn to act!')
           return
         }
       }
     } else {
       // Normal turn (not turn 1) - check action
-      if (metadata.actionPlayer !== selectedCard.owner) {
+      if (metadata.actionPlayer !== activeCard.owner) {
         alert('It\'s not your turn to act!')
         return
       }
     }
     
     // Check if hero is on cooldown (cannot deploy if cooldown counter > 0)
-    if (selectedCard.cardType === 'hero') {
-      const cooldownCounter = metadata.deathCooldowns[selectedCard.id]
+    if (activeCard.cardType === 'hero') {
+      const cooldownCounter = metadata.deathCooldowns[activeCard.id]
       if (cooldownCounter !== undefined && cooldownCounter > 0) {
         alert(`Hero is on cooldown! ${cooldownCounter} turn${cooldownCounter !== 1 ? 's' : ''} remaining.`)
         return
@@ -250,25 +252,25 @@ export function useDeployment() {
     // - Turn 3: each player can deploy only 1 new hero (their 4th)
     // - Turn 4+: no per-turn cap (cooldown still applies)
     if (
-      selectedCard.cardType === 'hero' &&
-      (selectedCard.location === 'deployZone' || selectedCard.location === 'base') &&
+      activeCard.cardType === 'hero' &&
+      (activeCard.location === 'deployZone' || activeCard.location === 'base') &&
       metadata.currentTurn >= 2 &&
       metadata.currentTurn <= 3
     ) {
-      const deployedKey = `${selectedCard.owner}HeroesDeployedThisTurn` as keyof GameMetadata
+      const deployedKey = `${activeCard.owner}HeroesDeployedThisTurn` as keyof GameMetadata
       const deployedThisTurn = (metadata[deployedKey] as number) || 0
       if (deployedThisTurn >= 1) {
-        alert(`Only one new hero can be deployed by ${selectedCard.owner === 'player1' ? 'Player 1' : 'Player 2'} on turn ${metadata.currentTurn}.`)
+        alert(`Only one new hero can be deployed by ${activeCard.owner === 'player1' ? 'Player 1' : 'Player 2'} on turn ${metadata.currentTurn}.`)
         return
       }
     }
     
     // Check costs (heroes don't cost runes - they GIVE runes when deployed)
-    const isSpell = selectedCard.cardType === 'spell'
-    const isHero = selectedCard.cardType === 'hero'
-    const cardTemplate = selectedCard as BaseCard
-    const playerMana = selectedCard.owner === 'player1' ? metadata.player1Mana : metadata.player2Mana
-    const playerRunePool = selectedCard.owner === 'player1' ? metadata.player1RunePool : metadata.player2RunePool
+    const isSpell = activeCard.cardType === 'spell'
+    const isHero = activeCard.cardType === 'hero'
+    const cardTemplate = activeCard as BaseCard
+    const playerMana = activeCard.owner === 'player1' ? metadata.player1Mana : metadata.player2Mana
+    const playerRunePool = activeCard.owner === 'player1' ? metadata.player1RunePool : metadata.player2RunePool
     
     // Only check costs for non-heroes, or spells being deployed to battlefields (not base)
     // Heroes don't cost runes - they generate runes when deployed
@@ -297,8 +299,8 @@ export function useDeployment() {
     // Check if deploying to battlefield and slots are full
     if ((location === 'battlefieldA' || location === 'battlefieldB')) {
       const battlefield = location === 'battlefieldA' 
-        ? gameState.battlefieldA[selectedCard.owner as 'player1' | 'player2']
-        : gameState.battlefieldB[selectedCard.owner as 'player1' | 'player2']
+        ? gameState.battlefieldA[activeCard.owner as 'player1' | 'player2']
+        : gameState.battlefieldB[activeCard.owner as 'player1' | 'player2']
       
       // Check lane color requirements for non-hero cards
       if (!isHero && cardTemplate.colors && cardTemplate.colors.length > 0) {
@@ -312,29 +314,29 @@ export function useDeployment() {
       
       const availableSlots = getAvailableSlots(battlefield)
       
-      if (selectedCard.cardType !== 'generic' && availableSlots <= 0 && !targetSlot) {
+      if (activeCard.cardType !== 'generic' && availableSlots <= 0 && !targetSlot) {
         alert('Battlefield is full! Maximum 5 slots.')
         return
       }
 
       // Handle generic unit stacking
-      if (selectedCard.cardType === 'generic' && battlefield.length > 0 && !targetSlot) {
+      if (activeCard.cardType === 'generic' && battlefield.length > 0 && !targetSlot) {
         // Try to stack with another generic unit
         const stackableGeneric = battlefield.find(c => 
           c.cardType === 'generic' && 
           !('stackedWith' in c && c.stackedWith) &&
-          c.id !== selectedCard.id
+          c.id !== activeCard.id
         ) as GenericUnit | undefined
 
-        if (stackableGeneric && selectedCard.cardType === 'generic') {
+        if (stackableGeneric && activeCard.cardType === 'generic') {
           // Stack the new card with existing generic
-          const selectedGeneric = selectedCard as GenericUnit
+          const selectedGeneric = activeCard as GenericUnit
           const newStackPower = (stackableGeneric.attack || 0) + (selectedGeneric.attack || 0)
           const newStackHealth = (stackableGeneric.health || 0) + (selectedGeneric.health || 0)
 
           setGameState(prev => {
             const newBattlefield = prev[location === 'battlefieldA' ? 'battlefieldA' : 'battlefieldB']
-            const playerField = selectedCard.owner as 'player1' | 'player2'
+            const playerField = activeCard.owner as 'player1' | 'player2'
             
             return {
               ...prev,
@@ -342,7 +344,7 @@ export function useDeployment() {
                 ...newBattlefield,
                 [playerField]: newBattlefield[playerField].map(c =>
                   c.id === stackableGeneric.id
-                    ? { ...c, stackPower: newStackPower, stackHealth: newStackHealth, stackedWith: selectedCard.id } as GenericUnit
+                    ? { ...c, stackPower: newStackPower, stackHealth: newStackHealth, stackedWith: activeCard.id } as GenericUnit
                     : c
                 ).concat([{
                   ...selectedGeneric,
@@ -352,10 +354,10 @@ export function useDeployment() {
                   stackHealth: newStackHealth,
                 }] as GenericUnit[]),
               },
-              [`${selectedCard.owner}Hand`]: (prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[])
-                .filter((c: Card) => c.id !== selectedCard.id),
-              [`${selectedCard.owner}Base`]: (prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[])
-                .filter((c: Card) => c.id !== selectedCard.id),
+              [`${activeCard.owner}Hand`]: (prev[`${activeCard.owner}Hand` as keyof typeof prev] as Card[])
+                .filter((c: Card) => c.id !== activeCard.id),
+              [`${activeCard.owner}Base`]: (prev[`${activeCard.owner}Base` as keyof typeof prev] as Card[])
+                .filter((c: Card) => c.id !== activeCard.id),
             }
           })
           setSelectedCardId(null)
@@ -367,13 +369,13 @@ export function useDeployment() {
     // Regular deployment
     setGameState(prev => {
       // Remove from current location
-      const removeFromLocation = (cards: Card[]) => cards.filter(c => c.id !== selectedCardId)
+      const removeFromLocation = (cards: Card[]) => cards.filter(c => c.id !== activeCardId)
       
       // Add to new location
       if (location === 'base') {
         // Hero movement to base: 1 per turn, heals to full
-        const isHero = selectedCard.cardType === 'hero'
-        const movedToBaseKey = `${selectedCard.owner}MovedToBase` as keyof GameMetadata
+        const isHero = activeCard.cardType === 'hero'
+        const movedToBaseKey = `${activeCard.owner}MovedToBase` as keyof GameMetadata
         const hasMovedToBase = prev.metadata[movedToBaseKey] as boolean
         
         if (isHero && hasMovedToBase) {
@@ -382,14 +384,14 @@ export function useDeployment() {
         }
         
         // Heal hero to full health when moving to base
-        const healedCard = isHero && 'maxHealth' in selectedCard
-          ? { ...selectedCard, location, currentHealth: (selectedCard as any).maxHealth, slot: undefined }
-          : { ...selectedCard, location, slot: undefined }
+        const healedCard = isHero && 'maxHealth' in activeCard
+          ? { ...activeCard, location, currentHealth: (activeCard as any).maxHealth, slot: undefined }
+          : { ...activeCard, location, slot: undefined }
         
         // Handle runes and mana costs
-        const runePoolKey = `${selectedCard.owner}RunePool` as keyof GameMetadata
-        const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
-        const isHeroCard = selectedCard.cardType === 'hero'
+        const runePoolKey = `${activeCard.owner}RunePool` as keyof GameMetadata
+        const manaKey = `${activeCard.owner}Mana` as keyof GameMetadata
+        const isHeroCard = activeCard.cardType === 'hero'
         
         let updatedRunePool = prev.metadata[runePoolKey] as any
         let updatedMana = prev.metadata[manaKey] as number
@@ -425,16 +427,16 @@ export function useDeployment() {
         
         return {
           ...prev,
-          [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
-          [`${selectedCard.owner}Base`]: [...prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[], healedCard],
-          [`${selectedCard.owner}DeployZone`]: removeFromLocation(prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[]),
+          [`${activeCard.owner}Hand`]: removeFromLocation(prev[`${activeCard.owner}Hand` as keyof typeof prev] as Card[]),
+          [`${activeCard.owner}Base`]: [...prev[`${activeCard.owner}Base` as keyof typeof prev] as Card[], healedCard],
+          [`${activeCard.owner}DeployZone`]: removeFromLocation(prev[`${activeCard.owner}DeployZone` as keyof typeof prev] as Card[]),
           battlefieldA: {
             ...prev.battlefieldA,
-            [selectedCard.owner]: removeFromLocation(prev.battlefieldA[selectedCard.owner as 'player1' | 'player2']),
+            [activeCard.owner]: removeFromLocation(prev.battlefieldA[activeCard.owner as 'player1' | 'player2']),
           },
           battlefieldB: {
             ...prev.battlefieldB,
-            [selectedCard.owner]: removeFromLocation(prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']),
+            [activeCard.owner]: removeFromLocation(prev.battlefieldB[activeCard.owner as 'player1' | 'player2']),
           },
           metadata: {
             ...prev.metadata,
@@ -445,7 +447,7 @@ export function useDeployment() {
         }
       } else if (location === 'battlefieldA' || location === 'battlefieldB') {
         const battlefieldKey = location
-        const battlefieldCards = prev[battlefieldKey][selectedCard.owner as 'player1' | 'player2']
+        const battlefieldCards = prev[battlefieldKey][activeCard.owner as 'player1' | 'player2']
         
         // Use provided slot or find first available slot (1-5)
         let finalTargetSlot = targetSlot
@@ -459,7 +461,7 @@ export function useDeployment() {
         }
         
         // If all slots full, don't deploy (unless moving from another battlefield - allow that)
-        const isMovingFromBattlefield = selectedCard.location === 'battlefieldA' || selectedCard.location === 'battlefieldB'
+        const isMovingFromBattlefield = activeCard.location === 'battlefieldA' || activeCard.location === 'battlefieldB'
         if (!finalTargetSlot && !isMovingFromBattlefield) {
           alert('Battlefield is full! Maximum 5 slots.')
           return prev
@@ -467,39 +469,39 @@ export function useDeployment() {
         
         // If moving from another battlefield and no slot specified, reuse the slot or find a new one
         if (isMovingFromBattlefield && !finalTargetSlot) {
-          finalTargetSlot = selectedCard.slot || 1 // Try to keep the same slot
+          finalTargetSlot = activeCard.slot || 1 // Try to keep the same slot
         }
         
         // If target slot is occupied, swap positions
         if (finalTargetSlot) {
-          const slotOccupied = battlefieldCards.some(c => c.id !== selectedCard.id && c.slot === finalTargetSlot)
+          const slotOccupied = battlefieldCards.some(c => c.id !== activeCard.id && c.slot === finalTargetSlot)
           if (slotOccupied) {
             const otherCard = battlefieldCards.find(c => c.slot === finalTargetSlot)
             if (otherCard) {
               // Swap positions
               const otherBattlefieldKey = location === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
-              const runePoolKey = `${selectedCard.owner}RunePool` as keyof GameMetadata
-              const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
+              const runePoolKey = `${activeCard.owner}RunePool` as keyof GameMetadata
+              const manaKey = `${activeCard.owner}Mana` as keyof GameMetadata
               
               // Handle runes and mana
               let updatedRunePool = prev.metadata[runePoolKey] as any
               let updatedMana = prev.metadata[manaKey] as number
-              const isHeroCard = selectedCard.cardType === 'hero'
+              const isHeroCard = activeCard.cardType === 'hero'
               
         // If hero is deploying, add runes from that hero
         if (isHeroCard && (location === 'battlefieldA' || location === 'battlefieldB')) {
           // Hero is deploying - add runes from that hero
           // Find the card in previous state to check its actual location
-          const prevCard = [...prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[],
-                            ...prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[],
-                            ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
-                            ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']]
-                            .find(c => c.id === selectedCardId)
+          const prevCard = [...prev[`${activeCard.owner}Hand` as keyof typeof prev] as Card[],
+                            ...prev[`${activeCard.owner}Base` as keyof typeof prev] as Card[],
+                            ...prev.battlefieldA[activeCard.owner as 'player1' | 'player2'],
+                            ...prev.battlefieldB[activeCard.owner as 'player1' | 'player2']]
+                            .find(c => c.id === activeCardId)
           // Check if hero was previously on a battlefield (if so, don't add runes again)
           const wasOnBattlefield = prevCard && (prevCard.location === 'battlefieldA' || prevCard.location === 'battlefieldB')
           if (!wasOnBattlefield) {
             // Hero is deploying for the first time (from base/hand) - add runes
-            updatedRunePool = addRunesFromHero(selectedCard as Hero, updatedRunePool)
+            updatedRunePool = addRunesFromHero(activeCard as Hero, updatedRunePool)
           }
         } else if (!isHeroCard) {
                 // Non-hero cards (including spells): pay mana and consume runes
@@ -530,20 +532,20 @@ export function useDeployment() {
               
               return {
                 ...prev,
-                [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
-                [`${selectedCard.owner}Base`]: removeFromLocation(prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[]),
-                [`${selectedCard.owner}DeployZone`]: removeFromLocation(prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[]),
+                [`${activeCard.owner}Hand`]: removeFromLocation(prev[`${activeCard.owner}Hand` as keyof typeof prev] as Card[]),
+                [`${activeCard.owner}Base`]: removeFromLocation(prev[`${activeCard.owner}Base` as keyof typeof prev] as Card[]),
+                [`${activeCard.owner}DeployZone`]: removeFromLocation(prev[`${activeCard.owner}DeployZone` as keyof typeof prev] as Card[]),
                 [otherBattlefieldKey]: {
                   ...prev[otherBattlefieldKey],
-                  [selectedCard.owner]: removeFromLocation(prev[otherBattlefieldKey][selectedCard.owner as 'player1' | 'player2']),
+                  [activeCard.owner]: removeFromLocation(prev[otherBattlefieldKey][activeCard.owner as 'player1' | 'player2']),
                 },
                 [battlefieldKey]: {
                   ...prev[battlefieldKey],
-                  [selectedCard.owner]: prev[battlefieldKey][selectedCard.owner as 'player1' | 'player2']
-                    .filter(c => c.id !== selectedCard.id && c.id !== otherCard.id)
+                  [activeCard.owner]: prev[battlefieldKey][activeCard.owner as 'player1' | 'player2']
+                    .filter(c => c.id !== activeCard.id && c.id !== otherCard.id)
                     .concat([
-                      { ...selectedCard, location, slot: finalTargetSlot },
-                      { ...otherCard, slot: selectedCard.slot || finalTargetSlot }
+                      { ...activeCard, location, slot: finalTargetSlot },
+                      { ...otherCard, slot: activeCard.slot || finalTargetSlot }
                     ])
                     .sort((a, b) => (a.slot || 0) - (b.slot || 0)),
                 },
@@ -558,15 +560,15 @@ export function useDeployment() {
         }
 
         const otherBattlefieldKey = location === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
-        const runePoolKey = `${selectedCard.owner}RunePool` as keyof GameMetadata
-        const manaKey = `${selectedCard.owner}Mana` as keyof GameMetadata
+        const runePoolKey = `${activeCard.owner}RunePool` as keyof GameMetadata
+        const manaKey = `${activeCard.owner}Mana` as keyof GameMetadata
         
         // Pay mana and consume runes if needed
         let updatedRunePool = prev.metadata[runePoolKey] as any
         let updatedMana = prev.metadata[manaKey] as number
         
         // Check if this is a hero card
-        const isHeroCard = selectedCard.cardType === 'hero'
+        const isHeroCard = activeCard.cardType === 'hero'
         
         // Heroes don't cost mana or runes - they GIVE runes when deployed
         // Non-hero cards (including spells): pay mana and consume runes
@@ -600,40 +602,40 @@ export function useDeployment() {
         if (isHeroCard && (location === 'battlefieldA' || location === 'battlefieldB')) {
           // Hero is deploying - add runes from that hero (one-time)
           // Find the card in previous state to check its actual location
-          const prevCard = [...prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[],
-                            ...prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[],
-                            ...prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[],
-                            ...prev.battlefieldA[selectedCard.owner as 'player1' | 'player2'],
-                            ...prev.battlefieldB[selectedCard.owner as 'player1' | 'player2']]
-                            .find(c => c.id === selectedCardId)
+          const prevCard = [...prev[`${activeCard.owner}Hand` as keyof typeof prev] as Card[],
+                            ...prev[`${activeCard.owner}Base` as keyof typeof prev] as Card[],
+                            ...prev[`${activeCard.owner}DeployZone` as keyof typeof prev] as Card[],
+                            ...prev.battlefieldA[activeCard.owner as 'player1' | 'player2'],
+                            ...prev.battlefieldB[activeCard.owner as 'player1' | 'player2']]
+                            .find(c => c.id === activeCardId)
           // Check if hero was previously on a battlefield (if so, don't add runes again)
           const wasOnBattlefield = prevCard && (prevCard.location === 'battlefieldA' || prevCard.location === 'battlefieldB')
           if (!wasOnBattlefield) {
             // Hero is deploying for the first time (from base/deployZone/hand) - add runes
-            updatedRunePool = addRunesFromHero(selectedCard as Hero, updatedRunePool)
+            updatedRunePool = addRunesFromHero(activeCard as Hero, updatedRunePool)
           }
         }
         
         return {
           ...prev,
-          [`${selectedCard.owner}Hand`]: removeFromLocation(prev[`${selectedCard.owner}Hand` as keyof typeof prev] as Card[]),
-          [`${selectedCard.owner}Base`]: removeFromLocation(prev[`${selectedCard.owner}Base` as keyof typeof prev] as Card[]),
-          [`${selectedCard.owner}DeployZone`]: removeFromLocation(prev[`${selectedCard.owner}DeployZone` as keyof typeof prev] as Card[]),
+          [`${activeCard.owner}Hand`]: removeFromLocation(prev[`${activeCard.owner}Hand` as keyof typeof prev] as Card[]),
+          [`${activeCard.owner}Base`]: removeFromLocation(prev[`${activeCard.owner}Base` as keyof typeof prev] as Card[]),
+          [`${activeCard.owner}DeployZone`]: removeFromLocation(prev[`${activeCard.owner}DeployZone` as keyof typeof prev] as Card[]),
           // Remove from the other battlefield if the card is moving from there
           [otherBattlefieldKey]: {
             ...prev[otherBattlefieldKey],
-            [selectedCard.owner]: removeFromLocation(prev[otherBattlefieldKey][selectedCard.owner as 'player1' | 'player2']),
+            [activeCard.owner]: removeFromLocation(prev[otherBattlefieldKey][activeCard.owner as 'player1' | 'player2']),
           },
           // Add to the target battlefield (apply rune scaling in prototype mode)
           [battlefieldKey]: {
             ...prev[battlefieldKey],
-            [selectedCard.owner]: [
-              ...prev[battlefieldKey][selectedCard.owner as 'player1' | 'player2'].filter(c => c.id !== selectedCard.id),
+            [activeCard.owner]: [
+              ...prev[battlefieldKey][activeCard.owner as 'player1' | 'player2'].filter(c => c.id !== activeCard.id),
               (() => {
-                let deployedCard = { ...selectedCard, location, slot: finalTargetSlot || 1 }
-                if (prev.metadata.isRunePrototype && prev.metadata.laneRunes && selectedCard.cardType === 'generic') {
-                  const laneRunes = prev.metadata.laneRunes[battlefieldKey as 'battlefieldA' | 'battlefieldB'][selectedCard.owner as 'player1' | 'player2']
-                  const unit = selectedCard as GenericUnit
+                let deployedCard = { ...activeCard, location, slot: finalTargetSlot || 1 }
+                if (prev.metadata.isRunePrototype && prev.metadata.laneRunes && activeCard.cardType === 'generic') {
+                  const laneRunes = prev.metadata.laneRunes[battlefieldKey as 'battlefieldA' | 'battlefieldB'][activeCard.owner as 'player1' | 'player2']
+                  const unit = activeCard as GenericUnit
                   if (unit.runeScaling) {
                     const scaled = applyRuneScalingToUnit(unit, laneRunes)
                     deployedCard = { ...deployedCard, attack: scaled.attack, health: scaled.health, maxHealth: scaled.maxHealth, currentHealth: scaled.currentHealth } as any
@@ -658,7 +660,7 @@ export function useDeployment() {
       const updatedMetadata = { ...prev.metadata }
       
       // Update turn 1 deployment phase if needed
-      if (metadata.currentTurn === 1 && selectedCard.cardType === 'hero') {
+      if (metadata.currentTurn === 1 && activeCard.cardType === 'hero') {
         updatedMetadata.turn1DeploymentPhase = newDeploymentPhase
         
         // When deployment is complete, set action and initiative
@@ -674,7 +676,7 @@ export function useDeployment() {
       
       // Handle action/initiative passing
       // During turn 1 deployment phase (before complete), don't pass action/initiative
-      if (metadata.currentTurn === 1 && selectedCard.cardType === 'hero' && updatedMetadata.turn1DeploymentPhase !== 'complete') {
+      if (metadata.currentTurn === 1 && activeCard.cardType === 'hero' && updatedMetadata.turn1DeploymentPhase !== 'complete') {
         // Still in deployment phase - action/initiative handled above
         updatedMetadata.player1Passed = false
         updatedMetadata.player2Passed = false
@@ -695,10 +697,10 @@ export function useDeployment() {
     })
     
     // Prototype spell draw/heal handling (e.g., Tidecall) when cast from hand
-    if (selectedCard.cardType === 'spell' && selectedCard.location === 'hand') {
-      const spell = selectedCard as SpellCard
+    if (activeCard.cardType === 'spell' && activeCard.location === 'hand') {
+      const spell = activeCard as SpellCard
       const effect = spell.effect
-      const owner = selectedCard.owner as 'player1' | 'player2'
+      const owner = activeCard.owner as 'player1' | 'player2'
 
       let drawCount = effect.type === 'draw_and_heal' ? (effect.drawCount || 0) : 0
       let healAmount = effect.type === 'draw_and_heal' ? (effect.healAmount || 0) : 0
@@ -762,6 +764,154 @@ export function useDeployment() {
 
     setSelectedCardId(null)
   }, [selectedCard, selectedCardId, gameState, metadata, getAvailableSlots, setGameState, setSelectedCardId, player1SidebarCards, player2SidebarCards, setPlayer1SidebarCards, setPlayer2SidebarCards])
+
+  const handleCastSpellOnTarget = useCallback((
+    targetCard: Card,
+    battlefieldId: 'battlefieldA' | 'battlefieldB',
+    spellOverride?: SpellCard
+  ) => {
+    const spell = spellOverride || (selectedCard?.cardType === 'spell' ? (selectedCard as SpellCard) : null)
+    if (!spell) return
+    if (spell.location !== 'hand') return
+    if (metadata.currentPhase !== 'play') {
+      alert(`Cannot cast spells during ${metadata.currentPhase} phase!`)
+      return
+    }
+    const owner = spell.owner as 'player1' | 'player2'
+    const opponent = owner === 'player1' ? 'player2' : 'player1'
+    if (metadata.actionPlayer && metadata.actionPlayer !== owner) {
+      alert("It's not your turn to act!")
+      return
+    }
+
+    if (targetCard.owner !== opponent) {
+      alert('Damage spells must target an enemy unit.')
+      return
+    }
+
+    const effect = spell.effect
+    const isDamageSpell = effect.type === 'damage' || effect.type === 'targeted_damage' || effect.type === 'damage_and_stun'
+    if (!isDamageSpell) {
+      alert('This spell type is not target-cast in prototype mode yet.')
+      return
+    }
+
+    const playerMana = owner === 'player1' ? metadata.player1Mana : metadata.player2Mana
+    const playerRunePool = owner === 'player1' ? metadata.player1RunePool : metadata.player2RunePool
+    if (!canAffordCard(spell, playerMana, playerRunePool)) {
+      alert('Cannot afford this spell.')
+      return
+    }
+
+    let damage = effect.damage || 0
+    if (metadata.isRunePrototype) {
+      const laneRunes = metadata.laneRunes?.[battlefieldId]?.[owner] || []
+      const scaled = applyRuneScalingToSpell(spell, laneRunes)
+      damage += scaled.damage
+    }
+
+    setGameState(prev => {
+      const handKey = `${owner}Hand` as keyof typeof prev
+      const manaKey = `${owner}Mana` as keyof GameMetadata
+      const runePoolKey = `${owner}RunePool` as keyof GameMetadata
+
+      const battlefield = prev[battlefieldId]
+      const ownerField = battlefield[owner]
+      const opponentField = battlefield[opponent]
+      const targetInLane = opponentField.find(c => c.id === targetCard.id)
+      if (!targetInLane) {
+        return prev
+      }
+
+      let updatedMana = prev.metadata[manaKey] as number
+      if (spell.manaCost) {
+        updatedMana -= spell.manaCost
+      }
+
+      const { newPool } = consumeRunesForCardWithTracking(spell, prev.metadata[runePoolKey] as any)
+      let updatedRunePool = newPool
+      if (spell.effect.type === 'add_temporary_runes' && spell.effect.runeColors) {
+        updatedRunePool = addTemporaryRunes(updatedRunePool, spell.effect.runeColors as any)
+      }
+      if (spell.refundMana && spell.refundMana > 0) {
+        updatedMana += spell.refundMana
+      }
+
+      const nextOpponentField: Card[] = []
+      const baseAdditions: Card[] = []
+      const updatedDeathCooldowns = { ...prev.metadata.deathCooldowns }
+      let updatedP1RunePool = prev.metadata.player1RunePool
+      let updatedP2RunePool = prev.metadata.player2RunePool
+
+      opponentField.forEach(card => {
+        if (card.id !== targetCard.id) {
+          nextOpponentField.push(card)
+          return
+        }
+
+        if (card.cardType === 'hero') {
+          const hero = card as Hero
+          const remainingHP = hero.currentHealth - damage
+          if (remainingHP > 0) {
+            nextOpponentField.push({ ...hero, currentHealth: remainingHP })
+          } else {
+            baseAdditions.push({
+              ...hero,
+              location: 'base' as const,
+              currentHealth: 0,
+              slot: undefined,
+            })
+            updatedDeathCooldowns[hero.id] = 2
+            if (opponent === 'player1') {
+              updatedP1RunePool = removeRunesFromHero(hero, updatedP1RunePool)
+            } else {
+              updatedP2RunePool = removeRunesFromHero(hero, updatedP2RunePool)
+            }
+          }
+        } else if (card.cardType === 'generic') {
+          const unit = card as GenericUnit
+          const remainingHP = unit.currentHealth - damage
+          if (remainingHP > 0) {
+            nextOpponentField.push({ ...unit, currentHealth: remainingHP })
+          }
+        } else {
+          nextOpponentField.push(card)
+        }
+      })
+
+      const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
+      const nextStunnedHeroes = { ...(prev.metadata.stunnedHeroes || {}) }
+      if (effect.type === 'damage_and_stun' && targetInLane.cardType === 'hero') {
+        nextStunnedHeroes[targetInLane.id] = true
+      }
+
+      return {
+        ...prev,
+        [handKey]: (prev[handKey] as Card[]).filter(c => c.id !== spell.id),
+        [`${opponent}Base`]: [...(prev[`${opponent}Base` as keyof typeof prev] as Card[]), ...baseAdditions],
+        [battlefieldId]: {
+          ...battlefield,
+          [owner]: ownerField,
+          [opponent]: nextOpponentField,
+        },
+        metadata: {
+          ...prev.metadata,
+          [manaKey]: updatedMana,
+          [runePoolKey]: updatedRunePool,
+          player1RunePool: updatedP1RunePool,
+          player2RunePool: updatedP2RunePool,
+          deathCooldowns: updatedDeathCooldowns,
+          stunnedHeroes: nextStunnedHeroes,
+          actionPlayer: otherPlayer,
+          initiativePlayer: otherPlayer,
+          player1Passed: false,
+          player2Passed: false,
+        },
+      }
+    })
+
+    setSelectedCardId(null)
+  }, [selectedCard, metadata, setGameState, setSelectedCardId])
 
   const handleChangeSlot = useCallback((card: Card, newSlot: number, location: 'battlefieldA' | 'battlefieldB') => {
     if (newSlot < 1 || newSlot > 5) return
@@ -991,6 +1141,7 @@ export function useDeployment() {
 
   return {
     handleDeploy,
+    handleCastSpellOnTarget,
     handleChangeSlot,
     handleRemoveFromBattlefield,
     handleEquipItem,

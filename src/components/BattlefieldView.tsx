@@ -9,7 +9,6 @@ import { HeroCard } from './HeroCard'
 import { HeroAbilityEditor } from './HeroAbilityEditor'
 import { LaneRuneDisplay } from './LaneRuneDisplay'
 import { resolveSimultaneousCombat } from '../game/combatSystem'
-import { createCardFromTemplate } from '../game/sampleData'
 
 interface BattlefieldViewProps {
   battlefieldId: 'battlefieldA' | 'battlefieldB'
@@ -28,15 +27,11 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     setGameState,
     setShowCombatSummary,
     setCombatSummaryData,
-    player1SidebarCards,
-    player2SidebarCards,
-    setPlayer1SidebarCards,
-    setPlayer2SidebarCards,
   } = useGameContext()
   const [editingHeroId, setEditingHeroId] = useState<string | null>(null)
   // Track which slot is currently being dragged over (player + slotNum)
   const [dragOverSlot, setDragOverSlot] = useState<{ player: 'player1' | 'player2', slotNum: number } | null>(null)
-  const { handleDeploy, handleChangeSlot, handleRemoveFromBattlefield, handleEquipItem } = useDeployment()
+  const { handleDeploy, handleCastSpellOnTarget, handleChangeSlot, handleRemoveFromBattlefield, handleEquipItem } = useDeployment()
   
   // Clear drag over state when drag ends
   useEffect(() => {
@@ -63,6 +58,16 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
   const borderColor = battlefieldId === 'battlefieldA' ? '#4a90e2' : '#ff9800'
   const bgColor = battlefieldId === 'battlefieldA' ? '#e3f2fd' : '#fff3e0'
   const battlefieldName = battlefieldId === 'battlefieldA' ? 'A' : 'B'
+  const isTargetedDamageSpellSelected = Boolean(
+    selectedCard &&
+    selectedCard.cardType === 'spell' &&
+    selectedCard.location === 'hand' &&
+    'effect' in selectedCard &&
+    selectedCard.effect &&
+    ['damage', 'targeted_damage', 'damage_and_stun'].includes(
+      (selectedCard as import('../game/types').SpellCard).effect.type
+    )
+  )
 
   const handleCardClick = (cardId: string, e?: React.MouseEvent) => {
     if (e) {
@@ -86,7 +91,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
 
   const renderSlot = (slotNum: number, player: 'player1' | 'player2') => {
     const cardInSlot = battlefield[player].find(c => c.slot === slotNum)
-    const isSelected = selectedCard && selectedCard.id === cardInSlot?.id
+    const isSelected = Boolean(selectedCard && selectedCard.id === cardInSlot?.id)
     
     // Get dragged card if any - also check battlefields in case card is being moved
     const draggedCard = draggedCardId ? 
@@ -114,6 +119,12 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
         cardInSlot &&
         cardInSlot.cardType === 'hero' &&
         cardInSlot.owner === player)
+    const draggedTargetedDamageSpell = draggedCard &&
+      draggedCard.cardType === 'spell' &&
+      draggedCard.location === 'hand' &&
+      ['damage', 'targeted_damage', 'damage_and_stun'].includes(draggedCard.effect.type)
+    const canDropTargetedDamageSpellHere = Boolean(draggedTargetedDamageSpell && cardInSlot && draggedCard.owner !== player)
+    const canClickCastHere = Boolean(isTargetedDamageSpellSelected && cardInSlot && selectedCard && selectedCard.owner !== player)
     
     const playerColor = player === 'player1' ? '#f44336' : '#4a90e2'
     const playerBgColor = player === 'player1' ? '#ffebee' : '#e3f2fd'
@@ -125,25 +136,12 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       e.preventDefault()
       e.stopPropagation()
       
-      console.log(`[BattlefieldView] handleDrop - Slot ${slotNum}, Player ${player}`)
-      console.log(`[BattlefieldView] handleDrop - draggedCardId from context:`, draggedCardId)
-      console.log(`[BattlefieldView] handleDrop - dataTransfer types:`, Array.from(e.dataTransfer.types))
-      
-      // Try both formats
       let cardId = e.dataTransfer.getData('cardId')
-      console.log(`[BattlefieldView] handleDrop - cardId from 'cardId':`, cardId)
       if (!cardId) {
         cardId = e.dataTransfer.getData('text/plain')
-        console.log(`[BattlefieldView] handleDrop - cardId from 'text/plain':`, cardId)
       }
-      if (!cardId) {
-        console.log(`[BattlefieldView] handleDrop - ERROR: No cardId found in dataTransfer!`)
-        return
-      }
+      if (!cardId) return
       
-      console.log(`[BattlefieldView] handleDrop - Found cardId:`, cardId)
-      
-      // Find the card being dropped
       const allCards = [
         ...gameState.player1Hand,
         ...gameState.player2Hand,
@@ -158,12 +156,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       ]
       const droppedCard = allCards.find(c => c.id === cardId)
       
-      console.log(`[BattlefieldView] handleDrop - droppedCard found:`, droppedCard?.name, 'owner:', droppedCard?.owner, 'expected player:', player)
-      
-      if (!droppedCard) {
-        console.log(`[BattlefieldView] handleDrop - ERROR: droppedCard not found!`)
-        return
-      }
+      if (!droppedCard) return
       
       // Check if equipping item to hero
       if (droppedCard.cardType === 'item' && cardInSlot && cardInSlot.cardType === 'hero' && droppedCard.owner === player && cardInSlot.owner === player) {
@@ -171,67 +164,28 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
         setDraggedCardId(null)
         return
       }
+
+      // Drag-and-drop target casting for direct damage spells.
+      if (
+        droppedCard.cardType === 'spell' &&
+        droppedCard.location === 'hand' &&
+        cardInSlot &&
+        droppedCard.owner !== player &&
+        ['damage', 'targeted_damage', 'damage_and_stun'].includes(droppedCard.effect.type)
+      ) {
+        handleCastSpellOnTarget(cardInSlot, battlefieldId, droppedCard)
+        setDraggedCardId(null)
+        return
+      }
       
-      // Use the same deployment logic as clicking - but do it directly since we have the card
+      // Deploy card directly via cardOverride — no stale-closure retry needed.
       if (droppedCard.owner === player) {
-        console.log(`[BattlefieldView] handleDrop - Card owner matches, proceeding with deployment`)
-        console.log(`[BattlefieldView] handleDrop - droppedCard.location:`, droppedCard.location, 'battlefieldId:', battlefieldId)
-        console.log(`[BattlefieldView] handleDrop - droppedCard.cardType:`, droppedCard.cardType, 'currentPhase:', metadata.currentPhase)
-        
         setDraggedCardId(null)
-        
-          // Route hero drops through shared deployment hook so all turn/cooldown limits stay consistent.
-          if (droppedCard.cardType === 'hero') {
-            setSelectedCardId(cardId)
-            setDraggedCardId(null)
-            let attempts = 0
-            const tryHeroDeploy = () => {
-              attempts++
-              if (droppedCard.location === battlefieldId) {
-                handleChangeSlot(droppedCard, slotNum, battlefieldId)
-              } else {
-                handleDeploy(battlefieldId, slotNum)
-              }
-              if (attempts < 3) {
-                setTimeout(tryHeroDeploy, 50)
-              }
-            }
-            setTimeout(tryHeroDeploy, 0)
-            return
-          }
-        
-        // For other cases (play phase, or non-hero cards), we still need to use handleDeploy
-        // But first ensure selectedCard is set by setting selectedCardId and waiting
-        setSelectedCardId(cardId)
-        setDraggedCardId(null)
-        
-        // Force a re-render by using a callback that checks if selectedCard is available
-        // We'll use a ref-like approach with multiple attempts
-        let attempts = 0
-        const tryDeploy = () => {
-          attempts++
-          // Check if we can access selectedCard now - but we can't from closure
-          // Instead, just try calling handleDeploy - if it fails silently, we'll retry
-          console.log(`[BattlefieldView] handleDrop - Attempt ${attempts} to deploy`)
-          
-          // Actually, let's just set selectedCardId and immediately call handleDeploy
-          // If it fails, we'll see in the logs
-          if (droppedCard.location === battlefieldId) {
-            handleChangeSlot(droppedCard, slotNum, battlefieldId)
-          } else {
-            handleDeploy(battlefieldId, slotNum)
-          }
-          
-          // If we've tried a few times and it's still not working, give up
-          if (attempts < 3) {
-            setTimeout(tryDeploy, 50)
-          }
+        if (droppedCard.location === battlefieldId) {
+          handleChangeSlot(droppedCard, slotNum, battlefieldId)
+        } else {
+          handleDeploy(battlefieldId, slotNum, droppedCard)
         }
-        
-        // Start trying immediately
-        setTimeout(tryDeploy, 50)
-      } else {
-        console.log(`[BattlefieldView] handleDrop - ERROR: Card owner doesn't match! droppedCard.owner:`, droppedCard.owner, 'expected:', player)
       }
     }
 
@@ -239,29 +193,18 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       e.preventDefault() // Always prevent default to allow drop
       e.stopPropagation()
       
-      // Note: dataTransfer.getData() can't be read during dragover (browser security)
-      // We must rely on draggedCardId from context
-      console.log(`[BattlefieldView] handleDragOver - Slot ${slotNum}, Player ${player}, draggedCardId:`, draggedCardId, 'draggedCard:', draggedCard?.name, 'owner:', draggedCard?.owner, 'dragOverSlot:', dragOverSlot)
-      
-      // If we have a dragged card that belongs to this player, allow drop
-      if (draggedCardId && draggedCard?.owner === player) {
+      // Allow normal own-card moves OR targeted spell drops onto enemy occupied slot.
+      if (draggedCardId && (draggedCard?.owner === player || canDropTargetedDamageSpellHere)) {
         e.dataTransfer.dropEffect = 'move'
-        // Always update drag over state when dragging over this slot
         if (dragOverSlot?.player !== player || dragOverSlot?.slotNum !== slotNum) {
-          console.log(`[BattlefieldView] handleDragOver - Setting dragOverSlot to ${player}, ${slotNum}`)
           setDragOverSlot({ player, slotNum })
         }
       } else if (draggedCardId) {
-        // We're dragging something, but it doesn't belong to this player
-        console.log(`[BattlefieldView] handleDragOver - Card doesn't belong to this player`)
         e.dataTransfer.dropEffect = 'none'
-        // Clear drag over if it was set
         if (dragOverSlot?.player === player && dragOverSlot?.slotNum === slotNum) {
           setDragOverSlot(null)
         }
       } else {
-        // No drag in progress, but allow the event to continue (might be from another component)
-        console.log(`[BattlefieldView] handleDragOver - No draggedCardId in context`)
         e.dataTransfer.dropEffect = 'none'
       }
     }
@@ -270,26 +213,12 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       e.preventDefault()
       e.stopPropagation()
       
-      // Note: dataTransfer.getData() can't be read during dragenter (browser security)
-      // We must rely on draggedCardId from context
-      // However, if draggedCardId isn't set yet (async state update), check if dataTransfer has the types
-      // If it has 'cardId' or 'text/plain' types, we know a card is being dragged
       const hasCardData = e.dataTransfer.types.includes('cardId') || e.dataTransfer.types.includes('text/plain')
-      console.log(`[BattlefieldView] handleDragEnter - Slot ${slotNum}, Player ${player}, draggedCardId:`, draggedCardId, 'draggedCard:', draggedCard?.name, 'hasCardData:', hasCardData, 'types:', Array.from(e.dataTransfer.types))
       
-      // Set drag over state if:
-      // 1. We have draggedCardId in context AND it belongs to this player, OR
-      // 2. We detect card data in dataTransfer (will validate on drop)
-      if (draggedCardId && draggedCard?.owner === player) {
-        console.log(`[BattlefieldView] handleDragEnter - Setting dragOverSlot (context has draggedCardId)`)
+      if (draggedCardId && (draggedCard?.owner === player || canDropTargetedDamageSpellHere)) {
         setDragOverSlot({ player, slotNum })
       } else if (hasCardData && !draggedCardId) {
-        // Card is being dragged but context hasn't updated yet - set drag over optimistically
-        // Will be validated on drop
-        console.log(`[BattlefieldView] handleDragEnter - Setting dragOverSlot (optimistic, context not updated yet)`)
         setDragOverSlot({ player, slotNum })
-      } else {
-        console.log(`[BattlefieldView] handleDragEnter - NOT setting dragOverSlot`)
       }
     }
     
@@ -324,10 +253,10 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
         key={slotNum}
         style={{
           minHeight: '100px',
-          border: isDragOver ? `3px solid ${playerColor}` : (canMoveHere || canEquipItem) ? `2px dashed ${playerColor}` : '1px solid #ddd',
+          border: isDragOver ? `3px solid ${playerColor}` : (canMoveHere || canEquipItem || canDropTargetedDamageSpellHere || canClickCastHere) ? `2px dashed ${playerColor}` : '1px solid #ddd',
           borderRadius: '4px',
           padding: '4px',
-          backgroundColor: isDragOver ? playerBgColor : (canMoveHere || canEquipItem) ? '#f0f0f0' : '#f9f9f9',
+          backgroundColor: isDragOver ? playerBgColor : (canMoveHere || canEquipItem || canDropTargetedDamageSpellHere || canClickCastHere) ? '#f0f0f0' : '#f9f9f9',
           position: 'relative',
           transition: 'all 0.2s',
           width: '100%',
@@ -347,6 +276,12 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
           setDragOverSlot(null)
         }}
         onClick={() => {
+          // Target-cast damage spells: click enemy occupied slot to resolve and consume spell.
+          if (isTargetedDamageSpellSelected && selectedCard && cardInSlot && selectedCard.owner !== player) {
+            handleCastSpellOnTarget(cardInSlot, battlefieldId)
+            return
+          }
+
           // Check if equipping item to hero
           if (canEquipItem && selectedCard && cardInSlot) {
             handleEquipItem(cardInSlot as import('../game/types').Hero, selectedCard as import('../game/types').ItemCard, battlefieldId)
@@ -403,7 +338,6 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
             // Call parent's handleDrop directly to avoid propagation issues
             e.preventDefault()
             e.stopPropagation()
-            console.log(`[BattlefieldView] Inner content div onDrop - forwarding to parent`)
             handleDrop(e)
             setDragOverSlot(null)
           }}
@@ -412,7 +346,14 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
             <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left' }}>
               <HeroCard
                 card={cardInSlot}
-                onClick={(e) => handleCardClick(cardInSlot.id, e)}
+                onClick={(e) => {
+                  if (isTargetedDamageSpellSelected && selectedCard && selectedCard.owner !== cardInSlot.owner) {
+                    e?.stopPropagation()
+                    handleCastSpellOnTarget(cardInSlot, battlefieldId)
+                    return
+                  }
+                  handleCardClick(cardInSlot.id, e)
+                }}
                 isSelected={isSelected}
                 showStats={true}
                 onRemove={() => handleRemoveFromBattlefield(cardInSlot, battlefieldId)}
@@ -848,7 +789,12 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
         </div>
       </div>
 
-      {selectedCard && (
+      {isTargetedDamageSpellSelected && selectedCard && (
+        <div style={{ marginTop: '10px', fontSize: '12px', color: '#444', fontWeight: 600 }}>
+          Select an enemy unit in this lane to cast `{selectedCard.name}`.
+        </div>
+      )}
+      {selectedCard && !isTargetedDamageSpellSelected && (
         <button
           onClick={() => handleDeploy(battlefieldId)}
           disabled={selectedCard && selectedCard.cardType !== 'generic' && getAvailableSlots(

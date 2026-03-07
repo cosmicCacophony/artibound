@@ -208,20 +208,15 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                 draggable={true}
                 isDragging={draggedCardId === card.id}
                 onDragStart={(e) => {
-                  // Allow drag for heroes - validation happens on drop
                   if (card.cardType !== 'hero') {
-                    console.log('Preventing drag - not a hero', card.cardType)
                     e.preventDefault()
                     return
                   }
                   e.stopPropagation()
-                  console.log('[PlayerArea] onDragStart - Setting draggedCardId:', card.id, card.name)
                   setDraggedCardId(card.id)
                   e.dataTransfer.effectAllowed = 'move'
-                  // Set data in both formats
                   e.dataTransfer.setData('text/plain', card.id)
                   e.dataTransfer.setData('cardId', card.id)
-                  console.log('[PlayerArea] onDragStart - dataTransfer types:', Array.from(e.dataTransfer.types))
                 }}
                 onDragEnd={(e) => {
                   setDraggedCardId(null)
@@ -234,59 +229,61 @@ export function PlayerArea({ player }: PlayerAreaProps) {
         </div>
       </div>
 
-      {/* Base - Heroes on cooldown and artifacts */}
-      <div style={{ marginBottom: '20px', border: '2px solid #999', borderRadius: '8px', padding: '15px', backgroundColor: '#e8e8e8' }}>
-        <h3 style={{ marginTop: 0, color: '#666' }}>Base ({playerBase.length})</h3>
-        <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px' }}>Heroes on cooldown and artifacts</p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '60px' }}>
-          {playerBase.length > 0 ? (
-            playerBase.map(card => (
-              <HeroCard
-                key={card.id}
-                card={card}
-                onClick={(e) => handleCardClick(card.id, e)}
-                isSelected={selectedCardId === card.id}
-                showStats={true}
-                isDead={!!metadata.deathCooldowns[card.id]}
-                cooldownCounter={metadata.deathCooldowns[card.id]}
-                isPlayed={!!metadata.playedSpells[card.id]}
-                onTogglePlayed={() => handleToggleSpellPlayed(card)}
-                isStunned={card.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[card.id])}
-                onToggleStun={card.cardType === 'hero' ? () => handleToggleStun(card) : undefined}
-                onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, card.owner)}
-                draggable={card.cardType === 'hero' && metadata.currentPhase === 'deploy' && !metadata.deathCooldowns[card.id]}
-                isDragging={draggedCardId === card.id}
-                onDragStart={(e) => {
-                  setDraggedCardId(card.id)
-                  e.dataTransfer.setData('cardId', card.id)
-                  e.dataTransfer.effectAllowed = 'move'
-                }}
-                onDragEnd={() => {
-                  setDraggedCardId(null)
-                }}
-              />
-            ))
-          ) : (
-            <p style={{ color: '#999' }}>Empty</p>
+      {/* Base is hidden in rune prototype UI (still used internally for cooldown state) */}
+      {!metadata.isRunePrototype && (
+        <div style={{ marginBottom: '20px', border: '2px solid #999', borderRadius: '8px', padding: '15px', backgroundColor: '#e8e8e8' }}>
+          <h3 style={{ marginTop: 0, color: '#666' }}>Base ({playerBase.length})</h3>
+          <p style={{ fontSize: '12px', color: '#666', marginTop: '-10px', marginBottom: '10px' }}>Heroes on cooldown and artifacts</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '60px' }}>
+            {playerBase.length > 0 ? (
+              playerBase.map(card => (
+                <HeroCard
+                  key={card.id}
+                  card={card}
+                  onClick={(e) => handleCardClick(card.id, e)}
+                  isSelected={selectedCardId === card.id}
+                  showStats={true}
+                  isDead={!!metadata.deathCooldowns[card.id]}
+                  cooldownCounter={metadata.deathCooldowns[card.id]}
+                  isPlayed={!!metadata.playedSpells[card.id]}
+                  onTogglePlayed={() => handleToggleSpellPlayed(card)}
+                  isStunned={card.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[card.id])}
+                  onToggleStun={card.cardType === 'hero' ? () => handleToggleStun(card) : undefined}
+                  onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, card.owner)}
+                  draggable={card.cardType === 'hero' && metadata.currentPhase === 'deploy' && !metadata.deathCooldowns[card.id]}
+                  isDragging={draggedCardId === card.id}
+                  onDragStart={(e) => {
+                    setDraggedCardId(card.id)
+                    e.dataTransfer.setData('cardId', card.id)
+                    e.dataTransfer.effectAllowed = 'move'
+                  }}
+                  onDragEnd={() => {
+                    setDraggedCardId(null)
+                  }}
+                />
+              ))
+            ) : (
+              <p style={{ color: '#999' }}>Empty</p>
+            )}
+          </div>
+          {selectedCard && selectedCard.owner === player && (
+            <button
+              onClick={() => handleDeploy('base')}
+              style={{
+                marginTop: '10px',
+                padding: '8px 16px',
+                backgroundColor: '#4a90e2',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Move {selectedCard.name} to Base
+            </button>
           )}
         </div>
-        {selectedCard && selectedCard.owner === player && (
-          <button
-            onClick={() => handleDeploy('base')}
-            style={{
-              marginTop: '10px',
-              padding: '8px 16px',
-              backgroundColor: '#4a90e2',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-            }}
-          >
-            Move {selectedCard.name} to Base
-          </button>
-        )}
-      </div>
+      )}
 
       {/* Hand */}
       <div>
@@ -300,7 +297,7 @@ export function PlayerArea({ player }: PlayerAreaProps) {
               marginBottom: '15px',
             }}
           >
-            <strong>Selected: {selectedCard.name}</strong> - Choose a deployment location above
+            <strong>Selected: {selectedCard.name}</strong> - {selectedCard.cardType === 'spell' && ['damage', 'targeted_damage', 'damage_and_stun'].includes(selectedCard.effect.type) ? 'Click an enemy unit in a lane to cast.' : 'Choose a deployment location above'}
           </div>
         )}
         <div style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -321,20 +318,21 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                 draggable={true}
                 isDragging={draggedCardId === card.id}
                 onDragStart={(e) => {
-                  // Allow drag for heroes - validation happens on drop
-                  if (card.cardType !== 'hero') {
-                    console.log('Preventing drag - not a hero', card.cardType)
+                  const isTargetedDamageSpell =
+                    card.cardType === 'spell' &&
+                    card.location === 'hand' &&
+                    ['damage', 'targeted_damage', 'damage_and_stun'].includes(
+                      (card as import('../game/types').SpellCard).effect.type
+                    )
+                  if (card.cardType !== 'hero' && !isTargetedDamageSpell) {
                     e.preventDefault()
                     return
                   }
                   e.stopPropagation()
-                  console.log('[PlayerArea] onDragStart - Setting draggedCardId:', card.id, card.name)
                   setDraggedCardId(card.id)
                   e.dataTransfer.effectAllowed = 'move'
-                  // Set data in both formats
                   e.dataTransfer.setData('text/plain', card.id)
                   e.dataTransfer.setData('cardId', card.id)
-                  console.log('[PlayerArea] onDragStart - dataTransfer types:', Array.from(e.dataTransfer.types))
                 }}
                 onDragEnd={(e) => {
                   setDraggedCardId(null)
