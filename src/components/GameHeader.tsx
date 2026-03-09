@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useGameContext } from '../context/GameContext'
 import { useGamePersistence } from '../hooks/useGamePersistence'
 import { useTurnManagement } from '../hooks/useTurnManagement'
@@ -6,6 +7,12 @@ export function GameHeader() {
   const { metadata, activePlayer, setShowCardLibrary } = useGameContext()
   const { savedStates, exportGameState, importGameState } = useGamePersistence()
   const { handleNextPhase, handleNextTurn, handlePass, handleEndDeployPhase } = useTurnManagement()
+
+  useEffect(() => {
+    if (metadata.currentPhase === 'play' && metadata.player1Passed && metadata.player2Passed) {
+      handleNextPhase()
+    }
+  }, [metadata.currentPhase, metadata.player1Passed, metadata.player2Passed, handleNextPhase])
 
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>

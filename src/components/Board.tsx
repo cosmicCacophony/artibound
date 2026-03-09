@@ -31,6 +31,23 @@ export function Board() {
     && actionPlayer
     && !resourceChoices[actionPlayer]
 
+  // After turn 1 hero deployment completes, transition to resource phase so
+  // players can make their first rune/mana choices before the play phase begins.
+  useEffect(() => {
+    if (isPrototype && metadata.currentTurn === 1 &&
+        metadata.currentPhase === 'play' &&
+        metadata.turn1DeploymentPhase === 'complete' &&
+        !resourceChoices.player1 && !resourceChoices.player2) {
+      setGameState(prev => ({
+        ...prev,
+        metadata: {
+          ...prev.metadata,
+          currentPhase: 'resource' as const,
+        },
+      }))
+    }
+  }, [isPrototype, metadata.currentTurn, metadata.currentPhase, metadata.turn1DeploymentPhase, resourceChoices.player1, resourceChoices.player2, setGameState])
+
   // Auto-advance from resource phase to play phase when both players have made choices
   useEffect(() => {
     if (isPrototype && metadata.currentPhase === 'resource' &&

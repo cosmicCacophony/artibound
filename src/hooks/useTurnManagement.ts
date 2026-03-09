@@ -673,9 +673,6 @@ export function useTurnManagement() {
   }, [setGameState, player1SidebarCards, player2SidebarCards, setPlayer1SidebarCards, setPlayer2SidebarCards])
 
   const handlePass = useCallback((player: 'player1' | 'player2') => {
-    // Detect "both passed" inside the setGameState updater to avoid stale closures
-    let bothPassed = false
-
     setGameState(prev => {
       // Handle turn 1 deployment passing (counter-deployment phases)
       if (prev.metadata.currentTurn === 1 && prev.metadata.turn1DeploymentPhase && 
@@ -714,8 +711,6 @@ export function useTurnManagement() {
       
       if (!otherPlayerPassed) {
         newMetadata.actionPlayer = player === 'player1' ? 'player2' : 'player1'
-      } else if (prev.metadata.currentPhase === 'play') {
-        bothPassed = true
       }
       
       return {
@@ -723,12 +718,7 @@ export function useTurnManagement() {
         metadata: newMetadata,
       }
     })
-    
-    // The updater runs synchronously, so bothPassed is set reliably
-    if (bothPassed) {
-      handleNextPhase()
-    }
-  }, [setGameState, handleNextPhase])
+  }, [setGameState])
 
   const handleEndDeployPhase = useCallback(() => {
     setGameState(prev => {
