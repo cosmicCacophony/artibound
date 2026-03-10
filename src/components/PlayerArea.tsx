@@ -302,43 +302,47 @@ export function PlayerArea({ player }: PlayerAreaProps) {
         )}
         <div style={{ display: 'flex', flexWrap: 'wrap' }}>
           {playerHand.length > 0 ? (
-            playerHand.map(card => (
-              <HeroCard
-                key={card.id}
-                card={card}
-                onClick={(e) => handleCardClick(card.id, e)}
-                isSelected={selectedCardId === card.id}
-                showStats={true}
-                isDead={!!metadata.deathCooldowns[card.id]}
-                cooldownCounter={metadata.deathCooldowns[card.id]}
-                isPlayed={card.location === 'base' && !!metadata.playedSpells[card.id]}
-                onTogglePlayed={card.location === 'base' ? () => handleToggleSpellPlayed(card) : undefined}
-                onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, card.owner)}
-                onEditAbility={card.cardType === 'hero' ? (heroId) => setEditingHeroId(heroId) : undefined}
-                draggable={true}
-                isDragging={draggedCardId === card.id}
-                onDragStart={(e) => {
-                  const isTargetedDamageSpell =
-                    card.cardType === 'spell' &&
-                    card.location === 'hand' &&
-                    ['damage', 'targeted_damage', 'damage_and_stun'].includes(
-                      (card as import('../game/types').SpellCard).effect.type
-                    )
-                  if (card.cardType !== 'hero' && !isTargetedDamageSpell) {
-                    e.preventDefault()
-                    return
-                  }
-                  e.stopPropagation()
-                  setDraggedCardId(card.id)
-                  e.dataTransfer.effectAllowed = 'move'
-                  e.dataTransfer.setData('text/plain', card.id)
-                  e.dataTransfer.setData('cardId', card.id)
-                }}
-                onDragEnd={(e) => {
-                  setDraggedCardId(null)
-                }}
-              />
-            ))
+            playerHand.map(card => {
+              const isTargetedDamageSpell =
+                card.cardType === 'spell' &&
+                card.location === 'hand' &&
+                ['damage', 'targeted_damage', 'damage_and_stun'].includes(
+                  (card as import('../game/types').SpellCard).effect.type
+                )
+              const canDragFromHand = card.cardType === 'hero' || isTargetedDamageSpell
+
+              return (
+                <HeroCard
+                  key={card.id}
+                  card={card}
+                  onClick={(e) => handleCardClick(card.id, e)}
+                  isSelected={selectedCardId === card.id}
+                  showStats={true}
+                  isDead={!!metadata.deathCooldowns[card.id]}
+                  cooldownCounter={metadata.deathCooldowns[card.id]}
+                  isPlayed={card.location === 'base' && !!metadata.playedSpells[card.id]}
+                  onTogglePlayed={card.location === 'base' ? () => handleToggleSpellPlayed(card) : undefined}
+                  onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, card.owner)}
+                  onEditAbility={card.cardType === 'hero' ? (heroId) => setEditingHeroId(heroId) : undefined}
+                  draggable={canDragFromHand}
+                  isDragging={draggedCardId === card.id}
+                  onDragStart={(e) => {
+                    if (!canDragFromHand) {
+                      e.preventDefault()
+                      return
+                    }
+                    e.stopPropagation()
+                    setDraggedCardId(card.id)
+                    e.dataTransfer.effectAllowed = 'move'
+                    e.dataTransfer.setData('text/plain', card.id)
+                    e.dataTransfer.setData('cardId', card.id)
+                  }}
+                  onDragEnd={() => {
+                    setDraggedCardId(null)
+                  }}
+                />
+              )
+            })
           ) : (
             <p style={{ color: '#999' }}>Empty</p>
           )}
