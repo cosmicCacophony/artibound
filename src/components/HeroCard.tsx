@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { Card, Color } from '../game/types'
+import { Card, Color, RuneColor, GenericUnit, SpellCard } from '../game/types'
 import { tier1Items } from '../game/sampleData'
+import { RuneScalingPreview } from './RuneScalingPreview'
 
 interface HeroCardProps {
   card: Card
@@ -25,6 +26,7 @@ interface HeroCardProps {
   onDragStart?: (e: React.DragEvent) => void // Handler for drag start
   onDragEnd?: (e: React.DragEvent) => void // Handler for drag end
   isDragging?: boolean // Whether this card is currently being dragged
+  laneRunes?: { battlefieldA: RuneColor[]; battlefieldB: RuneColor[] }
 }
 
 // Color palette mapping
@@ -44,7 +46,8 @@ const COLOR_LIGHT_MAP: Record<Color, string> = {
   green: '#e8f5e9',
 }
 
-export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove, onDecreaseHealth, onIncreaseHealth, onDecreaseAttack, onIncreaseAttack, showCombatControls = false, isDead = false, cooldownCounter, isPlayed = false, onTogglePlayed, isStunned = false, onToggleStun, onAbilityClick, onEditAbility, draggable = false, onDragStart, onDragEnd, isDragging = false }: HeroCardProps) {
+export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove, onDecreaseHealth, onIncreaseHealth, onDecreaseAttack, onIncreaseAttack, showCombatControls = false, isDead = false, cooldownCounter, isPlayed = false, onTogglePlayed, isStunned = false, onToggleStun, onAbilityClick, onEditAbility, draggable = false, onDragStart, onDragEnd, isDragging = false, laneRunes }: HeroCardProps) {
+  const [showRuneTooltip, setShowRuneTooltip] = useState(false)
   // Get card colors
   const cardColors: Color[] = 'colors' in card && card.colors ? card.colors : []
   
@@ -247,7 +250,7 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
         boxShadow: isSelected ? '0 4px 8px rgba(74, 144, 226, 0.4)' : '0 2px 4px rgba(0,0,0,0.1)',
         transition: 'all 0.2s',
         position: 'relative',
-        overflow: 'hidden',
+        overflow: showRuneTooltip ? 'visible' : 'hidden',
       }}
     >
       {/* Color indicator bar at top for multicolor */}
@@ -708,6 +711,47 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
         </div>
       )}
       
+      {/* Rune scaling indicator + tooltip */}
+      {'runeScaling' in card && card.runeScaling && card.runeScaling.length > 0 && laneRunes && (
+        <div
+          style={{ position: 'relative', marginTop: '6px' }}
+          onMouseEnter={() => setShowRuneTooltip(true)}
+          onMouseLeave={() => setShowRuneTooltip(false)}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '3px 6px',
+              borderRadius: '4px',
+              backgroundColor: '#f0f4ff',
+              border: '1px solid #c7d2fe',
+              cursor: 'default',
+              fontSize: '10px',
+              fontWeight: 600,
+              color: '#4f46e5',
+            }}
+          >
+            <span>🔮</span>
+            <span>{card.runeScaling.length} tier{card.runeScaling.length > 1 ? 's' : ''}</span>
+            <span style={{ color: '#94a3b8', fontWeight: 400, marginLeft: 'auto' }}>hover</span>
+          </div>
+          {showRuneTooltip && (
+            <RuneScalingPreview
+              runeScaling={card.runeScaling}
+              baseAttack={'attack' in card ? (card as GenericUnit).attack : undefined}
+              baseHealth={'health' in card ? (card as GenericUnit).health : undefined}
+              baseSpellEffect={card.cardType === 'spell' && 'effect' in card
+                ? `Deal ${(card as SpellCard).effect.damage || 0} damage`
+                : undefined}
+              cardType={card.cardType === 'spell' ? 'spell' : 'generic'}
+              laneRunes={laneRunes}
+            />
+          )}
+        </div>
+      )}
+
       {/* Cooldown counter display (for heroes in base) */}
       {cooldownCounter !== undefined && cooldownCounter > 0 && card.cardType === 'hero' && card.location === 'base' && (
         <div

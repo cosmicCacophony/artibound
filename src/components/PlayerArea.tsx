@@ -28,6 +28,11 @@ export function PlayerArea({ player }: PlayerAreaProps) {
   const playerBg = player === 'player1' ? '#ffebee' : '#e3f2fd'
   const playerLabel = player === 'player1' ? 'Player 1 (RB)' : 'Player 2 (GW)'
 
+  const playerLaneRunes = metadata.laneRunes ? {
+    battlefieldA: metadata.laneRunes.battlefieldA[player],
+    battlefieldB: metadata.laneRunes.battlefieldB[player],
+  } : undefined
+
   const handleCardClick = (cardId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     setSelectedCardId(selectedCardId === cardId ? null : cardId)
@@ -109,6 +114,7 @@ export function PlayerArea({ player }: PlayerAreaProps) {
                   onClick={(e) => handleCardClick(card.id, e)}
                   isSelected={selectedCardId === card.id}
                   showStats={true}
+                  laneRunes={playerLaneRunes}
                   draggable={canDrag}
                   isDragging={draggedCardId === card.id}
                   onDragStart={(e) => {
