@@ -22,6 +22,8 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     setSelectedCardId,
     draggedCardId,
     setDraggedCardId,
+    pendingAbility,
+    setPendingAbility,
     metadata,
     getAvailableSlots,
     setGameState,
@@ -40,7 +42,7 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     }
   }, [draggedCardId])
   const { handleDecreaseHealth, handleIncreaseHealth, handleDecreaseAttack, handleIncreaseAttack } = useCombat()
-  const { handleAbilityClick } = useHeroAbilities()
+  const { handleAbilityClick, handleAbilityTargetClick } = useHeroAbilities()
   const { handleToggleStun, handleSpawnCreep } = useTurnManagement()
 
   const battlefield = gameState[battlefieldId]
@@ -125,6 +127,23 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       ['damage', 'targeted_damage', 'damage_and_stun'].includes(draggedCard.effect.type)
     const canDropTargetedDamageSpellHere = Boolean(draggedTargetedDamageSpell && cardInSlot && draggedCard.owner !== player)
     const canClickCastHere = Boolean(isTargetedDamageSpellSelected && cardInSlot && selectedCard && selectedCard.owner !== player)
+
+    const isAbilityTarget = (() => {
+      if (!pendingAbility || !cardInSlot || pendingAbility.battlefieldId !== battlefieldId) return false
+      const { ability, owner } = pendingAbility
+      switch (ability.effectType) {
+        case 'damage_target':
+        case 'steal_unit':
+        case 'bounce_unit':
+          return cardInSlot.owner !== owner && cardInSlot.cardType !== 'hero'
+            ? true
+            : cardInSlot.owner !== owner && ability.effectType === 'damage_target'
+        case 'buff_units':
+          return cardInSlot.owner === owner && cardInSlot.cardType !== 'hero'
+        default:
+          return false
+      }
+    })()
     
     const playerColor = player === 'player1' ? '#f44336' : '#4a90e2'
     const playerBgColor = player === 'player1' ? '#ffebee' : '#e3f2fd'
@@ -253,10 +272,10 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
         key={slotNum}
         style={{
           minHeight: '100px',
-          border: isDragOver ? `3px solid ${playerColor}` : (canMoveHere || canEquipItem || canDropTargetedDamageSpellHere || canClickCastHere) ? `2px dashed ${playerColor}` : '1px solid #ddd',
+          border: isDragOver ? `3px solid ${playerColor}` : isAbilityTarget ? '2px dashed #ff6f00' : (canMoveHere || canEquipItem || canDropTargetedDamageSpellHere || canClickCastHere) ? `2px dashed ${playerColor}` : '1px solid #ddd',
           borderRadius: '4px',
           padding: '4px',
-          backgroundColor: isDragOver ? playerBgColor : (canMoveHere || canEquipItem || canDropTargetedDamageSpellHere || canClickCastHere) ? '#f0f0f0' : '#f9f9f9',
+          backgroundColor: isDragOver ? playerBgColor : isAbilityTarget ? '#fff8e1' : (canMoveHere || canEquipItem || canDropTargetedDamageSpellHere || canClickCastHere) ? '#f0f0f0' : '#f9f9f9',
           position: 'relative',
           transition: 'all 0.2s',
           width: '100%',
@@ -276,7 +295,11 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
           setDragOverSlot(null)
         }}
         onClick={() => {
-          // Target-cast damage spells: click enemy occupied slot to resolve and consume spell.
+          if (isAbilityTarget && pendingAbility && cardInSlot) {
+            handleAbilityTargetClick(cardInSlot, battlefieldId)
+            return
+          }
+
           if (isTargetedDamageSpellSelected && selectedCard && cardInSlot && selectedCard.owner !== player) {
             handleCastSpellOnTarget(cardInSlot, battlefieldId)
             return
@@ -347,6 +370,11 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
               <HeroCard
                 card={cardInSlot}
                 onClick={(e) => {
+                  if (isAbilityTarget && pendingAbility && cardInSlot) {
+                    e?.stopPropagation()
+                    handleAbilityTargetClick(cardInSlot, battlefieldId)
+                    return
+                  }
                   if (isTargetedDamageSpellSelected && selectedCard && selectedCard.owner !== cardInSlot.owner) {
                     e?.stopPropagation()
                     handleCastSpellOnTarget(cardInSlot, battlefieldId)
@@ -789,6 +817,17 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
         </div>
       </div>
 
+      {pendingAbility && pendingAbility.battlefieldId === battlefieldId && (
+        <div style={{ marginTop: '10px', fontSize: '12px', color: '#ff6f00', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>Select a target for {pendingAbility.ability.name}.</span>
+          <button
+            onClick={() => setPendingAbility(null)}
+            style={{ padding: '2px 8px', fontSize: '11px', cursor: 'pointer', border: '1px solid #ccc', borderRadius: '4px', background: '#fff' }}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
       {isTargetedDamageSpellSelected && selectedCard && (
         <div style={{ marginTop: '10px', fontSize: '12px', color: '#444', fontWeight: 600 }}>
           Select an enemy unit in this lane to cast `{selectedCard.name}`.

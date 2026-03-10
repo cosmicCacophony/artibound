@@ -239,6 +239,8 @@ export type HeroAbilityEffectType =
   | 'rune_to_damage' // Spend runes to deal tower damage (combo payoff)
   | 'sacrifice_unit' // Sacrifice a unit for effect
   | 'shadowfiend_ability' // Shadowfiend: deal 1 damage per counter to random enemy unit
+  | 'damage_tower_lane' // Deal damage to the enemy tower in this lane
+  | 'bounce_unit' // Return enemy non-hero unit to owner's hand
   | 'custom' // Custom effect
 
 export type HeroAbilityTrigger = 

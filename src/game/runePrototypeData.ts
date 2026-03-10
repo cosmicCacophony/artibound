@@ -18,6 +18,15 @@ export const brPrototypeHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     currentHealth: 7,
     supportEffect: 'Lane creatures get +1 attack',
     equippedItems: [],
+    ability: {
+      name: 'Firestrike',
+      description: 'Deal 3 damage to the enemy tower in this lane.',
+      trigger: 'activated',
+      manaCost: 1,
+      cooldown: 1,
+      effectType: 'damage_tower_lane',
+      effectValue: 3,
+    },
   },
   {
     id: 'proto-br-ember-tactician',
@@ -31,6 +40,15 @@ export const brPrototypeHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     currentHealth: 6,
     supportEffect: 'First spell costs 1 less',
     equippedItems: [],
+    ability: {
+      name: 'Reposition',
+      description: 'Move this hero to the other lane (first open slot).',
+      trigger: 'activated',
+      manaCost: 1,
+      cooldown: 1,
+      effectType: 'move_cross_battlefield',
+      effectValue: 0,
+    },
   },
   {
     id: 'proto-br-blood-broker',
@@ -44,6 +62,15 @@ export const brPrototypeHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     currentHealth: 8,
     supportEffect: 'Creature death heals tower 1',
     equippedItems: [],
+    ability: {
+      name: 'Blood Siphon',
+      description: 'Deal 2 damage to an enemy unit in this lane, heal this hero for 2.',
+      trigger: 'activated',
+      manaCost: 2,
+      cooldown: 1,
+      effectType: 'damage_target',
+      effectValue: 2,
+    },
   },
   {
     id: 'proto-br-grave-raider',
@@ -57,6 +84,15 @@ export const brPrototypeHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     currentHealth: 6,
     supportEffect: '+1 attack if 2+ lane runes',
     equippedItems: [],
+    ability: {
+      name: 'Raise Dead',
+      description: 'Spawn a 2/1 Skeleton in the first empty slot in this lane.',
+      trigger: 'activated',
+      manaCost: 1,
+      cooldown: 1,
+      effectType: 'create_unit',
+      effectValue: 0,
+    },
   },
 ]
 
@@ -157,6 +193,16 @@ export const gwuPrototypeHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     currentHealth: 8,
     supportEffect: '+1/+1 if 2+ lane runes',
     equippedItems: [],
+    ability: {
+      name: 'Rune Harvest',
+      description: 'Consume 1 green lane rune permanently, steal an enemy non-hero unit in this lane.',
+      trigger: 'activated',
+      manaCost: 1,
+      cooldown: 1,
+      effectType: 'steal_unit',
+      effectValue: 0,
+      runeCost: ['green'],
+    },
   },
   {
     id: 'proto-gwu-ancient-warden',
@@ -170,6 +216,15 @@ export const gwuPrototypeHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     currentHealth: 7,
     supportEffect: 'Creatures enter with +1 health',
     equippedItems: [],
+    ability: {
+      name: 'Bark Armor',
+      description: 'Give a friendly non-hero unit in this lane +0/+3 permanently.',
+      trigger: 'activated',
+      manaCost: 1,
+      cooldown: 1,
+      effectType: 'buff_units',
+      effectValue: 3,
+    },
   },
   {
     id: 'proto-gwu-shield-marshal',
@@ -183,6 +238,15 @@ export const gwuPrototypeHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     currentHealth: 9,
     supportEffect: 'Prevent 1 damage/turn',
     equippedItems: [],
+    ability: {
+      name: 'Tower Mend',
+      description: 'Heal your tower in this lane for 3.',
+      trigger: 'activated',
+      manaCost: 2,
+      cooldown: 1,
+      effectType: 'heal_target',
+      effectValue: 3,
+    },
   },
   {
     id: 'proto-gwu-archmage-tides',
@@ -196,6 +260,15 @@ export const gwuPrototypeHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     currentHealth: 6,
     supportEffect: 'Spells draw 1 at 3 runes',
     equippedItems: [],
+    ability: {
+      name: 'Tidal Return',
+      description: 'Return an enemy non-hero unit in this lane to its owner\'s hand.',
+      trigger: 'activated',
+      manaCost: 2,
+      cooldown: 1,
+      effectType: 'bounce_unit',
+      effectValue: 0,
+    },
   },
 ]
 

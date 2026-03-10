@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
-import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, BattlefieldDefinition, FinalDraftSelection, Color, HEROES_REQUIRED, CARDS_REQUIRED, ShopItem, Archetype, GameMetadata } from '../game/types'
+import { Card, GameState, AttackTarget, Item, BaseCard, PlayerId, Hero, BattlefieldDefinition, FinalDraftSelection, Color, HEROES_REQUIRED, CARDS_REQUIRED, ShopItem, Archetype, GameMetadata, HeroAbility } from '../game/types'
 import { createInitialGameState, createCardLibrary, createGameStateFromDraft } from '../game/sampleData'
 import { allCards, allSpells, allArtifacts, allBattlefields, allHeroes } from '../game/cardData'
 import { ubHeroes } from '../game/comprehensiveCardData'
@@ -7,6 +7,13 @@ import { boss1ValiantLegion } from '../game/bossData'
 import { heroMatchesArchetype, cardMatchesArchetype } from '../game/archetypeUtils'
 import { saveDraft, getPreviousDraft } from '../game/draftStorage'
 import { createRunePrototypeGameState } from '../game/runePrototypeData'
+
+export interface PendingAbility {
+  heroId: string
+  ability: HeroAbility
+  owner: PlayerId
+  battlefieldId: 'battlefieldA' | 'battlefieldB'
+}
 
 interface GameContextType {
   // Game State
@@ -18,6 +25,8 @@ interface GameContextType {
   setSelectedCardId: (id: string | null) => void
   draggedCardId: string | null // Card currently being dragged
   setDraggedCardId: (id: string | null) => void
+  pendingAbility: PendingAbility | null
+  setPendingAbility: (pending: PendingAbility | null) => void
   itemShopPlayer: PlayerId | null // Which player's shop is open (null if closed)
   setItemShopPlayer: (player: PlayerId | null) => void
   itemShopItems: ShopItem[]
@@ -93,6 +102,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   })
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
   const [draggedCardId, setDraggedCardId] = useState<string | null>(null)
+  const [pendingAbility, setPendingAbility] = useState<PendingAbility | null>(null)
   const [itemShopPlayer, setItemShopPlayer] = useState<PlayerId | null>(null)
   const [itemShopItems, setItemShopItems] = useState<ShopItem[]>([])
   
@@ -450,6 +460,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setSelectedCardId,
     draggedCardId,
     setDraggedCardId,
+    pendingAbility,
+    setPendingAbility,
     itemShopPlayer,
     setItemShopPlayer,
     itemShopItems,
