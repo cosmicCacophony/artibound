@@ -1,12 +1,9 @@
 import { useCallback } from 'react'
-import { Card, AttackTarget, GameMetadata } from '../game/types'
+import { Card } from '../game/types'
 import { useGameContext } from '../context/GameContext'
-import { getDefaultTargets, resolveCombat } from '../game/combatSystem'
-import { removeRunesFromHero } from '../game/runeSystem'
 
 export function useCombat() {
-  const { gameState, setGameState, combatTargetsA, setCombatTargetsA, combatTargetsB, setCombatTargetsB } = useGameContext()
-  const metadata = gameState.metadata
+  const { setGameState } = useGameContext()
 
   const handleDecreaseHealth = useCallback((card: Card) => {
     if (!('currentHealth' in card)) return
@@ -16,19 +13,13 @@ export function useCombat() {
     if (newHealth <= 0) {
       // Card dies - track death cooldown (1 round)
       const player = card.owner
-      const opponent = player === 'player1' ? 'player2' : 'player1'
       const location = card.location
 
       if (card.cardType === 'hero') {
-        // Hero dies - goes to base with death cooldown (1 round before can redeploy)
         const hero = card as import('../game/types').Hero
         
         setGameState(prev => {
           const removeFromLocation = (cards: Card[]) => cards.filter(c => c.id !== card.id)
-          
-          // Remove runes from the hero when it dies
-          const runePoolKey = player === 'player1' ? 'player1RunePool' : 'player2RunePool'
-          const updatedRunePool = removeRunesFromHero(hero, prev.metadata[runePoolKey])
           
           return {
             ...prev,
@@ -39,15 +30,13 @@ export function useCombat() {
             [`${player}Base`]: [...prev[`${player}Base` as keyof typeof prev] as Card[], {
               ...hero,
               location: 'base',
-              currentHealth: 0, // Dead - will heal to full in base after cooldown
-              slot: undefined,
+              currentHealth: 0,
             }],
             metadata: {
               ...prev.metadata,
-              [runePoolKey]: updatedRunePool,
               deathCooldowns: {
                 ...prev.metadata.deathCooldowns,
-                [card.id]: 2, // Set cooldown counter to 2 (decreases by 1 each turn, prevents deployment for 1 full round)
+                [card.id]: 2,
               },
             },
           }

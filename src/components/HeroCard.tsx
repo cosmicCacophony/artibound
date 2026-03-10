@@ -169,12 +169,18 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
         return `Deal ${effect.damage} damage to target`
       case 'aoe_damage':
         return `Deal ${effect.damage} damage to ${effect.targetCount || 3} targets`
-      case 'adjacent_damage':
-        return `Deal ${effect.damage} damage to ${effect.adjacentCount || 3} adjacent units`
+      case 'multi_target_damage':
+        return `Deal ${effect.damage} damage to up to ${effect.targetCount || 2} targets`
+      case 'split_damage':
+        return `Deal ${effect.damage} damage split among up to ${effect.maxTargets || 3} targets`
+      case 'chain_damage':
+        return `Deal ${effect.damage} damage to up to ${effect.targetCount || 3} targets`
       case 'all_units_damage':
         return `Deal ${effect.damage} damage to all units`
       case 'board_wipe':
         return `Destroy all ${effect.affectsOwnUnits ? 'units' : 'enemy units'}`
+      case 'stun':
+        return `Stun target for ${effect.stunDuration || 1} turn(s)`
       default:
         return 'Spell effect'
     }
@@ -322,7 +328,26 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
         )}
       </div>
       
-      <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 'bold' }}>{card.name}</h3>
+      <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: 'bold' }}>{card.name}</h3>
+      {(card.cardType === 'hero' || card.cardType === 'generic') && 'formationTag' in card && card.formationTag && (
+        <div style={{
+          display: 'inline-block',
+          padding: '1px 6px',
+          borderRadius: '3px',
+          fontSize: '10px',
+          fontWeight: 'bold',
+          marginBottom: '4px',
+          color: '#fff',
+          backgroundColor:
+            card.formationTag === 'frontline' ? '#6b7280' :
+            card.formationTag === 'ranged' ? '#059669' :
+            card.formationTag === 'assassin' ? '#7c3aed' : '#999',
+        }}>
+          {card.formationTag === 'frontline' ? '🛡 Frontline' :
+           card.formationTag === 'ranged' ? '🏹 Ranged' :
+           card.formationTag === 'assassin' ? '🗡 Assassin' : card.formationTag}
+        </div>
+      )}
       <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#666' }}>{card.description}</p>
       
       {/* Always show stats for heroes, units, and generic cards - full clarity */}

@@ -1,222 +1,154 @@
 import { useEffect } from 'react'
 import { useGameContext } from '../context/GameContext'
-import { useGamePersistence } from '../hooks/useGamePersistence'
 import { useTurnManagement } from '../hooks/useTurnManagement'
 
 export function GameHeader() {
-  const { metadata, activePlayer, setShowCardLibrary } = useGameContext()
-  const { savedStates, exportGameState, importGameState } = useGamePersistence()
+  const { metadata, initializeRunePrototype } = useGameContext()
   const { handleNextPhase, handleNextTurn, handlePass, handleEndDeployPhase } = useTurnManagement()
 
+  // Auto-trigger combat when both players pass during play phase
   useEffect(() => {
     if (metadata.currentPhase === 'play' && metadata.player1Passed && metadata.player2Passed) {
       handleNextPhase()
     }
   }, [metadata.currentPhase, metadata.player1Passed, metadata.player2Passed, handleNextPhase])
 
+  const phaseLabel = metadata.currentPhase === 'resource' ? 'Resource'
+    : metadata.currentPhase === 'deploy' ? 'Deploy'
+    : metadata.currentPhase === 'play' ? 'Play'
+    : metadata.currentPhase
+
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-      <h1 style={{ margin: 0 }}>
-        Artibound
-        {metadata.isRunePrototype && (
-          <span style={{ fontSize: '14px', color: '#E91E63', marginLeft: '12px', fontWeight: 'normal' }}>
-            RUNE PROTOTYPE — BR vs GWu
-          </span>
-        )}
-      </h1>
-      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-        {/* Action Display - Prominent */}
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '20px',
+      padding: '12px 16px',
+      backgroundColor: '#1a1a2e',
+      borderRadius: '8px',
+      color: 'white',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <h2 style={{ margin: 0, fontSize: '18px' }}>Artibound</h2>
+        <span style={{ fontSize: '13px', color: '#E91E63', fontWeight: 'bold' }}>
+          RB vs GW Prototype
+        </span>
+      </div>
+
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        {/* Action indicator */}
         {metadata.actionPlayer && (
-          <div style={{ 
-            fontSize: '16px', 
-            fontWeight: 'bold',
-            padding: '8px 16px',
-            backgroundColor: metadata.actionPlayer === 'player1' ? '#f44336' : '#4a90e2',
-            color: 'white',
+          <div style={{
+            padding: '6px 14px',
+            backgroundColor: metadata.actionPlayer === 'player1' ? '#e53935' : '#1e88e5',
             borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
+            fontWeight: 'bold',
+            fontSize: '13px',
           }}>
-            <span style={{ fontSize: '20px' }}>🎯</span>
-            Action: {metadata.actionPlayer === 'player1' ? 'Player 1' : 'Player 2'}
+            Action: {metadata.actionPlayer === 'player1' ? 'P1 (RB)' : 'P2 (GW)'}
           </div>
         )}
-        {/* Initiative Display - Separate */}
-        {metadata.initiativePlayer && (
-          <div style={{ 
-            fontSize: '14px', 
-            fontWeight: 'bold',
-            padding: '6px 12px',
-            backgroundColor: metadata.initiativePlayer === 'player1' ? '#ff9800' : '#9c27b0',
-            color: 'white',
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px'
-          }}>
-            <span style={{ fontSize: '16px' }}>⚡</span>
-            Initiative: {metadata.initiativePlayer === 'player1' ? 'P1' : 'P2'}
-          </div>
-        )}
-        <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
-          Turn {metadata.currentTurn} - {activePlayer === 'player1' ? 'Player 1' : 'Player 2'}
+
+        {/* Turn + Phase */}
+        <div style={{ fontSize: '13px', fontWeight: 'bold' }}>
+          Turn {metadata.currentTurn} | {phaseLabel}
         </div>
-        <div style={{ fontSize: '14px', fontWeight: 'bold', textTransform: 'capitalize' }}>
-          Phase: {metadata.currentPhase}
-          {metadata.currentTurn === 1 && metadata.turn1DeploymentPhase && metadata.turn1DeploymentPhase !== 'complete' && (
-            <span style={{ marginLeft: '8px', color: '#ff9800' }}>
-              (Deployment: {metadata.turn1DeploymentPhase === 'p1_lane1' ? 'P1 → Lane 1' :
-                            metadata.turn1DeploymentPhase === 'p2_lane1' ? 'P2 → Lane 1 (counter)' :
-                            metadata.turn1DeploymentPhase === 'p2_lane2' ? 'P2 → Lane 2' :
-                            'P1 → Lane 2 (counter)'})
-            </span>
-          )}
-        </div>
-        <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
-          P1 Mana: {metadata.player1Mana}/{metadata.player1MaxMana}
-          {metadata.player1Mana > metadata.player1MaxMana && ` (+${metadata.player1Mana - metadata.player1MaxMana})`}
+
+        {/* Mana */}
+        <div style={{ fontSize: '13px' }}>
+          <span style={{ color: '#ef5350' }}>P1: {metadata.player1Mana}/{metadata.player1MaxMana}</span>
           {' | '}
-          P2 Mana: {metadata.player2Mana}/{metadata.player2MaxMana}
-          {metadata.player2Mana > metadata.player2MaxMana && ` (+${metadata.player2Mana - metadata.player2MaxMana})`}
+          <span style={{ color: '#42a5f5' }}>P2: {metadata.player2Mana}/{metadata.player2MaxMana}</span>
         </div>
-        {/* End Deploy Phase Button - Show during deploy phase */}
+
+        {/* End Deploy Phase */}
         {metadata.currentPhase === 'deploy' && (
           <button
             onClick={handleEndDeployPhase}
             style={{
-              padding: '8px 16px',
+              padding: '6px 14px',
               backgroundColor: '#4caf50',
               color: 'white',
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
-              fontSize: '14px',
+              fontSize: '13px',
               fontWeight: 'bold',
             }}
-            title="End deployment phase and begin play phase"
           >
-            End Deploy Phase
+            End Deploy
           </button>
         )}
-        <button
-          onClick={handleNextTurn}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#ff9800',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 'bold',
-          }}
-        >
-          Next Turn
-        </button>
-        {/* Pass Button - Show during turn 1 deployment (counter-deployment) or play phase */}
-        {metadata.currentTurn === 1 && metadata.turn1DeploymentPhase && metadata.turn1DeploymentPhase !== 'complete' && (
-          (metadata.turn1DeploymentPhase === 'p2_lane1' || metadata.turn1DeploymentPhase === 'p1_lane2') && (
-            <button
-              onClick={() => handlePass(metadata.turn1DeploymentPhase === 'p2_lane1' ? 'player2' : 'player1')}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#ff9800',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: 'bold',
-              }}
-              title={`${metadata.turn1DeploymentPhase === 'p2_lane1' ? 'Player 2' : 'Player 1'} - Skip counter-deployment`}
-            >
-              Pass Counter-Deploy ({metadata.turn1DeploymentPhase === 'p2_lane1' ? 'P2' : 'P1'})
-            </button>
-          )
-        )}
-        {/* Pass Button - Show for whoever has action during play phase */}
-        {metadata.currentPhase === 'play' && metadata.actionPlayer && 
-         !(metadata.currentTurn === 1 && metadata.turn1DeploymentPhase && metadata.turn1DeploymentPhase !== 'complete') && (
+
+        {/* Pass (play phase) */}
+        {metadata.currentPhase === 'play' && metadata.actionPlayer && (
           <button
             onClick={() => handlePass(metadata.actionPlayer!)}
             style={{
-              padding: '8px 16px',
+              padding: '6px 14px',
               backgroundColor: '#ff9800',
               color: 'white',
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
-              fontSize: '14px',
+              fontSize: '13px',
               fontWeight: 'bold',
             }}
-            title={`${metadata.actionPlayer === 'player1' ? 'Player 1' : 'Player 2'} - Pass without action (retain initiative for next turn, or go to combat if both passed)`}
           >
             Pass ({metadata.actionPlayer === 'player1' ? 'P1' : 'P2'})
           </button>
         )}
+
+        {/* Next Turn */}
         <button
-          onClick={handleNextPhase}
+          onClick={handleNextTurn}
           style={{
-            padding: '8px 16px',
-            backgroundColor: '#4caf50',
+            padding: '6px 14px',
+            backgroundColor: '#ff9800',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
             cursor: 'pointer',
-            fontSize: '14px',
+            fontSize: '13px',
+            fontWeight: 'bold',
           }}
         >
-          Next Phase
+          Next Turn
         </button>
+
+        {/* Force combat (debug) */}
         <button
-          onClick={() => setShowCardLibrary(true)}
+          onClick={handleNextPhase}
           style={{
-            padding: '8px 16px',
+            padding: '6px 14px',
+            backgroundColor: '#616161',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '12px',
+          }}
+        >
+          Force Combat
+        </button>
+
+        {/* Restart */}
+        <button
+          onClick={initializeRunePrototype}
+          style={{
+            padding: '6px 14px',
             backgroundColor: '#9c27b0',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
             cursor: 'pointer',
-            fontSize: '14px',
+            fontSize: '12px',
           }}
         >
-          Card Library
+          Restart
         </button>
-        <button
-          onClick={exportGameState}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#2196f3',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '14px',
-          }}
-        >
-          Export State
-        </button>
-        {savedStates.length > 0 && (
-          <select
-            onChange={(e) => {
-              if (e.target.value) importGameState(e.target.value)
-            }}
-            style={{
-              padding: '8px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              fontSize: '12px',
-            }}
-          >
-            <option value="">Import State...</option>
-            {savedStates.map(state => (
-              <option key={state.key} value={state.key}>{state.display}</option>
-            ))}
-          </select>
-        )}
       </div>
     </div>
   )
 }
-

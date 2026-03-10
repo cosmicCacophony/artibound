@@ -1,4 +1,4 @@
-import { Hero, SignatureCard, HybridCard, GenericUnit, Card, BaseCard, Item, GameMetadata, TOWER_HP, NEXUS_HP, STARTING_GOLD, BattlefieldDefinition, SpellCard, SpellEffect, BattlefieldBuff, BattlefieldId, BattlefieldBuffEffectType, RunePool } from './types'
+import { Hero, SignatureCard, HybridCard, GenericUnit, Card, BaseCard, Item, GameMetadata, TOWER_HP, NEXUS_HP, STARTING_GOLD, BattlefieldDefinition, SpellCard, SpellEffect, BattlefieldBuff, BattlefieldId, BattlefieldBuffEffectType } from './types'
 import { allCards, allSpells, allArtifacts } from './cardData'
 
 // Item definitions
@@ -93,22 +93,22 @@ export const tier1Items: Item[] = [
   {
     id: 'item-blink-dagger',
     name: 'Blink Dagger',
-    description: '+2 HP. Activated: Move this hero to a slot in an adjacent lane.',
+    description: '+2 HP. Activated: Move this hero to an adjacent lane.',
     cost: 6,
     tier: 1,
     hpBonus: 2,
     hasActivatedAbility: true,
-    activatedAbilityDescription: 'Move this hero to a slot in an adjacent lane.',
+    activatedAbilityDescription: 'Move this hero to an adjacent lane.',
   },
   {
     id: 'item-phase-boots',
     name: 'Phase Boots',
-    description: '+3 HP. Activated: Swap this hero to another slot.',
+    description: '+3 HP. Activated: Swap this hero with another unit.',
     cost: 7,
     tier: 1,
     hpBonus: 3,
     hasActivatedAbility: true,
-    activatedAbilityDescription: 'Swap this hero to another slot.',
+    activatedAbilityDescription: 'Swap this hero with another unit.',
   },
   {
     id: 'item-keenfolk-musket',
@@ -232,12 +232,12 @@ export const tier1Items: Item[] = [
   {
     id: 'item-horn-alpha',
     name: 'Horn of the Alpha',
-    description: '+4 HP. Activated (Cost: 1 gold, Cooldown: 2 turns): Create an 8/8 unit with Trample in an empty slot.',
+    description: '+4 HP. Activated (Cost: 1 gold, Cooldown: 2 turns): Create an 8/8 unit with Trample in this lane.',
     cost: 40,
     tier: 2,
     hpBonus: 4,
     hasActivatedAbility: true,
-    activatedAbilityDescription: 'Create an 8/8 unit with Trample in an empty slot. (Cost: 1 gold, Cooldown: 2 turns)',
+    activatedAbilityDescription: 'Create an 8/8 unit with Trample in this lane. (Cost: 1 gold, Cooldown: 2 turns)',
     specialEffects: ['create_unit'], // Special effect: creates unit
   },
   {
@@ -856,7 +856,6 @@ export function createCardFromTemplate(
     owner,
     manaCost: template.manaCost,
     colors: template.colors,
-    consumesRunes: template.consumesRunes,
   }
 
   // Handle spell cards - check comprehensive data first, then test deck data
@@ -1592,16 +1591,17 @@ export const blueSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'spell-blue-1',
     name: 'Arcane Burst',
-    description: 'Damage 3 adjacent units',
+    description: 'Deal 3 damage to up to 3 enemy units.',
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 4,
     effect: {
-      type: 'adjacent_damage',
+      type: 'aoe_damage',
       damage: 3,
-      adjacentCount: 3,
+      targetCount: 3,
       affectsUnits: true,
       affectsHeroes: false,
+      affectsEnemyUnits: true,
     },
   },
   {
@@ -1704,7 +1704,6 @@ export function createInitialGameState(): {
     cardType: card.cardType,
     manaCost: card.manaCost,
     colors: card.colors,
-    consumesRunes: card.consumesRunes,
   }, 'player1', 'hand'))
 
   // Player 2: UB control cards + key test spells (sweepers, rune ramp)
@@ -1728,7 +1727,6 @@ export function createInitialGameState(): {
     cardType: card.cardType,
     manaCost: card.manaCost,
     colors: card.colors,
-    consumesRunes: card.consumesRunes,
   }, 'player2', 'hand'))
 
   // Initialize hero ability cooldowns for heroes that start on cooldown
@@ -1742,19 +1740,15 @@ export function createInitialGameState(): {
     }
   })
 
-  // Initialize empty rune pools - runes are added when heroes deploy
-  const player1InitialRunePool: RunePool = { runes: [], temporaryRunes: [] }
-  const player2InitialRunePool: RunePool = { runes: [], temporaryRunes: [] }
-
   const metadata: GameMetadata = {
     currentTurn: 1,
     activePlayer: 'player1',
-    currentPhase: 'play', // Both players can deploy during play phase on turn 1
+    currentPhase: 'play',
     player1Gold: STARTING_GOLD,
     player2Gold: STARTING_GOLD,
-    player1Mana: 3, // Starting mana
+    player1Mana: 3,
     player2Mana: 3,
-    player1MaxMana: 3, // Starting max mana
+    player1MaxMana: 3,
     player2MaxMana: 3,
     player1NexusHP: NEXUS_HP,
     player2NexusHP: NEXUS_HP,
@@ -1772,28 +1766,24 @@ export function createInitialGameState(): {
     },
     player1Tier: 1,
     player2Tier: 1,
-    deathCooldowns: {}, // Track hero death cooldowns - Record<cardId, counter> (starts at 2, decreases by 1 each turn, prevents deployment for 1 full round)
-    player1MovedToBase: false, // Track if player 1 moved a hero to base this turn
-    player2MovedToBase: false, // Track if player 2 moved a hero to base this turn
-    player1HeroesDeployedThisTurn: 0, // Track heroes deployed during deploy phase
-    player2HeroesDeployedThisTurn: 0, // Track heroes deployed during deploy phase
-    playedSpells: {}, // Track cards that have been played (for toggle X overlay) - Record<cardId, true> (works for any card type)
-    player1BattlefieldBuffs: [], // Permanent battlefield upgrades for player 1
-    player2BattlefieldBuffs: [], // Permanent battlefield upgrades for player 2
-    battlefieldDeathCounters: {}, // Track death counters for RW-bf2 (death counter -> draw card) - Record<"player-battlefield", count>
-    actionPlayer: 'player1', // Player 1 starts with action
-    initiativePlayer: 'player1', // Player 1 starts with initiative
-    heroAbilityCooldowns: initialCooldowns, // Track hero ability cooldowns - Record<heroId, turnLastUsed>
-    player1Passed: false, // Track if player 1 has passed this turn
-    player2Passed: false, // Track if player 2 has passed this turn
-    stunnedHeroes: {}, // Track stunned heroes (don't deal combat damage, only receive it)
-    barrierUnits: {}, // Track units with barrier (damage immunity for one turn)
-    cursedUnits: {}, // Track cursed units (stunned until opponent pays to remove)
-    turn1DeploymentPhase: 'p1_lane1', // Turn 1 deployment phase: p1_lane1 -> p2_lane1 -> p2_lane2 -> p1_lane2 -> complete
-    // Rune system
-    player1RunePool: player1InitialRunePool,
-    player2RunePool: player2InitialRunePool,
-    // Seals (mana rocks)
+    deathCooldowns: {},
+    player1MovedToBase: false,
+    player2MovedToBase: false,
+    player1HeroesDeployedThisTurn: 0,
+    player2HeroesDeployedThisTurn: 0,
+    playedSpells: {},
+    player1BattlefieldBuffs: [],
+    player2BattlefieldBuffs: [],
+    battlefieldDeathCounters: {},
+    actionPlayer: 'player1',
+    initiativePlayer: 'player1',
+    heroAbilityCooldowns: initialCooldowns,
+    player1Passed: false,
+    player2Passed: false,
+    stunnedHeroes: {},
+    barrierUnits: {},
+    cursedUnits: {},
+    turn1DeploymentPhase: 'p1_lane1',
     player1Seals: [],
     player2Seals: [],
     // New mechanics tracking
@@ -1806,7 +1796,7 @@ export function createInitialGameState(): {
     heroCounters: {}, // Track counters on heroes (e.g., WB Life Channeler)
   }
 
-  // Spawn initial 1/1 creeps in slot 1 for both players on both battlefields
+  // Spawn initial 1/1 creeps for both players on both battlefields
   const createInitialCreep = (player: 'player1' | 'player2', battlefieldId: 'battlefieldA' | 'battlefieldB'): GenericUnit => ({
     id: `creep-${player}-${battlefieldId}-initial-${Date.now()}`,
     name: 'Creep',
@@ -1820,7 +1810,6 @@ export function createInitialGameState(): {
     currentHealth: 1,
     location: battlefieldId,
     owner: player,
-    slot: 1,
   })
 
   return {
@@ -1982,10 +1971,6 @@ export function createGameStateFromDraft(
     }
   })
 
-  // Initialize empty rune pools - runes are added when heroes deploy
-  const player1InitialRunePool: RunePool = { runes: [], temporaryRunes: [] }
-  const player2InitialRunePool: RunePool = { runes: [], temporaryRunes: [] }
-
   // Initialize metadata
   const metadata: GameMetadata = {
     currentTurn: 1,
@@ -1993,9 +1978,9 @@ export function createGameStateFromDraft(
     currentPhase: 'play',
     player1Gold: STARTING_GOLD,
     player2Gold: STARTING_GOLD,
-    player1Mana: 3, // Starting mana
+    player1Mana: 3,
     player2Mana: 3,
-    player1MaxMana: 3, // Starting max mana
+    player1MaxMana: 3,
     player2MaxMana: 3,
     player1NexusHP: NEXUS_HP,
     player2NexusHP: NEXUS_HP,
@@ -2021,20 +2006,16 @@ export function createGameStateFromDraft(
     playedSpells: {},
     player1BattlefieldBuffs: [],
     player2BattlefieldBuffs: [],
-    battlefieldDeathCounters: {}, // Track death counters for RW-bf2 (death counter -> draw card) - Record<"player-battlefield", count>
-    actionPlayer: 'player1', // Player 1 starts with action
-    initiativePlayer: 'player1', // Player 1 starts with initiative
-    heroAbilityCooldowns: initialCooldowns, // Track hero ability cooldowns - Record<heroId, turnLastUsed>
-    player1Passed: false, // Track if player 1 has passed this turn
-    player2Passed: false, // Track if player 2 has passed this turn
-    turn1DeploymentPhase: 'p1_lane1', // Turn 1 deployment: Player 1 deploys to lane 1 first
-    stunnedHeroes: {}, // Track stunned heroes (don't deal combat damage, only receive it)
-    barrierUnits: {}, // Track units with barrier (damage immunity for one turn)
-    cursedUnits: {}, // Track cursed units (stunned until opponent pays to remove)
-    // Rune system - start with empty pools, runes added when heroes deploy
-    player1RunePool: player1InitialRunePool,
-    player2RunePool: player2InitialRunePool,
-    // Seals (mana rocks)
+    battlefieldDeathCounters: {},
+    actionPlayer: 'player1',
+    initiativePlayer: 'player1',
+    heroAbilityCooldowns: initialCooldowns,
+    player1Passed: false,
+    player2Passed: false,
+    turn1DeploymentPhase: 'p1_lane1',
+    stunnedHeroes: {},
+    barrierUnits: {},
+    cursedUnits: {},
     player1Seals: [],
     player2Seals: [],
     // New mechanics tracking
@@ -2049,7 +2030,7 @@ export function createGameStateFromDraft(
 
   // Battlefields removed - simplifying game to focus on color system and combat
   
-  // Spawn initial 1/1 creeps in slot 1 for both players on both battlefields
+  // Spawn initial 1/1 creeps for both players on both battlefields
   const createInitialCreep = (player: 'player1' | 'player2', battlefieldId: 'battlefieldA' | 'battlefieldB'): GenericUnit => ({
     id: `creep-${player}-${battlefieldId}-initial-${Date.now()}`,
     name: 'Creep',
@@ -2063,7 +2044,6 @@ export function createGameStateFromDraft(
     currentHealth: 1,
     location: battlefieldId,
     owner: player,
-    slot: 1,
   })
 
   return {

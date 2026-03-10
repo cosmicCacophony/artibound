@@ -25,11 +25,21 @@ export function CombatSummaryModal({
 }: CombatSummaryModalProps) {
   if (!isOpen) return null
 
+  const tagIcon = (tag?: string) => {
+    if (!tag) return ''
+    switch (tag) {
+      case 'frontline': return '🛡'
+      case 'ranged': return '🏹'
+      case 'assassin': return '🗡'
+      default: return ''
+    }
+  }
+
   const renderCombatLog = (log: CombatLogEntry[], battlefieldName: string) => {
     if (log.length === 0) {
       return (
         <div style={{ padding: '12px', color: '#666', fontStyle: 'italic' }}>
-          No combat occurred on {battlefieldName}
+          No combat occurred in {battlefieldName}
         </div>
       )
     }
@@ -48,10 +58,13 @@ export function CombatSummaryModal({
             }}
           >
             <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>
-              {entry.attackerName} → {entry.targetName || 'Tower'}
+              {tagIcon(entry.formationTag)} {entry.attackerName} → {entry.targetName || 'Tower'}
             </div>
             <div style={{ fontSize: '12px', color: '#666' }}>
-              {entry.damage} damage{entry.killed ? ' (KILLED)' : ''}
+              {entry.damage} damage
+              {entry.killed ? ' — KILLED' : ''}
+              {entry.formationTag === 'assassin' && entry.targetType === 'tower' ? ' (bypassed units)' : ''}
+              {entry.formationTag === 'ranged' && entry.targetType === 'unit' ? ' (shot over frontline)' : ''}
             </div>
           </div>
         ))}
@@ -106,10 +119,10 @@ export function CombatSummaryModal({
           </button>
         </div>
 
-        {/* Battlefield A */}
+        {/* Lane A */}
         <div style={{ marginBottom: '24px' }}>
           <h3 style={{ margin: '0 0 12px 0', color: '#1976d2' }}>
-            {battlefieldA.name}
+            Lane A
           </h3>
           {renderCombatLog(battlefieldA.combatLog, battlefieldA.name)}
           
@@ -132,10 +145,10 @@ export function CombatSummaryModal({
           </div>
         </div>
 
-        {/* Battlefield B */}
+        {/* Lane B */}
         <div style={{ marginBottom: '24px' }}>
           <h3 style={{ margin: '0 0 12px 0', color: '#1976d2' }}>
-            {battlefieldB.name}
+            Lane B
           </h3>
           {renderCombatLog(battlefieldB.combatLog, battlefieldB.name)}
           

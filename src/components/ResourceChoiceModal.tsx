@@ -101,7 +101,7 @@ export function ResourceChoiceModal({ player, onComplete }: ResourceChoiceModalP
     onComplete()
   }
 
-  const playerLabel = player === 'player1' ? 'Player 1 (BR)' : 'Player 2 (GWu)'
+  const playerLabel = player === 'player1' ? 'Player 1 (RB)' : 'Player 2 (GW)'
 
   const renderLaneChoice = (
     label: string,

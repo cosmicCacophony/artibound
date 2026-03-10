@@ -1,8 +1,7 @@
 import { useCallback } from 'react'
-import { TurnPhase, Card, GameMetadata, Hero, BaseCard, PlayerId } from '../game/types'
+import { TurnPhase, Card, GameMetadata } from '../game/types'
 import { useGameContext } from '../context/GameContext'
-import { getDefaultTargets, resolveCombat, resolveSimultaneousCombat, resolveRangedAttacks } from '../game/combatSystem'
-import { removeRunesFromHero } from '../game/runeSystem'
+import { resolveSimultaneousCombat } from '../game/combatSystem'
 import { createCardFromTemplate } from '../game/sampleData'
 import { getNextPhase } from '../game/turnStateMachine'
 
@@ -10,10 +9,6 @@ export function useTurnManagement() {
   const { 
     gameState, 
     setGameState, 
-    combatTargetsA, 
-    setCombatTargetsA, 
-    combatTargetsB, 
-    setCombatTargetsB,
     setShowCombatSummary,
     setCombatSummaryData,
     player1SidebarCards,
@@ -60,12 +55,6 @@ export function useTurnManagement() {
         gameState
       )
       
-      const rangedResult = resolveRangedAttacks(
-        gameState,
-        resultB.updatedTowerHP,
-        initialTowerArmor
-      )
-
       const laneMomentumDelta = {
         battlefieldA: {
           player1: Math.max(0, initialTowerHP.towerA_player2 - resultA.updatedTowerHP.towerA_player2),
@@ -83,15 +72,10 @@ export function useTurnManagement() {
         player1Base: Card[],
         player2Base: Card[],
         deathCooldowns: Record<string, number>,
-        player1RunePool: GameMetadata['player1RunePool'],
-        player2RunePool: GameMetadata['player2RunePool']
       ) => {
         const newP1Base = [...player1Base]
         const newP2Base = [...player2Base]
         const newCooldowns = { ...deathCooldowns }
-        let updatedP1RunePool = player1RunePool
-        let updatedP2RunePool = player2RunePool
-        const blackHeroesDied: Array<{ player: PlayerId }> = []
         
         originalBattlefield.player1.forEach(originalCard => {
           if (originalCard.cardType === 'hero') {
@@ -102,13 +86,8 @@ export function useTurnManagement() {
                 ...hero,
                 location: 'base' as const,
                 currentHealth: 0,
-                slot: undefined,
               })
               newCooldowns[hero.id] = 2
-              updatedP1RunePool = removeRunesFromHero(hero, updatedP1RunePool)
-              if (hero.colors?.includes('black')) {
-                blackHeroesDied.push({ player: 'player1' })
-              }
             }
           }
         })
@@ -122,41 +101,30 @@ export function useTurnManagement() {
                 ...hero,
                 location: 'base' as const,
                 currentHealth: 0,
-                slot: undefined,
               })
               newCooldowns[hero.id] = 2
-              updatedP2RunePool = removeRunesFromHero(hero, updatedP2RunePool)
-              if (hero.colors?.includes('black')) {
-                blackHeroesDied.push({ player: 'player2' })
-              }
             }
           }
         })
 
-        return { newP1Base, newP2Base, newCooldowns, updatedP1RunePool, updatedP2RunePool, blackHeroesDied }
+        return { newP1Base, newP2Base, newCooldowns }
       }
       
-      const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA, updatedP1RunePool: updatedP1RunePoolA, updatedP2RunePool: updatedP2RunePoolA, blackHeroesDied: blackHeroesDiedA } = processKilledHeroes(
+      const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA } = processKilledHeroes(
         gameState.battlefieldA,
         resultA.updatedBattlefield,
         gameState.player1Base,
         gameState.player2Base,
         metadata.deathCooldowns,
-        metadata.player1RunePool,
-        metadata.player2RunePool
       )
       
-      const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB, updatedP1RunePool: updatedP1RunePoolB, updatedP2RunePool: updatedP2RunePoolB, blackHeroesDied: blackHeroesDiedB } = processKilledHeroes(
+      const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB } = processKilledHeroes(
         gameState.battlefieldB,
         resultB.updatedBattlefield,
         newP1BaseA,
         newP2BaseA,
         newCooldownsA,
-        updatedP1RunePoolA,
-        updatedP2RunePoolA
       )
-      
-      const allBlackHeroesDied = [...blackHeroesDiedA, ...blackHeroesDiedB]
       
       const totalDamageToP1Nexus = resultA.overflowDamage.player2 + resultB.overflowDamage.player2
       const totalDamageToP2Nexus = resultA.overflowDamage.player1 + resultB.overflowDamage.player1
@@ -175,22 +143,22 @@ export function useTurnManagement() {
       setCombatSummaryData({
         battlefieldA: {
           name: 'Battlefield A',
-          combatLog: [...resultA.combatLog, ...rangedResult.combatLog],
+          combatLog: resultA.combatLog,
           towerHP: {
-            player1: rangedResult.updatedTowerHP.towerA_player1,
-            player2: rangedResult.updatedTowerHP.towerA_player2,
+            player1: resultB.updatedTowerHP.towerA_player1,
+            player2: resultB.updatedTowerHP.towerA_player2,
           },
           overflowDamage: {
-            player1: resultA.overflowDamage.player1 + rangedResult.overflowDamage.player1,
-            player2: resultA.overflowDamage.player2 + rangedResult.overflowDamage.player2,
+            player1: resultA.overflowDamage.player1,
+            player2: resultA.overflowDamage.player2,
           },
         },
         battlefieldB: {
           name: 'Battlefield B',
           combatLog: resultB.combatLog,
           towerHP: {
-            player1: rangedResult.updatedTowerHP.towerB_player1,
-            player2: rangedResult.updatedTowerHP.towerB_player2,
+            player1: resultB.updatedTowerHP.towerB_player1,
+            player2: resultB.updatedTowerHP.towerB_player2,
           },
           overflowDamage: {
             player1: resultB.overflowDamage.player1,
@@ -204,23 +172,6 @@ export function useTurnManagement() {
       setGameState(prev => {
         const newP1NexusHP = Math.max(0, prev.metadata.player1NexusHP - totalDamageToP1Nexus)
         const newP2NexusHP = Math.max(0, prev.metadata.player2NexusHP - totalDamageToP2Nexus)
-        
-        let updatedP1RunePool = updatedP1RunePoolB
-        let updatedP2RunePool = updatedP2RunePoolB
-        
-        allBlackHeroesDied.forEach(({ player }) => {
-          if (player === 'player1') {
-            updatedP1RunePool = {
-              ...updatedP1RunePool,
-              runes: [...updatedP1RunePool.runes, 'black'],
-            }
-          } else {
-            updatedP2RunePool = {
-              ...updatedP2RunePool,
-              runes: [...updatedP2RunePool.runes, 'black'],
-            }
-          }
-        })
         
         const existingLaneMomentum = prev.metadata.laneMomentum || {
           battlefieldA: { player1: 0, player2: 0 },
@@ -296,15 +247,13 @@ export function useTurnManagement() {
           player2Hand: [...(prev.player2Hand || []), ...p2CardsToDraw],
           metadata: {
             ...prev.metadata,
-            towerA_player1_HP: rangedResult.updatedTowerHP.towerA_player1,
-            towerA_player2_HP: rangedResult.updatedTowerHP.towerA_player2,
-            towerB_player1_HP: rangedResult.updatedTowerHP.towerB_player1,
-            towerB_player2_HP: rangedResult.updatedTowerHP.towerB_player2,
-            player1NexusHP: Math.max(0, newP1NexusHP - (rangedResult.overflowDamage.player2)),
-            player2NexusHP: Math.max(0, newP2NexusHP - (rangedResult.overflowDamage.player1)),
+            towerA_player1_HP: resultB.updatedTowerHP.towerA_player1,
+            towerA_player2_HP: resultB.updatedTowerHP.towerA_player2,
+            towerB_player1_HP: resultB.updatedTowerHP.towerB_player1,
+            towerB_player2_HP: resultB.updatedTowerHP.towerB_player2,
+            player1NexusHP: newP1NexusHP,
+            player2NexusHP: newP2NexusHP,
             deathCooldowns: { ...p1CooldownResult.newCooldowns, ...p2CooldownResult.newCooldowns },
-            player1RunePool: updatedP1RunePool,
-            player2RunePool: updatedP2RunePool,
             laneMomentum: updatedLaneMomentum,
             currentTurn: prev.metadata.currentTurn + 1,
             currentPhase: nextPhase,
@@ -332,7 +281,7 @@ export function useTurnManagement() {
         currentPhase: 'play' as TurnPhase,
       },
     }))
-  }, [metadata, gameState, combatTargetsA, combatTargetsB, setGameState, setCombatTargetsA, setCombatTargetsB, player1SidebarCards, player2SidebarCards, setPlayer1SidebarCards, setPlayer2SidebarCards, setShowCombatSummary, setCombatSummaryData])
+  }, [metadata, gameState, setGameState, player1SidebarCards, player2SidebarCards, setPlayer1SidebarCards, setPlayer2SidebarCards, setShowCombatSummary, setCombatSummaryData])
 
   const handleToggleSpellPlayed = useCallback((card: Card) => {
     // Allow any card type to be marked as played (spells, units, heroes)
@@ -380,23 +329,10 @@ export function useTurnManagement() {
       const battlefield = prev[battlefieldId]
       const playerUnits = battlefield[player]
       
-      // Find first available slot (1-5)
-      let availableSlot: number | null = null
-      for (let slot = 1; slot <= 5; slot++) {
-        const isOccupied = playerUnits.some(unit => unit.slot === slot)
-        if (!isOccupied) {
-          availableSlot = slot
-          break
-        }
-      }
-      
-      // If no slots available, don't spawn
-      if (availableSlot === null) {
-        console.log(`No available slot for ${player} creep on ${battlefieldId}`)
+      if (playerUnits.length >= 5) {
         return prev
       }
       
-      // Create the creep
       const creep: import('../game/types').GenericUnit = {
         id: `creep-${player}-${battlefieldId}-${Date.now()}-${Math.random()}`,
         name: 'Creep',
@@ -410,7 +346,6 @@ export function useTurnManagement() {
         currentHealth: 1,
         location: battlefieldId,
         owner: player,
-        slot: availableSlot,
       }
       
       return {
@@ -498,45 +433,31 @@ export function useTurnManagement() {
       // If no one has initiative (shouldn't happen), default to player1
       const nextAction = prev.metadata.initiativePlayer || 'player1'
       
-      // Dark Archmage spawn logic: spawn Void Apprentice in adjacent slot at start of each turn
+      // Dark Archmage spawn logic: spawn Void Apprentice in same lane at start of each turn
       const spawnVoidApprentices = (battlefield: typeof prev.battlefieldA, battlefieldId: 'battlefieldA' | 'battlefieldB') => {
         const updatedBattlefield = { ...battlefield }
         
-        // Check both players for Dark Archmage
         for (const player of ['player1', 'player2'] as const) {
-          const darkArchmage = updatedBattlefield[player].find(
-            c => c.cardType === 'hero' && c.id.startsWith('ub-hero-archmage') && c.slot !== undefined
+          const hasDarkArchmage = updatedBattlefield[player].some(
+            c => c.cardType === 'hero' && c.id.startsWith('ub-hero-archmage')
           )
           
-          if (darkArchmage && darkArchmage.slot !== undefined) {
-            const archmageSlot = darkArchmage.slot
-            // Find adjacent slots (slot - 1 and slot + 1, within 1-5 range)
-            const adjacentSlots = [archmageSlot - 1, archmageSlot + 1].filter(s => s >= 1 && s <= 5)
-            
-            // Find an available adjacent slot
-            for (const slot of adjacentSlots) {
-              const slotOccupied = updatedBattlefield[player].some(c => c.slot === slot)
-              if (!slotOccupied) {
-                // Spawn Void Apprentice
-                const voidApprentice: import('../game/types').GenericUnit = {
-                  id: `ub-spawn-void-apprentice-${player}-${battlefieldId}-${slot}-${newTurn}`,
-                  name: 'Void Apprentice',
-                  description: 'Spawned by Dark Archmage. At the start of each turn, deals 2 damage to the nearest enemy unit.',
-                  cardType: 'generic',
-                  colors: ['blue'],
-                  manaCost: 0,
-                  attack: 2,
-                  health: 3,
-                  maxHealth: 3,
-                  currentHealth: 3,
-                  location: battlefieldId,
-                  owner: player,
-                  slot: slot,
-                }
-                updatedBattlefield[player] = [...updatedBattlefield[player], voidApprentice]
-                break // Only spawn one per archmage per turn
-              }
+          if (hasDarkArchmage && updatedBattlefield[player].length < 5) {
+            const voidApprentice: import('../game/types').GenericUnit = {
+              id: `ub-spawn-void-apprentice-${player}-${battlefieldId}-${newTurn}`,
+              name: 'Void Apprentice',
+              description: 'Spawned by Dark Archmage. At the start of each turn, deals 2 damage to the nearest enemy unit.',
+              cardType: 'generic',
+              colors: ['blue'],
+              manaCost: 0,
+              attack: 2,
+              health: 3,
+              maxHealth: 3,
+              currentHealth: 3,
+              location: battlefieldId,
+              owner: player,
             }
+            updatedBattlefield[player] = [...updatedBattlefield[player], voidApprentice]
           }
         }
         
@@ -558,76 +479,20 @@ export function useTurnManagement() {
       const finalP1Base = prev.player1Base
       const finalP2Base = prev.player2Base
       
-      // Rune system updates:
-      // 1. Clear temporary runes from previous turn
-      // 2. Generate new temporary runes from seals
-      // 3. Generate runes from artifacts in base with rune_generation effect
-      // 4. Generate temporary mana from rune generator artifacts
-      const clearAndGenerateRunes = (
-        pool: import('../game/types').RunePool, 
-        seals: import('../game/types').Seal[],
-        playerBase: import('../game/types').Card[]
-      ): { updatedPool: import('../game/types').RunePool; tempMana: number } => {
-        // Generate runes from seals
-        const sealRunes = seals.map(seal => seal.color)
-        
-        // Generate runes from artifacts in base with rune_generation effect
-        const artifactRunes: import('../game/types').RuneColor[] = []
+      // Calculate temporary mana from rune generator artifacts
+      const getTempManaFromArtifacts = (playerBase: import('../game/types').Card[]): number => {
         let tempMana = 0
         const artifacts = playerBase.filter(card => card.cardType === 'artifact') as import('../game/types').ArtifactCard[]
-        
         artifacts.forEach(artifact => {
-          if (artifact.effectType === 'rune_generation') {
-            // Determine which color(s) to generate based on artifact colors
-            // Single-color artifacts: effectValue=1, colors=['black'] -> generates 1 black rune
-            // Dual-color artifacts: effectValue=2, colors=['red','white'] -> generates 1 red + 1 white rune
-            if (artifact.colors && artifact.colors.length > 0) {
-              const effectValue = artifact.effectValue || 1
-              
-              if (artifact.colors.length === 1) {
-                // Single color generator - generate effectValue runes of that color
-                for (let i = 0; i < effectValue; i++) {
-                  artifactRunes.push(artifact.colors[0] as import('../game/types').RuneColor)
-                }
-              } else if (artifact.colors.length === 2 && effectValue === 2) {
-                // Dual color generator - generate 1 of each color
-                artifactRunes.push(artifact.colors[0] as import('../game/types').RuneColor)
-                artifactRunes.push(artifact.colors[1] as import('../game/types').RuneColor)
-              } else if (artifact.colors.length === 2 && effectValue === 1) {
-                // Flexible generator - player chooses, default to first color (could be improved with UI)
-                artifactRunes.push(artifact.colors[0] as import('../game/types').RuneColor)
-              }
-            }
-            
-            // Add temporary mana from generator
-            if (artifact.tempManaGeneration && artifact.tempManaGeneration > 0) {
-              tempMana += artifact.tempManaGeneration
-            }
+          if (artifact.effectType === 'rune_generation' && artifact.tempManaGeneration && artifact.tempManaGeneration > 0) {
+            tempMana += artifact.tempManaGeneration
           }
         })
-        
-        return {
-          updatedPool: {
-            runes: pool.runes, // Permanent runes persist
-            temporaryRunes: [...sealRunes, ...artifactRunes], // Seal and artifact runes replace previous temporary runes
-          },
-          tempMana,
-        }
+        return tempMana
       }
       
-      const p1RuneResult = clearAndGenerateRunes(
-        prev.metadata.player1RunePool,
-        prev.metadata.player1Seals || [],
-        prev.player1Base
-      )
-      const p2RuneResult = clearAndGenerateRunes(
-        prev.metadata.player2RunePool,
-        prev.metadata.player2Seals || [],
-        prev.player2Base
-      )
-      
-      // Temporary stats are now persistent - they don't reset automatically
-      // Players can manually remove them if needed
+      const p1TempMana = getTempManaFromArtifacts(prev.player1Base)
+      const p2TempMana = getTempManaFromArtifacts(prev.player2Base)
       
       return {
         ...prev,
@@ -643,8 +508,8 @@ export function useTurnManagement() {
           // Start new turn in deploy phase
           currentPhase: 'deploy',
           // Restore mana to max for both players + temporary mana from generators
-          player1Mana: newPlayer1MaxMana + p1RuneResult.tempMana,
-          player2Mana: newPlayer2MaxMana + p2RuneResult.tempMana,
+          player1Mana: newPlayer1MaxMana + p1TempMana,
+          player2Mana: newPlayer2MaxMana + p2TempMana,
           player1MaxMana: newPlayer1MaxMana,
           player2MaxMana: newPlayer2MaxMana,
           // Both players get 5 gold at the start of each turn
@@ -662,9 +527,6 @@ export function useTurnManagement() {
           // Reset deploy phase hero counters
           player1HeroesDeployedThisTurn: 0,
           player2HeroesDeployedThisTurn: 0,
-          // Update rune pools (clear temp, generate from seals)
-          player1RunePool: p1RuneResult.updatedPool,
-          player2RunePool: p2RuneResult.updatedPool,
           // Reset resource choices for rune prototype
           ...(prev.metadata.isRunePrototype ? { resourceChoicesMade: { player1: false, player2: false } } : {}),
         },

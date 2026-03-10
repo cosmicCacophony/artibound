@@ -1,5 +1,4 @@
 import { BaseCard, Color } from '../game/types'
-import { useGameContext } from '../context/GameContext'
 import { useCardLibrary } from '../hooks/useCardLibrary'
 
 interface CardLibrarySidebarProps {
@@ -9,7 +8,6 @@ interface CardLibrarySidebarProps {
 }
 
 export function CardLibrarySidebar({ player, cards, setCards }: CardLibrarySidebarProps) {
-  const { getAvailableSlots } = useGameContext()
   const { handleAddToHand } = useCardLibrary()
   
   const playerColor = player === 'player1' ? '#f44336' : '#2196f3'

@@ -127,7 +127,7 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['red', 'white'],
     manaCost: 5,
-    consumesRunes: true,
+
     attack: 5,
     health: 5,
     maxHealth: 5,
@@ -140,7 +140,7 @@ export const rwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['red', 'white'],
     manaCost: 4,
-    consumesRunes: true,
+
     attack: 4,
     health: 4,
     maxHealth: 4,
@@ -212,7 +212,6 @@ export const rgArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     cardType: 'artifact',
     colors: ['red'],
     manaCost: 3,
-    consumesRunes: true, // Requires R rune
     effectType: 'damage_amplifier', // Placeholder - would need custom effect for granting cleave
     effectValue: 0, // Cleave is a special effect, not a stat boost
   },
@@ -257,7 +256,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red', 'white'],
     manaCost: 5,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect
       damage: 0,
@@ -270,7 +269,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red', 'white'],
     manaCost: 4,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect
       damage: 0,
@@ -284,7 +283,6 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red'], // Hero combat spell - keeps rune requirement (uncommon)
     manaCost: 3,
-    consumesRunes: true, // Not generic - consumes runes
     effect: {
       type: 'targeted_damage', // Placeholder - manual resolution, no game tracking
       damage: 0,
@@ -305,17 +303,18 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'rw-spell-whirling-death',
     name: 'Whirling Death',
-    description: 'Deal 2 damage to caster\'s adjacent enemies and give them -2 attack. 2R.',
+    description: 'Deal 2 damage to up to 2 enemy units. 2R.',
     cardType: 'spell',
     colors: ['red'],
     manaCost: 2,
-    consumesRunes: true,
+
     effect: {
-      type: 'adjacent_damage',
+      type: 'aoe_damage',
       damage: 2,
-      adjacentCount: 2,
+      targetCount: 2,
       affectsUnits: true,
       affectsHeroes: true,
+      affectsEnemyUnits: true,
     },
   },
   // Unbreakable Column removed - replaced with white artifact
@@ -375,7 +374,6 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red', 'white'],
     manaCost: 3,
-    consumesRunes: true, // Requires RW runes - encourages aggro commitment
     effect: {
       type: 'create_tokens', // Custom effect: creates 2x 2/2 Legion tokens
       tokenCount: 2,
@@ -391,7 +389,6 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red', 'white'],
     manaCost: 2,
-    consumesRunes: true, // Requires RW runes - cheaper option for early game
     effect: {
       type: 'create_tokens', // Custom effect: creates 1x 2/2 Legion token
       tokenCount: 1,
@@ -407,7 +404,6 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red', 'white'],
     manaCost: 2,
-    consumesRunes: true, // Requires RW runes - early game token generation
     effect: {
       type: 'create_tokens', // Custom effect: creates 2x 1/1 Legion tokens
       tokenCount: 2,
@@ -426,7 +422,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red', 'red'],
     manaCost: 2,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage', // Placeholder - would be a conditional buff
       damage: 0,
@@ -437,13 +433,14 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'red-spell-chain-lightning',
     name: 'Chain Lightning',
-    description: 'Deal 3 damage to target, then 2 damage to an adjacent unit, then 1 to another adjacent. Costs 5R.',
+    description: 'Deal 3 damage to up to 3 targets. Costs 5R.',
     cardType: 'spell',
     colors: ['red'],
     manaCost: 5,
     effect: {
-      type: 'chain_damage',
-      chainDamages: [3, 2, 1],
+      type: 'multi_target_damage',
+      damage: 3,
+      targetCount: 3,
       affectsUnits: true,
       affectsHeroes: true,
     },
@@ -455,7 +452,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red'],
     manaCost: 3,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage',
       damage: 4,
@@ -471,7 +468,7 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red'],
     manaCost: 2,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage',
       damage: 3,
@@ -487,7 +484,6 @@ export const rwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red'],
     manaCost: 3,
-    consumesRunes: true, // Requires R rune
     refundMana: 3, // Free spell mechanic
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for immunity + forced fight
@@ -576,7 +572,6 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['red'],
     manaCost: 3,
-    consumesRunes: true, // Requires R rune
     attack: 2,
     health: 2,
     maxHealth: 2,
@@ -589,7 +584,6 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['red'],
     manaCost: 4,
-    consumesRunes: true, // Requires R rune
     attack: 3,
     health: 2,
     maxHealth: 2,
@@ -598,16 +592,16 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'rg-unit-rift-pouncer',
     name: 'Rift Pouncer',
-    description: '4/3. Cross-Strike 2 (when this attacks an empty slot, deal 2 damage across). Costs 4RG.',
+    description: '4/3 with Frontline. Costs 4RG.',
     cardType: 'generic',
     colors: ['red', 'green'],
     manaCost: 4,
-    consumesRunes: true,
+
     attack: 4,
     health: 3,
     maxHealth: 3,
     currentHealth: 3,
-    crossStrike: 2,
+    formationTag: 'frontline' as const,
   },
   {
     id: 'rg-unit-gutter-predator',
@@ -616,12 +610,11 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['green'],
     manaCost: 4,
-    consumesRunes: true,
+
     attack: 4,
     health: 2,
     maxHealth: 2,
     currentHealth: 2,
-    assassinate: true,
   },
   // RG Dopamine Hit: Multi-Fight Unit
   {
@@ -631,7 +624,6 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['green'],
     manaCost: 6,
-    consumesRunes: true, // Requires G rune - high dopamine hit card
     attack: 5,
     health: 5,
     maxHealth: 5,
@@ -646,7 +638,7 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['green'],
     manaCost: 5,
-    consumesRunes: true,
+
     attack: 5,
     health: 5,
     maxHealth: 5,
@@ -659,7 +651,7 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['green'],
     manaCost: 4,
-    consumesRunes: true,
+
     attack: 4,
     health: 5,
     maxHealth: 5,
@@ -672,7 +664,7 @@ export const rgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['red'],
     manaCost: 3,
-    consumesRunes: true,
+
     attack: 3,
     health: 4,
     maxHealth: 4,
@@ -689,7 +681,6 @@ export const rgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red', 'green'],
     manaCost: 4,
-    consumesRunes: true, // Requires both R and G runes
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for fight mechanic
       damage: 0,
@@ -704,7 +695,6 @@ export const rgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red', 'green'],
     manaCost: 5,
-    consumesRunes: true, // Requires both R and G runes
     effect: {
       type: 'targeted_damage',
       damage: 0, // Damage equals creature's power
@@ -719,7 +709,6 @@ export const rgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red', 'green'],
     manaCost: 6,
-    consumesRunes: true, // Requires both R and G runes
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for team buff
       damage: 0,
@@ -770,7 +759,6 @@ export const ruSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red'],
     manaCost: 2,
-    consumesRunes: true, // Not generic - consumes runes
     effect: {
       type: 'targeted_damage',
       damage: 4,
@@ -785,7 +773,7 @@ export const ruSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red'],
     manaCost: 3,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage',
       damage: 5,
@@ -799,7 +787,6 @@ export const ruSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Deal 6 damage to all units',
     cardType: 'spell',
     colors: ['red'],
-    consumesRunes: true, // Powerful AOE damage
     manaCost: 6,
     effect: {
       type: 'all_units_damage',
@@ -871,30 +858,30 @@ export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'rb-unit-crossfire-raider',
     name: 'Crossfire Raider',
-    description: '3/2. Cross-Strike 2 (when this attacks an empty slot, deal 2 damage across). Costs 3R.',
+    description: '3/2 with Ranged. Costs 3R.',
     cardType: 'generic',
     colors: ['red'],
     manaCost: 3,
-    consumesRunes: true,
+
     attack: 3,
     health: 2,
     maxHealth: 2,
     currentHealth: 2,
-    crossStrike: 2,
+    formationTag: 'ranged' as const,
   },
   {
     id: 'rb-unit-gravebolt-stalker',
     name: 'Gravebolt Stalker',
-    description: '2/3. Cross-Strike 2 (when this attacks an empty slot, deal 2 damage across). Costs 3B.',
+    description: '2/3 with Ranged. Costs 3B.',
     cardType: 'generic',
     colors: ['black'],
     manaCost: 3,
-    consumesRunes: true,
+
     attack: 2,
     health: 3,
     maxHealth: 3,
     currentHealth: 3,
-    crossStrike: 2,
+    formationTag: 'ranged' as const,
   },
   {
     id: 'rb-unit-bloodstep-killer',
@@ -903,12 +890,11 @@ export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['black'],
     manaCost: 3,
-    consumesRunes: true,
+
     attack: 3,
     health: 2,
     maxHealth: 2,
     currentHealth: 2,
-    assassinate: true,
   },
   // RB Spell Velocity Units (keep existing, add new)
   {
@@ -918,7 +904,7 @@ export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['red', 'black'],
     manaCost: 3,
-    consumesRunes: true,
+
     attack: 3,
     health: 2,
     maxHealth: 2,
@@ -933,7 +919,7 @@ export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['black'],
     manaCost: 3,
-    consumesRunes: true,
+
     attack: 2,
     health: 3,
     maxHealth: 3,
@@ -948,7 +934,7 @@ export const rbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['red'],
     manaCost: 3,
-    consumesRunes: true,
+
     attack: 3,
     health: 3,
     maxHealth: 3,
@@ -983,7 +969,7 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'black', 'red'],
     manaCost: 5,
-    consumesRunes: true,
+
     effect: {
       type: 'multi_target_damage',
       damage: 4,
@@ -999,7 +985,7 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'black', 'red'],
     manaCost: 6,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for permanent debuff + repeat
       damage: 0,
@@ -1014,7 +1000,6 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red'],
     manaCost: 4,
-    consumesRunes: true, // Requires R rune
     effect: {
       type: 'multi_target_damage',
       damage: 5,
@@ -1046,7 +1031,7 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red', 'black'],
     manaCost: 2,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage',
       damage: 2,
@@ -1096,7 +1081,7 @@ export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['black'],
     manaCost: 3,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage',
       damage: 999, // High damage to ensure kill
@@ -1199,11 +1184,11 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'gw-spell-balanced-growth',
     name: 'Balanced Growth',
-    description: 'Target hero gains +2/+2 permanently and gains a 1 cost activated ability to move to an adjacent slot. 3G.',
+    description: 'Target hero gains +2/+2 permanently. 3G.',
     cardType: 'spell',
     colors: ['green'],
     manaCost: 3,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage',
       damage: 0, // Placeholder - permanent +2/+2 buff + movement ability
@@ -1216,7 +1201,7 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'spell',
     colors: ['green'],
     manaCost: 4,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage',
       damage: 0, // Placeholder - permanent +4/+0 buff
@@ -1229,7 +1214,7 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'spell',
     colors: ['green', 'green', 'green', 'white'],
     manaCost: 6,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage',
       damage: 0, // Placeholder - permanent +5/+0 and Quickstrike
@@ -1244,7 +1229,7 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['white'],
     manaCost: 3,
-    consumesRunes: true,
+
     attack: 3,
     health: 3,
     maxHealth: 3,
@@ -1259,7 +1244,7 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['white', 'blue'],
     manaCost: 4,
-    consumesRunes: true,
+
     attack: 3,
     health: 4,
     maxHealth: 4,
@@ -1272,7 +1257,7 @@ export const gwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 6,
-    consumesRunes: true,
+
     refundMana: 6,
     effect: {
       type: 'custom', // Custom: bounces low-power units
@@ -1352,7 +1337,7 @@ export const gbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['green', 'black'],
     manaCost: 3,
-    consumesRunes: true,
+
     attack: 1,
     health: 1,
     maxHealth: 1,
@@ -1367,7 +1352,7 @@ export const gbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['green', 'black'],
     manaCost: 4,
-    consumesRunes: true,
+
     attack: 2,
     health: 2,
     maxHealth: 2,
@@ -1382,7 +1367,7 @@ export const gbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['green', 'black'],
     manaCost: 5,
-    consumesRunes: true,
+
     attack: 2,
     health: 2,
     maxHealth: 2,
@@ -1397,7 +1382,7 @@ export const gbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['green', 'black'],
     manaCost: 4,
-    consumesRunes: true,
+
     attack: 3,
     health: 3,
     maxHealth: 3,
@@ -1430,7 +1415,7 @@ export const gbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['green', 'black'],
     manaCost: 3,
-    consumesRunes: true,
+
     effect: {
       type: 'add_counters',
       damage: 0,
@@ -1462,7 +1447,6 @@ export const guSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['green'],
     manaCost: 2,
-    consumesRunes: true, // Requires G rune
     refundMana: 2, // Free spell mechanic
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for mana gain + buff
@@ -1491,7 +1475,6 @@ export const guSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'Deal 10 damage',
     cardType: 'spell',
     colors: ['green', 'blue'],
-    consumesRunes: true, // Powerful high damage
     manaCost: 7,
     effect: {
       type: 'targeted_damage',
@@ -1569,16 +1552,16 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
   {
     id: 'ub-unit-voidline-arcanist',
     name: 'Voidline Arcanist',
-    description: '2/4. Cross-Strike 2 (when this attacks an empty slot, deal 2 damage across). Costs 4UB.',
+    description: '2/4 with Ranged. Costs 4UB.',
     cardType: 'generic',
     colors: ['blue', 'black'],
     manaCost: 4,
-    consumesRunes: true,
+
     attack: 2,
     health: 4,
     maxHealth: 4,
     currentHealth: 4,
-    crossStrike: 2,
+    formationTag: 'ranged' as const,
   },
   {
     id: 'ub-unit-hexblade-infiltrator',
@@ -1587,12 +1570,11 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['blue'],
     manaCost: 3,
-    consumesRunes: true,
+
     attack: 2,
     health: 3,
     maxHealth: 3,
     currentHealth: 3,
-    assassinate: true,
   },
   {
     id: 'ub-unit-spell-stunner',
@@ -1601,7 +1583,7 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['blue'],
     manaCost: 3,
-    consumesRunes: true,
+
     attack: 2,
     health: 3,
     maxHealth: 3,
@@ -1615,7 +1597,7 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['blue', 'black'],
     manaCost: 3,
-    consumesRunes: true,
+
     attack: 2,
     health: 3,
     maxHealth: 3,
@@ -1629,7 +1611,7 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['blue', 'black'],
     manaCost: 4,
-    consumesRunes: true,
+
     attack: 3,
     health: 4,
     maxHealth: 4,
@@ -1644,7 +1626,7 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['blue', 'black'],
     manaCost: 3,
-    consumesRunes: true,
+
     attack: 2,
     health: 2,
     maxHealth: 2,
@@ -1658,7 +1640,7 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['blue', 'black'],
     manaCost: 3,
-    consumesRunes: true,
+
     attack: 2,
     health: 3,
     maxHealth: 3,
@@ -1672,7 +1654,7 @@ export const ubCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['blue', 'black'],
     manaCost: 5,
-    consumesRunes: true,
+
     attack: 4,
     health: 4,
     maxHealth: 4,
@@ -1691,7 +1673,7 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     cardType: 'artifact',
     colors: ['blue', 'black'],
     manaCost: 2,
-    consumesRunes: true,
+
     effectType: 'custom',
     effectValue: 0,
     specialEffects: ['look_at_top_card'], // Infinite combo piece 1
@@ -1703,7 +1685,7 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     cardType: 'artifact',
     colors: ['blue', 'black'],
     manaCost: 3,
-    consumesRunes: true,
+
     effectType: 'token_generation',
     effectValue: 1, // Creates clue token each turn
   },
@@ -1783,7 +1765,7 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     cardType: 'artifact',
     colors: ['black'],
     manaCost: 3,
-    consumesRunes: true,
+
     effectType: 'token_generation',
     effectValue: 1, // Creates scroll token each turn
   },
@@ -1794,7 +1776,7 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     cardType: 'artifact',
     colors: ['black'],
     manaCost: 3,
-    consumesRunes: true,
+
     effectType: 'custom',
     effectValue: 4, // 4 damage to enemy tower when hero sacrificed
   },
@@ -1805,7 +1787,7 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     cardType: 'artifact',
     colors: ['blue', 'black', 'red'],
     manaCost: 6,
-    consumesRunes: true,
+
     effectType: 'custom',
     effectValue: 5, // Deal 5 damage when tapped for 1 mana
   },
@@ -1816,7 +1798,7 @@ export const ubArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['green'],
     manaCost: 3,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for buff + regen
       damage: 0,
@@ -1839,7 +1821,7 @@ export const archetypeArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     cardType: 'artifact',
     colors: ['green'],
     manaCost: 3,
-    consumesRunes: true,
+
     effectType: 'archetype_tracker',
     effectValue: 3, // Triggers at 3 mighty units
   },
@@ -1851,7 +1833,7 @@ export const archetypeArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     cardType: 'artifact',
     colors: ['red'],
     manaCost: 3,
-    consumesRunes: true,
+
     effectType: 'archetype_tracker',
     effectValue: 6, // Triggers at 6 different damage sources
   },
@@ -1863,7 +1845,7 @@ export const archetypeArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     cardType: 'artifact',
     colors: ['black'],
     manaCost: 3,
-    consumesRunes: true,
+
     effectType: 'archetype_tracker',
     effectValue: 3, // Triggers at 3 spells in a turn
   },
@@ -1875,7 +1857,7 @@ export const archetypeArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     cardType: 'artifact',
     colors: ['blue'],
     manaCost: 3,
-    consumesRunes: true,
+
     effectType: 'spell_book',
     effectValue: 0, // Modal choice - requires BU or UB runes for the chosen effect
   },
@@ -1887,7 +1869,6 @@ export const archetypeArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
     cardType: 'artifact',
     colors: ['blue'],
     manaCost: 0,
-    consumesRunes: false,
     effectType: 'scry_artifact',
     effectValue: 1, // Scry 1 each turn
   },
@@ -1897,17 +1878,19 @@ export const archetypeArtifacts: Omit<ArtifactCard, 'location' | 'owner'>[] = [
 // All artifacts must be RW (R, W, RW) or UBG (U, G, B, or combinations)
 
 export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
-  // Blue positioning spell - Cunning Plan-like
+  // Blue control spell - Cunning Plan-like (converted from swap to stun)
   {
     id: 'blue-spell-cunning-plan',
     name: 'Cunning Plan',
-    description: 'Swap target ally or enemy unit at one location with target unit in another spot in the same lane.',
+    description: 'Stun target enemy unit until end of turn.',
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 2,
     effect: {
-      type: 'swap_heroes', // Reusing swap_heroes type for unit swapping
-      damage: 0,
+      type: 'stun',
+      stunDuration: 1,
+      affectsUnits: true,
+      affectsHeroes: true,
     },
   },
   // Signature spells (converted from units)
@@ -1919,7 +1902,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'black', 'red'],
     manaCost: 5,
-    consumesRunes: true,
+
     effect: {
       type: 'aoe_damage',
       damage: 5,
@@ -1936,7 +1919,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['black'],
     manaCost: 4,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage',
       damage: 7,
@@ -1952,7 +1935,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 5,
-    consumesRunes: true,
+
     effect: {
       type: 'aoe_damage',
       damage: 4,
@@ -1968,7 +1951,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['black'],
     manaCost: 3,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage',
       damage: 5,
@@ -1983,7 +1966,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 5,
-    consumesRunes: true,
+
     effect: {
       type: 'aoe_damage',
       damage: 4,
@@ -2000,7 +1983,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'black'],
     manaCost: 2,
-    consumesRunes: true,
+
     effect: {
       type: 'curse',
       curseCost: 3, // 3 mana to remove
@@ -2018,7 +2001,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'black'],
     manaCost: 1,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage',
       damage: 999, // Effectively destroy
@@ -2035,7 +2018,7 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'black'],
     manaCost: 6,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage',
       damage: 4,
@@ -2065,7 +2048,6 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['green', 'blue'],
     manaCost: 2,
-    consumesRunes: true, // Requires UG runes
     effect: {
       type: 'draw_and_heal', // Draw cards and heal
       damage: 0,
@@ -2082,7 +2064,6 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red'],
     manaCost: 3,
-    consumesRunes: true, // Requires R rune
     effect: {
       type: 'targeted_damage',
       damage: 4,
@@ -2098,7 +2079,6 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['black'],
     manaCost: 3,
-    consumesRunes: true, // Requires B rune
     effect: {
       type: 'draw_and_heal', // Using draw_and_heal with negative heal
       damage: 0,
@@ -2114,7 +2094,6 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 3,
-    consumesRunes: true, // Requires U rune
     effect: {
       type: 'return_to_base', // Reusing return_to_base for bounce
       damage: 0,
@@ -2129,7 +2108,6 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 3,
-    consumesRunes: true, // Requires U rune
     refundMana: 3, // Free spell mechanic
     effect: {
       type: 'return_to_base',
@@ -2146,7 +2124,6 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'blue'],
     manaCost: 5,
-    consumesRunes: true, // Requires UU runes
     refundMana: 5, // Free spell mechanic
     effect: {
       type: 'return_to_base',
@@ -2180,7 +2157,6 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 4,
-    consumesRunes: true, // Requires U rune
     refundMana: 4, // Free spell mechanic
     effect: {
       type: 'return_to_base',
@@ -2197,7 +2173,6 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['green'],
     manaCost: 3,
-    consumesRunes: true, // Requires G rune
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect
       damage: 0,
@@ -2212,7 +2187,6 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['black'],
     manaCost: 3,
-    consumesRunes: true, // Requires B rune
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for fight
       damage: 0,
@@ -2223,13 +2197,15 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'blue-spell-position-swap',
     name: 'Tactical Swap',
-    description: 'Swap two units\' positions.',
+    description: 'Stun target enemy unit until end of turn.',
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 2,
     effect: {
-      type: 'swap_heroes', // Reusing swap type for unit swapping
-      damage: 0,
+      type: 'stun',
+      stunDuration: 1,
+      affectsUnits: true,
+      affectsHeroes: true,
     },
     initiative: true,
   },
@@ -2240,7 +2216,6 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['black'],
     manaCost: 2,
-    consumesRunes: true, // Requires B rune
     effect: {
       type: 'draw_and_heal',
       damage: 0,
@@ -2271,7 +2246,6 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'black'], // Requires U and B runes
     manaCost: 4,
-    consumesRunes: true, // Not generic - consumes U and B runes
     effect: {
       type: 'aoe_damage',
       damage: 3,
@@ -2303,7 +2277,6 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 2,
-    consumesRunes: true, // Requires U rune
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for invulnerable + reflect
       damage: 0,
@@ -2339,17 +2312,17 @@ export const ubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'ubg-spell-aoe-6-distributed',
     name: 'Arcane Barrage',
-    description: 'Deal 6 damage evenly divided to target unit and adjacent units. 0 units: 6 to tower. 1 unit: 3+3. 2 units: 2+2+2. 3 units: 2+2+2. Costs 4UB.',
+    description: 'Deal 2 damage to up to 3 enemy units. Costs 4UB.',
     cardType: 'spell',
     colors: ['blue', 'black'],
     manaCost: 4,
-    consumesRunes: true, // Requires UB runes
     effect: {
-      type: 'adjacent_damage',
-      damage: 6,
-      adjacentCount: 3,
+      type: 'aoe_damage',
+      damage: 2,
+      targetCount: 3,
       affectsUnits: true,
       affectsHeroes: true,
+      affectsEnemyUnits: true,
     },
   },
   // Verdant Wrath removed - Void Cascade already provides the same AOE effect (5 damage to all enemy units)
@@ -2423,7 +2396,7 @@ export const freeSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 2,
-    consumesRunes: true,
+
     refundMana: 2,
     effect: {
       type: 'targeted_damage',
@@ -2434,14 +2407,16 @@ export const freeSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
     id: 'free-spell-tactical-reposition',
     name: 'Tactical Reposition',
-    description: 'Swap 2 units to different locations. Costs 2U, refunds 2 mana.',
+    description: 'Stun target enemy unit until end of turn. Costs 2U, refunds 2 mana.',
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 2,
     refundMana: 2,
     effect: {
-      type: 'swap_heroes',
-      damage: 0,
+      type: 'stun',
+      stunDuration: 1,
+      affectsUnits: true,
+      affectsHeroes: true,
     },
     initiative: true,
   },
@@ -2452,7 +2427,7 @@ export const freeSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 3,
-    consumesRunes: true,
+
     refundMana: 3,
     effect: {
       type: 'aoe_damage',
@@ -2535,7 +2510,7 @@ export const freeSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'black'],
     manaCost: 2,
-    consumesRunes: true,
+
     refundMana: 2,
     effect: {
       type: 'add_temporary_runes',
@@ -2551,7 +2526,7 @@ export const freeSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'black'],
     manaCost: 3,
-    consumesRunes: true,
+
     refundMana: 3,
     effect: {
       type: 'targeted_damage',
@@ -2579,12 +2554,12 @@ export const rwgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 7,
     maxHealth: 7,
     currentHealth: 7,
-    supportEffect: 'At the start of each turn, create a 1/1 black token in the nearest slot.',    equippedItems: [],
+    supportEffect: 'At the start of each turn, create a 1/1 black token in this lane.',    equippedItems: [],
   },
   {
     id: 'ggw-hero-nature-guardian',
     name: 'Nature Guardian',
-    description: '2/5. Whenever this attacks, add a 1/1 attacking in an adjacent slot. GW.',
+    description: '2/5. Whenever this attacks, create a 1/1 token in this lane. GW.',
     cardType: 'hero',
     colors: ['green', 'white'],
     attack: 2,
@@ -2595,7 +2570,7 @@ export const rwgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     equippedItems: [],
     ability: {
       name: 'Nature\'s Swarm',
-      description: 'Whenever this attacks, create a 1/1 token in an adjacent slot.',
+      description: 'Whenever this attacks, create a 1/1 token in this lane.',
       manaCost: 0,
       cooldown: 0,
       trigger: 'passive',
@@ -2614,7 +2589,7 @@ export const rwgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
     cardType: 'generic',
     colors: ['red', 'white', 'green'], // 3RGW
     manaCost: 3,
-    consumesRunes: true,
+
     attack: 3,
     health: 3,
     maxHealth: 3,
@@ -2627,7 +2602,6 @@ export const rwgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
     cardType: 'generic',
     colors: ['red', 'white', 'green'],
     manaCost: 5, // 2RWG = 5 total mana
-    consumesRunes: true, // 3-color card should require runes
     attack: 2,
     health: 4,
     maxHealth: 4,
@@ -2641,7 +2615,6 @@ export const rwgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
     cardType: 'generic',
     colors: ['red', 'green'],
     manaCost: 6,
-    consumesRunes: true, // Multicolor 6+ mana should require runes
     attack: 5,
     health: 5,
     maxHealth: 5,
@@ -2655,7 +2628,7 @@ export const rwgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
     cardType: 'generic',
     colors: ['red', 'red', 'green', 'green'],
     manaCost: 7,
-    consumesRunes: true,
+
     attack: 5,
     health: 5,
     maxHealth: 5,
@@ -2668,7 +2641,7 @@ export const rwgCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
     cardType: 'generic',
     colors: ['red', 'white', 'green'],
     manaCost: 5,
-    consumesRunes: true,
+
     attack: 5,
     health: 5,
     maxHealth: 5,
@@ -2684,7 +2657,6 @@ export const rwgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     description: 'All your units gain +2/+2 permanently. If you control heroes of 4 different colors, they gain +3/+3 instead.',
     cardType: 'spell',
     colors: ['red', 'white', 'green'],
-    consumesRunes: true, // Powerful 3-color buff
     manaCost: 6, // 3RWG = 6 total mana
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for permanent team buff that scales with color count
@@ -2698,7 +2670,6 @@ export const rwgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red', 'white', 'green'],
     manaCost: 4, // 1RWG = 4 total mana
-    consumesRunes: true, // Not generic - consumes R, W, and G runes
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for team buff + permanent counters
       damage: 0,
@@ -2712,7 +2683,7 @@ export const rwgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red', 'white'],
     manaCost: 8,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage', // Placeholder - would be team buff + card draw
       damage: 0,
@@ -2726,7 +2697,7 @@ export const rwgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['red', 'white'],
     manaCost: 5,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage', // Placeholder - would be team buff
       damage: 0,
@@ -2740,7 +2711,7 @@ export const rwgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'black'],
     manaCost: 6,
-    consumesRunes: true,
+
     effect: {
       type: 'aoe_damage',
       damage: 999,
@@ -2771,7 +2742,6 @@ export const rwgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 3,
-    consumesRunes: true, // Requires U rune
     effect: {
       type: 'split_damage',
       damage: 3,
@@ -2797,7 +2767,7 @@ export const ubgHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     health: 5,
     maxHealth: 5,
     currentHealth: 5,
-    supportEffect: 'When you draw your 2nd card each turn, create a 1/1 Void Spawn in the nearest slot. When it dies, deal 1 damage to any unit.',    equippedItems: [],
+    supportEffect: 'When you draw your 2nd card each turn, create a 1/1 Void Spawn in this lane. When it dies, deal 1 damage to any unit.',    equippedItems: [],
   },
   {
     id: 'ubg-hero-shadow-sage',
@@ -2827,7 +2797,6 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     rarity: 'rare',
     colors: ['blue', 'blue', 'blue', 'black', 'black', 'black', 'red'], // PROHIBITIVE: 3U, 3B, 1R
-    consumesRunes: true, // This spell requires and consumes UBR runes
     manaCost: 8,
     refundMana: 8, // Free spell mechanic - refunds mana cost
     effect: {
@@ -2844,7 +2813,7 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     rarity: 'rare',
     colors: ['blue', 'black', 'red'],
-    consumesRunes: true,
+
     manaCost: 9,
     refundMana: 9, // Free spell mechanic - refunds mana cost
     effect: {
@@ -2861,7 +2830,7 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'black', 'red'],
     manaCost: 3,
-    consumesRunes: true,
+
     effect: {
       type: 'curse_with_debuff',
       curseCost: 4, // Higher cost than default (3)
@@ -2878,7 +2847,7 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'generic',
     colors: ['blue', 'black', 'red'],
     manaCost: 4,
-    consumesRunes: true,
+
     attack: 3,
     health: 4,
     maxHealth: 4,
@@ -2893,7 +2862,6 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['green', 'blue', 'black'],
     manaCost: 4,
-    consumesRunes: true, // Requires GUB runes
     effect: {
       type: 'targeted_damage',
       damage: 6,
@@ -2910,7 +2878,6 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'black', 'red'],
     manaCost: 8,
-    consumesRunes: true, // Requires UBR runes
     refundMana: 8, // Free spell mechanic
     effect: {
       type: 'targeted_damage',
@@ -2928,7 +2895,6 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'black', 'red'],
     manaCost: 9,
-    consumesRunes: true, // Requires UBR runes
     refundMana: 9, // Free spell mechanic
     effect: {
       type: 'aoe_damage',
@@ -2947,7 +2913,6 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'black', 'red'],
     manaCost: 6,
-    consumesRunes: true, // Requires UBR runes
     effect: {
       type: 'aoe_damage',
       damage: 3,
@@ -2965,7 +2930,6 @@ export const ubgSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'black', 'red'],
     manaCost: 5,
-    consumesRunes: true, // Requires UBR runes
     effect: {
       type: 'aoe_damage',
       damage: 4,
@@ -2990,7 +2954,6 @@ export const ubrCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
     cardType: 'generic',
     colors: ['blue', 'black', 'red'],
     manaCost: 7,
-    consumesRunes: true, // Requires UBR runes
     attack: 4,
     health: 4,
     maxHealth: 4,
@@ -3015,7 +2978,7 @@ export const gbrCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
     cardType: 'generic',
     colors: ['green', 'black', 'red'],
     manaCost: 3,
-    consumesRunes: true,
+
     attack: 3,
     health: 3,
     maxHealth: 3,
@@ -3030,7 +2993,7 @@ export const gbrCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
     cardType: 'generic',
     colors: ['green', 'black'],
     manaCost: 2,
-    consumesRunes: true,
+
     attack: 1,
     health: 1,
     maxHealth: 1,
@@ -3045,7 +3008,7 @@ export const gbrCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
     cardType: 'generic',
     colors: ['green', 'red', 'black'],
     manaCost: 5,
-    consumesRunes: true,
+
     attack: 4,
     health: 4,
     maxHealth: 4,
@@ -3059,7 +3022,7 @@ export const gbrCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
     cardType: 'generic',
     colors: ['green', 'black'],
     manaCost: 3,
-    consumesRunes: true,
+
     attack: 2,
     health: 2,
     maxHealth: 2,
@@ -3107,7 +3070,6 @@ export const wubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['white', 'blue', 'black'],
     manaCost: 4,
-    consumesRunes: true, // Requires WUB runes
     refundMana: 4, // Free spell mechanic
     effect: {
       type: 'targeted_damage',
@@ -3125,7 +3087,6 @@ export const wubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['white', 'blue', 'black'],
     manaCost: 3,
-    consumesRunes: true, // Requires WUB runes
     refundMana: 3, // Free spell mechanic
     effect: {
       type: 'targeted_damage',
@@ -3143,7 +3104,6 @@ export const wubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['white', 'blue', 'black'],
     manaCost: 5,
-    consumesRunes: true, // Requires WUB runes
     refundMana: 5, // Free spell mechanic
     effect: {
       type: 'targeted_damage',
@@ -3162,7 +3122,7 @@ export const wubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['white', 'blue', 'black'],
     manaCost: 2,
-    consumesRunes: true,
+
     refundMana: 2, // Free spell mechanic
     effect: {
       type: 'return_to_base',
@@ -3180,7 +3140,6 @@ export const wubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['white', 'blue', 'black'],
     manaCost: 8,
-    consumesRunes: true, // Requires WUB runes
     refundMana: 8, // Free spell mechanic
     effect: {
       type: 'aoe_damage',
@@ -3199,7 +3158,6 @@ export const wubSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['white', 'blue', 'black'],
     manaCost: 9,
-    consumesRunes: true, // Requires WUB runes
     refundMana: 9, // Free spell mechanic
     effect: {
       type: 'targeted_damage',
@@ -3233,7 +3191,6 @@ export const wguSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['white', 'green', 'blue'],
     manaCost: 3,
-    consumesRunes: true, // Requires WGU runes
     refundMana: 3, // Free spell mechanic
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for ramp + buff + protection
@@ -3250,7 +3207,6 @@ export const wguSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['white', 'green', 'blue'],
     manaCost: 4,
-    consumesRunes: true, // Requires WGU runes
     refundMana: 4, // Free spell mechanic
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for ramp + team buff
@@ -3266,7 +3222,6 @@ export const wguSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['white', 'green', 'blue'],
     manaCost: 3,
-    consumesRunes: true, // Requires WGU runes
     refundMana: 3, // Free spell mechanic
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for permanent buff
@@ -3284,7 +3239,6 @@ export const wguSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['white', 'green', 'blue'],
     manaCost: 8,
-    consumesRunes: true, // Requires WGU runes
     refundMana: 8, // Free spell mechanic
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for ramp + team buff + protection + draw
@@ -3301,7 +3255,7 @@ export const wguSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue'],
     manaCost: 2,
-    consumesRunes: true,
+
     effect: {
       type: 'stun',
       stunDuration: 1,
@@ -3337,7 +3291,7 @@ export const wguCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 
     cardType: 'generic',
     colors: ['blue', 'white'],
     manaCost: 5,
-    consumesRunes: true,
+
     attack: 5,
     health: 5,
     maxHealth: 5,
@@ -3384,7 +3338,7 @@ export const uwCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['white'],
     manaCost: 4,
-    consumesRunes: true,
+
     attack: 2,
     health: 3,
     maxHealth: 3,
@@ -3426,7 +3380,7 @@ export const uwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['white'],
     manaCost: 5,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for buff + permanent regen
       damage: 0,
@@ -3441,7 +3395,7 @@ export const uwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'white'],
     manaCost: 5,
-    consumesRunes: true,
+
     effect: {
       type: 'draw_and_heal',
       damage: 0, // Placeholder - would need custom effect for tower heal
@@ -3457,7 +3411,7 @@ export const uwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['blue', 'white'],
     manaCost: 6,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage', // Placeholder - would need custom effect for selective bounce
       damage: 0,
@@ -3481,7 +3435,7 @@ export const wbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['white', 'black'],
     manaCost: 4,
-    consumesRunes: true,
+
     attack: 3,
     health: 4,
     maxHealth: 4,
@@ -3495,7 +3449,7 @@ export const wbCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | '
     cardType: 'generic',
     colors: ['white', 'black'],
     manaCost: 3,
-    consumesRunes: true,
+
     attack: 2,
     health: 3,
     maxHealth: 3,
@@ -3513,7 +3467,7 @@ export const wbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
     cardType: 'spell',
     colors: ['white', 'black'],
     manaCost: 3,
-    consumesRunes: true,
+
     effect: {
       type: 'targeted_damage',
       damage: 999, // Effectively destroy
@@ -3627,7 +3581,7 @@ export const rareWUHeroes: Omit<Hero, 'location' | 'owner'>[] = [
     rarity: 'rare',
     colors: ['white', 'blue'],
     manaCost: 5,
-    consumesRunes: true,
+
     attack: 3,
     health: 7,
     maxHealth: 7,
@@ -3656,7 +3610,7 @@ export const rareUBCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith'
     rarity: 'rare',
     colors: ['blue', 'black'],
     manaCost: 6,
-    consumesRunes: true,
+
     attack: 4,
     health: 4,
     maxHealth: 4,
@@ -3673,7 +3627,7 @@ export const rareBRCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith'
     rarity: 'rare',
     colors: ['black', 'red'],
     manaCost: 7,
-    consumesRunes: true,
+
     attack: 5,
     health: 3,
     maxHealth: 3,
@@ -3813,8 +3767,8 @@ export const archetypeBattlefields: BattlefieldDefinition[] = [
     name: 'Training Grounds',
     description: 'RW battlefield - supports go wide',
     colors: ['red', 'white'],
-    staticAbility: 'You can deploy 5 units instead of 4',
-    staticAbilityId: 'sixth-slot',
+    staticAbility: 'You can deploy 6 units instead of 5',
+    staticAbilityId: 'extra-capacity',
   },
   // RG - Beefy
   {

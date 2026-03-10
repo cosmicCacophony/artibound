@@ -1,8 +1,8 @@
 import { useCallback } from 'react'
-import { Card, Location, GenericUnit, GameMetadata, BATTLEFIELD_SLOT_LIMIT, Hero, ItemCard, BaseCard, SpellCard } from '../game/types'
+import { Card, Location, GenericUnit, GameMetadata, MAX_UNITS_PER_LANE, Hero, ItemCard, BaseCard, SpellCard } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { createCardFromTemplate, tier1Items } from '../game/sampleData'
-import { canAffordCard, consumeRunesForCard, addRunesFromHero, removeRunesFromHero, addTemporaryRunes, consumeRunesForCardWithTracking } from '../game/runeSystem'
+import { canAffordCard } from '../game/runeSystem'
 import { canPlayCardInLane } from '../game/colorSystem'
 import { applyRuneScalingToSpell, applyRuneScalingToUnit } from '../game/runePrototypeData'
 
@@ -13,7 +13,6 @@ export function useDeployment() {
     selectedCard,
     selectedCardId,
     setSelectedCardId,
-    getAvailableSlots,
     player1SidebarCards,
     player2SidebarCards,
     setPlayer1SidebarCards,
@@ -21,7 +20,7 @@ export function useDeployment() {
   } = useGameContext()
   const metadata = gameState.metadata
 
-  const handleDeploy = useCallback((location: Location, targetSlot?: number, cardOverride?: Card) => {
+  const handleDeploy = useCallback((location: Location, _unused?: number, cardOverride?: Card) => {
     const activeCard = cardOverride || selectedCard
     const activeCardId = cardOverride?.id || selectedCardId
     if (!activeCardId || !activeCard) return
@@ -56,26 +55,15 @@ export function useDeployment() {
         }
       }
       
-      // Handle deploy phase deployment with bounce mechanic
+      // Handle deploy phase deployment
       setGameState(prev => {
         const battlefieldKey = location as 'battlefieldA' | 'battlefieldB'
         const playerKey = activeCard.owner as 'player1' | 'player2'
         const battlefield = prev[battlefieldKey][playerKey]
         
-        // Find slot - use target slot or first available
-        let finalSlot = targetSlot
-        if (!finalSlot) {
-          for (let i = 1; i <= 5; i++) {
-            if (!battlefield.some(c => c.slot === i)) {
-              finalSlot = i
-              break
-            }
-          }
+        if (battlefield.length >= MAX_UNITS_PER_LANE) {
+          return prev
         }
-        if (!finalSlot) finalSlot = 1 // Default to slot 1 if all full (will bounce)
-        
-        // Check if there's an existing hero in this slot
-        const existingHeroInSlot = battlefield.find(c => c.slot === finalSlot && c.cardType === 'hero') as Hero | undefined
         
         // Remove deploying hero from base or deploy zone
         const newBase = (prev[`${activeCard.owner}Base` as keyof typeof prev] as Card[])
@@ -83,52 +71,21 @@ export function useDeployment() {
         const newDeployZone = (prev[`${activeCard.owner}DeployZone` as keyof typeof prev] as Card[])
           .filter(c => c.id !== activeCard.id)
         
-        // If there's an existing hero, bounce it to base with 1 cooldown
-        let updatedBase = newBase
-        let updatedCooldowns = { ...prev.metadata.deathCooldowns }
-        let updatedRunePool = prev.metadata[`${activeCard.owner}RunePool` as keyof typeof prev.metadata] as any
+        // Remove the deploying hero from battlefield (if moving between battlefields)
+        const updatedBattlefield = battlefield.filter(c => c.id !== activeCard.id)
         
-        if (existingHeroInSlot) {
-          // Bounce the existing hero to base
-          const bouncedHero = {
-            ...existingHeroInSlot,
-            location: 'base' as const,
-            slot: undefined,
-          }
-          updatedBase = [...updatedBase, bouncedHero]
-          // Add 1 turn cooldown to bounced hero
-          updatedCooldowns[existingHeroInSlot.id] = 1
-        }
-        
-        // Add runes from the deploying hero (if coming from base/deployZone, not already on battlefield)
-        const wasOnBattlefield = activeCard.location === 'battlefieldA' || activeCard.location === 'battlefieldB'
-        const isFromBaseOrDeployZone = activeCard.location === 'base' || activeCard.location === 'deployZone'
-        if (!wasOnBattlefield && isFromBaseOrDeployZone && (activeCard as Hero).colors) {
-          const heroColors = (activeCard as Hero).colors || []
-          updatedRunePool = {
-            ...updatedRunePool,
-            runes: [...updatedRunePool.runes, ...heroColors],
-          }
-        }
-        
-        // Remove existing hero from battlefield if bounced, and remove the deploying hero from battlefield (if moving)
-        const updatedBattlefield = battlefield
-          .filter(c => c.id !== activeCard.id && (existingHeroInSlot ? c.id !== existingHeroInSlot.id : true))
-        
-        // Add the deploying hero to the battlefield
         const deployedHero = {
           ...activeCard,
           location: battlefieldKey,
-          slot: finalSlot,
         }
         
         return {
           ...prev,
-          [`${activeCard.owner}Base`]: updatedBase,
+          [`${activeCard.owner}Base`]: newBase,
           [`${activeCard.owner}DeployZone`]: newDeployZone,
           [battlefieldKey]: {
             ...prev[battlefieldKey],
-            [playerKey]: [...updatedBattlefield, deployedHero].sort((a, b) => (a.slot || 0) - (b.slot || 0)),
+            [playerKey]: [...updatedBattlefield, deployedHero],
           },
           // Also remove from other battlefield if hero was there
           ...(activeCard.location === 'battlefieldA' || activeCard.location === 'battlefieldB' ? {
@@ -140,9 +97,6 @@ export function useDeployment() {
           } : {}),
           metadata: {
             ...prev.metadata,
-            deathCooldowns: updatedCooldowns,
-            [`${activeCard.owner}RunePool`]: updatedRunePool,
-            // Increment heroes deployed counter (only counts if deploying from base/deployZone, not moving between battlefields)
             ...(activeCard.location === 'base' || activeCard.location === 'deployZone' ? {
               [`${activeCard.owner}HeroesDeployedThisTurn`]: ((prev.metadata[`${activeCard.owner}HeroesDeployedThisTurn` as keyof typeof prev.metadata] as number) || 0) + 1,
             } : {}),
@@ -265,33 +219,15 @@ export function useDeployment() {
       }
     }
     
-    // Check costs (heroes don't cost runes - they GIVE runes when deployed)
     const isSpell = activeCard.cardType === 'spell'
     const isHero = activeCard.cardType === 'hero'
     const cardTemplate = activeCard as BaseCard
     const playerMana = activeCard.owner === 'player1' ? metadata.player1Mana : metadata.player2Mana
-    const playerRunePool = activeCard.owner === 'player1' ? metadata.player1RunePool : metadata.player2RunePool
     
-    // Only check costs for non-heroes, or spells being deployed to battlefields (not base)
-    // Heroes don't cost runes - they generate runes when deployed
+    // Check mana cost for non-heroes
     if (!isHero && (!isSpell || location !== 'base')) {
-      // Check mana cost
       if (cardTemplate.manaCost && cardTemplate.manaCost > playerMana) {
         alert(`Not enough mana! Need ${cardTemplate.manaCost}, have ${playerMana}`)
-        return
-      }
-      
-      // Check rune requirements (color requirements) - only for non-heroes
-      if (!canAffordCard(cardTemplate, playerMana, playerRunePool)) {
-        const missingRunes = cardTemplate.colors?.filter(color => {
-          const available = playerRunePool.runes.filter(r => r === color).length
-          return available === 0
-        }) || []
-        if (missingRunes.length > 0) {
-          alert(`Missing required runes: ${missingRunes.join(', ')}`)
-        } else {
-          alert(`Cannot afford ${cardTemplate.name}`)
-        }
         return
       }
     }
@@ -312,15 +248,13 @@ export function useDeployment() {
         }
       }
       
-      const availableSlots = getAvailableSlots(battlefield)
-      
-      if (activeCard.cardType !== 'generic' && availableSlots <= 0 && !targetSlot) {
-        alert('Battlefield is full! Maximum 5 slots.')
+      if (activeCard.cardType !== 'generic' && battlefield.length >= MAX_UNITS_PER_LANE) {
+        alert('Battlefield is full! Maximum ' + MAX_UNITS_PER_LANE + ' units per lane.')
         return
       }
 
       // Handle generic unit stacking
-      if (activeCard.cardType === 'generic' && battlefield.length > 0 && !targetSlot) {
+      if (activeCard.cardType === 'generic' && battlefield.length > 0) {
         // Try to stack with another generic unit
         const stackableGeneric = battlefield.find(c => 
           c.cardType === 'generic' && 
@@ -385,44 +319,25 @@ export function useDeployment() {
         
         // Heal hero to full health when moving to base
         const healedCard = isHero && 'maxHealth' in activeCard
-          ? { ...activeCard, location, currentHealth: (activeCard as any).maxHealth, slot: undefined }
-          : { ...activeCard, location, slot: undefined }
+          ? { ...activeCard, location, currentHealth: (activeCard as any).maxHealth }
+          : { ...activeCard, location }
         
-        // Handle runes and mana costs
-        const runePoolKey = `${activeCard.owner}RunePool` as keyof GameMetadata
         const manaKey = `${activeCard.owner}Mana` as keyof GameMetadata
         const isHeroCard = activeCard.cardType === 'hero'
         
-        let updatedRunePool = prev.metadata[runePoolKey] as any
         let updatedMana = prev.metadata[manaKey] as number
         
-        // Heroes don't cost runes - they GIVE runes when deployed
-        // Bouncing heroes does NOT remove runes - bouncing should be strategic, not punishing
-        // Non-hero cards (including spells): pay mana and consume runes
         if (!isHeroCard) {
-          // Pay mana cost
           if (cardTemplate.manaCost) {
             updatedMana = updatedMana - cardTemplate.manaCost
           }
-          // Consume runes for color requirements (only if consumesRunes: true)
-          const { newPool, consumedColors } = consumeRunesForCardWithTracking(cardTemplate, updatedRunePool)
-          updatedRunePool = newPool
           
-          // Handle spell effects that add temporary runes (like Dark Ritual)
           if (cardTemplate.cardType === 'spell' && cardTemplate.effect) {
             const spellCard = cardTemplate as SpellCard
-            const spellEffect = spellCard.effect
-            
-            if (spellEffect.type === 'add_temporary_runes' && spellEffect.runeColors) {
-              updatedRunePool = addTemporaryRunes(updatedRunePool, spellEffect.runeColors as any)
-            }
-            
-            // Handle mana refund for "free spells" (Urza block inspired)
             if (spellCard.refundMana && spellCard.refundMana > 0) {
               updatedMana = updatedMana + spellCard.refundMana
             }
           }
-          
         }
         
         return {
@@ -441,178 +356,36 @@ export function useDeployment() {
           metadata: {
             ...prev.metadata,
             ...(isHeroCard ? { [movedToBaseKey]: true } : {}),
-            [runePoolKey]: updatedRunePool,
             ...(!isHeroCard ? { [manaKey]: updatedMana } : {}),
           },
         }
       } else if (location === 'battlefieldA' || location === 'battlefieldB') {
         const battlefieldKey = location
-        const battlefieldCards = prev[battlefieldKey][activeCard.owner as 'player1' | 'player2']
+        const battlefield = prev[battlefieldKey][activeCard.owner as 'player1' | 'player2']
         
-        // Use provided slot or find first available slot (1-5)
-        let finalTargetSlot = targetSlot
-        if (!finalTargetSlot) {
-          for (let i = 1; i <= 5; i++) {
-            if (!battlefieldCards.some(c => c.slot === i)) {
-              finalTargetSlot = i
-              break
-            }
-          }
-        }
-        
-        // If all slots full, don't deploy (unless moving from another battlefield - allow that)
         const isMovingFromBattlefield = activeCard.location === 'battlefieldA' || activeCard.location === 'battlefieldB'
-        if (!finalTargetSlot && !isMovingFromBattlefield) {
-          alert('Battlefield is full! Maximum 5 slots.')
+        if (battlefield.length >= MAX_UNITS_PER_LANE && !isMovingFromBattlefield) {
+          alert('Battlefield is full! Maximum ' + MAX_UNITS_PER_LANE + ' units per lane.')
           return prev
-        }
-        
-        // If moving from another battlefield and no slot specified, reuse the slot or find a new one
-        if (isMovingFromBattlefield && !finalTargetSlot) {
-          finalTargetSlot = activeCard.slot || 1 // Try to keep the same slot
-        }
-        
-        // If target slot is occupied, swap positions
-        if (finalTargetSlot) {
-          const slotOccupied = battlefieldCards.some(c => c.id !== activeCard.id && c.slot === finalTargetSlot)
-          if (slotOccupied) {
-            const otherCard = battlefieldCards.find(c => c.slot === finalTargetSlot)
-            if (otherCard) {
-              // Swap positions
-              const otherBattlefieldKey = location === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
-              const runePoolKey = `${activeCard.owner}RunePool` as keyof GameMetadata
-              const manaKey = `${activeCard.owner}Mana` as keyof GameMetadata
-              
-              // Handle runes and mana
-              let updatedRunePool = prev.metadata[runePoolKey] as any
-              let updatedMana = prev.metadata[manaKey] as number
-              const isHeroCard = activeCard.cardType === 'hero'
-              
-        // If hero is deploying, add runes from that hero
-        if (isHeroCard && (location === 'battlefieldA' || location === 'battlefieldB')) {
-          // Hero is deploying - add runes from that hero
-          // Find the card in previous state to check its actual location
-          const prevCard = [...prev[`${activeCard.owner}Hand` as keyof typeof prev] as Card[],
-                            ...prev[`${activeCard.owner}Base` as keyof typeof prev] as Card[],
-                            ...prev.battlefieldA[activeCard.owner as 'player1' | 'player2'],
-                            ...prev.battlefieldB[activeCard.owner as 'player1' | 'player2']]
-                            .find(c => c.id === activeCardId)
-          // Check if hero was previously on a battlefield (if so, don't add runes again)
-          const wasOnBattlefield = prevCard && (prevCard.location === 'battlefieldA' || prevCard.location === 'battlefieldB')
-          if (!wasOnBattlefield) {
-            // Hero is deploying for the first time (from base/hand) - add runes
-            updatedRunePool = addRunesFromHero(activeCard as Hero, updatedRunePool)
-          }
-        } else if (!isHeroCard) {
-                // Non-hero cards (including spells): pay mana and consume runes
-                // Pay mana cost
-                if (cardTemplate.manaCost) {
-                  updatedMana = updatedMana - cardTemplate.manaCost
-                }
-                // Consume runes for color requirements (only if consumesRunes: true)
-                const { newPool, consumedColors } = consumeRunesForCardWithTracking(cardTemplate, updatedRunePool)
-                updatedRunePool = newPool
-                
-                // Handle spell effects that add temporary runes (like Dark Ritual)
-                if (cardTemplate.cardType === 'spell' && cardTemplate.effect) {
-                  const spellCard = cardTemplate as SpellCard
-                  const spellEffect = spellCard.effect
-                  
-                  if (spellEffect.type === 'add_temporary_runes' && spellEffect.runeColors) {
-                    updatedRunePool = addTemporaryRunes(updatedRunePool, spellEffect.runeColors as any)
-                  }
-                  
-                  // Handle mana refund for "free spells" (Urza block inspired)
-                  if (spellCard.refundMana && spellCard.refundMana > 0) {
-                    updatedMana = updatedMana + spellCard.refundMana
-                  }
-                }
-                
-              }
-              
-              return {
-                ...prev,
-                [`${activeCard.owner}Hand`]: removeFromLocation(prev[`${activeCard.owner}Hand` as keyof typeof prev] as Card[]),
-                [`${activeCard.owner}Base`]: removeFromLocation(prev[`${activeCard.owner}Base` as keyof typeof prev] as Card[]),
-                [`${activeCard.owner}DeployZone`]: removeFromLocation(prev[`${activeCard.owner}DeployZone` as keyof typeof prev] as Card[]),
-                [otherBattlefieldKey]: {
-                  ...prev[otherBattlefieldKey],
-                  [activeCard.owner]: removeFromLocation(prev[otherBattlefieldKey][activeCard.owner as 'player1' | 'player2']),
-                },
-                [battlefieldKey]: {
-                  ...prev[battlefieldKey],
-                  [activeCard.owner]: prev[battlefieldKey][activeCard.owner as 'player1' | 'player2']
-                    .filter(c => c.id !== activeCard.id && c.id !== otherCard.id)
-                    .concat([
-                      { ...activeCard, location, slot: finalTargetSlot },
-                      { ...otherCard, slot: activeCard.slot || finalTargetSlot }
-                    ])
-                    .sort((a, b) => (a.slot || 0) - (b.slot || 0)),
-                },
-                metadata: {
-                  ...prev.metadata,
-                  [runePoolKey]: updatedRunePool,
-                  ...(!isHeroCard ? { [manaKey]: updatedMana } : {}),
-                },
-              }
-            }
-          }
         }
 
         const otherBattlefieldKey = location === 'battlefieldA' ? 'battlefieldB' : 'battlefieldA'
-        const runePoolKey = `${activeCard.owner}RunePool` as keyof GameMetadata
         const manaKey = `${activeCard.owner}Mana` as keyof GameMetadata
         
-        // Pay mana and consume runes if needed
-        let updatedRunePool = prev.metadata[runePoolKey] as any
         let updatedMana = prev.metadata[manaKey] as number
         
-        // Check if this is a hero card
         const isHeroCard = activeCard.cardType === 'hero'
         
-        // Heroes don't cost mana or runes - they GIVE runes when deployed
-        // Non-hero cards (including spells): pay mana and consume runes
         if (!isHeroCard) {
-          // Pay mana cost
           if (cardTemplate.manaCost) {
             updatedMana = updatedMana - cardTemplate.manaCost
           }
-          // Consume runes for color requirements (only if consumesRunes: true)
-          const { newPool, consumedColors } = consumeRunesForCardWithTracking(cardTemplate, updatedRunePool)
-          updatedRunePool = newPool
           
-          // Handle spell effects that add temporary runes (like Dark Ritual)
           if (cardTemplate.cardType === 'spell' && cardTemplate.effect) {
             const spellCard = cardTemplate as SpellCard
-            const spellEffect = spellCard.effect
-            
-            if (spellEffect.type === 'add_temporary_runes' && spellEffect.runeColors) {
-              updatedRunePool = addTemporaryRunes(updatedRunePool, spellEffect.runeColors as any)
-            }
-            
-            // Handle mana refund for "free spells" (Urza block inspired)
             if (spellCard.refundMana && spellCard.refundMana > 0) {
               updatedMana = updatedMana + spellCard.refundMana
             }
-          }
-          
-        }
-        
-        // If hero is deploying to a battlefield, add runes from that hero
-        if (isHeroCard && (location === 'battlefieldA' || location === 'battlefieldB')) {
-          // Hero is deploying - add runes from that hero (one-time)
-          // Find the card in previous state to check its actual location
-          const prevCard = [...prev[`${activeCard.owner}Hand` as keyof typeof prev] as Card[],
-                            ...prev[`${activeCard.owner}Base` as keyof typeof prev] as Card[],
-                            ...prev[`${activeCard.owner}DeployZone` as keyof typeof prev] as Card[],
-                            ...prev.battlefieldA[activeCard.owner as 'player1' | 'player2'],
-                            ...prev.battlefieldB[activeCard.owner as 'player1' | 'player2']]
-                            .find(c => c.id === activeCardId)
-          // Check if hero was previously on a battlefield (if so, don't add runes again)
-          const wasOnBattlefield = prevCard && (prevCard.location === 'battlefieldA' || prevCard.location === 'battlefieldB')
-          if (!wasOnBattlefield) {
-            // Hero is deploying for the first time (from base/deployZone/hand) - add runes
-            updatedRunePool = addRunesFromHero(activeCard as Hero, updatedRunePool)
           }
         }
         
@@ -621,18 +394,16 @@ export function useDeployment() {
           [`${activeCard.owner}Hand`]: removeFromLocation(prev[`${activeCard.owner}Hand` as keyof typeof prev] as Card[]),
           [`${activeCard.owner}Base`]: removeFromLocation(prev[`${activeCard.owner}Base` as keyof typeof prev] as Card[]),
           [`${activeCard.owner}DeployZone`]: removeFromLocation(prev[`${activeCard.owner}DeployZone` as keyof typeof prev] as Card[]),
-          // Remove from the other battlefield if the card is moving from there
           [otherBattlefieldKey]: {
             ...prev[otherBattlefieldKey],
             [activeCard.owner]: removeFromLocation(prev[otherBattlefieldKey][activeCard.owner as 'player1' | 'player2']),
           },
-          // Add to the target battlefield (apply rune scaling in prototype mode)
           [battlefieldKey]: {
             ...prev[battlefieldKey],
             [activeCard.owner]: [
               ...prev[battlefieldKey][activeCard.owner as 'player1' | 'player2'].filter(c => c.id !== activeCard.id),
               (() => {
-                let deployedCard = { ...activeCard, location, slot: finalTargetSlot || 1 }
+                let deployedCard = { ...activeCard, location }
                 if (prev.metadata.isRunePrototype && prev.metadata.laneRunes && activeCard.cardType === 'generic') {
                   const laneRunes = prev.metadata.laneRunes[battlefieldKey as 'battlefieldA' | 'battlefieldB'][activeCard.owner as 'player1' | 'player2']
                   const unit = activeCard as GenericUnit
@@ -643,11 +414,10 @@ export function useDeployment() {
                 }
                 return deployedCard
               })()
-            ].sort((a, b) => (a.slot || 0) - (b.slot || 0)),
+            ],
           },
           metadata: {
             ...prev.metadata,
-            [runePoolKey]: updatedRunePool,
             ...(!isHeroCard ? { [manaKey]: updatedMana } : {}),
           },
         }
@@ -763,7 +533,7 @@ export function useDeployment() {
     }
 
     setSelectedCardId(null)
-  }, [selectedCard, selectedCardId, gameState, metadata, getAvailableSlots, setGameState, setSelectedCardId, player1SidebarCards, player2SidebarCards, setPlayer1SidebarCards, setPlayer2SidebarCards])
+  }, [selectedCard, selectedCardId, gameState, metadata, setGameState, setSelectedCardId, player1SidebarCards, player2SidebarCards, setPlayer1SidebarCards, setPlayer2SidebarCards])
 
   const handleCastSpellOnTarget = useCallback((
     targetCard: Card,
@@ -797,8 +567,7 @@ export function useDeployment() {
     }
 
     const playerMana = owner === 'player1' ? metadata.player1Mana : metadata.player2Mana
-    const playerRunePool = owner === 'player1' ? metadata.player1RunePool : metadata.player2RunePool
-    if (!canAffordCard(spell, playerMana, playerRunePool)) {
+    if (!canAffordCard(spell, playerMana)) {
       alert('Cannot afford this spell.')
       return
     }
@@ -813,7 +582,6 @@ export function useDeployment() {
     setGameState(prev => {
       const handKey = `${owner}Hand` as keyof typeof prev
       const manaKey = `${owner}Mana` as keyof GameMetadata
-      const runePoolKey = `${owner}RunePool` as keyof GameMetadata
 
       const battlefield = prev[battlefieldId]
       const ownerField = battlefield[owner]
@@ -827,12 +595,6 @@ export function useDeployment() {
       if (spell.manaCost) {
         updatedMana -= spell.manaCost
       }
-
-      const { newPool } = consumeRunesForCardWithTracking(spell, prev.metadata[runePoolKey] as any)
-      let updatedRunePool = newPool
-      if (spell.effect.type === 'add_temporary_runes' && spell.effect.runeColors) {
-        updatedRunePool = addTemporaryRunes(updatedRunePool, spell.effect.runeColors as any)
-      }
       if (spell.refundMana && spell.refundMana > 0) {
         updatedMana += spell.refundMana
       }
@@ -840,8 +602,6 @@ export function useDeployment() {
       const nextOpponentField: Card[] = []
       const baseAdditions: Card[] = []
       const updatedDeathCooldowns = { ...prev.metadata.deathCooldowns }
-      let updatedP1RunePool = prev.metadata.player1RunePool
-      let updatedP2RunePool = prev.metadata.player2RunePool
 
       opponentField.forEach(card => {
         if (card.id !== targetCard.id) {
@@ -859,14 +619,8 @@ export function useDeployment() {
               ...hero,
               location: 'base' as const,
               currentHealth: 0,
-              slot: undefined,
             })
             updatedDeathCooldowns[hero.id] = 2
-            if (opponent === 'player1') {
-              updatedP1RunePool = removeRunesFromHero(hero, updatedP1RunePool)
-            } else {
-              updatedP2RunePool = removeRunesFromHero(hero, updatedP2RunePool)
-            }
           }
         } else if (card.cardType === 'generic') {
           const unit = card as GenericUnit
@@ -897,9 +651,6 @@ export function useDeployment() {
         metadata: {
           ...prev.metadata,
           [manaKey]: updatedMana,
-          [runePoolKey]: updatedRunePool,
-          player1RunePool: updatedP1RunePool,
-          player2RunePool: updatedP2RunePool,
           deathCooldowns: updatedDeathCooldowns,
           stunnedHeroes: nextStunnedHeroes,
           actionPlayer: otherPlayer,
@@ -912,49 +663,6 @@ export function useDeployment() {
 
     setSelectedCardId(null)
   }, [selectedCard, metadata, setGameState, setSelectedCardId])
-
-  const handleChangeSlot = useCallback((card: Card, newSlot: number, location: 'battlefieldA' | 'battlefieldB') => {
-    if (newSlot < 1 || newSlot > 5) return
-    
-    const player = card.owner
-    setGameState(prev => {
-      const battlefield = prev[location][player as 'player1' | 'player2']
-      
-      // Check if slot is already occupied
-      const slotOccupied = battlefield.some(c => c.id !== card.id && c.slot === newSlot)
-      if (slotOccupied) {
-        // Swap positions if slot is occupied
-        const otherCard = battlefield.find(c => c.slot === newSlot)
-        if (otherCard) {
-          return {
-            ...prev,
-            [location]: {
-              ...prev[location],
-              [player]: battlefield.map(c => {
-                if (c.id === card.id) {
-                  return { ...c, slot: newSlot }
-                } else if (c.id === otherCard.id) {
-                  return { ...c, slot: card.slot }
-                }
-                return c
-              }),
-            },
-          }
-        }
-      }
-      
-      // Just move to new slot
-      return {
-        ...prev,
-        [location]: {
-          ...prev[location],
-          [player]: battlefield.map(c =>
-            c.id === card.id ? { ...c, slot: newSlot } : c
-          ).sort((a, b) => (a.slot || 0) - (b.slot || 0)),
-        },
-      }
-    })
-  }, [setGameState])
 
   const handleRemoveFromBattlefield = useCallback((card: Card, location: 'battlefieldA' | 'battlefieldB') => {
     // Award gold to opponent when removing a generic unit (creep)
@@ -1012,23 +720,16 @@ export function useDeployment() {
         ? {
             ...hero,
             location: 'base' as const,
-            currentHealth: 0, // Dead - will heal to full in base after cooldown
-            slot: undefined,
+            currentHealth: 0,
           }
         : { ...card, location: 'base' as const }
       
       const updatedDeathCooldowns = isHero && hero
         ? {
             ...prev.metadata.deathCooldowns,
-            [card.id]: 2, // Set cooldown counter to 2 (decreases by 1 each turn, prevents deployment for 1 full round)
+            [card.id]: 2,
           }
         : prev.metadata.deathCooldowns
-      
-      // Remove runes from the hero when it's removed via X button (counts as death)
-      const runePoolKey = card.owner === 'player1' ? 'player1RunePool' : 'player2RunePool'
-      const updatedRunePool = isHero && hero 
-        ? removeRunesFromHero(hero, prev.metadata[runePoolKey])
-        : prev.metadata[runePoolKey]
       
       return {
         ...prev,
@@ -1039,8 +740,6 @@ export function useDeployment() {
         [`${card.owner}Base`]: [...prev[`${card.owner}Base` as keyof typeof prev] as Card[], cardToBase],
         metadata: {
           ...prev.metadata,
-          [runePoolKey]: updatedRunePool,
-          // No card draw for manually removing units/heroes (only combat kills give card draw)
           deathCooldowns: updatedDeathCooldowns,
         },
       }
@@ -1142,7 +841,6 @@ export function useDeployment() {
   return {
     handleDeploy,
     handleCastSpellOnTarget,
-    handleChangeSlot,
     handleRemoveFromBattlefield,
     handleEquipItem,
   }

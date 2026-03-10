@@ -1,13 +1,15 @@
 import { RunePool, RuneColor, Color, Hero, BaseCard, Seal, PlayerId } from './types'
 
 /**
- * Rune System
+ * Rune System (Legacy utilities)
  * 
- * - Permanent runes: Added when you deploy a hero, removed when hero dies
- * - Temporary runes: Added by spells (Dark Ritual), cleared at end of turn
- * - Seals: Permanent artifacts that generate 1 rune of their color each turn
- * - Runes are used for color requirements of spells/cards
- * - Mana is used for generic costs (existing system)
+ * The global rune pool has been removed. The only rune system now is
+ * lane runes (per-lane, per-player, chosen each turn via ResourceChoiceModal).
+ * 
+ * Remaining utilities here are kept for:
+ * - Seal management (permanent rune generators)
+ * - Generic pool operations that may be used by future mechanics
+ * - canAffordCard (now mana-only check)
  */
 
 /**
@@ -149,41 +151,14 @@ export function getAllAvailableRunes(pool: RunePool): RuneColor[] {
 }
 
 /**
- * Check if a card can be afforded (has enough mana AND required color runes)
- * Now considers both permanent and temporary runes
- * 
- * Cards with consumesRunes: true require runes to be available.
- * Generic cards (consumesRunes: false/undefined) just need hero color in lane.
- * 
+ * Check if a card can be afforded (mana check only).
+ * Color requirements are now handled by lane color system (colorSystem.ts).
  */
-export function canAffordCard(card: BaseCard, mana: number, runePool: RunePool): boolean {
-  // Check mana cost
+export function canAffordCard(card: BaseCard, mana: number): boolean {
   if (card.manaCost) {
     if (card.manaCost > mana) {
       return false
     }
-  }
-  
-  // Only check runes if card consumes them
-  if (!card.consumesRunes) {
-    return true
-  }
-  
-  // Check color requirements (runes) for non-generic cards
-  if (!card.colors || card.colors.length === 0) {
-    return true // No color requirements
-  }
-  
-  // Check if we have enough runes of each required color (permanent + temporary)
-  const availableRunes = getAllAvailableRunes(runePool)
-  
-  for (const requiredColor of card.colors) {
-    const index = availableRunes.indexOf(requiredColor)
-    if (index === -1) {
-      return false // Missing required color rune
-    }
-    // Remove the rune from available pool (each color requirement consumes one rune)
-    availableRunes.splice(index, 1)
   }
   
   return true
@@ -214,105 +189,22 @@ export function getMissingRunes(card: BaseCard, runePool: RunePool): Color[] {
 }
 
 /**
- * Consume runes for a card (pay color requirements)
- * Consumes temporary runes first, then permanent runes
- * Returns the updated rune pool with required runes removed
- * 
- * Only cards with consumesRunes: true consume runes.
- * Generic cards (consumesRunes: false/undefined) just need hero color in lane.
+ * Consume runes for a card (legacy - now a no-op).
+ * Global rune pool consumption has been removed. Returns pool unchanged.
  */
-export function consumeRunesForCard(card: BaseCard, runePool: RunePool): RunePool {
-  // Only consume if card has consumesRunes: true
-  if (!card.consumesRunes) {
-    return runePool
-  }
-  
-  if (!card.colors || card.colors.length === 0) {
-    return runePool // No color requirements, no runes consumed
-  }
-  
-  // Safety check: ensure temporaryRunes is always an array
-  const safeTemporaryRunes = Array.isArray(runePool.temporaryRunes) ? runePool.temporaryRunes : []
-  const safePermanentRunes = Array.isArray(runePool.runes) ? runePool.runes : []
-  
-  const newTemporaryRunes = [...safeTemporaryRunes]
-  const newPermanentRunes = [...safePermanentRunes]
-  
-  // Remove one rune of each required color (prefer temporary first)
-  for (const requiredColor of card.colors) {
-    // Try temporary first
-    const tempIndex = newTemporaryRunes.indexOf(requiredColor)
-    if (tempIndex !== -1) {
-      newTemporaryRunes.splice(tempIndex, 1)
-    } else {
-      // Fall back to permanent
-      const permIndex = newPermanentRunes.indexOf(requiredColor)
-      if (permIndex !== -1) {
-        newPermanentRunes.splice(permIndex, 1)
-      }
-    }
-  }
-  
-  return {
-    runes: newPermanentRunes,
-    temporaryRunes: newTemporaryRunes,
-  }
+export function consumeRunesForCard(_card: BaseCard, runePool: RunePool): RunePool {
+  return runePool
 }
 
 /**
- * Consume runes and return which colors were consumed
- * Returns array of colors that were actually consumed from the pool
- * 
- * Tracks which rune colors were spent for rune consumption logic
+ * Consume runes for a card with tracking (legacy - now a no-op).
+ * Global rune pool consumption has been removed. Returns pool unchanged.
  */
 export function consumeRunesForCardWithTracking(
-  card: BaseCard, 
+  _card: BaseCard, 
   runePool: RunePool
 ): { newPool: RunePool; consumedColors: RuneColor[] } {
-  // Only consume if card has consumesRunes: true
-  if (!card.consumesRunes) {
-    return { newPool: runePool, consumedColors: [] }
-  }
-  
-  if (!card.colors || card.colors.length === 0) {
-    return { newPool: runePool, consumedColors: [] } // No color requirements, no runes consumed
-  }
-  
-  // Safety check: ensure arrays are always arrays
-  const safeTemporaryRunes = Array.isArray(runePool.temporaryRunes) ? runePool.temporaryRunes : []
-  const safePermanentRunes = Array.isArray(runePool.runes) ? runePool.runes : []
-  
-  const newTemporaryRunes = [...safeTemporaryRunes]
-  const newPermanentRunes = [...safePermanentRunes]
-  const consumedColors: RuneColor[] = []
-  
-  // Track each color as we consume it
-  for (const requiredColor of card.colors) {
-    const runeColor = requiredColor as RuneColor
-    
-    // Try temporary runes first
-    const tempIndex = newTemporaryRunes.indexOf(runeColor)
-    if (tempIndex !== -1) {
-      newTemporaryRunes.splice(tempIndex, 1)
-      consumedColors.push(runeColor)
-      continue
-    }
-    
-    // Then permanent runes
-    const permIndex = newPermanentRunes.indexOf(runeColor)
-    if (permIndex !== -1) {
-      newPermanentRunes.splice(permIndex, 1)
-      consumedColors.push(runeColor)
-    }
-  }
-  
-  return {
-    newPool: {
-      runes: newPermanentRunes,
-      temporaryRunes: newTemporaryRunes,
-    },
-    consumedColors
-  }
+  return { newPool: runePool, consumedColors: [] }
 }
 
 /**

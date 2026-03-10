@@ -1,107 +1,89 @@
-import { Hero, GenericUnit, SpellCard, Card, GameMetadata, RunePool, RuneColor, RuneScalingTier, TOWER_HP, NEXUS_HP, STARTING_GOLD } from './types'
+import { Hero, GenericUnit, SpellCard, Card, GameMetadata, RuneColor, RuneScalingTier, TOWER_HP, NEXUS_HP, STARTING_GOLD } from './types'
 
 // ============================================================================
-// BR DECK — Aggressive / Removal
-// Heroes: 2 Red, 2 Black — all with simple passive lane bonuses
+// RB DECK — Aggressive / Burn
+// Heroes: 2 Red (primary, pre-deployed) + 2 Black (secondary, deployed turns 2-3)
+// Cards: 4 units (one per formation tag) + 1 removal spell
 // ============================================================================
 
-export const brPrototypeHeroes: Omit<Hero, 'location' | 'owner'>[] = [
+export const rbHeroes: Omit<Hero, 'location' | 'owner'>[] = [
+  // Primary heroes (pre-deployed turn 1)
   {
-    id: 'proto-br-flame-captain',
+    id: 'proto-rb-flame-captain',
     name: 'Flame Captain',
-    description: 'Lane creatures get +1 attack when attacking.',
+    description: 'Red hero. Lane creatures deal +1 damage.',
     cardType: 'hero',
     colors: ['red'],
     attack: 4,
+    health: 6,
+    maxHealth: 6,
+    currentHealth: 6,
+    equippedItems: [],
+    formationTag: 'frontline',
+  },
+  {
+    id: 'proto-rb-ember-tactician',
+    name: 'Ember Tactician',
+    description: 'Red hero. First spell each turn costs 1 less.',
+    cardType: 'hero',
+    colors: ['red'],
+    attack: 3,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+    equippedItems: [],
+  },
+  // Secondary heroes (deployed turns 2-3)
+  {
+    id: 'proto-rb-blood-broker',
+    name: 'Blood Broker',
+    description: 'Black hero. When a friendly creature dies, deal 1 to enemy tower.',
+    cardType: 'hero',
+    colors: ['black'],
+    attack: 3,
     health: 7,
     maxHealth: 7,
     currentHealth: 7,
-    supportEffect: 'Lane creatures get +1 attack',
     equippedItems: [],
-    ability: {
-      name: 'Firestrike',
-      description: 'Deal 3 damage to the enemy tower in this lane.',
-      trigger: 'activated',
-      manaCost: 1,
-      cooldown: 1,
-      effectType: 'damage_tower_lane',
-      effectValue: 3,
-    },
   },
   {
-    id: 'proto-br-ember-tactician',
-    name: 'Ember Tactician',
-    description: 'First spell in this lane each turn costs 1 less mana.',
-    cardType: 'hero',
-    colors: ['red'],
-    attack: 3,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
-    supportEffect: 'First spell costs 1 less',
-    equippedItems: [],
-    ability: {
-      name: 'Reposition',
-      description: 'Move this hero to the other lane (first open slot).',
-      trigger: 'activated',
-      manaCost: 1,
-      cooldown: 1,
-      effectType: 'move_cross_battlefield',
-      effectValue: 0,
-    },
-  },
-  {
-    id: 'proto-br-blood-broker',
-    name: 'Blood Broker',
-    description: 'When a creature dies in this lane, heal your tower 1.',
-    cardType: 'hero',
-    colors: ['black'],
-    attack: 3,
-    health: 8,
-    maxHealth: 8,
-    currentHealth: 8,
-    supportEffect: 'Creature death heals tower 1',
-    equippedItems: [],
-    ability: {
-      name: 'Blood Siphon',
-      description: 'Deal 2 damage to an enemy unit in this lane, heal this hero for 2.',
-      trigger: 'activated',
-      manaCost: 2,
-      cooldown: 1,
-      effectType: 'damage_target',
-      effectValue: 2,
-    },
-  },
-  {
-    id: 'proto-br-grave-raider',
+    id: 'proto-rb-grave-raider',
     name: 'Grave Raider',
-    description: 'Creatures in this lane get +1 attack if lane has 2+ runes.',
+    description: 'Black hero. Creatures get +1 attack if lane has 2+ runes.',
     cardType: 'hero',
     colors: ['black'],
     attack: 4,
-    health: 6,
-    maxHealth: 6,
-    currentHealth: 6,
-    supportEffect: '+1 attack if 2+ lane runes',
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
     equippedItems: [],
-    ability: {
-      name: 'Raise Dead',
-      description: 'Spawn a 2/1 Skeleton in the first empty slot in this lane.',
-      trigger: 'activated',
-      manaCost: 1,
-      cooldown: 1,
-      effectType: 'create_unit',
-      effectValue: 0,
-    },
+    formationTag: 'ranged',
   },
 ]
 
-// BR Cards — 4 types, designed around R/RR/RRB/RRR thresholds
-export const brPrototypeCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+export const rbUnits: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
   {
-    id: 'proto-br-berserker',
-    name: 'Berserker',
-    description: '2/2. Scales: R→3/2, RR→4/2, RRB→5/3.',
+    id: 'proto-rb-ironclad',
+    name: 'Ironclad Berserker',
+    description: 'Frontline. Forces enemies to attack it first.',
+    cardType: 'generic',
+    colors: [],
+    manaCost: 2,
+    attack: 3,
+    health: 4,
+    maxHealth: 4,
+    currentHealth: 4,
+    formationTag: 'frontline',
+    runeScaling: [
+      { runeRequirement: ['red'], attackBonus: 1, description: '4/4' },
+      { runeRequirement: ['red', 'red'], attackBonus: 2, healthBonus: 1, description: '5/5' },
+      { runeRequirement: ['red', 'red', 'black'], attackBonus: 3, healthBonus: 1, description: '6/5' },
+    ],
+  },
+  {
+    id: 'proto-rb-ember-archer',
+    name: 'Ember Archer',
+    description: 'Ranged. Shoots over frontline to hit backline targets.',
     cardType: 'generic',
     colors: [],
     manaCost: 2,
@@ -109,36 +91,55 @@ export const brPrototypeCards: Omit<GenericUnit, 'location' | 'owner' | 'stacked
     health: 2,
     maxHealth: 2,
     currentHealth: 2,
+    formationTag: 'ranged',
     runeScaling: [
       { runeRequirement: ['red'], attackBonus: 1, description: '3/2' },
-      { runeRequirement: ['red', 'red'], attackBonus: 2, description: '4/2' },
+      { runeRequirement: ['red', 'black'], attackBonus: 2, healthBonus: 1, description: '4/3' },
       { runeRequirement: ['red', 'red', 'black'], attackBonus: 3, healthBonus: 1, description: '5/3' },
     ],
   },
   {
-    id: 'proto-br-ragebound',
-    name: 'Ragebound',
-    description: '1/1. Cheap aggro. Scales: R→2/1, RR→3/2, RRR→4/3.',
+    id: 'proto-rb-shadow-blade',
+    name: 'Shadow Blade',
+    description: 'Assassin. Bypasses all units to strike the tower directly.',
+    cardType: 'generic',
+    colors: [],
+    manaCost: 3,
+    attack: 4,
+    health: 1,
+    maxHealth: 1,
+    currentHealth: 1,
+    formationTag: 'assassin',
+    runeScaling: [
+      { runeRequirement: ['black'], attackBonus: 1, description: '5/1' },
+      { runeRequirement: ['red', 'black'], attackBonus: 1, healthBonus: 1, description: '5/2' },
+      { runeRequirement: ['red', 'red', 'black'], attackBonus: 3, healthBonus: 1, description: '7/2' },
+    ],
+  },
+  {
+    id: 'proto-rb-scorch-imp',
+    name: 'Scorch Imp',
+    description: 'Cheap aggro unit. Attacks any enemy, must hit frontline first.',
     cardType: 'generic',
     colors: [],
     manaCost: 1,
     attack: 1,
-    health: 1,
-    maxHealth: 1,
-    currentHealth: 1,
+    health: 2,
+    maxHealth: 2,
+    currentHealth: 2,
     runeScaling: [
-      { runeRequirement: ['red'], attackBonus: 1, description: '2/1' },
-      { runeRequirement: ['red', 'red'], attackBonus: 2, healthBonus: 1, description: '3/2' },
-      { runeRequirement: ['red', 'red', 'red'], attackBonus: 3, healthBonus: 2, description: '4/3' },
+      { runeRequirement: ['red'], attackBonus: 1, description: '2/2' },
+      { runeRequirement: ['red', 'red'], attackBonus: 2, healthBonus: 1, description: '3/3' },
+      { runeRequirement: ['red', 'red', 'red'], attackBonus: 3, healthBonus: 1, description: '4/3' },
     ],
   },
 ]
 
-export const brPrototypeSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+export const rbSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
-    id: 'proto-br-blood-bolt',
-    name: 'Blood Bolt',
-    description: 'Deal 2 damage. Scales: RR→4, RRB→5+draw, RRR→8.',
+    id: 'proto-rb-scorching-bolt',
+    name: 'Scorching Bolt',
+    description: 'Deal 2 damage to a unit. Scales with red/black runes.',
     cardType: 'spell',
     colors: [],
     manaCost: 2,
@@ -149,135 +150,133 @@ export const brPrototypeSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
       affectsHeroes: true,
     },
     runeScaling: [
+      { runeRequirement: ['red'], damageBonus: 1, description: 'Deal 3 damage' },
       { runeRequirement: ['red', 'red'], damageBonus: 2, description: 'Deal 4 damage' },
-      { runeRequirement: ['red', 'red', 'black'], damageBonus: 3, drawCards: 1, description: 'Deal 5 damage, draw 1' },
-      { runeRequirement: ['red', 'red', 'red'], damageBonus: 6, description: 'Deal 8 damage' },
-    ],
-  },
-  {
-    id: 'proto-br-scorch',
-    name: 'Scorch',
-    description: 'Deal 1 damage. Scales: R→2, RR→3+tower, RRB→5.',
-    cardType: 'spell',
-    colors: [],
-    manaCost: 1,
-    effect: {
-      type: 'targeted_damage',
-      damage: 1,
-      affectsUnits: true,
-      affectsHeroes: true,
-    },
-    runeScaling: [
-      { runeRequirement: ['red'], damageBonus: 1, description: 'Deal 2 damage' },
-      { runeRequirement: ['red', 'red'], damageBonus: 2, healTower: -1, description: 'Deal 3 damage, 1 to tower' },
-      { runeRequirement: ['red', 'red', 'black'], damageBonus: 4, description: 'Deal 5 damage' },
+      { runeRequirement: ['red', 'red', 'black'], damageBonus: 4, description: 'Deal 6 damage' },
     ],
   },
 ]
 
 // ============================================================================
-// GWu DECK — Control / Scaling
-// Heroes: 2 Green, 1 White, 1 Blue — simple passive lane bonuses
+// GW DECK — Control / Scaling
+// Heroes: 2 Green (primary, pre-deployed) + 2 White (secondary, deployed turns 2-3)
+// Cards: 4 units (one per formation tag) + 1 buff spell
 // ============================================================================
 
-export const gwuPrototypeHeroes: Omit<Hero, 'location' | 'owner'>[] = [
+export const gwHeroes: Omit<Hero, 'location' | 'owner'>[] = [
+  // Primary heroes (pre-deployed turn 1)
   {
-    id: 'proto-gwu-rune-druid',
+    id: 'proto-gw-rune-druid',
     name: 'Rune Druid',
-    description: 'If this lane has 2+ runes, creatures gain +1/+1.',
+    description: 'Green hero. Creatures gain +1/+1 if lane has 2+ runes.',
     cardType: 'hero',
     colors: ['green'],
     attack: 2,
     health: 8,
     maxHealth: 8,
     currentHealth: 8,
-    supportEffect: '+1/+1 if 2+ lane runes',
     equippedItems: [],
-    ability: {
-      name: 'Rune Harvest',
-      description: 'Consume 1 green lane rune permanently, steal an enemy non-hero unit in this lane.',
-      trigger: 'activated',
-      manaCost: 1,
-      cooldown: 1,
-      effectType: 'steal_unit',
-      effectValue: 0,
-      runeCost: ['green'],
-    },
+    formationTag: 'frontline',
   },
   {
-    id: 'proto-gwu-ancient-warden',
+    id: 'proto-gw-ancient-warden',
     name: 'Ancient Warden',
-    description: 'Creatures played in this lane enter with +1 health.',
+    description: 'Green hero. Creatures played here enter with +1 health.',
     cardType: 'hero',
     colors: ['green'],
     attack: 3,
     health: 7,
     maxHealth: 7,
     currentHealth: 7,
-    supportEffect: 'Creatures enter with +1 health',
     equippedItems: [],
-    ability: {
-      name: 'Bark Armor',
-      description: 'Give a friendly non-hero unit in this lane +0/+3 permanently.',
-      trigger: 'activated',
-      manaCost: 1,
-      cooldown: 1,
-      effectType: 'buff_units',
-      effectValue: 3,
-    },
   },
+  // Secondary heroes (deployed turns 2-3)
   {
-    id: 'proto-gwu-shield-marshal',
+    id: 'proto-gw-shield-marshal',
     name: 'Shield Marshal',
-    description: 'Once per turn, prevent 1 damage to a creature in this lane.',
+    description: 'White hero. Prevents 1 damage per turn to a friendly creature.',
     cardType: 'hero',
     colors: ['white'],
     attack: 2,
     health: 9,
     maxHealth: 9,
     currentHealth: 9,
-    supportEffect: 'Prevent 1 damage/turn',
     equippedItems: [],
-    ability: {
-      name: 'Tower Mend',
-      description: 'Heal your tower in this lane for 3.',
-      trigger: 'activated',
-      manaCost: 2,
-      cooldown: 1,
-      effectType: 'heal_target',
-      effectValue: 3,
-    },
   },
   {
-    id: 'proto-gwu-archmage-tides',
-    name: 'Archmage of the Tides',
-    description: 'If this lane has 3 runes, spells cast here draw 1 card.',
+    id: 'proto-gw-sunward-knight',
+    name: 'Sunward Knight',
+    description: 'White hero. Frontline guardian that protects the lane.',
     cardType: 'hero',
-    colors: ['blue'],
+    colors: ['white'],
     attack: 3,
     health: 6,
     maxHealth: 6,
     currentHealth: 6,
-    supportEffect: 'Spells draw 1 at 3 runes',
     equippedItems: [],
-    ability: {
-      name: 'Tidal Return',
-      description: 'Return an enemy non-hero unit in this lane to its owner\'s hand.',
-      trigger: 'activated',
-      manaCost: 2,
-      cooldown: 1,
-      effectType: 'bounce_unit',
-      effectValue: 0,
-    },
+    formationTag: 'frontline',
   },
 ]
 
-// GWu Cards — 4 types, designed around G/GW/GGW/GWU thresholds
-export const gwuPrototypeCards: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
+export const gwUnits: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[] = [
   {
-    id: 'proto-gwu-guardian',
-    name: 'Guardian',
-    description: '2/3. Scales: G→3/3, GW→3/4, GGW→4/5.',
+    id: 'proto-gw-ancient-guardian',
+    name: 'Ancient Guardian',
+    description: 'Frontline. Wall of health that forces enemies to attack it.',
+    cardType: 'generic',
+    colors: [],
+    manaCost: 2,
+    attack: 1,
+    health: 5,
+    maxHealth: 5,
+    currentHealth: 5,
+    formationTag: 'frontline',
+    runeScaling: [
+      { runeRequirement: ['green'], attackBonus: 1, description: '2/5' },
+      { runeRequirement: ['green', 'white'], attackBonus: 1, healthBonus: 1, description: '2/6' },
+      { runeRequirement: ['green', 'green', 'white'], attackBonus: 2, healthBonus: 3, description: '3/8' },
+    ],
+  },
+  {
+    id: 'proto-gw-tideweaver',
+    name: 'Tideweaver',
+    description: 'Ranged. Shoots over frontline to pick off backline threats.',
+    cardType: 'generic',
+    colors: [],
+    manaCost: 3,
+    attack: 2,
+    health: 3,
+    maxHealth: 3,
+    currentHealth: 3,
+    formationTag: 'ranged',
+    runeScaling: [
+      { runeRequirement: ['green'], attackBonus: 1, description: '3/3' },
+      { runeRequirement: ['green', 'white'], attackBonus: 1, healthBonus: 1, description: '3/4' },
+      { runeRequirement: ['green', 'green', 'white'], attackBonus: 2, healthBonus: 2, description: '4/5' },
+    ],
+  },
+  {
+    id: 'proto-gw-vine-stalker',
+    name: 'Vine Stalker',
+    description: 'Assassin. Slips past all units to strike the tower directly.',
+    cardType: 'generic',
+    colors: [],
+    manaCost: 3,
+    attack: 3,
+    health: 1,
+    maxHealth: 1,
+    currentHealth: 1,
+    formationTag: 'assassin',
+    runeScaling: [
+      { runeRequirement: ['green'], attackBonus: 1, description: '4/1' },
+      { runeRequirement: ['green', 'white'], attackBonus: 1, healthBonus: 1, description: '4/2' },
+      { runeRequirement: ['green', 'green', 'white'], attackBonus: 2, healthBonus: 2, description: '5/3' },
+    ],
+  },
+  {
+    id: 'proto-gw-grove-sentinel',
+    name: 'Grove Sentinel',
+    description: 'Balanced defender. Attacks any enemy, must hit frontline first.',
     cardType: 'generic',
     colors: [],
     manaCost: 2,
@@ -291,60 +290,27 @@ export const gwuPrototypeCards: Omit<GenericUnit, 'location' | 'owner' | 'stacke
       { runeRequirement: ['green', 'green', 'white'], attackBonus: 2, healthBonus: 2, description: '4/5' },
     ],
   },
-  {
-    id: 'proto-gwu-ancient-hydra',
-    name: 'Ancient Hydra',
-    description: '3/3. Finisher. Scales: GW→4/4, GGW→5/6, GWU→8/8.',
-    cardType: 'generic',
-    colors: [],
-    manaCost: 4,
-    attack: 3,
-    health: 3,
-    maxHealth: 3,
-    currentHealth: 3,
-    runeScaling: [
-      { runeRequirement: ['green', 'white'], attackBonus: 1, healthBonus: 1, description: '4/4' },
-      { runeRequirement: ['green', 'green', 'white'], attackBonus: 2, healthBonus: 3, description: '5/6' },
-      { runeRequirement: ['green', 'white', 'blue'], attackBonus: 5, healthBonus: 5, description: '8/8 finisher' },
-    ],
-  },
 ]
 
-export const gwuPrototypeSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
+export const gwSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
   {
-    id: 'proto-gwu-growth',
-    name: 'Growth',
-    description: 'Target +1/+1. Scales: G→+2/+2, GW→draw 1, GGW→all +2/+2.',
+    id: 'proto-gw-natures-blessing',
+    name: "Nature's Blessing",
+    description: 'Give a friendly unit +1/+2. Scales with green/white runes.',
     cardType: 'spell',
     colors: [],
     manaCost: 2,
     effect: {
-      type: 'targeted_damage',
+      type: 'buff',
       damage: 0,
+      attackBuff: 1,
+      healthBuff: 2,
       affectsUnits: true,
     },
     runeScaling: [
-      { runeRequirement: ['green'], attackBonus: 1, healthBonus: 1, description: '+2/+2 to target' },
-      { runeRequirement: ['green', 'white'], attackBonus: 1, healthBonus: 1, drawCards: 1, description: '+2/+2 + draw 1' },
-      { runeRequirement: ['green', 'green', 'white'], attackBonus: 2, healthBonus: 2, description: 'All allies +2/+2' },
-    ],
-  },
-  {
-    id: 'proto-gwu-tidecall',
-    name: 'Tidecall',
-    description: 'Draw 1 card. Scales: G→draw 2, GW→draw 2+heal 2, GWU→draw 3+heal 4.',
-    cardType: 'spell',
-    colors: [],
-    manaCost: 2,
-    effect: {
-      type: 'draw_and_heal',
-      damage: 0,
-      drawCount: 1,
-    },
-    runeScaling: [
-      { runeRequirement: ['green'], drawCards: 1, description: 'Draw 2 total' },
-      { runeRequirement: ['green', 'white'], drawCards: 1, healTower: 2, description: 'Draw 2, heal tower 2' },
-      { runeRequirement: ['green', 'white', 'blue'], drawCards: 2, healTower: 4, description: 'Draw 3, heal tower 4' },
+      { runeRequirement: ['green'], attackBonus: 1, description: '+2/+2' },
+      { runeRequirement: ['green', 'white'], attackBonus: 1, healthBonus: 1, drawCards: 1, description: '+2/+3, draw 1' },
+      { runeRequirement: ['green', 'green', 'white'], attackBonus: 2, healthBonus: 2, drawCards: 1, description: '+3/+4, draw 1' },
     ],
   },
 ]
@@ -353,10 +319,6 @@ export const gwuPrototypeSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
 // RUNE SCALING HELPERS
 // ============================================================================
 
-/**
- * Count runes in a lane by color.
- * Returns a map of color -> count.
- */
 export function countRunesByColor(laneRunes: RuneColor[]): Record<RuneColor, number> {
   const counts: Record<string, number> = { red: 0, blue: 0, white: 0, black: 0, green: 0 }
   for (const rune of laneRunes) {
@@ -365,10 +327,6 @@ export function countRunesByColor(laneRunes: RuneColor[]): Record<RuneColor, num
   return counts as Record<RuneColor, number>
 }
 
-/**
- * Check if a rune requirement is met by the lane's runes.
- * E.g., requirement ['red','red','black'] needs at least 2 red + 1 black.
- */
 export function meetsRuneRequirement(laneRunes: RuneColor[], requirement: RuneColor[]): boolean {
   const available = countRunesByColor(laneRunes)
   const needed = countRunesByColor(requirement)
@@ -378,11 +336,6 @@ export function meetsRuneRequirement(laneRunes: RuneColor[], requirement: RuneCo
   return true
 }
 
-/**
- * Get the highest matching rune scaling tier for a card given the lane runes.
- * Returns the tier index (0-based) or -1 if no tier is met.
- * Tiers are checked from highest (last) to lowest (first).
- */
 export function getActiveRuneScalingTier(
   runeScaling: RuneScalingTier[] | undefined,
   laneRunes: RuneColor[]
@@ -394,9 +347,6 @@ export function getActiveRuneScalingTier(
   return -1
 }
 
-/**
- * Apply rune scaling to a unit card — returns modified attack/health.
- */
 export function applyRuneScalingToUnit(
   card: { attack: number, health: number, maxHealth: number, currentHealth: number, runeScaling?: RuneScalingTier[] },
   laneRunes: RuneColor[]
@@ -415,9 +365,6 @@ export function applyRuneScalingToUnit(
   }
 }
 
-/**
- * Apply rune scaling to a spell — returns modified damage + bonus effects.
- */
 export function applyRuneScalingToSpell(
   card: { effect: { damage?: number }, runeScaling?: RuneScalingTier[] },
   laneRunes: RuneColor[]
@@ -440,10 +387,12 @@ export function applyRuneScalingToSpell(
 // PROTOTYPE GAME STATE CREATION
 // ============================================================================
 
-function createPrototypeHero(
+const COPIES_PER_CARD = 3
+
+function createHero(
   template: Omit<Hero, 'location' | 'owner'>,
   owner: 'player1' | 'player2',
-  location: 'deployZone' | 'base',
+  location: 'battlefieldA' | 'battlefieldB' | 'deployZone',
   index: number
 ): Hero {
   return {
@@ -454,16 +403,15 @@ function createPrototypeHero(
   }
 }
 
-function createPrototypeUnit(
+function createUnit(
   template: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>,
   owner: 'player1' | 'player2',
-  location: 'hand' | 'base',
   copyIndex: number
 ): GenericUnit {
   return {
     ...template,
-    id: `${template.id}-${owner}-copy${copyIndex}-${Date.now()}`,
-    location,
+    id: `${template.id}-${owner}-copy${copyIndex}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    location: 'hand',
     owner,
     stackedWith: undefined,
     stackPower: undefined,
@@ -471,16 +419,15 @@ function createPrototypeUnit(
   }
 }
 
-function createPrototypeSpell(
+function createSpell(
   template: Omit<SpellCard, 'location' | 'owner'>,
   owner: 'player1' | 'player2',
-  location: 'hand' | 'base',
   copyIndex: number
 ): SpellCard {
   return {
     ...template,
-    id: `${template.id}-${owner}-copy${copyIndex}-${Date.now()}`,
-    location,
+    id: `${template.id}-${owner}-copy${copyIndex}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    location: 'hand',
     owner,
   }
 }
@@ -495,10 +442,15 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 /**
- * Create a simplified rune prototype game state.
- * P1 = BR deck (aggressive), P2 = GWu deck (control/scaling).
- * 4 heroes each, 4 card types × 4 copies = 16 cards each.
- * No AI, no boss, hotseat mode.
+ * Create the prototype game state.
+ * P1 = RB (aggressive), P2 = GW (control).
+ * 
+ * Hero deployment cadence:
+ *   Turn 1: Primary heroes pre-deployed (hero[0] -> Lane A, hero[1] -> Lane B)
+ *   Turn 2: Player chooses which lane to deploy hero[2] (secondary color)
+ *   Turn 3: hero[3] auto-deploys to the other lane
+ * 
+ * Each deck: 5 card designs x 3 copies = 15 cards.
  */
 export function createRunePrototypeGameState(): {
   player1Hand: Card[]
@@ -513,15 +465,19 @@ export function createRunePrototypeGameState(): {
   player1Library: Card[]
   player2Library: Card[]
 } {
-  // Heroes: all start in deployZone
-  const player1Heroes = brPrototypeHeroes.map((h, i) =>
-    createPrototypeHero(h, 'player1', 'deployZone', i)
-  )
-  const player2Heroes = gwuPrototypeHeroes.map((h, i) =>
-    createPrototypeHero(h, 'player2', 'deployZone', i)
-  )
+  // Primary heroes pre-deployed to lanes
+  const p1HeroA = createHero(rbHeroes[0], 'player1', 'battlefieldA', 0)
+  const p1HeroB = createHero(rbHeroes[1], 'player1', 'battlefieldB', 1)
+  // Secondary heroes wait in deploy zone
+  const p1Hero2 = createHero(rbHeroes[2], 'player1', 'deployZone', 2)
+  const p1Hero3 = createHero(rbHeroes[3], 'player1', 'deployZone', 3)
 
-  // Build decks: 4 copies of each card type
+  const p2HeroA = createHero(gwHeroes[0], 'player2', 'battlefieldA', 0)
+  const p2HeroB = createHero(gwHeroes[1], 'player2', 'battlefieldB', 1)
+  const p2Hero2 = createHero(gwHeroes[2], 'player2', 'deployZone', 2)
+  const p2Hero3 = createHero(gwHeroes[3], 'player2', 'deployZone', 3)
+
+  // Build decks
   const buildDeck = (
     units: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[],
     spells: Omit<SpellCard, 'location' | 'owner'>[],
@@ -529,34 +485,31 @@ export function createRunePrototypeGameState(): {
   ): Card[] => {
     const cards: Card[] = []
     for (const unit of units) {
-      for (let copy = 0; copy < 4; copy++) {
-        cards.push(createPrototypeUnit(unit, owner, 'hand', copy))
+      for (let copy = 0; copy < COPIES_PER_CARD; copy++) {
+        cards.push(createUnit(unit, owner, copy))
       }
     }
     for (const spell of spells) {
-      for (let copy = 0; copy < 4; copy++) {
-        cards.push(createPrototypeSpell(spell, owner, 'hand', copy))
+      for (let copy = 0; copy < COPIES_PER_CARD; copy++) {
+        cards.push(createSpell(spell, owner, copy))
       }
     }
     return shuffleArray(cards)
   }
 
-  const p1Deck = buildDeck(brPrototypeCards, brPrototypeSpells, 'player1')
-  const p2Deck = buildDeck(gwuPrototypeCards, gwuPrototypeSpells, 'player2')
+  const p1Deck = buildDeck(rbUnits, rbSpells, 'player1')
+  const p2Deck = buildDeck(gwUnits, gwSpells, 'player2')
 
-  // Starting hand = first 4, rest go to library (drawn later)
   const STARTING_HAND_SIZE = 4
   const player1Hand = p1Deck.slice(0, STARTING_HAND_SIZE)
   const player1Library = p1Deck.slice(STARTING_HAND_SIZE).map(c => ({ ...c, location: 'base' as const }))
   const player2Hand = p2Deck.slice(0, STARTING_HAND_SIZE)
   const player2Library = p2Deck.slice(STARTING_HAND_SIZE).map(c => ({ ...c, location: 'base' as const }))
 
-  const emptyRunePool: RunePool = { runes: [], temporaryRunes: [] }
-
   const metadata: GameMetadata = {
     currentTurn: 1,
     activePlayer: 'player1',
-    currentPhase: 'play',
+    currentPhase: 'resource',
     player1Gold: STARTING_GOLD,
     player2Gold: STARTING_GOLD,
     player1Mana: 2,
@@ -596,9 +549,6 @@ export function createRunePrototypeGameState(): {
     stunnedHeroes: {},
     barrierUnits: {},
     cursedUnits: {},
-    turn1DeploymentPhase: 'p1_lane1',
-    player1RunePool: emptyRunePool,
-    player2RunePool: emptyRunePool,
     player1Seals: [],
     player2Seals: [],
     player1SpellsCastThisTurn: 0,
@@ -621,10 +571,10 @@ export function createRunePrototypeGameState(): {
     player2Hand,
     player1Base: [],
     player2Base: [],
-    player1DeployZone: [...player1Heroes],
-    player2DeployZone: [...player2Heroes],
-    battlefieldA: { player1: [], player2: [] },
-    battlefieldB: { player1: [], player2: [] },
+    player1DeployZone: [p1Hero2, p1Hero3],
+    player2DeployZone: [p2Hero2, p2Hero3],
+    battlefieldA: { player1: [p1HeroA], player2: [p2HeroA] },
+    battlefieldB: { player1: [p1HeroB], player2: [p2HeroB] },
     metadata,
     player1Library,
     player2Library,

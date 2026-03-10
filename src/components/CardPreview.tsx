@@ -8,9 +8,7 @@ interface CardPreviewProps {
 
 export function CardPreview({ card }: CardPreviewProps) {
   const { metadata } = useGameContext()
-  // Determine which player's rune pool to use (default to player1 for preview)
-  const runePool = metadata.player1RunePool // Could be improved to detect owner
-  const playerMana = metadata.player1Mana // Default to player1 for preview
+  const playerMana = metadata.player1Mana
   const COLOR_MAP: Record<Color, string> = {
     red: '#d32f2f',
     blue: '#1976d2',
@@ -149,7 +147,7 @@ export function CardPreview({ card }: CardPreviewProps) {
                 ))}
               </span>
             )}
-            {canAffordCard(card, playerMana, runePool) ? (
+            {canAffordCard(card, playerMana) ? (
               <span style={{ color: '#4caf50', marginLeft: '8px' }}>✓</span>
             ) : (
               <span style={{ color: '#f44336', marginLeft: '8px' }}>✗</span>

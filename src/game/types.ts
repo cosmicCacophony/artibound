@@ -71,7 +71,6 @@ export interface BaseCard {
   rarity?: Rarity // Card rarity (defaults to 'common' if not specified)
   manaCost?: number // Cost to play this card (uses mana)
   colors?: Color[] // Colors required to cast in lane with matching hero color
-  consumesRunes?: boolean // If true, casting this card consumes runes from the pool
   runeScaling?: RuneScalingTier[] // Tiered effects based on lane runes (sorted weakest to strongest)
 }
 
@@ -110,19 +109,20 @@ export type ShopItem = Item | (Omit<BattlefieldBuff, 'id' | 'battlefieldId' | 'p
 
 export type TurnPhase = 'deploy' | 'resource' | 'play' | 'combatA' | 'adjust' | 'combatB'
 
+// Formation tags for autobattler combat
+export type FormationTag = 'frontline' | 'ranged' | 'assassin'
+
 // Combat System Types
 export type AttackTargetType = 'unit' | 'tower'
 
 export interface AttackTarget {
   type: AttackTargetType
-  targetId?: string // Unit ID if type is 'unit', undefined if 'tower'
-  targetSlot?: number // Slot number for tower targeting (positional reference)
+  targetId?: string
 }
 
 export interface CombatAction {
-  attackerId: string // ID of the attacking unit
-  attackerSlot: number // Slot position of attacker
-  target: AttackTarget // What the attacker is targeting
+  attackerId: string
+  target: AttackTarget
 }
 
 export interface GameMetadata {
@@ -136,9 +136,6 @@ export interface GameMetadata {
   player2Mana: number
   player1MaxMana: number // Maximum mana (increases by 1 per turn)
   player2MaxMana: number
-  // Rune system
-  player1RunePool: RunePool
-  player2RunePool: RunePool
   // Seals - Permanent rune generators (like mana rocks)
   player1Seals: Seal[]
   player2Seals: Seal[]
@@ -278,12 +275,10 @@ export interface Hero extends BaseCard {
   currentHealth: number // Track current health for combat
   temporaryHP?: number // Temporary HP bonus (resets at end of turn)
   temporaryAttack?: number // Temporary attack bonus (resets at end of turn)
-  crossStrike?: number // Deals damage across battlefields when attacking an empty slot
-  assassinate?: boolean // Can target any unit in lane if no blocker in front
+  formationTag?: FormationTag
   supportEffect?: string
   location: Location
   owner: PlayerId
-  slot?: number // Slot position 1-5 on battlefield
   equippedItems?: string[] // Array of item IDs
   signatureCardId?: string // ID of the signature card for this hero (2 copies added to deck)
   bonusVsHeroes?: number // Bonus damage when attacking heroes (e.g., +3 for assassins)
@@ -299,7 +294,6 @@ export interface SignatureCard extends BaseCard {
   currentHealth: number
   location: Location
   owner: PlayerId
-  slot?: number
   effect?: string // Special effect when played
 }
 
@@ -312,7 +306,6 @@ export interface HybridCard extends BaseCard {
   baseBuff?: string // Effect when in base
   location: Location
   owner: PlayerId
-  slot?: number
 }
 
 export interface GenericUnit extends BaseCard {
@@ -323,11 +316,9 @@ export interface GenericUnit extends BaseCard {
   currentHealth: number
   temporaryHP?: number // Temporary HP bonus (resets at end of turn)
   temporaryAttack?: number // Temporary attack bonus (resets at end of turn)
-  crossStrike?: number // Deals damage across battlefields when attacking an empty slot
-  assassinate?: boolean // Can target any unit in lane if no blocker in front
+  formationTag?: FormationTag
   location: Location
   owner: PlayerId
-  slot?: number
   stackedWith?: string // ID of generic unit this is stacked with (if any)
   stackPower?: number // Combined power if stacked
   stackHealth?: number // Combined health if stacked
@@ -349,33 +340,32 @@ export type SpellEffectType =
   | 'board_wipe' // Destroy all units/heroes
   | 'targeted_damage' // Damage to specific target(s)
   | 'multi_target_damage' // Choose multiple separate targets (e.g., "Deal 2 damage to up to 2 targets")
-  | 'chain_damage' // Sequential damage to adjacent units (e.g., "3 damage, then 2 to adjacent, then 1")
+  | 'chain_damage' // Sequential multi-target damage (choose up to N targets, deal damage to each)
   | 'split_damage' // Distribute damage among targets (e.g., "Deal 3 damage split among up to 3 targets")
-  | 'adjacent_damage' // Damage to adjacent units
   | 'all_units_damage' // Damage to all units
   | 'stun' // Stun target (cannot attack this turn)
   | 'damage_and_stun' // Deal damage and stun
-  | 'front_damage' // Damage to enemy in front of caster's hero
-  | 'swap_heroes' // Swap hero positions
   | 'add_temporary_runes' // Add temporary runes (like Dark Ritual)
   | 'create_seal' // Create a permanent seal/mana rock
   | 'add_permanent_rune' // Add permanent rune to pool
   | 'return_to_base' // Returns target card to its owner's base
   | 'draw_and_heal' // Draws cards and heals
   | 'steal_unit' // Take control of target enemy unit
+  | 'buff' // Buff a friendly unit (+attack/+health)
 
 export interface SpellEffect {
   type: SpellEffectType
   damage?: number // Damage amount
   targetCount?: number // For multi-target spells: how many targets can be selected
   maxTargets?: number // Maximum number of targets for split/multi-target
-  chainDamages?: number[] // For chain damage: array of damage values [3, 2, 1]
   affectsHeroes?: boolean // Does it affect heroes?
   affectsUnits?: boolean // Does it affect units?
   affectsOwnUnits?: boolean // For board wipes: affects own units too?
   affectsEnemyUnits?: boolean // For board wipes: affects enemy units?
-  adjacentCount?: number // For adjacent damage: how many adjacent units
   stunDuration?: number // Turns stunned (default 1)
+  // Buff effects
+  attackBuff?: number // Attack bonus to grant
+  healthBuff?: number // Health bonus to grant
   // Rune generation effects
   runeColors?: RuneColor[] // Colors of runes to add (e.g., ['black', 'black', 'black'] for Dark Ritual)
   sealColor?: RuneColor // Color of seal to create
@@ -534,7 +524,7 @@ export interface GameState {
   player2Battlefields?: BattlefieldDefinition[]
 }
 
-export const BATTLEFIELD_SLOT_LIMIT = 5
+export const MAX_UNITS_PER_LANE = 5
 export const TOWER_HP = 15
 export const NEXUS_HP = 30
 export const STARTING_GOLD = 5
