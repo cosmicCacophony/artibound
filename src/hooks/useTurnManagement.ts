@@ -1,9 +1,11 @@
 import { useCallback } from 'react'
-import { TurnPhase, Card, GameMetadata } from '../game/types'
+import { TurnPhase, Card, GameMetadata, Hero, RuneColor } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { resolveSimultaneousCombat } from '../game/combatSystem'
 import { createCardFromTemplate } from '../game/sampleData'
 import { getNextPhase } from '../game/turnStateMachine'
+import { checkWinCondition, computeTowerDamageDealt } from '../game/winCondition'
+import { HeroDeathInfo } from '../components/CombatSummaryModal'
 
 export function useTurnManagement() {
   const { 
@@ -72,62 +74,99 @@ export function useTurnManagement() {
         player1Base: Card[],
         player2Base: Card[],
         deathCooldowns: Record<string, number>,
+        _battlefieldId: 'battlefieldA' | 'battlefieldB',
+        laneRunes: { player1: RuneColor[], player2: RuneColor[] },
       ) => {
         const newP1Base = [...player1Base]
         const newP2Base = [...player2Base]
         const newCooldowns = { ...deathCooldowns }
+        const heroDeaths: HeroDeathInfo[] = []
+        const updatedLaneRunes = {
+          player1: [...laneRunes.player1],
+          player2: [...laneRunes.player2],
+        }
         
-        originalBattlefield.player1.forEach(originalCard => {
-          if (originalCard.cardType === 'hero') {
-            const stillAlive = updatedBattlefield.player1.some(c => c.id === originalCard.id)
-            if (!stillAlive) {
-              const hero = originalCard as import('../game/types').Hero
-              newP1Base.push({
-                ...hero,
-                location: 'base' as const,
-                currentHealth: 0,
-              })
-              newCooldowns[hero.id] = 2
-            }
-          }
-        })
-        
-        originalBattlefield.player2.forEach(originalCard => {
-          if (originalCard.cardType === 'hero') {
-            const stillAlive = updatedBattlefield.player2.some(c => c.id === originalCard.id)
-            if (!stillAlive) {
-              const hero = originalCard as import('../game/types').Hero
-              newP2Base.push({
-                ...hero,
-                location: 'base' as const,
-                currentHealth: 0,
-              })
-              newCooldowns[hero.id] = 2
-            }
-          }
-        })
+        const processPlayer = (player: 'player1' | 'player2', baseArr: Card[]) => {
+          originalBattlefield[player].forEach(originalCard => {
+            if (originalCard.cardType === 'hero') {
+              const stillAlive = updatedBattlefield[player].some(c => c.id === originalCard.id)
+              if (!stillAlive) {
+                const hero = originalCard as Hero
+                baseArr.push({
+                  ...hero,
+                  location: 'base' as const,
+                  currentHealth: 0,
+                })
+                newCooldowns[hero.id] = 2
 
-        return { newP1Base, newP2Base, newCooldowns }
+                // Remove one rune of each of the hero's colors from the lane
+                const runesLost: RuneColor[] = []
+                if (hero.colors) {
+                  for (const color of hero.colors) {
+                    const idx = updatedLaneRunes[player].indexOf(color as RuneColor)
+                    if (idx !== -1) {
+                      updatedLaneRunes[player].splice(idx, 1)
+                      runesLost.push(color as RuneColor)
+                    }
+                  }
+                }
+
+                heroDeaths.push({
+                  heroName: hero.name,
+                  heroId: hero.id,
+                  owner: player,
+                  runesLost,
+                })
+              }
+            }
+          })
+        }
+
+        processPlayer('player1', newP1Base)
+        processPlayer('player2', newP2Base)
+
+        return { newP1Base, newP2Base, newCooldowns, heroDeaths, updatedLaneRunes }
       }
       
-      const { newP1Base: newP1BaseA, newP2Base: newP2BaseA, newCooldowns: newCooldownsA } = processKilledHeroes(
+      const currentLaneRunes = metadata.laneRunes || {
+        battlefieldA: { player1: [], player2: [] },
+        battlefieldB: { player1: [], player2: [] },
+      }
+
+      const resultAHeroes = processKilledHeroes(
         gameState.battlefieldA,
         resultA.updatedBattlefield,
         gameState.player1Base,
         gameState.player2Base,
         metadata.deathCooldowns,
+        'battlefieldA',
+        currentLaneRunes.battlefieldA,
       )
       
-      const { newP1Base: newP1BaseB, newP2Base: newP2BaseB, newCooldowns: newCooldownsB } = processKilledHeroes(
+      const resultBHeroes = processKilledHeroes(
         gameState.battlefieldB,
         resultB.updatedBattlefield,
-        newP1BaseA,
-        newP2BaseA,
-        newCooldownsA,
+        resultAHeroes.newP1Base,
+        resultAHeroes.newP2Base,
+        resultAHeroes.newCooldowns,
+        'battlefieldB',
+        currentLaneRunes.battlefieldB,
       )
+
+      const newP1BaseB = resultBHeroes.newP1Base
+      const newP2BaseB = resultBHeroes.newP2Base
+      const newCooldownsB = resultBHeroes.newCooldowns
+
+      const updatedLaneRunesAfterDeaths = {
+        battlefieldA: resultAHeroes.updatedLaneRunes,
+        battlefieldB: resultBHeroes.updatedLaneRunes,
+      }
       
       const totalDamageToP1Nexus = resultA.overflowDamage.player2 + resultB.overflowDamage.player2
       const totalDamageToP2Nexus = resultA.overflowDamage.player1 + resultB.overflowDamage.player1
+
+      // Track cumulative tower damage dealt
+      const towerDmgThisRound = computeTowerDamageDealt(initialTowerHP, resultB.updatedTowerHP)
 
       // Draw 2 cards for each player (turn 2+ only; turn 1 uses starting hands)
       const shouldDraw = metadata.currentTurn >= 1
@@ -152,6 +191,7 @@ export function useTurnManagement() {
             player1: resultA.overflowDamage.player1,
             player2: resultA.overflowDamage.player2,
           },
+          heroDeaths: resultAHeroes.heroDeaths,
         },
         battlefieldB: {
           name: 'Battlefield B',
@@ -164,6 +204,7 @@ export function useTurnManagement() {
             player1: resultB.overflowDamage.player1,
             player2: resultB.overflowDamage.player2,
           },
+          heroDeaths: resultBHeroes.heroDeaths,
         },
       })
       setShowCombatSummary(true)
@@ -235,6 +276,46 @@ export function useTurnManagement() {
         const p2MaxMana = prev.metadata.player2MaxMana
         const nextPhase = getNextPhase('play', 'COMBAT_RESOLVED', !!prev.metadata.isRunePrototype)
 
+        const prevTotalDmg = prev.metadata.totalTowerDamageDealt || { player1: 0, player2: 0 }
+        const newTotalTowerDmg = {
+          player1: prevTotalDmg.player1 + towerDmgThisRound.player1,
+          player2: prevTotalDmg.player2 + towerDmgThisRound.player2,
+        }
+
+        const newTurn = prev.metadata.currentTurn + 1
+        const postCombatMetadata: GameMetadata = {
+          ...prev.metadata,
+          towerA_player1_HP: resultB.updatedTowerHP.towerA_player1,
+          towerA_player2_HP: resultB.updatedTowerHP.towerA_player2,
+          towerB_player1_HP: resultB.updatedTowerHP.towerB_player1,
+          towerB_player2_HP: resultB.updatedTowerHP.towerB_player2,
+          player1NexusHP: newP1NexusHP,
+          player2NexusHP: newP2NexusHP,
+          deathCooldowns: { ...p1CooldownResult.newCooldowns, ...p2CooldownResult.newCooldowns },
+          laneMomentum: updatedLaneMomentum,
+          laneRunes: updatedLaneRunesAfterDeaths,
+          currentTurn: newTurn,
+          currentPhase: nextPhase,
+          activePlayer: initiativePlayer,
+          actionPlayer: initiativePlayer,
+          player1Mana: p1MaxMana,
+          player2Mana: p2MaxMana,
+          player1Passed: false,
+          player2Passed: false,
+          turn1DeploymentPhase: 'complete',
+          resourceChoicesMade: { player1: false, player2: false },
+          player1HeroesDeployedThisTurn: 0,
+          player2HeroesDeployedThisTurn: 0,
+          totalTowerDamageDealt: newTotalTowerDmg,
+        }
+
+        const winResult = checkWinCondition(postCombatMetadata)
+        if (winResult.gameOver) {
+          postCombatMetadata.gameOver = true
+          postCombatMetadata.winner = winResult.winner
+          postCombatMetadata.winReason = winResult.winReason
+        }
+
         return {
           ...prev,
           battlefieldA: resultA.updatedBattlefield,
@@ -245,29 +326,7 @@ export function useTurnManagement() {
           player2DeployZone: p2CooldownResult.newDeployZone,
           player1Hand: [...(prev.player1Hand || []), ...p1CardsToDraw],
           player2Hand: [...(prev.player2Hand || []), ...p2CardsToDraw],
-          metadata: {
-            ...prev.metadata,
-            towerA_player1_HP: resultB.updatedTowerHP.towerA_player1,
-            towerA_player2_HP: resultB.updatedTowerHP.towerA_player2,
-            towerB_player1_HP: resultB.updatedTowerHP.towerB_player1,
-            towerB_player2_HP: resultB.updatedTowerHP.towerB_player2,
-            player1NexusHP: newP1NexusHP,
-            player2NexusHP: newP2NexusHP,
-            deathCooldowns: { ...p1CooldownResult.newCooldowns, ...p2CooldownResult.newCooldowns },
-            laneMomentum: updatedLaneMomentum,
-            currentTurn: prev.metadata.currentTurn + 1,
-            currentPhase: nextPhase,
-            activePlayer: initiativePlayer,
-            actionPlayer: initiativePlayer,
-            player1Mana: p1MaxMana,
-            player2Mana: p2MaxMana,
-            player1Passed: false,
-            player2Passed: false,
-            turn1DeploymentPhase: 'complete',
-            resourceChoicesMade: { player1: false, player2: false },
-            player1HeroesDeployedThisTurn: 0,
-            player2HeroesDeployedThisTurn: 0,
-          },
+          metadata: postCombatMetadata,
         }
       })
       return

@@ -4,6 +4,7 @@ import { GameHeader } from './GameHeader'
 import { PlayerArea } from './PlayerArea'
 import { BattlefieldView } from './BattlefieldView'
 import { CombatSummaryModal } from './CombatSummaryModal'
+import { VictoryModal } from './VictoryModal'
 import { ResourceChoiceModal } from './ResourceChoiceModal'
 import { HeroDeployModal } from './HeroDeployModal'
 import { getNextPhase } from '../game/turnStateMachine'
@@ -19,6 +20,7 @@ export function Board() {
     setShowCombatSummary,
     combatSummaryData,
     metadata,
+    initializeRunePrototype,
   } = useGameContext()
 
   const [deployStep, setDeployStep] = useState<DeployStep>('idle')
@@ -199,6 +201,17 @@ export function Board() {
           onClose={() => setShowCombatSummary(false)}
           battlefieldA={combatSummaryData.battlefieldA}
           battlefieldB={combatSummaryData.battlefieldB}
+        />
+      )}
+
+      {/* Victory Modal */}
+      {metadata.gameOver && metadata.winner && (
+        <VictoryModal
+          isOpen={true}
+          winner={metadata.winner}
+          winReason={metadata.winReason || null}
+          metadata={metadata}
+          onRestart={initializeRunePrototype}
         />
       )}
 

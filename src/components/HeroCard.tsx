@@ -184,6 +184,8 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
         return `Destroy all ${effect.affectsOwnUnits ? 'units' : 'enemy units'}`
       case 'stun':
         return `Stun target for ${effect.stunDuration || 1} turn(s)`
+      case 'buff':
+        return `+${effect.attackBuff || 0}/+${effect.healthBuff || 0} to target`
       default:
         return 'Spell effect'
     }
@@ -743,7 +745,9 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
               baseAttack={'attack' in card ? (card as GenericUnit).attack : undefined}
               baseHealth={'health' in card ? (card as GenericUnit).health : undefined}
               baseSpellEffect={card.cardType === 'spell' && 'effect' in card
-                ? `Deal ${(card as SpellCard).effect.damage || 0} damage`
+                ? ((card as SpellCard).effect.type === 'buff'
+                  ? `+${(card as SpellCard).effect.attackBuff || 0}/+${(card as SpellCard).effect.healthBuff || 0}`
+                  : `Deal ${(card as SpellCard).effect.damage || 0} damage`)
                 : undefined}
               cardType={card.cardType === 'spell' ? 'spell' : 'generic'}
               laneRunes={laneRunes}
@@ -752,31 +756,49 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
         </div>
       )}
 
-      {/* Cooldown counter display (for heroes in base) */}
+      {/* Death cooldown overlay (for heroes in base) */}
       {cooldownCounter !== undefined && cooldownCounter > 0 && card.cardType === 'hero' && card.location === 'base' && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '4px',
-            right: '4px',
-            backgroundColor: 'rgba(255, 0, 0, 0.9)',
-            color: 'white',
-            borderRadius: '50%',
-            width: '28px',
-            height: '28px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            zIndex: 11,
-            border: '2px solid white',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
-          }}
-          title={`Cooldown: ${cooldownCounter} turn${cooldownCounter !== 1 ? 's' : ''} remaining`}
-        >
-          {cooldownCounter}
-        </div>
+        <>
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.45)',
+              borderRadius: '8px',
+              zIndex: 10,
+              pointerEvents: 'none',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              zIndex: 11,
+              pointerEvents: 'none',
+            }}
+          >
+            <div style={{ fontSize: '24px', lineHeight: 1 }}>{'\u{1F480}'}</div>
+            <div style={{
+              color: '#ff5252',
+              fontSize: '11px',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+              marginTop: '2px',
+            }}>
+              {cooldownCounter} turn{cooldownCounter !== 1 ? 's' : ''}
+            </div>
+          </div>
+        </>
       )}
       
       {/* Death cooldown overlay - black X */}

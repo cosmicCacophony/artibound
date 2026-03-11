@@ -365,20 +365,33 @@ export function applyRuneScalingToUnit(
   }
 }
 
+export interface SpellScalingResult {
+  damage: number
+  drawCards: number
+  healTower: number
+  attackBuff: number
+  healthBuff: number
+  activeScalingDescription?: string
+}
+
 export function applyRuneScalingToSpell(
-  card: { effect: { damage?: number }, runeScaling?: RuneScalingTier[] },
+  card: { effect: { damage?: number; attackBuff?: number; healthBuff?: number }, runeScaling?: RuneScalingTier[] },
   laneRunes: RuneColor[]
-): { damage: number, drawCards: number, healTower: number, activeScalingDescription?: string } {
+): SpellScalingResult {
   const baseDamage = card.effect.damage || 0
+  const baseAttackBuff = card.effect.attackBuff || 0
+  const baseHealthBuff = card.effect.healthBuff || 0
   const tierIndex = getActiveRuneScalingTier(card.runeScaling, laneRunes)
   if (tierIndex < 0) {
-    return { damage: baseDamage, drawCards: 0, healTower: 0 }
+    return { damage: baseDamage, drawCards: 0, healTower: 0, attackBuff: baseAttackBuff, healthBuff: baseHealthBuff }
   }
   const tier = card.runeScaling![tierIndex]
   return {
     damage: baseDamage + (tier.damageBonus || 0),
     drawCards: tier.drawCards || 0,
     healTower: tier.healTower || 0,
+    attackBuff: baseAttackBuff + (tier.attackBonus || 0),
+    healthBuff: baseHealthBuff + (tier.healthBonus || 0),
     activeScalingDescription: tier.description,
   }
 }

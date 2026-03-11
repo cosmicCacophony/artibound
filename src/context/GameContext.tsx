@@ -28,18 +28,8 @@ interface GameContextType {
   showCombatSummary: boolean
   setShowCombatSummary: (show: boolean) => void
   combatSummaryData: {
-    battlefieldA: {
-      name: string
-      combatLog: any[]
-      towerHP: { player1: number, player2: number }
-      overflowDamage: { player1: number, player2: number }
-    }
-    battlefieldB: {
-      name: string
-      combatLog: any[]
-      towerHP: { player1: number, player2: number }
-      overflowDamage: { player1: number, player2: number }
-    }
+    battlefieldA: import('../components/CombatSummaryModal').LaneCombatData
+    battlefieldB: import('../components/CombatSummaryModal').LaneCombatData
   } | null
   setCombatSummaryData: (data: any) => void
 

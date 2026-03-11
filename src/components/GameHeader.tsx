@@ -8,10 +8,12 @@ export function GameHeader() {
 
   // Auto-trigger combat when both players pass during play phase
   useEffect(() => {
-    if (metadata.currentPhase === 'play' && metadata.player1Passed && metadata.player2Passed) {
+    if (!metadata.gameOver && metadata.currentPhase === 'play' && metadata.player1Passed && metadata.player2Passed) {
       handleNextPhase()
     }
-  }, [metadata.currentPhase, metadata.player1Passed, metadata.player2Passed, handleNextPhase])
+  }, [metadata.gameOver, metadata.currentPhase, metadata.player1Passed, metadata.player2Passed, handleNextPhase])
+
+  const isGameOver = !!metadata.gameOver
 
   const phaseLabel = metadata.currentPhase === 'resource' ? 'Resource'
     : metadata.currentPhase === 'deploy' ? 'Deploy'
@@ -63,7 +65,7 @@ export function GameHeader() {
         </div>
 
         {/* End Deploy Phase */}
-        {metadata.currentPhase === 'deploy' && (
+        {metadata.currentPhase === 'deploy' && !isGameOver && (
           <button
             onClick={handleEndDeployPhase}
             style={{
@@ -82,7 +84,7 @@ export function GameHeader() {
         )}
 
         {/* Pass (play phase) */}
-        {metadata.currentPhase === 'play' && metadata.actionPlayer && (
+        {metadata.currentPhase === 'play' && metadata.actionPlayer && !isGameOver && (
           <button
             onClick={() => handlePass(metadata.actionPlayer!)}
             style={{
@@ -103,9 +105,10 @@ export function GameHeader() {
         {/* Next Turn */}
         <button
           onClick={handleNextTurn}
+          disabled={isGameOver}
           style={{
             padding: '6px 14px',
-            backgroundColor: '#ff9800',
+            backgroundColor: isGameOver ? '#555' : '#ff9800',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
@@ -120,9 +123,10 @@ export function GameHeader() {
         {/* Force combat (debug) */}
         <button
           onClick={handleNextPhase}
+          disabled={isGameOver}
           style={{
             padding: '6px 14px',
-            backgroundColor: '#616161',
+            backgroundColor: isGameOver ? '#555' : '#616161',
             color: 'white',
             border: 'none',
             borderRadius: '4px',

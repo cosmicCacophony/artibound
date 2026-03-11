@@ -554,14 +554,19 @@ export function useDeployment() {
       return
     }
 
-    if (targetCard.owner !== opponent) {
+    const effect = spell.effect
+    const isDamageSpell = effect.type === 'damage' || effect.type === 'targeted_damage' || effect.type === 'damage_and_stun'
+    const isBuffSpell = effect.type === 'buff'
+
+    if (isBuffSpell && targetCard.owner !== owner) {
+      alert('Buff spells must target a friendly unit.')
+      return
+    }
+    if (isDamageSpell && targetCard.owner !== opponent) {
       alert('Damage spells must target an enemy unit.')
       return
     }
-
-    const effect = spell.effect
-    const isDamageSpell = effect.type === 'damage' || effect.type === 'targeted_damage' || effect.type === 'damage_and_stun'
-    if (!isDamageSpell) {
+    if (!isDamageSpell && !isBuffSpell) {
       alert('This spell type is not target-cast in prototype mode yet.')
       return
     }
@@ -573,10 +578,14 @@ export function useDeployment() {
     }
 
     let damage = effect.damage || 0
+    let attackBuff = effect.attackBuff || 0
+    let healthBuff = effect.healthBuff || 0
     if (metadata.isRunePrototype) {
       const laneRunes = metadata.laneRunes?.[battlefieldId]?.[owner] || []
       const scaled = applyRuneScalingToSpell(spell, laneRunes)
       damage += scaled.damage
+      attackBuff = scaled.attackBuff
+      healthBuff = scaled.healthBuff
     }
 
     setGameState(prev => {
@@ -586,10 +595,6 @@ export function useDeployment() {
       const battlefield = prev[battlefieldId]
       const ownerField = battlefield[owner]
       const opponentField = battlefield[opponent]
-      const targetInLane = opponentField.find(c => c.id === targetCard.id)
-      if (!targetInLane) {
-        return prev
-      }
 
       let updatedMana = prev.metadata[manaKey] as number
       if (spell.manaCost) {
@@ -597,6 +602,61 @@ export function useDeployment() {
       }
       if (spell.refundMana && spell.refundMana > 0) {
         updatedMana += spell.refundMana
+      }
+
+      // Handle buff spell targeting friendly units
+      if (isBuffSpell) {
+        const targetInOwnerField = ownerField.find(c => c.id === targetCard.id)
+        if (!targetInOwnerField) return prev
+
+        const updatedOwnerField = ownerField.map(card => {
+          if (card.id !== targetCard.id) return card
+          if (card.cardType === 'hero') {
+            const hero = card as Hero
+            return {
+              ...hero,
+              attack: hero.attack + attackBuff,
+              health: hero.health + healthBuff,
+              maxHealth: hero.maxHealth + healthBuff,
+              currentHealth: hero.currentHealth + healthBuff,
+            }
+          } else if (card.cardType === 'generic') {
+            const unit = card as GenericUnit
+            return {
+              ...unit,
+              attack: unit.attack + attackBuff,
+              health: unit.health + healthBuff,
+              maxHealth: unit.maxHealth + healthBuff,
+              currentHealth: unit.currentHealth + healthBuff,
+            }
+          }
+          return card
+        })
+
+        const otherPlayer = prev.metadata.actionPlayer === 'player1' ? 'player2' : 'player1'
+        return {
+          ...prev,
+          [handKey]: (prev[handKey] as Card[]).filter(c => c.id !== spell.id),
+          [battlefieldId]: {
+            ...battlefield,
+            [owner]: updatedOwnerField,
+            [opponent]: opponentField,
+          },
+          metadata: {
+            ...prev.metadata,
+            [manaKey]: updatedMana,
+            actionPlayer: otherPlayer,
+            initiativePlayer: otherPlayer,
+            player1Passed: false,
+            player2Passed: false,
+          },
+        }
+      }
+
+      // Handle damage spell targeting enemy units
+      const targetInLane = opponentField.find(c => c.id === targetCard.id)
+      if (!targetInLane) {
+        return prev
       }
 
       const nextOpponentField: Card[] = []

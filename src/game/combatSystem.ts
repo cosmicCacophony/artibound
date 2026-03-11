@@ -17,12 +17,18 @@ import { Card, AttackTarget, Battlefield, PlayerId, GameState, GenericUnit, Hero
 export interface CombatLogEntry {
   attackerId: string
   attackerName: string
-  targetType: 'unit' | 'tower'
+  targetType: 'unit' | 'tower' | 'combat_win'
   targetId?: string
   targetName?: string
   damage: number
   killed?: boolean
+  killedHero?: boolean
   formationTag?: FormationTag
+  combatWinInfo?: {
+    winningSide: PlayerId
+    winnerSurvivors: number
+    loserSurvivors: number
+  }
 }
 
 function getFormationTag(unit: Card): FormationTag | undefined {
@@ -233,12 +239,14 @@ export function resolveSimultaneousCombat(
       const newHealth = Math.max(0, (unit as any).currentHealth - damageAfterTemp)
       const newTempHP = Math.max(0, tempHP - dmg)
 
-      // Update kill status in combat log
       if (newHealth <= 0) {
         combatLog.forEach(entry => {
-          if (entry.targetId === unit.id) entry.killed = true
+          if (entry.targetId === unit.id) {
+            entry.killed = true
+            if (unit.cardType === 'hero') entry.killedHero = true
+          }
         })
-        return alive // unit is dead, don't add to alive list
+        return alive
       }
 
       const updated = { ...unit, currentHealth: newHealth } as any
@@ -252,6 +260,35 @@ export function resolveSimultaneousCombat(
 
   const updatedP1 = applyDamageToUnits(battlefield.player1)
   const updatedP2 = applyDamageToUnits(battlefield.player2)
+
+  // Combat-win tower damage: loser's tower takes damage = winner's surviving unit count
+  const p1Survivors = updatedP1.length
+  const p2Survivors = updatedP2.length
+
+  if (p1Survivors !== p2Survivors) {
+    const winningSide: PlayerId = p1Survivors > p2Survivors ? 'player1' : 'player2'
+    const winnerCount = Math.max(p1Survivors, p2Survivors)
+    const loserCount = Math.min(p1Survivors, p2Survivors)
+    const combatWinDamage = winnerCount
+
+    const loserTowerKey = battlefieldId === 'battlefieldA'
+      ? (winningSide === 'player1' ? 'towerA_player2' : 'towerA_player1')
+      : (winningSide === 'player1' ? 'towerB_player2' : 'towerB_player1')
+
+    towerDamage[loserTowerKey] = (towerDamage[loserTowerKey] || 0) + combatWinDamage
+
+    combatLog.push({
+      attackerId: 'combat-win',
+      attackerName: `${winningSide === 'player1' ? 'P1' : 'P2'} Combat Victory`,
+      targetType: 'combat_win',
+      damage: combatWinDamage,
+      combatWinInfo: {
+        winningSide,
+        winnerSurvivors: winnerCount,
+        loserSurvivors: loserCount,
+      },
+    })
+  }
 
   // Apply damage to towers
   for (const [towerKey, totalDmg] of Object.entries(towerDamage)) {

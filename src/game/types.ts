@@ -221,6 +221,12 @@ export interface GameMetadata {
   resourceChoicesMade?: { player1: boolean, player2: boolean }
   // Is this a rune prototype game? (controls which UI/logic paths to use)
   isRunePrototype?: boolean
+  // Win condition tracking
+  gameOver?: boolean
+  winner?: PlayerId | null
+  winReason?: 'towers_destroyed' | 'turn_limit' | null
+  // Cumulative tower damage dealt (for turn-limit tiebreaker)
+  totalTowerDamageDealt?: { player1: number; player2: number }
 }
 
 // Hero Ability Types
