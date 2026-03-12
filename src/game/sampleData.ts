@@ -1,4 +1,4 @@
-import { Hero, SignatureCard, HybridCard, GenericUnit, Card, BaseCard, Item, GameMetadata, TOWER_HP, NEXUS_HP, STARTING_GOLD, BattlefieldDefinition, SpellCard, SpellEffect, BattlefieldBuff, BattlefieldId, BattlefieldBuffEffectType } from './types'
+import { Hero, SignatureCard, HybridCard, GenericUnit, Card, BaseCard, Item, ItemCard, GameMetadata, TOWER_HP, NEXUS_HP, STARTING_GOLD, BattlefieldDefinition, SpellCard, SpellEffect, BattlefieldBuff, BattlefieldId, BattlefieldBuffEffectType } from './types'
 import { allCards, allSpells, allArtifacts } from './cardData'
 
 // Item definitions
@@ -109,6 +109,49 @@ export const tier1Items: Item[] = [
     hpBonus: 3,
     hasActivatedAbility: true,
     activatedAbilityDescription: 'Swap this hero with another unit.',
+  },
+  // Equipment cards (playable from hand onto units during play phase)
+  {
+    id: 'equip-iron-sword',
+    name: 'Iron Sword',
+    description: '+2 Attack',
+    cost: 0,
+    tier: 1,
+    attackBonus: 2,
+  },
+  {
+    id: 'equip-wooden-shield',
+    name: 'Wooden Shield',
+    description: '+3 HP',
+    cost: 0,
+    tier: 1,
+    hpBonus: 3,
+  },
+  {
+    id: 'equip-war-banner',
+    name: 'War Banner',
+    description: '+1 Attack, +1 HP',
+    cost: 0,
+    tier: 1,
+    attackBonus: 1,
+    hpBonus: 1,
+  },
+  {
+    id: 'equip-heavy-plate',
+    name: 'Heavy Plate',
+    description: '+4 HP, grants Frontline',
+    cost: 0,
+    tier: 1,
+    hpBonus: 4,
+    specialEffects: ['frontline'],
+  },
+  {
+    id: 'equip-scouts-cloak',
+    name: 'Scout\'s Cloak',
+    description: 'Grants Ranged (bypasses frontline targeting)',
+    cost: 0,
+    tier: 1,
+    specialEffects: ['ranged'],
   },
   {
     id: 'item-keenfolk-musket',
@@ -963,6 +1006,16 @@ export function createCardFromTemplate(
         } as GenericUnit
       }
     }
+  }
+
+  // Handle item cards
+  if (template.cardType === 'item') {
+    const itemId = (template as any).itemId || template.id
+    return {
+      ...base,
+      cardType: 'item' as const,
+      itemId,
+    } as ItemCard
   }
 
   // Final fallback - use template directly with type-specific handling

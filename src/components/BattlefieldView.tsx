@@ -51,6 +51,12 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     )
   )
 
+  const isItemSelected = Boolean(
+    selectedCard &&
+    selectedCard.cardType === 'item' &&
+    selectedCard.location === 'hand'
+  )
+
   const handleCardClick = (cardId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     setSelectedCardId(selectedCardId === cardId ? null : cardId)
@@ -101,15 +107,19 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       }
     })()
     const canClickCast = Boolean(isTargetedDamageSpellSelected && selectedCard && selectedCard.owner !== player)
+    const canEquipItem = Boolean(
+      isItemSelected && selectedCard && selectedCard.owner === player &&
+      (card.cardType === 'hero' || card.cardType === 'generic')
+    )
 
     return (
       <div
         key={card.id}
         style={{
-          border: isAbilityTarget ? '2px dashed #ff6f00' : canClickCast ? '2px dashed #f44336' : '1px solid transparent',
+          border: isAbilityTarget ? '2px dashed #ff6f00' : canClickCast ? '2px dashed #f44336' : canEquipItem ? '2px dashed #4caf50' : '1px solid transparent',
           borderRadius: '4px',
-          background: isAbilityTarget ? '#fff8e1' : 'transparent',
-          cursor: isAbilityTarget || canClickCast ? 'pointer' : undefined,
+          background: isAbilityTarget ? '#fff8e1' : canEquipItem ? '#e8f5e9' : 'transparent',
+          cursor: isAbilityTarget || canClickCast || canEquipItem ? 'pointer' : undefined,
         }}
         onClick={(e) => {
           if (isAbilityTarget && pendingAbility) {
@@ -120,6 +130,15 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
           if (canClickCast && selectedCard) {
             e.stopPropagation()
             handleCastSpellOnTarget(card, battlefieldId)
+            return
+          }
+          if (canEquipItem && selectedCard) {
+            e.stopPropagation()
+            handleEquipItem(
+              card as Hero | import('../game/types').GenericUnit,
+              selectedCard as import('../game/types').ItemCard,
+              battlefieldId,
+            )
             return
           }
         }}
@@ -158,7 +177,9 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
   }
 
   const renderLaneSide = (player: 'player1' | 'player2') => {
-    const units = battlefield[player]
+    const allCards = battlefield[player]
+    const heroes = allCards.filter(c => c.cardType === 'hero')
+    const units = allCards.filter(c => c.cardType !== 'hero')
     const lanePower = getTotalLanePower(player)
     const playerColor = player === 'player1' ? '#f44336' : '#4a90e2'
 
@@ -177,20 +198,21 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
       let cardId = e.dataTransfer.getData('cardId') || e.dataTransfer.getData('text/plain')
       if (!cardId) return
 
-      const allCards = [
+      const allGameCards = [
         ...gameState.player1Hand, ...gameState.player2Hand,
         ...gameState.player1Base, ...gameState.player2Base,
         ...gameState.player1DeployZone, ...gameState.player2DeployZone,
         ...gameState.battlefieldA.player1, ...gameState.battlefieldA.player2,
         ...gameState.battlefieldB.player1, ...gameState.battlefieldB.player2,
       ]
-      const droppedCard = allCards.find(c => c.id === cardId)
+      const droppedCard = allGameCards.find(c => c.id === cardId)
       if (!droppedCard) return
 
       if (droppedCard.cardType === 'item' && droppedCard.owner === player) {
-        const targetHero = units.find(u => u.cardType === 'hero') as Hero | undefined
-        if (targetHero) {
-          handleEquipItem(targetHero, droppedCard as import('../game/types').ItemCard, battlefieldId)
+        // Equip to the first available unit (hero or generic) in the lane
+        const targetUnit = allCards.find(u => u.cardType === 'hero' || u.cardType === 'generic') as (Hero | import('../game/types').GenericUnit) | undefined
+        if (targetUnit) {
+          handleEquipItem(targetUnit, droppedCard as import('../game/types').ItemCard, battlefieldId)
           setDraggedCardId(null)
           return
         }
@@ -208,10 +230,45 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
           <h4 style={{ fontSize: '12px', margin: 0, color: playerColor }}>
             {player === 'player1' ? 'Player 1' : 'Player 2'}
             <span style={{ fontWeight: 'normal', color: '#666', marginLeft: '6px' }}>
-              ({units.length}/{MAX_UNITS_PER_LANE} units | Power: {lanePower})
+              ({allCards.length}/{MAX_UNITS_PER_LANE} | Units: {units.length} | Power: {lanePower})
             </span>
           </h4>
         </div>
+
+        {/* Commander row: heroes as backline aura providers */}
+        {heroes.length > 0 && (
+          <div style={{
+            display: 'flex',
+            gap: '6px',
+            padding: '4px 6px',
+            marginBottom: '4px',
+            borderRadius: '4px',
+            backgroundColor: `${playerColor}08`,
+            border: `1px solid ${playerColor}30`,
+            alignItems: 'flex-start',
+          }}>
+            <div style={{
+              fontSize: '10px',
+              fontWeight: 'bold',
+              color: playerColor,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              writingMode: 'vertical-rl',
+              textOrientation: 'mixed',
+              padding: '4px 0',
+              opacity: 0.7,
+            }}>
+              CMD
+            </div>
+            {heroes.map(card => (
+              <div key={card.id} style={{ transform: 'scale(0.8)', transformOrigin: 'top left', width: '120px' }}>
+                {renderUnitCard(card, player)}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Unit row: frontline combatants */}
         <div
           style={{
             display: 'flex',

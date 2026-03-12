@@ -806,63 +806,59 @@ export function useDeployment() {
     })
   }, [setGameState])
 
-  const handleEquipItem = useCallback((hero: Hero, itemCard: ItemCard, battlefieldId: 'battlefieldA' | 'battlefieldB') => {
-    // Check action
+  const handleEquipItem = useCallback((target: Hero | GenericUnit, itemCard: ItemCard, battlefieldId: 'battlefieldA' | 'battlefieldB') => {
     if (metadata.actionPlayer !== itemCard.owner) {
       alert('It\'s not your turn to act!')
       return
     }
-    
-    // Items cost 0 mana (no mana check needed)
-    // Items can only be equipped to heroes (not units)
-    if (hero.cardType !== 'hero') {
-      alert('Items can only be equipped to heroes!')
+
+    if (target.cardType !== 'hero' && target.cardType !== 'generic') {
+      alert('Items can only be equipped to heroes or units!')
       return
     }
-    
-    // Get the item template
+
     const item = tier1Items.find(i => i.id === itemCard.itemId)
     if (!item) {
       alert('Item not found!')
       return
     }
-    
-    // Equip the item to the hero
+
     setGameState(prev => {
       const updatedBattlefield = prev[battlefieldId]
-      const player = hero.owner as 'player1' | 'player2'
-      
-      // Update the hero with the new item and immediately apply stat bonuses
-      const updatedHeroes = updatedBattlefield[player].map(c => {
-        if (c.id === hero.id && c.cardType === 'hero') {
-          const currentItems = (c as Hero).equippedItems || []
-          const newItems = [...currentItems, itemCard.itemId]
-          
-          // Calculate bonuses from the newly equipped item
-          const attackBonus = item.attackBonus || 0
-          const hpBonus = item.hpBonus || 0
-          
-          // Apply bonuses directly to current stats
-          const newAttack = (c as Hero).attack + attackBonus
-          const newMaxHealth = (c as Hero).maxHealth + hpBonus
-          const newCurrentHealth = Math.max(1, (c as Hero).currentHealth + hpBonus) // Ensure at least 1 HP
-          
-          return {
-            ...c,
-            attack: newAttack,
-            maxHealth: newMaxHealth,
-            currentHealth: newCurrentHealth,
-            equippedItems: newItems,
-          } as Hero
+      const player = target.owner as 'player1' | 'player2'
+
+      const updatedUnits = updatedBattlefield[player].map(c => {
+        if (c.id !== target.id) return c
+        if (c.cardType !== 'hero' && c.cardType !== 'generic') return c
+
+        const unit = c as Hero | GenericUnit
+        const currentItems = unit.equippedItems || []
+        const newItems = [...currentItems, itemCard.itemId]
+
+        const attackBonus = item.attackBonus || 0
+        const hpBonus = item.hpBonus || 0
+
+        const updated: any = {
+          ...unit,
+          attack: unit.attack + attackBonus,
+          maxHealth: unit.maxHealth + hpBonus,
+          currentHealth: Math.max(1, unit.currentHealth + hpBonus),
+          equippedItems: newItems,
         }
-        return c
+
+        // Apply formation tag changes from special effects
+        if (item.specialEffects?.includes('frontline')) {
+          updated.formationTag = 'frontline'
+        } else if (item.specialEffects?.includes('ranged')) {
+          updated.formationTag = 'ranged'
+        }
+
+        return updated as Card
       })
-      
-      // Remove item from hand
+
       const updatedHand = (prev[`${itemCard.owner}Hand` as keyof typeof prev] as Card[])
         .filter(c => c.id !== itemCard.id)
-      
-      // Apply tower armor if item has tower_armor special effect
+
       let updatedMetadata = { ...prev.metadata }
       if (item.specialEffects?.includes('tower_armor') && item.armor) {
         const towerArmorKey = battlefieldId === 'battlefieldA'
@@ -873,28 +869,26 @@ export function useDeployment() {
           [towerArmorKey]: (updatedMetadata[towerArmorKey as keyof typeof updatedMetadata] as number) + item.armor,
         }
       }
-      
-      // Equipping an item is an action - pass both action AND initiative to opponent
+
       const otherPlayer = itemCard.owner === 'player1' ? 'player2' : 'player1'
-      
+
       return {
         ...prev,
         [battlefieldId]: {
           ...prev[battlefieldId],
-          [player]: updatedHeroes,
+          [player]: updatedUnits,
         },
         [`${itemCard.owner}Hand`]: updatedHand,
         metadata: {
           ...prev.metadata,
           actionPlayer: otherPlayer,
           initiativePlayer: otherPlayer,
-          // Reset pass flags when an action is taken
           player1Passed: false,
           player2Passed: false,
         },
       }
     })
-    
+
     setSelectedCardId(null)
   }, [metadata, setGameState, setSelectedCardId])
 

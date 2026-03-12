@@ -1,4 +1,4 @@
-import { Hero, GenericUnit, SpellCard, Card, GameMetadata, RuneColor, RuneScalingTier, TOWER_HP, NEXUS_HP, STARTING_GOLD } from './types'
+import { Hero, GenericUnit, SpellCard, ItemCard, Card, GameMetadata, RuneColor, RuneScalingTier, TOWER_HP, NEXUS_HP, STARTING_GOLD } from './types'
 
 // ============================================================================
 // RB DECK — Aggressive / Burn
@@ -445,6 +445,34 @@ function createSpell(
   }
 }
 
+function createItem(
+  itemId: string,
+  name: string,
+  description: string,
+  manaCost: number,
+  owner: 'player1' | 'player2',
+  copyIndex: number,
+): ItemCard {
+  return {
+    id: `${itemId}-${owner}-copy${copyIndex}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    name,
+    description,
+    cardType: 'item',
+    manaCost,
+    itemId,
+    location: 'hand',
+    owner,
+  }
+}
+
+const equipmentPool = [
+  { itemId: 'equip-iron-sword', name: 'Iron Sword', description: '+2 Attack', manaCost: 2 },
+  { itemId: 'equip-wooden-shield', name: 'Wooden Shield', description: '+3 HP', manaCost: 2 },
+  { itemId: 'equip-war-banner', name: 'War Banner', description: '+1 Attack, +1 HP', manaCost: 3 },
+  { itemId: 'equip-heavy-plate', name: 'Heavy Plate', description: '+4 HP, grants Frontline', manaCost: 3 },
+  { itemId: 'equip-scouts-cloak', name: 'Scout\'s Cloak', description: 'Grants Ranged', manaCost: 2 },
+]
+
 function shuffleArray<T>(arr: T[]): T[] {
   const copy = [...arr]
   for (let i = copy.length - 1; i > 0; i--) {
@@ -490,7 +518,7 @@ export function createRunePrototypeGameState(): {
   const p2Hero2 = createHero(gwHeroes[2], 'player2', 'deployZone', 2)
   const p2Hero3 = createHero(gwHeroes[3], 'player2', 'deployZone', 3)
 
-  // Build decks
+  // Build decks (units + spells + equipment)
   const buildDeck = (
     units: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[],
     spells: Omit<SpellCard, 'location' | 'owner'>[],
@@ -506,6 +534,12 @@ export function createRunePrototypeGameState(): {
       for (let copy = 0; copy < COPIES_PER_CARD; copy++) {
         cards.push(createSpell(spell, owner, copy))
       }
+    }
+    // Add 3 random equipment cards per deck
+    const shuffledEquip = shuffleArray([...equipmentPool])
+    for (let i = 0; i < 3; i++) {
+      const eq = shuffledEquip[i % shuffledEquip.length]
+      cards.push(createItem(eq.itemId, eq.name, eq.description, eq.manaCost, owner, i))
     }
     return shuffleArray(cards)
   }

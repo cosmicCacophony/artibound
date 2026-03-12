@@ -182,7 +182,8 @@ export function useTurnManagement() {
       setCombatSummaryData({
         battlefieldA: {
           name: 'Battlefield A',
-          combatLog: resultA.combatLog,
+          combatRounds: resultA.combatRounds,
+          outcome: resultA.outcome,
           towerHP: {
             player1: resultB.updatedTowerHP.towerA_player1,
             player2: resultB.updatedTowerHP.towerA_player2,
@@ -195,7 +196,8 @@ export function useTurnManagement() {
         },
         battlefieldB: {
           name: 'Battlefield B',
-          combatLog: resultB.combatLog,
+          combatRounds: resultB.combatRounds,
+          outcome: resultB.outcome,
           towerHP: {
             player1: resultB.updatedTowerHP.towerB_player1,
             player2: resultB.updatedTowerHP.towerB_player2,

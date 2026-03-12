@@ -248,10 +248,11 @@ export type HeroAbilityEffectType =
 
 export type HeroAbilityTrigger = 
   | 'on_deploy'
-  | 'on_spell_cast' // New: Triggers when you cast a spell
+  | 'on_spell_cast'
   | 'start_of_turn'
   | 'passive'
   | 'activated' // Manual activation with mana cost
+  | 'aura' // Passive combat buff applied to all friendly units in lane
 
 // Chromatic Payoff System - Green's rune identity
 export interface HeroAbility {
@@ -325,6 +326,7 @@ export interface GenericUnit extends BaseCard {
   formationTag?: FormationTag
   location: Location
   owner: PlayerId
+  equippedItems?: string[] // Array of equipped item IDs
   stackedWith?: string // ID of generic unit this is stacked with (if any)
   stackPower?: number // Combined power if stacked
   stackHealth?: number // Combined health if stacked
@@ -534,6 +536,7 @@ export const MAX_UNITS_PER_LANE = 5
 export const TOWER_HP = 15
 export const NEXUS_HP = 30
 export const STARTING_GOLD = 5
+export const COMBAT_TOWER_DAMAGE = 3
 
 // Draft System Constants
 export const DECK_SIZE = 30

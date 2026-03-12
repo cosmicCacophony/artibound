@@ -1,4 +1,4 @@
-import { CombatLogEntry } from '../game/combatSystem'
+import { CombatLogEntry, CombatRound, CombatOutcome } from '../game/combatSystem'
 import { RuneColor } from '../game/types'
 
 export interface HeroDeathInfo {
@@ -10,7 +10,8 @@ export interface HeroDeathInfo {
 
 export interface LaneCombatData {
   name: string
-  combatLog: CombatLogEntry[]
+  combatRounds: CombatRound[]
+  outcome: CombatOutcome
   towerHP: { player1: number, player2: number }
   overflowDamage: { player1: number, player2: number }
   heroDeaths?: HeroDeathInfo[]
@@ -45,77 +46,114 @@ export function CombatSummaryModal({
     red: '🔴', blue: '🔵', white: '⚪', black: '⚫', green: '🟢',
   }
 
-  const renderCombatLog = (log: CombatLogEntry[], battlefieldName: string, heroDeaths?: HeroDeathInfo[]) => {
-    if (log.length === 0) {
+  const renderEntries = (entries: CombatLogEntry[]) => {
+    return entries.map((entry, index) => {
+      if (entry.targetType === 'combat_win') return null
+      const isHeroAttack = entry.targetType === 'hero'
+      return (
+        <div
+          key={index}
+          style={{
+            padding: '6px 8px',
+            marginBottom: '3px',
+            backgroundColor: entry.killed ? (isHeroAttack ? '#1a1a2e' : '#ffebee') : (isHeroAttack ? '#fff8e1' : '#f5f5f5'),
+            borderRadius: '4px',
+            borderLeft: entry.killed ? '3px solid #f44336' : isHeroAttack ? '3px solid #ff9800' : '3px solid #4caf50',
+          }}
+        >
+          <div style={{ fontWeight: 'bold', marginBottom: '2px', fontSize: '12px', color: isHeroAttack && entry.killed ? '#ef5350' : undefined }}>
+            {tagIcon(entry.formationTag)} {entry.attackerName} → {entry.targetName || 'Unknown'}
+          </div>
+          <div style={{ fontSize: '11px', color: isHeroAttack && entry.killed ? '#ffab40' : '#666' }}>
+            {entry.damage} damage
+            {entry.killed && isHeroAttack ? ' — HERO KILLED' : entry.killed ? ' — KILLED' : ''}
+            {entry.formationTag === 'assassin' ? ' (bypassed frontline)' : ''}
+            {entry.formationTag === 'ranged' ? ' (shot over frontline)' : ''}
+          </div>
+        </div>
+      )
+    })
+  }
+
+  const renderLaneCombat = (lane: LaneCombatData, heroDeaths?: HeroDeathInfo[]) => {
+    if (lane.combatRounds.length === 0) {
       return (
         <div style={{ padding: '12px', color: '#666', fontStyle: 'italic' }}>
-          No combat occurred in {battlefieldName}
+          No combat occurred in {lane.name}
         </div>
       )
     }
 
-    const unitEntries = log.filter(e => e.targetType !== 'combat_win')
-    const combatWinEntry = log.find(e => e.targetType === 'combat_win')
+    const combatRounds = lane.combatRounds.filter(r => r.phase === 'combat')
+    const heroAttackRound = lane.combatRounds.find(r => r.phase === 'hero_attack')
+    const outcomeRound = lane.combatRounds.find(r => r.phase === 'outcome')
+    const outcomeEntry = outcomeRound?.entries.find(e => e.targetType === 'combat_win')
 
     return (
-      <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-        {unitEntries.map((entry, index) => (
-          <div
-            key={index}
-            style={{
-              padding: '8px',
-              marginBottom: '4px',
-              backgroundColor: entry.killed ? '#ffebee' : '#f5f5f5',
-              borderRadius: '4px',
-              borderLeft: entry.killed ? '3px solid #f44336' : '3px solid #4caf50',
-            }}
-          >
-            <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>
-              {tagIcon(entry.formationTag)} {entry.attackerName} → {entry.targetName || 'Tower'}
-            </div>
-            <div style={{ fontSize: '12px', color: '#666' }}>
-              {entry.damage} damage
-              {entry.killed ? ' — KILLED' : ''}
-              {entry.formationTag === 'assassin' && entry.targetType === 'tower' ? ' (bypassed units)' : ''}
-              {entry.formationTag === 'ranged' && entry.targetType === 'unit' ? ' (shot over frontline)' : ''}
-            </div>
+      <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+        {combatRounds.map((round) => (
+          <div key={round.roundNumber} style={{ marginBottom: '8px' }}>
+            {combatRounds.length > 1 && (
+              <div style={{
+                fontSize: '11px',
+                fontWeight: 'bold',
+                color: '#9e9e9e',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                marginBottom: '4px',
+                paddingLeft: '4px',
+              }}>
+                Round {round.roundNumber}
+              </div>
+            )}
+            {renderEntries(round.entries)}
           </div>
         ))}
 
-        {combatWinEntry && combatWinEntry.combatWinInfo && (
+        {heroAttackRound && heroAttackRound.entries.length > 0 && (
+          <div style={{ marginTop: '8px' }}>
+            <div style={{
+              fontSize: '11px',
+              fontWeight: 'bold',
+              color: '#ff6f00',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              marginBottom: '4px',
+              paddingLeft: '4px',
+            }}>
+              Hero Attack
+            </div>
+            {renderEntries(heroAttackRound.entries)}
+          </div>
+        )}
+
+        {outcomeEntry && outcomeEntry.combatWinInfo && (
           <div
             style={{
               padding: '10px',
               marginTop: '8px',
-              backgroundColor: '#fff3e0',
+              backgroundColor: outcomeEntry.combatWinInfo.winningSide === 'tie' ? '#e8eaf6' : '#fff3e0',
               borderRadius: '6px',
-              border: '2px solid #ff9800',
+              border: outcomeEntry.combatWinInfo.winningSide === 'tie' ? '2px solid #5c6bc0' : '2px solid #ff9800',
             }}
           >
-            <div style={{ fontWeight: 'bold', color: '#e65100', marginBottom: '4px', fontSize: '13px' }}>
-              {combatWinEntry.combatWinInfo.winningSide === 'player1' ? 'P1' : 'P2'} wins combat!
+            <div style={{
+              fontWeight: 'bold',
+              color: outcomeEntry.combatWinInfo.winningSide === 'tie' ? '#5c6bc0' : '#e65100',
+              marginBottom: '4px',
+              fontSize: '13px',
+            }}>
+              {outcomeEntry.combatWinInfo.winningSide === 'tie'
+                ? 'Mutual Destruction!'
+                : `${outcomeEntry.combatWinInfo.winningSide === 'player1' ? 'P1' : 'P2'} wins combat!`
+              }
             </div>
-            <div style={{ fontSize: '12px', color: '#bf360c' }}>
-              {combatWinEntry.combatWinInfo.winnerSurvivors} vs {combatWinEntry.combatWinInfo.loserSurvivors} survivors
-              — {combatWinEntry.damage} tower damage to {combatWinEntry.combatWinInfo.winningSide === 'player1' ? 'P2' : 'P1'}
+            <div style={{ fontSize: '12px', color: outcomeEntry.combatWinInfo.winningSide === 'tie' ? '#3949ab' : '#bf360c' }}>
+              {outcomeEntry.combatWinInfo.winningSide === 'tie'
+                ? `Both towers take ${outcomeEntry.damage} damage`
+                : `${outcomeEntry.combatWinInfo.p1Survivors || outcomeEntry.combatWinInfo.p2Survivors} survivors — ${outcomeEntry.damage} tower damage`
+              }
             </div>
-          </div>
-        )}
-
-        {!combatWinEntry && unitEntries.length > 0 && (
-          <div
-            style={{
-              padding: '8px',
-              marginTop: '8px',
-              backgroundColor: '#e8eaf6',
-              borderRadius: '4px',
-              textAlign: 'center',
-              color: '#5c6bc0',
-              fontSize: '12px',
-              fontWeight: 600,
-            }}
-          >
-            Draw — equal survivors, no tower damage
           </div>
         )}
 
@@ -175,9 +213,8 @@ export function CombatSummaryModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 style={{ margin: 0, color: '#d32f2f' }}>⚔️ Combat Summary</h2>
+          <h2 style={{ margin: 0, color: '#d32f2f' }}>Combat Summary</h2>
           <button
             onClick={onClose}
             style={{
@@ -194,14 +231,9 @@ export function CombatSummaryModal({
           </button>
         </div>
 
-        {/* Lane A */}
         <div style={{ marginBottom: '24px' }}>
-          <h3 style={{ margin: '0 0 12px 0', color: '#1976d2' }}>
-            Lane A
-          </h3>
-          {renderCombatLog(battlefieldA.combatLog, battlefieldA.name, battlefieldA.heroDeaths)}
-          
-          {/* Tower HP */}
+          <h3 style={{ margin: '0 0 12px 0', color: '#1976d2' }}>Lane A</h3>
+          {renderLaneCombat(battlefieldA, battlefieldA.heroDeaths)}
           <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#e3f2fd', borderRadius: '4px' }}>
             <div style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Tower HP:</div>
             <div style={{ fontSize: '11px' }}>
@@ -212,22 +244,12 @@ export function CombatSummaryModal({
               Player 2: {battlefieldA.towerHP.player2} / 15
               {battlefieldA.towerHP.player2 === 0 && <span style={{ color: '#f44336', marginLeft: '8px' }}>DESTROYED</span>}
             </div>
-            {(battlefieldA.overflowDamage.player1 > 0 || battlefieldA.overflowDamage.player2 > 0) && (
-              <div style={{ fontSize: '11px', color: '#f44336', marginTop: '4px', fontWeight: 'bold' }}>
-                Overflow Damage: P1: {battlefieldA.overflowDamage.player1}, P2: {battlefieldA.overflowDamage.player2}
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Lane B */}
         <div style={{ marginBottom: '24px' }}>
-          <h3 style={{ margin: '0 0 12px 0', color: '#1976d2' }}>
-            Lane B
-          </h3>
-          {renderCombatLog(battlefieldB.combatLog, battlefieldB.name, battlefieldB.heroDeaths)}
-          
-          {/* Tower HP */}
+          <h3 style={{ margin: '0 0 12px 0', color: '#1976d2' }}>Lane B</h3>
+          {renderLaneCombat(battlefieldB, battlefieldB.heroDeaths)}
           <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#e3f2fd', borderRadius: '4px' }}>
             <div style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Tower HP:</div>
             <div style={{ fontSize: '11px' }}>
@@ -238,15 +260,9 @@ export function CombatSummaryModal({
               Player 2: {battlefieldB.towerHP.player2} / 15
               {battlefieldB.towerHP.player2 === 0 && <span style={{ color: '#f44336', marginLeft: '8px' }}>DESTROYED</span>}
             </div>
-            {(battlefieldB.overflowDamage.player1 > 0 || battlefieldB.overflowDamage.player2 > 0) && (
-              <div style={{ fontSize: '11px', color: '#f44336', marginTop: '4px', fontWeight: 'bold' }}>
-                Overflow Damage: P1: {battlefieldB.overflowDamage.player1}, P2: {battlefieldB.overflowDamage.player2}
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Total Overflow Damage */}
         {(battlefieldA.overflowDamage.player1 + battlefieldB.overflowDamage.player1 > 0 ||
           battlefieldA.overflowDamage.player2 + battlefieldB.overflowDamage.player2 > 0) && (
           <div style={{ 
@@ -271,19 +287,3 @@ export function CombatSummaryModal({
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
