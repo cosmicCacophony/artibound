@@ -1,307 +1,196 @@
-import { useState } from 'react'
-import { Card, Hero, HeroAbility, MAX_UNITS_PER_LANE } from '../game/types'
+import { MAX_UNITS_PER_LANE, PlayerId } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 import { useDeployment } from '../hooks/useDeployment'
-import { useCombat } from '../hooks/useCombat'
-import { useHeroAbilities } from '../hooks/useHeroAbilities'
 import { useTurnManagement } from '../hooks/useTurnManagement'
 import { HeroCard } from './HeroCard'
-import { HeroAbilityEditor } from './HeroAbilityEditor'
-import { LaneRuneDisplay } from './LaneRuneDisplay'
 
 interface BattlefieldViewProps {
   battlefieldId: 'battlefieldA' | 'battlefieldB'
 }
 
 export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
-  const { 
-    gameState, 
-    selectedCard, 
-    selectedCardId, 
+  const {
+    gameState,
+    selectedCard,
+    selectedCardId,
     setSelectedCardId,
     draggedCardId,
     setDraggedCardId,
-    pendingAbility,
-    setPendingAbility,
     metadata,
-    getLaneCapacity,
-    setGameState,
   } = useGameContext()
-  const [editingHeroId, setEditingHeroId] = useState<string | null>(null)
-  const { handleDeploy, handleCastSpellOnTarget, handleRemoveFromBattlefield, handleEquipItem } = useDeployment()
-  const { handleDecreaseHealth, handleIncreaseHealth, handleDecreaseAttack, handleIncreaseAttack } = useCombat()
-  const { handleAbilityClick, handleAbilityTargetClick } = useHeroAbilities()
-  const { handleToggleStun } = useTurnManagement()
+  const { handleDeploy, handleCastSpellOnTarget, handleTapSeal } = useDeployment()
+  const { handleDeclareAttacker, handleSelectBlocker, handleAssignBlocker } = useTurnManagement()
 
   const battlefield = gameState[battlefieldId]
-  const towerP1HP = battlefieldId === 'battlefieldA' ? metadata.towerA_player1_HP : metadata.towerB_player1_HP
-  const towerP2HP = battlefieldId === 'battlefieldA' ? metadata.towerA_player2_HP : metadata.towerB_player2_HP
-  const borderColor = battlefieldId === 'battlefieldA' ? '#4a90e2' : '#ff9800'
-  const bgColor = battlefieldId === 'battlefieldA' ? '#e3f2fd' : '#fff3e0'
-  const battlefieldName = battlefieldId === 'battlefieldA' ? 'A' : 'B'
+  const defendingPlayer: PlayerId = metadata.activePlayer === 'player1' ? 'player2' : 'player1'
+  const assignments = metadata.blockerAssignments || {}
+  const selectedBlockerId = metadata.selectedBlockerId
 
-  const isTargetedDamageSpellSelected = Boolean(
-    selectedCard &&
-    selectedCard.cardType === 'spell' &&
-    selectedCard.location === 'hand' &&
-    'effect' in selectedCard &&
-    selectedCard.effect &&
-    ['damage', 'targeted_damage', 'damage_and_stun'].includes(
-      (selectedCard as import('../game/types').SpellCard).effect.type
-    )
-  )
+  const allGameCards = [
+    ...gameState.player1Hand,
+    ...gameState.player2Hand,
+    ...gameState.player1DeployZone,
+    ...gameState.player2DeployZone,
+    ...gameState.battlefieldA.player1,
+    ...gameState.battlefieldA.player2,
+  ]
 
-  const isItemSelected = Boolean(
-    selectedCard &&
-    selectedCard.cardType === 'item' &&
-    selectedCard.location === 'hand'
-  )
+  const handleLaneClick = (player: PlayerId) => {
+    if (!selectedCard || selectedCard.owner !== player) {
+      return
+    }
+    if (selectedCard.location !== 'hand') {
+      return
+    }
+    if (selectedCard.cardType === 'spell') {
+      return
+    }
+    handleDeploy('battlefieldA', undefined, selectedCard)
+  }
 
-  const handleCardClick = (cardId: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
+  const handleCardClick = (cardId: string, player: PlayerId) => {
+    const card = battlefield[player].find(item => item.id === cardId)
+    if (!card) {
+      return
+    }
+
+    if (selectedCard?.cardType === 'spell' && selectedCard.owner === metadata.activePlayer && player !== selectedCard.owner) {
+      handleCastSpellOnTarget(card, 'battlefieldA', selectedCard)
+      return
+    }
+
+    if (metadata.currentPhase === 'declare_attackers' && player === metadata.activePlayer) {
+      handleDeclareAttacker(cardId)
+      return
+    }
+
+    if (metadata.currentPhase === 'declare_blockers') {
+      if (player === defendingPlayer) {
+        handleSelectBlocker(cardId)
+        return
+      }
+      if (player === metadata.activePlayer && selectedBlockerId) {
+        handleAssignBlocker(cardId)
+        return
+      }
+    }
+
     setSelectedCardId(selectedCardId === cardId ? null : cardId)
   }
 
-  const handleTowerDamage = (amount: number, player: 'player1' | 'player2') => {
-    const towerKey = battlefieldId === 'battlefieldA' 
-      ? (player === 'player1' ? 'towerA_player1_HP' : 'towerA_player2_HP')
-      : (player === 'player1' ? 'towerB_player1_HP' : 'towerB_player2_HP')
-    setGameState(prev => ({
-      ...prev,
-      metadata: {
-        ...prev.metadata,
-        [towerKey]: Math.max(0, Math.min(20, (prev.metadata[towerKey] as number) + amount)),
-      },
-    }))
-  }
-
-  const getTotalLanePower = (player: 'player1' | 'player2') => {
-    return battlefield[player].reduce((total, card) => {
-      if ('attack' in card) {
-        let atk = (card as any).attack || 0
-        if ((card.cardType === 'hero' || card.cardType === 'generic') && 'temporaryAttack' in card) {
-          atk += (card as any).temporaryAttack || 0
-        }
-        return total + atk
-      }
-      return total
-    }, 0)
-  }
-
-  const renderUnitCard = (card: Card, player: 'player1' | 'player2') => {
-    const isSelected = selectedCardId === card.id
-    const isAbilityTarget = (() => {
-      if (!pendingAbility || pendingAbility.battlefieldId !== battlefieldId) return false
-      const { ability, owner } = pendingAbility
-      switch (ability.effectType) {
-        case 'damage_target':
-        case 'steal_unit':
-        case 'bounce_unit':
-          return card.owner !== owner && card.cardType !== 'hero'
-            ? true
-            : card.owner !== owner && ability.effectType === 'damage_target'
-        case 'buff_units':
-          return card.owner === owner && card.cardType !== 'hero'
-        default:
-          return false
-      }
-    })()
-    const canClickCast = Boolean(isTargetedDamageSpellSelected && selectedCard && selectedCard.owner !== player)
-    const canEquipItem = Boolean(
-      isItemSelected && selectedCard && selectedCard.owner === player &&
-      (card.cardType === 'hero' || card.cardType === 'generic')
-    )
+  const renderSealBar = (player: PlayerId) => {
+    const seals = (player === 'player1' ? metadata.player1Seals : metadata.player2Seals).filter(seal => seal.inPlay)
+    if (seals.length === 0) {
+      return null
+    }
 
     return (
-      <div
-        key={card.id}
-        style={{
-          border: isAbilityTarget ? '2px dashed #ff6f00' : canClickCast ? '2px dashed #f44336' : canEquipItem ? '2px dashed #4caf50' : '1px solid transparent',
-          borderRadius: '4px',
-          background: isAbilityTarget ? '#fff8e1' : canEquipItem ? '#e8f5e9' : 'transparent',
-          cursor: isAbilityTarget || canClickCast || canEquipItem ? 'pointer' : undefined,
-        }}
-        onClick={(e) => {
-          if (isAbilityTarget && pendingAbility) {
-            e.stopPropagation()
-            handleAbilityTargetClick(card, battlefieldId)
-            return
-          }
-          if (canClickCast && selectedCard) {
-            e.stopPropagation()
-            handleCastSpellOnTarget(card, battlefieldId)
-            return
-          }
-          if (canEquipItem && selectedCard) {
-            e.stopPropagation()
-            handleEquipItem(
-              card as Hero | import('../game/types').GenericUnit,
-              selectedCard as import('../game/types').ItemCard,
-              battlefieldId,
-            )
-            return
-          }
-        }}
-      >
-        <HeroCard
-          card={card}
-          onClick={(e) => {
-            if (isAbilityTarget && pendingAbility) {
-              e?.stopPropagation()
-              handleAbilityTargetClick(card, battlefieldId)
-              return
-            }
-            if (canClickCast && selectedCard) {
-              e?.stopPropagation()
-              handleCastSpellOnTarget(card, battlefieldId)
-              return
-            }
-            handleCardClick(card.id, e)
-          }}
-          isSelected={isSelected}
-          showStats={true}
-          onRemove={() => handleRemoveFromBattlefield(card, battlefieldId)}
-          onDecreaseHealth={() => handleDecreaseHealth(card)}
-          onIncreaseHealth={() => handleIncreaseHealth(card)}
-          onDecreaseAttack={() => handleDecreaseAttack(card)}
-          onIncreaseAttack={() => handleIncreaseAttack(card)}
-          showCombatControls={true}
-          isDead={!!metadata.deathCooldowns[card.id]}
-          isStunned={card.cardType === 'hero' && Boolean(metadata.stunnedHeroes?.[card.id])}
-          onToggleStun={card.cardType === 'hero' ? () => handleToggleStun(card) : undefined}
-          onAbilityClick={(heroId, ability) => handleAbilityClick(heroId, ability, card.owner)}
-          onEditAbility={card.cardType === 'hero' ? (heroId) => setEditingHeroId(heroId) : undefined}
-        />
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
+        {seals.map(seal => (
+          <button
+            key={seal.id}
+            onClick={() => handleTapSeal(seal.id, player)}
+            disabled={seal.tapped || metadata.activePlayer !== player || metadata.currentPhase !== 'play'}
+            style={{
+              padding: '8px 10px',
+              borderRadius: '999px',
+              border: '1px solid #475569',
+              backgroundColor: seal.tapped ? '#334155' : '#0f172a',
+              color: '#fff',
+              cursor: seal.tapped ? 'not-allowed' : 'pointer',
+              fontSize: '12px',
+              fontWeight: 700,
+            }}
+          >
+            {seal.name} {seal.tapped ? '(Tapped)' : '(Tap for rune)'}
+          </button>
+        ))}
       </div>
     )
   }
 
-  const renderLaneSide = (player: 'player1' | 'player2') => {
-    const allCards = battlefield[player]
-    const heroes = allCards.filter(c => c.cardType === 'hero')
-    const units = allCards.filter(c => c.cardType !== 'hero')
-    const lanePower = getTotalLanePower(player)
-    const playerColor = player === 'player1' ? '#f44336' : '#4a90e2'
-
-    const draggedCard = draggedCardId ? 
-      [...gameState.player1Hand, ...gameState.player2Hand, ...gameState.player1Base, ...gameState.player2Base, ...gameState.player1DeployZone, ...gameState.player2DeployZone, ...gameState.battlefieldA.player1, ...gameState.battlefieldA.player2, ...gameState.battlefieldB.player1, ...gameState.battlefieldB.player2].find(c => c.id === draggedCardId) :
-      null
-
-    const canDropHere = draggedCard && (
-      (draggedCard.owner === player && (draggedCard.location === 'hand' || draggedCard.location === 'base' || draggedCard.location === 'deployZone' || draggedCard.location === battlefieldId || draggedCard.location === 'battlefieldA' || draggedCard.location === 'battlefieldB')) ||
-      (draggedCard.cardType === 'spell' && draggedCard.location === 'hand' && draggedCard.owner !== player && ['damage', 'targeted_damage', 'damage_and_stun'].includes((draggedCard as any).effect?.type))
-    )
-
-    const handleDrop = (e: React.DragEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      let cardId = e.dataTransfer.getData('cardId') || e.dataTransfer.getData('text/plain')
-      if (!cardId) return
-
-      const allGameCards = [
-        ...gameState.player1Hand, ...gameState.player2Hand,
-        ...gameState.player1Base, ...gameState.player2Base,
-        ...gameState.player1DeployZone, ...gameState.player2DeployZone,
-        ...gameState.battlefieldA.player1, ...gameState.battlefieldA.player2,
-        ...gameState.battlefieldB.player1, ...gameState.battlefieldB.player2,
-      ]
-      const droppedCard = allGameCards.find(c => c.id === cardId)
-      if (!droppedCard) return
-
-      if (droppedCard.cardType === 'item' && droppedCard.owner === player) {
-        // Equip to the first available unit (hero or generic) in the lane
-        const targetUnit = allCards.find(u => u.cardType === 'hero' || u.cardType === 'generic') as (Hero | import('../game/types').GenericUnit) | undefined
-        if (targetUnit) {
-          handleEquipItem(targetUnit, droppedCard as import('../game/types').ItemCard, battlefieldId)
-          setDraggedCardId(null)
-          return
-        }
-      }
-
-      if (droppedCard.owner === player || (droppedCard.cardType === 'spell' && droppedCard.owner !== player)) {
-        setDraggedCardId(null)
-        handleDeploy(battlefieldId, undefined, droppedCard)
-      }
-    }
+  const renderSide = (player: PlayerId) => {
+    const cards = battlefield[player]
+    const playerColor = player === 'player1' ? '#ef4444' : '#22c55e'
+    const blockedAttackerIds = new Set(Object.values(assignments))
 
     return (
-      <div style={{ marginBottom: player === 'player2' ? '8px' : 0 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-          <h4 style={{ fontSize: '12px', margin: 0, color: playerColor }}>
-            {player === 'player1' ? 'Player 1' : 'Player 2'}
-            <span style={{ fontWeight: 'normal', color: '#666', marginLeft: '6px' }}>
-              ({allCards.length}/{MAX_UNITS_PER_LANE} | Units: {units.length} | Power: {lanePower})
-            </span>
-          </h4>
+      <div
+        style={{
+          border: `1px solid ${playerColor}55`,
+          borderRadius: '12px',
+          padding: '12px',
+          backgroundColor: `${playerColor}10`,
+          minHeight: '240px',
+        }}
+        onClick={() => handleLaneClick(player)}
+        onDragOver={event => event.preventDefault()}
+        onDrop={event => {
+          event.preventDefault()
+          const cardId = event.dataTransfer.getData('cardId') || draggedCardId
+          if (!cardId) return
+          const droppedCard = allGameCards.find(card => card.id === cardId)
+          if (droppedCard && droppedCard.owner === player && droppedCard.location === 'hand' && droppedCard.cardType !== 'spell') {
+            handleDeploy('battlefieldA', undefined, droppedCard)
+          }
+          setDraggedCardId(null)
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: playerColor, fontWeight: 700 }}>
+          <span>{player === 'player1' ? 'Player 1 Battlefield' : 'Player 2 Battlefield'}</span>
+          <span>{cards.length}/{MAX_UNITS_PER_LANE}</span>
         </div>
 
-        {/* Commander row: heroes as backline aura providers */}
-        {heroes.length > 0 && (
-          <div style={{
-            display: 'flex',
-            gap: '6px',
-            padding: '4px 6px',
-            marginBottom: '4px',
-            borderRadius: '4px',
-            backgroundColor: `${playerColor}08`,
-            border: `1px solid ${playerColor}30`,
-            alignItems: 'flex-start',
-          }}>
-            <div style={{
-              fontSize: '10px',
-              fontWeight: 'bold',
-              color: playerColor,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              writingMode: 'vertical-rl',
-              textOrientation: 'mixed',
-              padding: '4px 0',
-              opacity: 0.7,
-            }}>
-              CMD
-            </div>
-            {heroes.map(card => (
-              <div key={card.id} style={{ transform: 'scale(0.8)', transformOrigin: 'top left', width: '120px' }}>
-                {renderUnitCard(card, player)}
-              </div>
-            ))}
-          </div>
-        )}
+        {renderSealBar(player)}
 
-        {/* Unit row: frontline combatants */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '6px',
-            minHeight: '110px',
-            padding: '6px',
-            border: canDropHere ? `2px dashed ${playerColor}` : '1px solid #ddd',
-            borderRadius: '4px',
-            backgroundColor: canDropHere ? `${playerColor}10` : '#f9f9f9',
-            flexWrap: 'wrap',
-            alignItems: 'flex-start',
-            transition: 'all 0.15s',
-          }}
-          onDragOver={(e) => {
-            e.preventDefault()
-            if (canDropHere) e.dataTransfer.dropEffect = 'move'
-          }}
-          onDrop={handleDrop}
-          onClick={() => {
-            if (selectedCard && selectedCard.owner === player && !isTargetedDamageSpellSelected) {
-              handleDeploy(battlefieldId)
-            }
-          }}
-        >
-          {units.length > 0 ? (
-            units.map(card => (
-              <div key={card.id} style={{ transform: 'scale(0.85)', transformOrigin: 'top left', width: '130px' }}>
-                {renderUnitCard(card, player)}
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {cards.length > 0 ? cards.map(card => {
+            const assignedTarget = assignments[card.id]
+            const blockerForCard = Object.entries(assignments).find(([, attackerId]) => attackerId === card.id)?.[0]
+            const isAttacking = Boolean(metadata.declaredAttackers?.includes(card.id))
+            const isBlocked = blockedAttackerIds.has(card.id)
+            const isSelectedBlocker = selectedBlockerId === card.id
+
+            return (
+              <div key={card.id} style={{ position: 'relative' }}>
+                <HeroCard
+                  card={card}
+                  onClick={() => handleCardClick(card.id, player)}
+                  isSelected={selectedCardId === card.id || isAttacking || isSelectedBlocker}
+                  showStats={true}
+                  draggable={card.location === 'hand'}
+                />
+                {(isAttacking || isBlocked || assignedTarget || blockerForCard) && (
+                  <div style={{ position: 'absolute', left: 8, right: 8, bottom: 8, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {isAttacking && (
+                      <div style={{ backgroundColor: '#1d4ed8', color: '#fff', fontSize: '10px', fontWeight: 700, borderRadius: '999px', padding: '2px 8px', textAlign: 'center' }}>
+                        Attacking
+                      </div>
+                    )}
+                    {isBlocked && (
+                      <div style={{ backgroundColor: '#7c3aed', color: '#fff', fontSize: '10px', fontWeight: 700, borderRadius: '999px', padding: '2px 8px', textAlign: 'center' }}>
+                        Blocked
+                      </div>
+                    )}
+                    {assignedTarget && (
+                      <div style={{ backgroundColor: '#7c3aed', color: '#fff', fontSize: '10px', fontWeight: 700, borderRadius: '999px', padding: '2px 8px', textAlign: 'center' }}>
+                        Blocking
+                      </div>
+                    )}
+                    {blockerForCard && (
+                      <div style={{ backgroundColor: '#475569', color: '#fff', fontSize: '10px', fontWeight: 700, borderRadius: '999px', padding: '2px 8px', textAlign: 'center' }}>
+                        Has blocker
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            ))
-          ) : (
-            <div style={{ fontSize: '11px', color: '#bbb', textAlign: 'center', width: '100%', paddingTop: '40px' }}>
-              {canDropHere ? 'Drop here to deploy' : 'Empty lane'}
+            )
+          }) : (
+            <div style={{ color: '#6b7280', fontSize: '13px' }}>
+              {selectedCard && selectedCard.owner === player && selectedCard.location === 'hand'
+                ? 'Click to play your selected card here.'
+                : 'No creatures in play.'}
             </div>
           )}
         </div>
@@ -309,129 +198,27 @@ export function BattlefieldView({ battlefieldId }: BattlefieldViewProps) {
     )
   }
 
-  const handleSaveAbility = (heroId: string, ability: HeroAbility | undefined) => {
-    setGameState(prev => {
-      const findAndUpdateHero = (cards: Card[]): Card[] => {
-        return cards.map(card => {
-          if (card.id === heroId && card.cardType === 'hero') {
-            return { ...card, ability } as Hero
-          }
-          return card
-        })
-      }
-      return {
-        ...prev,
-        player1Hand: findAndUpdateHero(prev.player1Hand),
-        player2Hand: findAndUpdateHero(prev.player2Hand),
-        player1Base: findAndUpdateHero(prev.player1Base),
-        player2Base: findAndUpdateHero(prev.player2Base),
-        player1DeployZone: findAndUpdateHero(prev.player1DeployZone),
-        player2DeployZone: findAndUpdateHero(prev.player2DeployZone),
-        battlefieldA: {
-          player1: findAndUpdateHero(prev.battlefieldA.player1),
-          player2: findAndUpdateHero(prev.battlefieldA.player2),
-        },
-        battlefieldB: {
-          player1: findAndUpdateHero(prev.battlefieldB.player1),
-          player2: findAndUpdateHero(prev.battlefieldB.player2),
-        },
-      }
-    })
-    setEditingHeroId(null)
-  }
-
-  const editingHero = editingHeroId 
-    ? [
-        ...gameState.player1Hand, ...gameState.player2Hand,
-        ...gameState.player1Base, ...gameState.player2Base,
-        ...gameState.player1DeployZone, ...gameState.player2DeployZone,
-        ...gameState.battlefieldA.player1, ...gameState.battlefieldA.player2,
-        ...gameState.battlefieldB.player1, ...gameState.battlefieldB.player2,
-      ].find(c => c.id === editingHeroId && c.cardType === 'hero') as Hero | undefined
-    : undefined
-
   return (
-    <>
-      {editingHero && (
-        <HeroAbilityEditor
-          hero={editingHero}
-          onSave={handleSaveAbility}
-          onClose={() => setEditingHeroId(null)}
-        />
-      )}
-      <div style={{
-        border: `2px solid ${borderColor}`,
-        borderRadius: '6px',
-        padding: '12px',
-        backgroundColor: bgColor,
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <div style={{ flex: 1 }}>
-            <h3 style={{ marginTop: 0, fontSize: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span>Lane {battlefieldName}</span>
-              {metadata.isRunePrototype && metadata.laneRunes && (
-                <span style={{ display: 'flex', gap: '12px', fontSize: '11px' }}>
-                  <LaneRuneDisplay laneRunes={metadata.laneRunes[battlefieldId].player1} laneName="P1" />
-                  <LaneRuneDisplay laneRunes={metadata.laneRunes[battlefieldId].player2} laneName="P2" />
-                </span>
-              )}
-            </h3>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#4a90e2' }}>
-                P2 Tower: {towerP2HP} HP
-              </div>
-              <button onClick={() => handleTowerDamage(-1, 'player2')} style={{ padding: '2px 6px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '10px' }}>-1</button>
-              <button onClick={() => handleTowerDamage(1, 'player2')} style={{ padding: '2px 6px', backgroundColor: '#4caf50', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '10px' }}>+1</button>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#f44336' }}>
-                P1 Tower: {towerP1HP} HP
-              </div>
-              <button onClick={() => handleTowerDamage(-1, 'player1')} style={{ padding: '2px 6px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '10px' }}>-1</button>
-              <button onClick={() => handleTowerDamage(1, 'player1')} style={{ padding: '2px 6px', backgroundColor: '#4caf50', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '10px' }}>+1</button>
-            </div>
+    <div style={{ border: '2px solid #334155', borderRadius: '16px', padding: '16px', backgroundColor: '#f8fafc' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+        <div>
+          <h3 style={{ margin: 0 }}>Battlefield</h3>
+          <div style={{ fontSize: '13px', color: '#475569', marginTop: '4px' }}>
+            {metadata.currentPhase === 'declare_attackers' && 'Declare attackers with the active player.'}
+            {metadata.currentPhase === 'declare_blockers' && 'Select a blocker, then click an attacker to assign it.'}
+            {metadata.currentPhase === 'play' && 'Play creatures, cast spells, or tap seals before combat.'}
           </div>
         </div>
-
-        {renderLaneSide('player2')}
-        {renderLaneSide('player1')}
-
-        {pendingAbility && pendingAbility.battlefieldId === battlefieldId && (
-          <div style={{ marginTop: '10px', fontSize: '12px', color: '#ff6f00', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>Select a target for {pendingAbility.ability.name}.</span>
-            <button onClick={() => setPendingAbility(null)} style={{ padding: '2px 8px', fontSize: '11px', cursor: 'pointer', border: '1px solid #ccc', borderRadius: '4px', background: '#fff' }}>Cancel</button>
-          </div>
-        )}
-        {isTargetedDamageSpellSelected && selectedCard && (
-          <div style={{ marginTop: '10px', fontSize: '12px', color: '#444', fontWeight: 600 }}>
-            Select an enemy unit in this lane to cast {selectedCard.name}.
-          </div>
-        )}
-        {selectedCard && !isTargetedDamageSpellSelected && (
-          <button
-            onClick={() => handleDeploy(battlefieldId)}
-            disabled={selectedCard && selectedCard.cardType !== 'generic' && getLaneCapacity(
-              battlefield[selectedCard.owner as 'player1' | 'player2']
-            ) <= 0}
-            style={{
-              marginTop: '10px',
-              padding: '8px 16px',
-              backgroundColor: borderColor,
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              opacity: selectedCard && selectedCard.cardType !== 'generic' && getLaneCapacity(
-                battlefield[selectedCard.owner as 'player1' | 'player2']
-              ) <= 0 ? 0.5 : 1,
-            }}
-          >
-            Deploy {selectedCard.name} to Lane {battlefieldName}
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: '16px', fontWeight: 700 }}>
+          <span style={{ color: '#ef4444' }}>P1 Tower: {metadata.towerA_player1_HP}</span>
+          <span style={{ color: '#22c55e' }}>P2 Tower: {metadata.towerA_player2_HP}</span>
+        </div>
       </div>
-    </>
+
+      <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: '12px' }}>
+        {renderSide('player2')}
+        {renderSide('player1')}
+      </div>
+    </div>
   )
 }

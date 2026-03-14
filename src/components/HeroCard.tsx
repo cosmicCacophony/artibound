@@ -186,6 +186,10 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
         return `Stun target for ${effect.stunDuration || 1} turn(s)`
       case 'buff':
         return `+${effect.attackBuff || 0}/+${effect.healthBuff || 0} to target`
+      case 'buff_all':
+        return `All friendly units get +${effect.attackBuff || 0}/+${effect.healthBuff || 0}`
+      case 'buff_tag':
+        return `${effect.targetTag || 'Matching'} units get +${effect.attackBuff || 0}/+${effect.healthBuff || 0}`
       default:
         return 'Spell effect'
     }
@@ -354,6 +358,25 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
         </div>
       )}
       <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#666' }}>{card.description}</p>
+      {'keywords' in card && card.keywords && card.keywords.length > 0 && (
+        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '6px' }}>
+          {card.keywords.map(keyword => (
+            <span
+              key={keyword}
+              style={{
+                fontSize: '10px',
+                fontWeight: 700,
+                backgroundColor: '#dbeafe',
+                color: '#1d4ed8',
+                borderRadius: '999px',
+                padding: '2px 6px',
+              }}
+            >
+              {keyword}
+            </span>
+          ))}
+        </div>
+      )}
       
       {/* Always show stats for heroes, units, and generic cards - full clarity */}
       {(card.cardType === 'hero' || card.cardType === 'signature' || card.cardType === 'hybrid' || card.cardType === 'generic') && (
@@ -361,6 +384,11 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
           {'manaCost' in card && card.manaCost !== undefined && (
             <div style={{ fontSize: '11px', color: '#1976d2', marginBottom: '4px', fontWeight: 'bold' }}>
               💎 {card.manaCost}
+              {'runeCost' in card && card.runeCost && card.runeCost.length > 0 && (
+                <span style={{ color: '#7c3aed', marginLeft: '6px' }}>
+                  🔮 {card.runeCost.join(' ')}
+                </span>
+              )}
             </div>
           )}
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -478,6 +506,24 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
               (Stacked)
             </div>
           )}
+          {('statusEffects' in card) && card.statusEffects && Object.values(card.statusEffects).some(value => value > 0) && (
+            <div style={{ fontSize: '10px', color: '#7c3aed', marginTop: '4px' }}>
+              Status:
+              {card.statusEffects.weak > 0 ? ` Weak ${card.statusEffects.weak}` : ''}
+              {card.statusEffects.vulnerable > 0 ? ` Vulnerable ${card.statusEffects.vulnerable}` : ''}
+              {card.statusEffects.strength > 0 ? ` Strength ${card.statusEffects.strength}` : ''}
+            </div>
+          )}
+          {('summoningSick' in card) && card.summoningSick && (
+            <div style={{ fontSize: '10px', color: '#b45309', marginTop: '4px' }}>
+              Summoning sick
+            </div>
+          )}
+          {('tapped' in card) && card.tapped && (
+            <div style={{ fontSize: '10px', color: '#475569', marginTop: '4px' }}>
+              Tapped
+            </div>
+          )}
         </div>
       )}
       
@@ -486,6 +532,11 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
           {'manaCost' in card && card.manaCost !== undefined && (
             <div style={{ fontSize: '11px', color: '#1976d2', marginBottom: '4px', fontWeight: 'bold' }}>
               💎 {card.manaCost}
+              {'runeCost' in card && card.runeCost && card.runeCost.length > 0 && (
+                <span style={{ color: '#7c3aed', marginLeft: '6px' }}>
+                  🔮 {card.runeCost.join(' ')}
+                </span>
+              )}
             </div>
           )}
           <div style={{ fontSize: '11px', color: '#9c27b0', marginTop: '4px' }}>
@@ -568,13 +619,17 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
         </div>
       )}
       
-      {card.cardType === 'hero' && 'ability' in card && (card as import('../game/types').Hero).ability && (
+      {card.cardType === 'hero' && 'ability' in card && (card as import('../game/types').Hero).ability && (() => {
+        const ability = (card as import('../game/types').Hero).ability
+        if (!ability) return null
+
+        return (
         <div style={{ marginTop: '8px' }}>
           <div 
             onClick={(e) => {
               e.stopPropagation() // Prevent card click when clicking ability
               if (onAbilityClick) {
-                onAbilityClick(card.id, (card as import('../game/types').Hero).ability!)
+                onAbilityClick(card.id, ability)
               }
             }}
             style={{ 
@@ -598,23 +653,23 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
             }}
           >
             <div style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '4px', color: '#1976d2' }}>
-              ⚡ {(card as import('../game/types').Hero).ability.name}
+              ⚡ {ability.name}
               {onAbilityClick && <span style={{ fontSize: '10px', marginLeft: '4px', color: '#666' }}>(Click to use)</span>}
             </div>
             <div style={{ fontSize: '10px', color: '#666', marginBottom: '4px' }}>
-              {(card as import('../game/types').Hero).ability.description}
+              {ability.description}
             </div>
             <div style={{ display: 'flex', gap: '8px', fontSize: '10px', alignItems: 'center' }}>
               <span style={{ color: '#1976d2', fontWeight: 'bold' }}>
-                💎 {(card as import('../game/types').Hero).ability.manaCost}
+                💎 {ability.manaCost}
               </span>
               <span style={{ color: '#f57c00', fontWeight: 'bold' }}>
-                ⏱️ Cooldown: {(card as import('../game/types').Hero).ability.cooldown} 
-                {(card as import('../game/types').Hero).ability.cooldown === 1 
+                ⏱️ Cooldown: {ability.cooldown} 
+                {ability.cooldown === 1 
                   ? ' (every turn)' 
-                  : (card as import('../game/types').Hero).ability.cooldown === 2
+                  : ability.cooldown === 2
                   ? ' (every other turn)'
-                  : ` (wait ${(card as import('../game/types').Hero).ability.cooldown - 1} turns)`}
+                  : ` (wait ${ability.cooldown - 1} turns)`}
               </span>
             </div>
           </div>
@@ -642,7 +697,8 @@ export function HeroCard({ card, onClick, isSelected, showStats = true, onRemove
             </button>
           )}
         </div>
-      )}
+        )
+      })()}
       {card.cardType === 'hero' && (!('ability' in card) || !(card as import('../game/types').Hero).ability) && onEditAbility && (
         <div style={{ marginTop: '8px' }}>
           <button

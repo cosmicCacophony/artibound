@@ -1,4 +1,4 @@
-export type Location = 'base' | 'deployZone' | 'battlefieldA' | 'battlefieldB' | 'hand'
+export type Location = 'base' | 'deployZone' | 'commandZone' | 'battlefieldA' | 'battlefieldB' | 'hand'
 export type CardType = 'hero' | 'signature' | 'hybrid' | 'generic' | 'spell' | 'item' | 'artifact'
 export type PlayerId = 'player1' | 'player2'
 
@@ -23,6 +23,9 @@ export interface Seal {
   name: string
   color: RuneColor // Color of rune it generates each turn
   owner: PlayerId
+  manaCost?: number
+  tapped?: boolean
+  inPlay?: boolean
 }
 
 // Maximum colors allowed per deck
@@ -70,6 +73,7 @@ export interface BaseCard {
   cardType: CardType
   rarity?: Rarity // Card rarity (defaults to 'common' if not specified)
   manaCost?: number // Cost to play this card (uses mana)
+  runeCost?: RuneColor[]
   colors?: Color[] // Colors required to cast in lane with matching hero color
   runeScaling?: RuneScalingTier[] // Tiered effects based on lane runes (sorted weakest to strongest)
 }
@@ -107,7 +111,33 @@ export interface BattlefieldBuff {
 // Shop item type - can be either a hero item or a battlefield buff template
 export type ShopItem = Item | (Omit<BattlefieldBuff, 'id' | 'battlefieldId' | 'playerId'> & { type: 'battlefieldBuff' })
 
-export type TurnPhase = 'deploy' | 'resource' | 'play' | 'combatA' | 'adjust' | 'combatB'
+export type TurnPhase =
+  | 'deploy'
+  | 'resource'
+  | 'play'
+  | 'declare_attackers'
+  | 'declare_blockers'
+  | 'resolve_combat'
+  | 'combat'
+  | 'combatA'
+  | 'adjust'
+  | 'combatB'
+
+export type Keyword = 'firstStrike' | 'deathtouch' | 'trample' | 'vigilance'
+export type StatusEffectName = 'weak' | 'vulnerable' | 'strength'
+
+export interface StatusEffects {
+  weak: number
+  vulnerable: number
+  strength: number
+}
+
+export interface OnDeployEffect {
+  type: 'apply_status'
+  status: StatusEffectName
+  amount: number
+  target: 'friendly' | 'enemy'
+}
 
 // Formation tags for autobattler combat
 export type FormationTag = 'frontline' | 'ranged' | 'assassin'
@@ -221,6 +251,15 @@ export interface GameMetadata {
   resourceChoicesMade?: { player1: boolean, player2: boolean }
   // Is this a rune prototype game? (controls which UI/logic paths to use)
   isRunePrototype?: boolean
+  isSingleLanePrototype?: boolean
+  isManualCombatPrototype?: boolean
+  roundsWon?: { player1: number; player2: number }
+  roundsLost?: { player1: number; player2: number }
+  pendingBonusRunes?: { player1: number; player2: number }
+  temporaryRunes?: { player1: RuneColor[]; player2: RuneColor[] }
+  declaredAttackers?: string[]
+  blockerAssignments?: Record<string, string>
+  selectedBlockerId?: string | null
   // Win condition tracking
   gameOver?: boolean
   winner?: PlayerId | null
@@ -283,6 +322,13 @@ export interface Hero extends BaseCard {
   temporaryHP?: number // Temporary HP bonus (resets at end of turn)
   temporaryAttack?: number // Temporary attack bonus (resets at end of turn)
   formationTag?: FormationTag
+  armor?: number
+  keywords?: Keyword[]
+  statusEffects?: StatusEffects
+  summoningSick?: boolean
+  tapped?: boolean
+  onDeployEffect?: OnDeployEffect
+  prototypeKey?: 'flameCaptain' | 'berserker' | 'natureGuardian' | 'inspiringCommander'
   supportEffect?: string
   location: Location
   owner: PlayerId
@@ -324,6 +370,13 @@ export interface GenericUnit extends BaseCard {
   temporaryHP?: number // Temporary HP bonus (resets at end of turn)
   temporaryAttack?: number // Temporary attack bonus (resets at end of turn)
   formationTag?: FormationTag
+  armor?: number
+  keywords?: Keyword[]
+  statusEffects?: StatusEffects
+  summoningSick?: boolean
+  tapped?: boolean
+  onDeployEffect?: OnDeployEffect
+  unitTags?: string[]
   location: Location
   owner: PlayerId
   equippedItems?: string[] // Array of equipped item IDs
@@ -360,6 +413,8 @@ export type SpellEffectType =
   | 'draw_and_heal' // Draws cards and heals
   | 'steal_unit' // Take control of target enemy unit
   | 'buff' // Buff a friendly unit (+attack/+health)
+  | 'buff_all' // Buff all friendly units
+  | 'buff_tag' // Buff friendly units with the matching formation tag
 
 export interface SpellEffect {
   type: SpellEffectType
@@ -374,6 +429,8 @@ export interface SpellEffect {
   // Buff effects
   attackBuff?: number // Attack bonus to grant
   healthBuff?: number // Health bonus to grant
+  targetTag?: FormationTag
+  grantArmor?: number
   // Rune generation effects
   runeColors?: RuneColor[] // Colors of runes to add (e.g., ['black', 'black', 'black'] for Dark Ritual)
   sealColor?: RuneColor // Color of seal to create
@@ -535,6 +592,7 @@ export interface GameState {
 export const MAX_UNITS_PER_LANE = 5
 export const TOWER_HP = 15
 export const NEXUS_HP = 30
+export const PROTOTYPE_TOWER_HP = 30
 export const STARTING_GOLD = 5
 export const COMBAT_TOWER_DAMAGE = 3
 

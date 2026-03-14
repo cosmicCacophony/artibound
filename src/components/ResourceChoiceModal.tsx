@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { PlayerId, RuneColor, Color, Hero, Card } from '../game/types'
+import { useMemo, useState } from 'react'
+import { Card, Color, Hero, PlayerId, RuneColor } from '../game/types'
 import { useGameContext } from '../context/GameContext'
 
 interface ResourceChoiceModalProps {
@@ -7,93 +7,84 @@ interface ResourceChoiceModalProps {
   onComplete: () => void
 }
 
-const colorDisplay: Record<Color, { bg: string; text: string }> = {
-  red: { bg: '#ef4444', text: '#ffffff' },
-  white: { bg: '#f3f4f6', text: '#000000' },
-  blue: { bg: '#3b82f6', text: '#ffffff' },
-  black: { bg: '#1f2937', text: '#ffffff' },
-  green: { bg: '#10b981', text: '#ffffff' },
+type PrimaryChoice = { type: 'mana' } | { type: 'rune'; color: RuneColor }
+
+const colorDisplay: Record<Color, { bg: string; text: string; label: string }> = {
+  red: { bg: '#ef4444', text: '#ffffff', label: 'R' },
+  white: { bg: '#f3f4f6', text: '#111827', label: 'W' },
+  blue: { bg: '#3b82f6', text: '#ffffff', label: 'U' },
+  black: { bg: '#111827', text: '#ffffff', label: 'B' },
+  green: { bg: '#10b981', text: '#ffffff', label: 'G' },
 }
 
-const colorAbbreviation: Record<Color, string> = {
-  red: 'R',
-  white: 'W',
-  blue: 'U',
-  black: 'B',
-  green: 'G',
-}
-
-type LaneChoice = { type: 'mana' } | { type: 'rune', color: RuneColor }
-
-function getHeroColorsInLane(
-  gameState: { battlefieldA: { player1: Card[], player2: Card[] }, battlefieldB: { player1: Card[], player2: Card[] } },
-  battlefield: 'battlefieldA' | 'battlefieldB',
-  player: PlayerId
-): Color[] {
-  const units = gameState[battlefield][player]
+function getHeroColors(cards: Card[]): Color[] {
   const colors = new Set<Color>()
-  for (const card of units) {
+  cards.forEach(card => {
     if (card.cardType === 'hero') {
-      const hero = card as Hero
-      for (const c of hero.colors) {
-        colors.add(c)
-      }
+      ;(card as Hero).colors.forEach(color => colors.add(color))
     }
-  }
+  })
   return Array.from(colors)
 }
 
 export function ResourceChoiceModal({ player, onComplete }: ResourceChoiceModalProps) {
   const { gameState, setGameState } = useGameContext()
-  const [laneAChoice, setLaneAChoice] = useState<LaneChoice | null>(null)
-  const [laneBChoice, setLaneBChoice] = useState<LaneChoice | null>(null)
+  const [primaryChoice, setPrimaryChoice] = useState<PrimaryChoice | null>(null)
 
-  const laneAColors = getHeroColorsInLane(gameState, 'battlefieldA', player)
-  const laneBColors = getHeroColorsInLane(gameState, 'battlefieldB', player)
+  const availableColors = useMemo(() => {
+    const colors = new Set<Color>()
+    getHeroColors(gameState.battlefieldA[player]).forEach(color => colors.add(color))
+    getHeroColors(player === 'player1' ? gameState.player1DeployZone : gameState.player2DeployZone).forEach(color => colors.add(color))
+    return Array.from(colors)
+  }, [gameState.battlefieldA, gameState.player1DeployZone, gameState.player2DeployZone, player])
 
-  const allColors: Color[] = ['red', 'black', 'green', 'white', 'blue']
+  const commandersInPlay = gameState.battlefieldA[player].filter(card => card.cardType === 'hero').length
+  const maxManaKey = player === 'player1' ? 'player1MaxMana' : 'player2MaxMana'
+  const manaKey = player === 'player1' ? 'player1Mana' : 'player2Mana'
+  const currentMaxMana = gameState.metadata[maxManaKey]
+  const canConfirm = primaryChoice !== null
+  const runeChoiceRequiresSacrifice = primaryChoice?.type === 'rune' && commandersInPlay === 0
 
   const handleConfirm = () => {
-    if (!laneAChoice || !laneBChoice) return
+    if (!canConfirm || !primaryChoice) return
 
     setGameState(prev => {
-      const manaKey = player === 'player1' ? 'player1Mana' : 'player2Mana'
-      const maxManaKey = player === 'player1' ? 'player1MaxMana' : 'player2MaxMana'
-      let manaGain = 0
-      const newLaneRunes = prev.metadata.laneRunes ? { ...prev.metadata.laneRunes } : {
-        battlefieldA: { player1: [] as RuneColor[], player2: [] as RuneColor[] },
-        battlefieldB: { player1: [] as RuneColor[], player2: [] as RuneColor[] },
+      const currentMana = prev.metadata[manaKey] as number
+      const currentMax = prev.metadata[maxManaKey] as number
+      const nextRunes = {
+        ...(prev.metadata.laneRunes || {
+          battlefieldA: { player1: [] as RuneColor[], player2: [] as RuneColor[] },
+          battlefieldB: { player1: [] as RuneColor[], player2: [] as RuneColor[] },
+        }),
       }
 
-      // Deep clone the lane runes
-      newLaneRunes.battlefieldA = { ...newLaneRunes.battlefieldA }
-      newLaneRunes.battlefieldB = { ...newLaneRunes.battlefieldB }
-      newLaneRunes.battlefieldA[player] = [...newLaneRunes.battlefieldA[player]]
-      newLaneRunes.battlefieldB[player] = [...newLaneRunes.battlefieldB[player]]
+      let nextMana = currentMana
+      let nextMaxMana = currentMax
 
-      if (laneAChoice.type === 'mana') {
-        manaGain++
+      if (primaryChoice.type === 'mana') {
+        nextMana += 1
+        nextMaxMana += 1
       } else {
-        newLaneRunes.battlefieldA[player].push(laneAChoice.color)
+        nextRunes.battlefieldA[player] = [...nextRunes.battlefieldA[player], primaryChoice.color]
+        if ((prev.battlefieldA[player].filter(card => card.cardType === 'hero').length) === 0) {
+          nextMaxMana = Math.max(0, currentMax - 1)
+          nextMana = Math.min(currentMana, nextMaxMana)
+        }
       }
-
-      if (laneBChoice.type === 'mana') {
-        manaGain++
-      } else {
-        newLaneRunes.battlefieldB[player].push(laneBChoice.color)
-      }
-
-      const newResourceChoices = { ...(prev.metadata.resourceChoicesMade || { player1: false, player2: false }) }
-      newResourceChoices[player] = true
 
       return {
         ...prev,
         metadata: {
           ...prev.metadata,
-          [manaKey]: (prev.metadata[manaKey] as number) + manaGain,
-          [maxManaKey]: (prev.metadata[maxManaKey] as number) + manaGain,
-          laneRunes: newLaneRunes,
-          resourceChoicesMade: newResourceChoices,
+          [manaKey]: nextMana,
+          [maxManaKey]: nextMaxMana,
+          laneRunes: nextRunes,
+          resourceChoicesMade: {
+            ...(prev.metadata.resourceChoicesMade || { player1: false, player2: false }),
+            [player]: true,
+          },
+          currentPhase: 'play',
+          actionPlayer: player,
         },
       }
     })
@@ -101,124 +92,79 @@ export function ResourceChoiceModal({ player, onComplete }: ResourceChoiceModalP
     onComplete()
   }
 
-  const playerLabel = player === 'player1' ? 'Player 1 (RB)' : 'Player 2 (GW)'
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div style={{ width: 'min(560px, 92vw)', backgroundColor: '#1f2937', color: '#fff', borderRadius: '14px', padding: '24px', border: '1px solid #374151' }}>
+        <h2 style={{ marginTop: 0, marginBottom: '8px' }}>Resource Choice</h2>
+        <p style={{ marginTop: 0, marginBottom: '16px', color: '#cbd5e1', lineHeight: 1.5 }}>
+          Choose either mana growth or a rune. If you do not control a commander yet, taking a rune permanently sacrifices one mana crystal.
+        </p>
 
-  const renderLaneChoice = (
-    label: string,
-    choice: LaneChoice | null,
-    setChoice: (c: LaneChoice) => void,
-    heroColors: Color[]
-  ) => {
-    const availableColors = heroColors.length > 0 ? heroColors : allColors
-
-    return (
-      <div style={{
-        border: '1px solid #444',
-        borderRadius: '8px',
-        padding: '12px',
-        backgroundColor: '#1e1e1e',
-        minWidth: '220px',
-      }}>
-        <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ccc', marginBottom: '8px' }}>
-          {label}
-        </div>
-        <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '18px', flexWrap: 'wrap' }}>
           <button
-            onClick={() => setChoice({ type: 'mana' })}
+            onClick={() => setPrimaryChoice({ type: 'mana' })}
             style={{
-              padding: '8px 12px',
-              backgroundColor: choice?.type === 'mana' ? '#4CAF50' : '#333',
-              color: 'white',
-              border: choice?.type === 'mana' ? '2px solid #81C784' : '1px solid #555',
-              borderRadius: '6px',
+              padding: '12px 16px',
+              borderRadius: '10px',
+              border: primaryChoice?.type === 'mana' ? '2px solid #93c5fd' : '1px solid #4b5563',
+              backgroundColor: primaryChoice?.type === 'mana' ? '#1d4ed8' : '#111827',
+              color: '#fff',
               cursor: 'pointer',
-              fontWeight: choice?.type === 'mana' ? 'bold' : 'normal',
-              fontSize: '13px',
+              fontWeight: 700,
             }}
           >
             +1 Mana
           </button>
-          <div style={{ fontSize: '11px', color: '#888', textAlign: 'center' }}>or add a rune:</div>
-          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-            {availableColors.map(color => {
-              const style = colorDisplay[color]
-              const isSelected = choice?.type === 'rune' && choice.color === color
-              return (
-                <button
-                  key={color}
-                  onClick={() => setChoice({ type: 'rune', color })}
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '6px',
-                    backgroundColor: style.bg,
-                    color: style.text,
-                    border: isSelected ? '3px solid #ffd700' : '2px solid transparent',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                    fontSize: '14px',
-                    boxShadow: isSelected ? '0 0 8px #ffd700' : 'none',
-                    transform: isSelected ? 'scale(1.1)' : 'scale(1)',
-                    transition: 'all 0.15s',
-                  }}
-                  title={`Add ${color} rune to this lane`}
-                >
-                  {colorAbbreviation[color]}
-                </button>
-              )
-            })}
-          </div>
+          {availableColors.map(color => {
+            const display = colorDisplay[color]
+            const selected = primaryChoice?.type === 'rune' && primaryChoice.color === color
+            return (
+              <button
+                key={color}
+                onClick={() => setPrimaryChoice({ type: 'rune', color })}
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  border: selected ? '3px solid #fde68a' : '1px solid transparent',
+                  backgroundColor: display.bg,
+                  color: display.text,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                }}
+                title={`Add a ${color} rune`}
+              >
+                {display.label}
+              </button>
+            )
+          })}
         </div>
-      </div>
-    )
-  }
 
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.7)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-    }}>
-      <div style={{
-        backgroundColor: '#2a2a2a',
-        borderRadius: '12px',
-        padding: '24px',
-        border: '2px solid #555',
-        maxWidth: '550px',
-        width: '90%',
-      }}>
-        <h2 style={{ color: '#fff', margin: '0 0 4px 0', fontSize: '18px' }}>
-          Resource Choices — {playerLabel}
-        </h2>
-        <p style={{ color: '#aaa', fontSize: '12px', margin: '0 0 16px 0' }}>
-          Make two independent choices (one per lane). Each: +1 mana OR +1 permanent rune.
-        </p>
-        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          {renderLaneChoice('Lane A', laneAChoice, setLaneAChoice, laneAColors)}
-          {renderLaneChoice('Lane B', laneBChoice, setLaneBChoice, laneBColors)}
+        <div style={{ marginBottom: '18px', padding: '12px', borderRadius: '10px', backgroundColor: '#111827', border: '1px solid #374151', fontSize: '13px', color: '#cbd5e1' }}>
+          <div>Commander colors: {availableColors.map(color => colorDisplay[color].label).join(' / ') || 'None'}</div>
+          <div style={{ marginTop: '6px' }}>Commanders in play: {commandersInPlay}</div>
+          {runeChoiceRequiresSacrifice && (
+            <div style={{ marginTop: '6px', color: '#fde68a' }}>
+              Warning: this rune choice will reduce your max mana from {currentMaxMana} to {Math.max(0, currentMaxMana - 1)}.
+            </div>
+          )}
         </div>
-        <div style={{ marginTop: '16px', textAlign: 'center' }}>
-          <button
-            onClick={handleConfirm}
-            disabled={!laneAChoice || !laneBChoice}
-            style={{
-              padding: '10px 32px',
-              backgroundColor: laneAChoice && laneBChoice ? '#E91E63' : '#555',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: laneAChoice && laneBChoice ? 'pointer' : 'not-allowed',
-              fontWeight: 'bold',
-              fontSize: '14px',
-            }}
-          >
-            Confirm Choices
-          </button>
-        </div>
+
+        <button
+          onClick={handleConfirm}
+          disabled={!canConfirm}
+          style={{
+            padding: '12px 18px',
+            borderRadius: '10px',
+            border: 'none',
+            backgroundColor: canConfirm ? '#e11d48' : '#4b5563',
+            color: '#fff',
+            cursor: canConfirm ? 'pointer' : 'not-allowed',
+            fontWeight: 700,
+          }}
+        >
+          Confirm Choice
+        </button>
       </div>
     </div>
   )

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
 import { Card, GameState, BaseCard, PlayerId, GameMetadata, HeroAbility } from '../game/types'
-import { createRunePrototypeGameState } from '../game/runePrototypeData'
+import { createManualPrototypeGameState } from '../game/sampleData'
 
 export interface PendingAbility {
   heroId: string
@@ -40,12 +40,13 @@ interface GameContextType {
   getLaneCapacity: (battlefield: Card[]) => number
   setActivePlayer: (player: PlayerId) => void
   initializeRunePrototype: () => void
+  initializePrototype: () => void
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
 
 function createEmptyGameState(): GameState {
-  const proto = createRunePrototypeGameState()
+  const proto = createManualPrototypeGameState()
   return {
     player1Hand: proto.player1Hand,
     player2Hand: proto.player2Hand,
@@ -102,7 +103,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [setGameState])
 
   const initializeRunePrototype = useCallback(() => {
-    const protoState = createRunePrototypeGameState()
+    const protoState = createManualPrototypeGameState()
     setGameState({
       player1Hand: protoState.player1Hand,
       player2Hand: protoState.player2Hand,
@@ -122,6 +123,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setCombatSummaryData(null)
     setShowCombatSummary(false)
   }, [setGameState])
+
+  const initializePrototype = initializeRunePrototype
 
   const value: GameContextType = {
     gameState,
@@ -146,6 +149,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     getLaneCapacity,
     setActivePlayer,
     initializeRunePrototype,
+    initializePrototype,
   }
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>

@@ -1,5 +1,19 @@
-import { Hero, SignatureCard, HybridCard, GenericUnit, Card, BaseCard, Item, ItemCard, GameMetadata, TOWER_HP, NEXUS_HP, STARTING_GOLD, BattlefieldDefinition, SpellCard, SpellEffect, BattlefieldBuff, BattlefieldId, BattlefieldBuffEffectType } from './types'
+import { Hero, SignatureCard, HybridCard, GenericUnit, Card, BaseCard, Item, ItemCard, GameMetadata, TOWER_HP, NEXUS_HP, STARTING_GOLD, BattlefieldDefinition, SpellCard, SpellEffect, BattlefieldBuff, BattlefieldId, BattlefieldBuffEffectType, PROTOTYPE_TOWER_HP, Seal } from './types'
 import { allCards, allSpells, allArtifacts } from './cardData'
+import {
+  prototypeRedHeroes,
+  prototypeGWHeroes,
+  prototypeRedUnits,
+  prototypeGWUnits,
+  prototypeRedSpells,
+  prototypeGWSpells,
+  manualPrototypeRBCommanders,
+  manualPrototypeGWCommanders,
+  manualPrototypeRBPool,
+  manualPrototypeGWPool,
+  manualPrototypeRBSeals,
+  manualPrototypeGWSeals,
+} from './comprehensiveCardData'
 
 // Item definitions
 export const tier1Items: Item[] = [
@@ -883,7 +897,7 @@ export function createLegacyCardLibrary(): BaseCard[] {
 export function createCardFromTemplate(
   template: BaseCard,
   owner: 'player1' | 'player2',
-  location: 'hand' | 'base' | 'battlefieldA' | 'battlefieldB' = 'hand'
+  location: 'hand' | 'base' | 'commandZone' | 'battlefieldA' | 'battlefieldB' = 'hand'
 ): Card {
   // Safety check: template must be defined
   if (!template || !template.id) {
@@ -898,6 +912,7 @@ export function createCardFromTemplate(
     location,
     owner,
     manaCost: template.manaCost,
+    runeCost: template.runeCost,
     colors: template.colors,
   }
 
@@ -909,6 +924,7 @@ export function createCardFromTemplate(
         ...base,
         effect: (template as any).effect,
         initiative: (template as any).initiative,
+        runeCost: template.runeCost,
         colors: template.colors,
       } as SpellCard
     }
@@ -920,6 +936,7 @@ export function createCardFromTemplate(
         ...base,
         effect: spellCard.effect,
         initiative: spellCard.initiative,
+        runeCost: spellCard.runeCost,
         colors: spellCard.colors,
       } as SpellCard
     }
@@ -928,9 +945,7 @@ export function createCardFromTemplate(
   // Handle heroes - template should already have all properties
   if (template.cardType === 'hero') {
     const heroTemplate = template as unknown as Omit<Hero, 'location' | 'owner' | 'id' | 'name' | 'description' | 'cardType'>
-    // Ensure template cannot override ownership/location/id when instancing from draft selections.
-    const { owner: _ignoredOwner, location: _ignoredLocation, id: _ignoredId, ...safeHeroTemplate } =
-      heroTemplate as unknown as Omit<Hero, 'location' | 'owner' | 'id'>
+    const safeHeroTemplate = heroTemplate as Omit<Hero, 'location' | 'owner' | 'id'>
     return {
       ...base,
       ...safeHeroTemplate,
@@ -1692,7 +1707,7 @@ export const blueSpells: Omit<SpellCard, 'location' | 'owner'>[] = [
 function createHeroFromTestDeck(
   template: Omit<Hero, 'location' | 'owner'>,
   owner: 'player1' | 'player2',
-  location: 'hand' | 'base' = 'base'
+  location: 'hand' | 'base' | 'deployZone' | 'battlefieldA' | 'battlefieldB' = 'base'
 ): Hero {
   return {
     ...template,
@@ -1907,6 +1922,263 @@ function shuffleArray<T>(array: T[]): T[] {
     ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
   }
   return shuffled
+}
+
+function getRandomPoolCards(pool: BaseCard[], count: number): BaseCard[] {
+  return Array.from({ length: count }, () => {
+    const index = Math.floor(Math.random() * pool.length)
+    return { ...pool[index] }
+  })
+}
+
+function createSealInstances(templates: Omit<Seal, 'owner'>[], owner: 'player1' | 'player2'): Seal[] {
+  return templates.map(template => ({
+    ...template,
+    id: `${template.id}-${owner}`,
+    owner,
+    tapped: false,
+    inPlay: false,
+  }))
+}
+
+export function createManualPrototypeGameState(): {
+  player1Hand: Card[]
+  player2Hand: Card[]
+  player1Base: Card[]
+  player2Base: Card[]
+  player1DeployZone: Card[]
+  player2DeployZone: Card[]
+  battlefieldA: { player1: Card[], player2: Card[] }
+  battlefieldB: { player1: Card[], player2: Card[] }
+  metadata: GameMetadata
+  player1Library: BaseCard[]
+  player2Library: BaseCard[]
+} {
+  const player1Library = manualPrototypeRBPool.map(card => ({ ...card }))
+  const player2Library = manualPrototypeGWPool.map(card => ({ ...card }))
+
+  const player1Hand = getRandomPoolCards(player1Library, 4).map(card => createCardFromTemplate(card, 'player1', 'hand'))
+  const player2Hand = getRandomPoolCards(player2Library, 4).map(card => createCardFromTemplate(card, 'player2', 'hand'))
+
+  const player1Commanders = manualPrototypeRBCommanders.map(hero =>
+    createCardFromTemplate(hero, 'player1', 'commandZone') as Hero
+  )
+  const player2Commanders = manualPrototypeGWCommanders.map(hero =>
+    createCardFromTemplate(hero, 'player2', 'commandZone') as Hero
+  )
+
+  const metadata: GameMetadata = {
+    currentTurn: 1,
+    activePlayer: 'player1',
+    currentPhase: 'resource',
+    player1Gold: 0,
+    player2Gold: 0,
+    player1Mana: 2,
+    player2Mana: 2,
+    player1MaxMana: 2,
+    player2MaxMana: 2,
+    player1Seals: createSealInstances(manualPrototypeRBSeals, 'player1'),
+    player2Seals: createSealInstances(manualPrototypeGWSeals, 'player2'),
+    player1NexusHP: NEXUS_HP,
+    player2NexusHP: NEXUS_HP,
+    towerA_player1_HP: PROTOTYPE_TOWER_HP,
+    towerA_player2_HP: PROTOTYPE_TOWER_HP,
+    towerB_player1_HP: 0,
+    towerB_player2_HP: 0,
+    towerA_player1_Armor: 0,
+    towerA_player2_Armor: 0,
+    towerB_player1_Armor: 0,
+    towerB_player2_Armor: 0,
+    laneMomentum: {
+      battlefieldA: { player1: 0, player2: 0 },
+      battlefieldB: { player1: 0, player2: 0 },
+    },
+    player1Tier: 1,
+    player2Tier: 1,
+    deathCooldowns: {},
+    player1MovedToBase: false,
+    player2MovedToBase: false,
+    player1HeroesDeployedThisTurn: 0,
+    player2HeroesDeployedThisTurn: 0,
+    playedSpells: {},
+    player1BattlefieldBuffs: [],
+    player2BattlefieldBuffs: [],
+    battlefieldDeathCounters: {},
+    actionPlayer: 'player1',
+    initiativePlayer: 'player1',
+    heroAbilityCooldowns: {},
+    player1Passed: false,
+    player2Passed: false,
+    stunnedHeroes: {},
+    barrierUnits: {},
+    cursedUnits: {},
+    player1SpellsCastThisTurn: 0,
+    player2SpellsCastThisTurn: 0,
+    player1ColorsPlayedThisTurn: [],
+    player2ColorsPlayedThisTurn: [],
+    player1CardTypesPlayedThisTurn: [],
+    player2CardTypesPlayedThisTurn: [],
+    heroCounters: {},
+    laneRunes: {
+      battlefieldA: { player1: [], player2: [] },
+      battlefieldB: { player1: [], player2: [] },
+    },
+    resourceChoicesMade: { player1: false, player2: false },
+    isRunePrototype: true,
+    isSingleLanePrototype: true,
+    isManualCombatPrototype: true,
+    temporaryRunes: { player1: [], player2: [] },
+    declaredAttackers: [],
+    blockerAssignments: {},
+    selectedBlockerId: null,
+    totalTowerDamageDealt: { player1: 0, player2: 0 },
+  }
+
+  return {
+    player1Hand,
+    player2Hand,
+    player1Base: [],
+    player2Base: [],
+    player1DeployZone: player1Commanders,
+    player2DeployZone: player2Commanders,
+    battlefieldA: { player1: [], player2: [] },
+    battlefieldB: { player1: [], player2: [] },
+    metadata,
+    player1Library,
+    player2Library,
+  }
+}
+
+export function createPrototypeGameState(): {
+  player1Hand: Card[]
+  player2Hand: Card[]
+  player1Base: Card[]
+  player2Base: Card[]
+  player1DeployZone: Card[]
+  player2DeployZone: Card[]
+  battlefieldA: { player1: Card[], player2: Card[] }
+  battlefieldB: { player1: Card[], player2: Card[] }
+  metadata: GameMetadata
+  player1Library: BaseCard[]
+  player2Library: BaseCard[]
+} {
+  const buildDeck = (
+    units: Omit<GenericUnit, 'location' | 'owner' | 'stackedWith' | 'stackPower' | 'stackHealth'>[],
+    spells: Omit<SpellCard, 'location' | 'owner'>[],
+  ): BaseCard[] => {
+    const deck: BaseCard[] = []
+
+    units.forEach(unit => {
+      for (let copy = 0; copy < 3; copy++) {
+        deck.push({ ...unit })
+      }
+    })
+
+    spells.forEach(spell => {
+      for (let copy = 0; copy < 2; copy++) {
+        deck.push({ ...spell })
+      }
+    })
+
+    return shuffleArray(deck)
+  }
+
+  const player1Heroes = prototypeRedHeroes.map(hero =>
+    createCardFromTemplate(hero, 'player1', 'battlefieldA') as Hero
+  )
+  const player2Heroes = prototypeGWHeroes.map(hero =>
+    createCardFromTemplate(hero, 'player2', 'battlefieldA') as Hero
+  )
+
+  const player1Deck = buildDeck(prototypeRedUnits, prototypeRedSpells)
+  const player2Deck = buildDeck(prototypeGWUnits, prototypeGWSpells)
+
+  const player1HandTemplates = player1Deck.slice(0, 5)
+  const player2HandTemplates = player2Deck.slice(0, 5)
+  const player1Library = player1Deck.slice(5)
+  const player2Library = player2Deck.slice(5)
+
+  const player1Hand = player1HandTemplates.map(card => createCardFromTemplate(card, 'player1', 'hand'))
+  const player2Hand = player2HandTemplates.map(card => createCardFromTemplate(card, 'player2', 'hand'))
+
+  const metadata: GameMetadata = {
+    currentTurn: 1,
+    activePlayer: 'player1',
+    currentPhase: 'resource',
+    player1Gold: 0,
+    player2Gold: 0,
+    player1Mana: 3,
+    player2Mana: 3,
+    player1MaxMana: 3,
+    player2MaxMana: 3,
+    player1NexusHP: NEXUS_HP,
+    player2NexusHP: NEXUS_HP,
+    towerA_player1_HP: PROTOTYPE_TOWER_HP,
+    towerA_player2_HP: PROTOTYPE_TOWER_HP,
+    towerB_player1_HP: 0,
+    towerB_player2_HP: 0,
+    towerA_player1_Armor: 0,
+    towerA_player2_Armor: 0,
+    towerB_player1_Armor: 0,
+    towerB_player2_Armor: 0,
+    laneMomentum: {
+      battlefieldA: { player1: 0, player2: 0 },
+      battlefieldB: { player1: 0, player2: 0 },
+    },
+    player1Tier: 1,
+    player2Tier: 1,
+    deathCooldowns: {},
+    player1MovedToBase: false,
+    player2MovedToBase: false,
+    player1HeroesDeployedThisTurn: 0,
+    player2HeroesDeployedThisTurn: 0,
+    playedSpells: {},
+    player1BattlefieldBuffs: [],
+    player2BattlefieldBuffs: [],
+    battlefieldDeathCounters: {},
+    actionPlayer: 'player1',
+    initiativePlayer: 'player1',
+    heroAbilityCooldowns: {},
+    player1Passed: false,
+    player2Passed: false,
+    stunnedHeroes: {},
+    barrierUnits: {},
+    cursedUnits: {},
+    player1Seals: [],
+    player2Seals: [],
+    player1SpellsCastThisTurn: 0,
+    player2SpellsCastThisTurn: 0,
+    player1ColorsPlayedThisTurn: [],
+    player2ColorsPlayedThisTurn: [],
+    player1CardTypesPlayedThisTurn: [],
+    player2CardTypesPlayedThisTurn: [],
+    heroCounters: {},
+    laneRunes: {
+      battlefieldA: { player1: [], player2: [] },
+      battlefieldB: { player1: [], player2: [] },
+    },
+    resourceChoicesMade: { player1: false, player2: false },
+    isRunePrototype: true,
+    isSingleLanePrototype: true,
+    roundsWon: { player1: 0, player2: 0 },
+    roundsLost: { player1: 0, player2: 0 },
+    pendingBonusRunes: { player1: 0, player2: 0 },
+    totalTowerDamageDealt: { player1: 0, player2: 0 },
+  }
+
+  return {
+    player1Hand,
+    player2Hand,
+    player1Base: [],
+    player2Base: [],
+    player1DeployZone: [],
+    player2DeployZone: [],
+    battlefieldA: { player1: player1Heroes, player2: player2Heroes },
+    battlefieldB: { player1: [], player2: [] },
+    metadata,
+    player1Library,
+    player2Library,
+  }
 }
 
 // Create game state from draft selections

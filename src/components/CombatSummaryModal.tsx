@@ -1,5 +1,5 @@
 import { CombatLogEntry, CombatRound, CombatOutcome } from '../game/combatSystem'
-import { RuneColor } from '../game/types'
+import { PROTOTYPE_TOWER_HP, RuneColor } from '../game/types'
 
 export interface HeroDeathInfo {
   heroName: string
@@ -28,19 +28,9 @@ export function CombatSummaryModal({
   isOpen, 
   onClose, 
   battlefieldA, 
-  battlefieldB 
+  battlefieldB: _battlefieldB 
 }: CombatSummaryModalProps) {
   if (!isOpen) return null
-
-  const tagIcon = (tag?: string) => {
-    if (!tag) return ''
-    switch (tag) {
-      case 'frontline': return '🛡'
-      case 'ranged': return '🏹'
-      case 'assassin': return '🗡'
-      default: return ''
-    }
-  }
 
   const runeColorEmoji: Record<string, string> = {
     red: '🔴', blue: '🔵', white: '⚪', black: '⚫', green: '🟢',
@@ -49,26 +39,24 @@ export function CombatSummaryModal({
   const renderEntries = (entries: CombatLogEntry[]) => {
     return entries.map((entry, index) => {
       if (entry.targetType === 'combat_win') return null
-      const isHeroAttack = entry.targetType === 'hero'
       return (
         <div
           key={index}
           style={{
             padding: '6px 8px',
             marginBottom: '3px',
-            backgroundColor: entry.killed ? (isHeroAttack ? '#1a1a2e' : '#ffebee') : (isHeroAttack ? '#fff8e1' : '#f5f5f5'),
+            backgroundColor: entry.killed ? '#fee2e2' : '#f8fafc',
             borderRadius: '4px',
-            borderLeft: entry.killed ? '3px solid #f44336' : isHeroAttack ? '3px solid #ff9800' : '3px solid #4caf50',
+            borderLeft: entry.killed ? '3px solid #ef4444' : entry.targetType === 'tower' ? '3px solid #1d4ed8' : '3px solid #4b5563',
           }}
         >
-          <div style={{ fontWeight: 'bold', marginBottom: '2px', fontSize: '12px', color: isHeroAttack && entry.killed ? '#ef5350' : undefined }}>
-            {tagIcon(entry.formationTag)} {entry.attackerName} → {entry.targetName || 'Unknown'}
+          <div style={{ fontWeight: 'bold', marginBottom: '2px', fontSize: '12px' }}>
+            {entry.attackerName} {'->'} {entry.targetName || 'Unknown'}
           </div>
-          <div style={{ fontSize: '11px', color: isHeroAttack && entry.killed ? '#ffab40' : '#666' }}>
+          <div style={{ fontSize: '11px', color: '#475569' }}>
             {entry.damage} damage
-            {entry.killed && isHeroAttack ? ' — HERO KILLED' : entry.killed ? ' — KILLED' : ''}
-            {entry.formationTag === 'assassin' ? ' (bypassed frontline)' : ''}
-            {entry.formationTag === 'ranged' ? ' (shot over frontline)' : ''}
+            {entry.killed ? ' - defeated' : ''}
+            {entry.note ? ` - ${entry.note}` : ''}
           </div>
         </div>
       )
@@ -84,8 +72,8 @@ export function CombatSummaryModal({
       )
     }
 
+    const firstStrikeRound = lane.combatRounds.find(r => r.phase === 'first_strike')
     const combatRounds = lane.combatRounds.filter(r => r.phase === 'combat')
-    const heroAttackRound = lane.combatRounds.find(r => r.phase === 'hero_attack')
     const outcomeRound = lane.combatRounds.find(r => r.phase === 'outcome')
     const outcomeEntry = outcomeRound?.entries.find(e => e.targetType === 'combat_win')
 
@@ -110,49 +98,46 @@ export function CombatSummaryModal({
           </div>
         ))}
 
-        {heroAttackRound && heroAttackRound.entries.length > 0 && (
+        {firstStrikeRound && firstStrikeRound.entries.length > 0 && (
           <div style={{ marginTop: '8px' }}>
             <div style={{
               fontSize: '11px',
               fontWeight: 'bold',
-              color: '#ff6f00',
+              color: '#b45309',
               textTransform: 'uppercase',
               letterSpacing: '1px',
               marginBottom: '4px',
               paddingLeft: '4px',
             }}>
-              Hero Attack
+              First Strike
             </div>
-            {renderEntries(heroAttackRound.entries)}
+            {renderEntries(firstStrikeRound.entries)}
           </div>
         )}
 
-        {outcomeEntry && outcomeEntry.combatWinInfo && (
+        {outcomeEntry && (
           <div
             style={{
               padding: '10px',
               marginTop: '8px',
-              backgroundColor: outcomeEntry.combatWinInfo.winningSide === 'tie' ? '#e8eaf6' : '#fff3e0',
+              backgroundColor: lane.outcome.winner === 'tie' ? '#e8eaf6' : '#fff3e0',
               borderRadius: '6px',
-              border: outcomeEntry.combatWinInfo.winningSide === 'tie' ? '2px solid #5c6bc0' : '2px solid #ff9800',
+              border: lane.outcome.winner === 'tie' ? '2px solid #5c6bc0' : '2px solid #ff9800',
             }}
           >
             <div style={{
               fontWeight: 'bold',
-              color: outcomeEntry.combatWinInfo.winningSide === 'tie' ? '#5c6bc0' : '#e65100',
+              color: lane.outcome.winner === 'tie' ? '#5c6bc0' : '#e65100',
               marginBottom: '4px',
               fontSize: '13px',
             }}>
-              {outcomeEntry.combatWinInfo.winningSide === 'tie'
+              {lane.outcome.winner === 'tie'
                 ? 'Mutual Destruction!'
-                : `${outcomeEntry.combatWinInfo.winningSide === 'player1' ? 'P1' : 'P2'} wins combat!`
+                : `${lane.outcome.winner === 'player1' ? 'P1' : 'P2'} wins combat!`
               }
             </div>
-            <div style={{ fontSize: '12px', color: outcomeEntry.combatWinInfo.winningSide === 'tie' ? '#3949ab' : '#bf360c' }}>
-              {outcomeEntry.combatWinInfo.winningSide === 'tie'
-                ? `Both towers take ${outcomeEntry.damage} damage`
-                : `${outcomeEntry.combatWinInfo.p1Survivors || outcomeEntry.combatWinInfo.p2Survivors} survivors — ${outcomeEntry.damage} tower damage`
-              }
+            <div style={{ fontSize: '12px', color: lane.outcome.winner === 'tie' ? '#3949ab' : '#bf360c' }}>
+              {outcomeEntry.note || `${outcomeEntry.damage} tower damage`}
             </div>
           </div>
         )}
@@ -232,57 +217,20 @@ export function CombatSummaryModal({
         </div>
 
         <div style={{ marginBottom: '24px' }}>
-          <h3 style={{ margin: '0 0 12px 0', color: '#1976d2' }}>Lane A</h3>
+          <h3 style={{ margin: '0 0 12px 0', color: '#1976d2' }}>Combat</h3>
           {renderLaneCombat(battlefieldA, battlefieldA.heroDeaths)}
           <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#e3f2fd', borderRadius: '4px' }}>
             <div style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Tower HP:</div>
             <div style={{ fontSize: '11px' }}>
-              Player 1: {battlefieldA.towerHP.player1} / 15
+              Player 1: {battlefieldA.towerHP.player1} / {PROTOTYPE_TOWER_HP}
               {battlefieldA.towerHP.player1 === 0 && <span style={{ color: '#f44336', marginLeft: '8px' }}>DESTROYED</span>}
             </div>
             <div style={{ fontSize: '11px' }}>
-              Player 2: {battlefieldA.towerHP.player2} / 15
+              Player 2: {battlefieldA.towerHP.player2} / {PROTOTYPE_TOWER_HP}
               {battlefieldA.towerHP.player2 === 0 && <span style={{ color: '#f44336', marginLeft: '8px' }}>DESTROYED</span>}
             </div>
           </div>
         </div>
-
-        <div style={{ marginBottom: '24px' }}>
-          <h3 style={{ margin: '0 0 12px 0', color: '#1976d2' }}>Lane B</h3>
-          {renderLaneCombat(battlefieldB, battlefieldB.heroDeaths)}
-          <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#e3f2fd', borderRadius: '4px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Tower HP:</div>
-            <div style={{ fontSize: '11px' }}>
-              Player 1: {battlefieldB.towerHP.player1} / 15
-              {battlefieldB.towerHP.player1 === 0 && <span style={{ color: '#f44336', marginLeft: '8px' }}>DESTROYED</span>}
-            </div>
-            <div style={{ fontSize: '11px' }}>
-              Player 2: {battlefieldB.towerHP.player2} / 15
-              {battlefieldB.towerHP.player2 === 0 && <span style={{ color: '#f44336', marginLeft: '8px' }}>DESTROYED</span>}
-            </div>
-          </div>
-        </div>
-
-        {(battlefieldA.overflowDamage.player1 + battlefieldB.overflowDamage.player1 > 0 ||
-          battlefieldA.overflowDamage.player2 + battlefieldB.overflowDamage.player2 > 0) && (
-          <div style={{ 
-            padding: '12px', 
-            backgroundColor: '#ffebee', 
-            borderRadius: '4px',
-            border: '2px solid #f44336',
-            marginTop: '16px'
-          }}>
-            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#d32f2f', marginBottom: '4px' }}>
-              Total Nexus Damage:
-            </div>
-            <div style={{ fontSize: '12px' }}>
-              Player 1 Nexus: -{battlefieldA.overflowDamage.player1 + battlefieldB.overflowDamage.player1} HP
-            </div>
-            <div style={{ fontSize: '12px' }}>
-              Player 2 Nexus: -{battlefieldA.overflowDamage.player2 + battlefieldB.overflowDamage.player2} HP
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )

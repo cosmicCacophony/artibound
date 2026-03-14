@@ -14,6 +14,36 @@ export interface WinCheckResult {
  * the most total tower damage wins.
  */
 export function checkWinCondition(metadata: GameMetadata): WinCheckResult {
+  if (metadata.isSingleLanePrototype) {
+    const p1Tower = metadata.towerA_player1_HP
+    const p2Tower = metadata.towerA_player2_HP
+
+    if (p1Tower <= 0 && p2Tower <= 0) {
+      const dmg = metadata.totalTowerDamageDealt || { player1: 0, player2: 0 }
+      return {
+        gameOver: true,
+        winner: dmg.player1 >= dmg.player2 ? 'player1' : 'player2',
+        winReason: 'towers_destroyed',
+      }
+    }
+
+    if (p2Tower <= 0) {
+      return { gameOver: true, winner: 'player1', winReason: 'towers_destroyed' }
+    }
+
+    if (p1Tower <= 0) {
+      return { gameOver: true, winner: 'player2', winReason: 'towers_destroyed' }
+    }
+
+    if (metadata.currentTurn > TURN_LIMIT) {
+      const dmg = metadata.totalTowerDamageDealt || { player1: 0, player2: 0 }
+      const winner: PlayerId = dmg.player1 >= dmg.player2 ? 'player1' : 'player2'
+      return { gameOver: true, winner, winReason: 'turn_limit' }
+    }
+
+    return { gameOver: false, winner: null, winReason: null }
+  }
+
   const p1TowerA = metadata.towerA_player1_HP
   const p1TowerB = metadata.towerB_player1_HP
   const p2TowerA = metadata.towerA_player2_HP

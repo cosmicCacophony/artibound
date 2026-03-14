@@ -1,154 +1,84 @@
-import { useEffect } from 'react'
 import { useGameContext } from '../context/GameContext'
 import { useTurnManagement } from '../hooks/useTurnManagement'
 
 export function GameHeader() {
-  const { metadata, initializeRunePrototype } = useGameContext()
-  const { handleNextPhase, handleNextTurn, handlePass, handleEndDeployPhase } = useTurnManagement()
-
-  // Auto-trigger combat when both players pass during play phase
-  useEffect(() => {
-    if (!metadata.gameOver && metadata.currentPhase === 'play' && metadata.player1Passed && metadata.player2Passed) {
-      handleNextPhase()
-    }
-  }, [metadata.gameOver, metadata.currentPhase, metadata.player1Passed, metadata.player2Passed, handleNextPhase])
-
-  const isGameOver = !!metadata.gameOver
-
-  const phaseLabel = metadata.currentPhase === 'resource' ? 'Resource'
-    : metadata.currentPhase === 'deploy' ? 'Deploy'
-    : metadata.currentPhase === 'play' ? 'Play'
-    : metadata.currentPhase
+  const { metadata, initializePrototype } = useGameContext()
+  const { handleStartCombat, handleConfirmAttackers, handleConfirmBlockers, handleSkipCombat, handleEndTurn } = useTurnManagement()
+  const p1Runes = [
+    ...(metadata.laneRunes?.battlefieldA.player1 || []),
+    ...(metadata.temporaryRunes?.player1 || []),
+  ]
+  const p2Runes = [
+    ...(metadata.laneRunes?.battlefieldA.player2 || []),
+    ...(metadata.temporaryRunes?.player2 || []),
+  ]
 
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '20px',
-      padding: '12px 16px',
-      backgroundColor: '#1a1a2e',
-      borderRadius: '8px',
-      color: 'white',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        <h2 style={{ margin: 0, fontSize: '18px' }}>Artibound</h2>
-        <span style={{ fontSize: '13px', color: '#E91E63', fontWeight: 'bold' }}>
-          RB vs GW Prototype
-        </span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '14px 18px', backgroundColor: '#111827', color: '#fff', borderRadius: '12px' }}>
+      <div>
+        <h2 style={{ margin: 0 }}>Artibound</h2>
+        <div style={{ fontSize: '13px', color: '#cbd5e1', marginTop: '4px' }}>
+          Single-lane prototype | Turn {metadata.currentTurn} | {metadata.currentPhase}
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-        {/* Action indicator */}
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <div style={{ fontSize: '13px', fontWeight: 700 }}>
+          <span style={{ color: '#ef4444' }}>P1 {metadata.player1Mana}/{metadata.player1MaxMana} | {p1Runes.join(', ') || 'no runes'}</span>
+          {' | '}
+          <span style={{ color: '#86efac' }}>P2 {metadata.player2Mana}/{metadata.player2MaxMana} | {p2Runes.join(', ') || 'no runes'}</span>
+        </div>
+
         {metadata.actionPlayer && (
-          <div style={{
-            padding: '6px 14px',
-            backgroundColor: metadata.actionPlayer === 'player1' ? '#e53935' : '#1e88e5',
-            borderRadius: '4px',
-            fontWeight: 'bold',
-            fontSize: '13px',
-          }}>
-            Action: {metadata.actionPlayer === 'player1' ? 'P1 (RB)' : 'P2 (GW)'}
+          <div style={{ fontSize: '13px', fontWeight: 700, padding: '8px 10px', borderRadius: '999px', backgroundColor: metadata.actionPlayer === 'player1' ? '#7f1d1d' : '#1d4ed8' }}>
+            Action: {metadata.actionPlayer === 'player1' ? 'P1' : 'P2'}
           </div>
         )}
 
-        {/* Turn + Phase */}
-        <div style={{ fontSize: '13px', fontWeight: 'bold' }}>
-          Turn {metadata.currentTurn} | {phaseLabel}
-        </div>
-
-        {/* Mana */}
-        <div style={{ fontSize: '13px' }}>
-          <span style={{ color: '#ef5350' }}>P1: {metadata.player1Mana}/{metadata.player1MaxMana}</span>
-          {' | '}
-          <span style={{ color: '#42a5f5' }}>P2: {metadata.player2Mana}/{metadata.player2MaxMana}</span>
-        </div>
-
-        {/* End Deploy Phase */}
-        {metadata.currentPhase === 'deploy' && !isGameOver && (
+        {metadata.currentPhase === 'play' && !metadata.gameOver && (
           <button
-            onClick={handleEndDeployPhase}
-            style={{
-              padding: '6px 14px',
-              backgroundColor: '#4caf50',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '13px',
-              fontWeight: 'bold',
-            }}
+            onClick={handleStartCombat}
+            style={{ padding: '10px 14px', borderRadius: '10px', border: 'none', backgroundColor: '#f59e0b', color: '#111827', cursor: 'pointer', fontWeight: 700 }}
           >
-            End Deploy
+            Declare Attacks
           </button>
         )}
 
-        {/* Pass (play phase) */}
-        {metadata.currentPhase === 'play' && metadata.actionPlayer && !isGameOver && (
+        {metadata.currentPhase === 'declare_attackers' && !metadata.gameOver && (
           <button
-            onClick={() => handlePass(metadata.actionPlayer!)}
-            style={{
-              padding: '6px 14px',
-              backgroundColor: '#ff9800',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '13px',
-              fontWeight: 'bold',
-            }}
+            onClick={handleConfirmAttackers}
+            style={{ padding: '10px 14px', borderRadius: '10px', border: 'none', backgroundColor: '#f59e0b', color: '#111827', cursor: 'pointer', fontWeight: 700 }}
           >
-            Pass ({metadata.actionPlayer === 'player1' ? 'P1' : 'P2'})
+            Confirm Attackers
           </button>
         )}
 
-        {/* Next Turn */}
+        {metadata.currentPhase === 'declare_blockers' && !metadata.gameOver && (
+          <button
+            onClick={handleConfirmBlockers}
+            style={{ padding: '10px 14px', borderRadius: '10px', border: 'none', backgroundColor: '#8b5cf6', color: '#fff', cursor: 'pointer', fontWeight: 700 }}
+          >
+            Confirm Blockers
+          </button>
+        )}
+
         <button
-          onClick={handleNextTurn}
-          disabled={isGameOver}
-          style={{
-            padding: '6px 14px',
-            backgroundColor: isGameOver ? '#555' : '#ff9800',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '13px',
-            fontWeight: 'bold',
-          }}
+          onClick={handleSkipCombat}
+          style={{ padding: '10px 14px', borderRadius: '10px', border: 'none', backgroundColor: '#475569', color: '#fff', cursor: 'pointer', fontWeight: 700 }}
         >
-          Next Turn
+          Skip Combat
         </button>
 
-        {/* Force combat (debug) */}
         <button
-          onClick={handleNextPhase}
-          disabled={isGameOver}
-          style={{
-            padding: '6px 14px',
-            backgroundColor: isGameOver ? '#555' : '#616161',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '12px',
-          }}
+          onClick={handleEndTurn}
+          style={{ padding: '10px 14px', borderRadius: '10px', border: 'none', backgroundColor: '#334155', color: '#fff', cursor: 'pointer', fontWeight: 700 }}
         >
-          Force Combat
+          End Turn
         </button>
 
-        {/* Restart */}
         <button
-          onClick={initializeRunePrototype}
-          style={{
-            padding: '6px 14px',
-            backgroundColor: '#9c27b0',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '12px',
-          }}
+          onClick={initializePrototype}
+          style={{ padding: '10px 14px', borderRadius: '10px', border: 'none', backgroundColor: '#e11d48', color: '#fff', cursor: 'pointer', fontWeight: 700 }}
         >
           Restart
         </button>
